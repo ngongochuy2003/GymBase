@@ -1,0 +1,5 @@
+# Only directories with package.json become JavaScript workspace packages.
+# .NET dependencies are managed by NuGet, independently of this workspace.
+packages:
+  - 'apps/*'
+  - 'packages/*'
