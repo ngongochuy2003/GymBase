@@ -1,8 +1,9 @@
 # CI workflows
 
-Chưa thêm workflow giả khi ứng dụng/lockfile chưa tồn tại.
-CI-01 sẽ tạo `mobile-ci.yml` và `api-ci.yml`, có path filters cho ứng dụng,
-packages dùng chung và cấu hình liên quan.
+`mobile-ci.yml` đã có: frozen-lockfile install, lint, typecheck, Jest, Prettier
+và export bundle Android/iOS/web. Chạy khi PR hoặc push develop/main thay đổi
+Mobile, packages hoặc cấu hình liên quan. Chưa chạy trên GitHub trong lần bàn giao local.
+`api-ci.yml` sẽ được tạo khi backend có source và tests.
 
 - Mobile: install từ lockfile, lint, typecheck và tests thực tế.
 - API: restore, build và tests thực tế theo SDK đã chốt.

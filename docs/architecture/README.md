@@ -8,7 +8,7 @@ Mobile (Expo / React Native) ─┐
 Web (Next.js, dự kiến V2) ───┘
 ```
 
-Đây là kiến trúc mục tiêu; REPO-01 mới dựng thư mục và quy ước.
+Mobile đã có demo chạy được; API/MySQL/Web vẫn là kiến trúc mục tiêu.
 Backend dùng modular monolith, chưa chia microservices. Mobile tổ chức feature-first.
 
 | Khu vực | Trách nhiệm và ranh giới |
