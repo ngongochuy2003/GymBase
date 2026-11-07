@@ -1,0 +1,3 @@
+@GymBase.SystemAPI_HostAddress = http://localhost:5020
+
+GET {{GymBase.SystemAPI_HostAddress}}/health

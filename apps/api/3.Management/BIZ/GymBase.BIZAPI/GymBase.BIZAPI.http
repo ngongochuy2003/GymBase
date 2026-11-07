@@ -1,0 +1,3 @@
+@GymBase.BIZAPI_HostAddress = http://localhost:5084
+
+GET {{GymBase.BIZAPI_HostAddress}}/health

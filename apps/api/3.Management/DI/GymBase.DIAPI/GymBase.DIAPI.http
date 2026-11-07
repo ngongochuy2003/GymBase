@@ -1,0 +1,3 @@
+@GymBase.DIAPI_HostAddress = http://localhost:5055
+
+GET {{GymBase.DIAPI_HostAddress}}/health

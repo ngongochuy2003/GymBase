@@ -1,0 +1,3 @@
+@GymBase.MobAPI_HostAddress = http://localhost:5106
+
+GET {{GymBase.MobAPI_HostAddress}}/health

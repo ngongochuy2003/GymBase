@@ -1,0 +1,3 @@
+@GymBase.ImportExportAPI_HostAddress = http://localhost:5100
+
+GET {{GymBase.ImportExportAPI_HostAddress}}/health

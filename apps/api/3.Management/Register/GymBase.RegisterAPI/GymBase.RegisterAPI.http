@@ -1,0 +1,3 @@
+@GymBase.RegisterAPI_HostAddress = http://localhost:5072
+
+GET {{GymBase.RegisterAPI_HostAddress}}/health

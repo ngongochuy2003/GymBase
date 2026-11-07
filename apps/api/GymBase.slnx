@@ -1,0 +1,81 @@
+<Solution>
+  <Folder Name="/1. Doc/">
+    <File Path="1.Doc/README.md" />
+  </Folder>
+  <Folder Name="/2. Config/">
+    <File Path="2.Config/README.md" />
+  </Folder>
+  <Folder Name="/3. Management/" />
+  <Folder Name="/3. Management/Auth/">
+    <Project Path="3.Management/Auth/GymBase.AuthAPI/GymBase.AuthAPI.csproj" />
+    <Project Path="3.Management/Auth/GymBase.BLAuth/GymBase.BLAuth.csproj" />
+    <Project Path="3.Management/Auth/GymBase.DLAuth.Contract/GymBase.DLAuth.Contract.csproj" />
+    <Project Path="3.Management/Auth/GymBase.DLAuth.Mysql/GymBase.DLAuth.Mysql.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/Base/">
+    <Project Path="3.Management/Base/GymBase.BaseAPI/GymBase.BaseAPI.csproj" />
+    <Project Path="3.Management/Base/GymBase.BLBase/GymBase.BLBase.csproj" />
+    <Project Path="3.Management/Base/GymBase.DLBase.Contract/GymBase.DLBase.Contract.csproj" />
+    <Project Path="3.Management/Base/GymBase.DLBase.Mysql/GymBase.DLBase.Mysql.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/BIZ/">
+    <Project Path="3.Management/BIZ/GymBase.BIZAPI/GymBase.BIZAPI.csproj" />
+    <Project Path="3.Management/BIZ/GymBase.BLBIZ/GymBase.BLBIZ.csproj" />
+    <Project Path="3.Management/BIZ/GymBase.DLBIZ.Contract/GymBase.DLBIZ.Contract.csproj" />
+    <Project Path="3.Management/BIZ/GymBase.DLBIZ.Mysql/GymBase.DLBIZ.Mysql.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/DI/">
+    <Project Path="3.Management/DI/GymBase.BLDI/GymBase.BLDI.csproj" />
+    <Project Path="3.Management/DI/GymBase.DIAPI/GymBase.DIAPI.csproj" />
+    <Project Path="3.Management/DI/GymBase.DLDI.Contract/GymBase.DLDI.Contract.csproj" />
+    <Project Path="3.Management/DI/GymBase.DLDI.Mysql/GymBase.DLDI.Mysql.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/ImportExport/">
+    <Project Path="3.Management/ImportExport/GymBase.BLImportExport/GymBase.BLImportExport.csproj" />
+    <Project Path="3.Management/ImportExport/GymBase.DLImportExport.Contract/GymBase.DLImportExport.Contract.csproj" />
+    <Project Path="3.Management/ImportExport/GymBase.DLImportExport.Mysql/GymBase.DLImportExport.Mysql.csproj" />
+    <Project Path="3.Management/ImportExport/GymBase.ImportExportAPI/GymBase.ImportExportAPI.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/Mob/">
+    <Project Path="3.Management/Mob/GymBase.MobAPI/GymBase.MobAPI.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/Register/">
+    <Project Path="3.Management/Register/GymBase.BLRegister/GymBase.BLRegister.csproj" />
+    <Project Path="3.Management/Register/GymBase.DLRegister.Contract/GymBase.DLRegister.Contract.csproj" />
+    <Project Path="3.Management/Register/GymBase.DLRegister.Mysql/GymBase.DLRegister.Mysql.csproj" />
+    <Project Path="3.Management/Register/GymBase.RegisterAPI/GymBase.RegisterAPI.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/Report/">
+    <Project Path="3.Management/Report/GymBase.BLReport/GymBase.BLReport.csproj" />
+    <Project Path="3.Management/Report/GymBase.DLReport.Contract/GymBase.DLReport.Contract.csproj" />
+    <Project Path="3.Management/Report/GymBase.DLReport.Mysql/GymBase.DLReport.Mysql.csproj" />
+    <Project Path="3.Management/Report/GymBase.ReportAPI/GymBase.ReportAPI.csproj" />
+  </Folder>
+  <Folder Name="/3. Management/System/">
+    <Project Path="3.Management/System/GymBase.BLSystem/GymBase.BLSystem.csproj" />
+    <Project Path="3.Management/System/GymBase.DLSystem.Contract/GymBase.DLSystem.Contract.csproj" />
+    <Project Path="3.Management/System/GymBase.DLSystem.Mysql/GymBase.DLSystem.Mysql.csproj" />
+    <Project Path="3.Management/System/GymBase.SystemAPI/GymBase.SystemAPI.csproj" />
+  </Folder>
+  <Folder Name="/4. Model/">
+    <Project Path="4.Model/GymBase.Model/GymBase.Model.csproj" />
+  </Folder>
+  <Folder Name="/5. Lib/">
+    <Project Path="5.Lib/GymBase.Lib/GymBase.Lib.csproj" />
+  </Folder>
+  <Folder Name="/6. Integration/">
+    <Project Path="6.Integration/GymBase.Integration/GymBase.Integration.csproj" />
+  </Folder>
+  <Folder Name="/7. Worker/">
+    <Project Path="7.Worker/GymBase.Worker/GymBase.Worker.csproj" />
+  </Folder>
+  <Folder Name="/8. Unitest/">
+    <Project Path="8.Unitest/GymBase.UnitTests/GymBase.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/99. AMISBASE/">
+    <Project Path="99.AMISBASE/GymBase.AMISBase.API/GymBase.AMISBase.API.csproj" />
+    <Project Path="99.AMISBASE/GymBase.AMISBase.BL/GymBase.AMISBase.BL.csproj" />
+    <Project Path="99.AMISBASE/GymBase.AMISBase.DL.Contract/GymBase.AMISBase.DL.Contract.csproj" />
+    <Project Path="99.AMISBASE/GymBase.AMISBase.DL.Mysql/GymBase.AMISBase.DL.Mysql.csproj" />
+  </Folder>
+</Solution>

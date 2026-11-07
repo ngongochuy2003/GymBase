@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.22" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DI\GymBase.BLDI\GymBase.BLDI.csproj" />
+    <ProjectReference Include="..\..\DI\GymBase.DLDI.Mysql\GymBase.DLDI.Mysql.csproj" />
+    <ProjectReference Include="..\..\BIZ\GymBase.BLBIZ\GymBase.BLBIZ.csproj" />
+    <ProjectReference Include="..\..\BIZ\GymBase.DLBIZ.Mysql\GymBase.DLBIZ.Mysql.csproj" />
+    <ProjectReference Include="..\..\..\99.AMISBASE\GymBase.AMISBase.API\GymBase.AMISBase.API.csproj" />
+  </ItemGroup>
+
+</Project>

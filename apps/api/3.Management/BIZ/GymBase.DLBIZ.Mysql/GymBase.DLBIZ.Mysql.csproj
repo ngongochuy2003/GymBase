@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GymBase.DLBIZ.Contract\GymBase.DLBIZ.Contract.csproj" />
+    <ProjectReference Include="..\..\..\99.AMISBASE\GymBase.AMISBase.DL.Mysql\GymBase.AMISBase.DL.Mysql.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
