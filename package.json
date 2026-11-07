@@ -2,8 +2,14 @@
   "name": "gymbase",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@10.34.9",
+  "engines": { "node": "^22.13.0 || ^24.3.0" },
   "description": "GymBase monorepo: mobile, API and future web application",
   "scripts": {
-    "check:repo": "node scripts/check-repo.mjs"
+    "check:repo": "node scripts/check-repo.mjs",
+    "mobile": "pnpm --filter @gymbase/mobile start",
+    "mobile:web": "pnpm --filter @gymbase/mobile web",
+    "mobile:android": "pnpm --filter @gymbase/mobile android",
+    "mobile:check": "pnpm --filter @gymbase/mobile check"
   }
 }

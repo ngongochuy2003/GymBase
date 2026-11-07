@@ -51,5 +51,5 @@ if (errors.length) {
   process.exitCode = 1;
 } else {
   console.log(`PASS: REPO-01 structure (${required.length} files) at ${fileURLToPath(root)}`);
-  console.log('Application builds, tests and runtime checks are separate future tasks.');
+  console.log('Structure check only. Run pnpm mobile:check for Mobile lint, types and tests.');
 }

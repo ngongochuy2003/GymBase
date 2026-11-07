@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "GymBase",
+    "slug": "gymbase-mobile",
+    "scheme": "gymbase",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router", "expo-secure-store"],
+    "web": { "bundler": "metro", "output": "single", "name": "GymBase Mobile" },
+    "experiments": { "typedRoutes": true }
+  }
+}

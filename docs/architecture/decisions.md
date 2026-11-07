@@ -1,5 +1,20 @@
 # Quyết định kiến trúc và các điểm còn mở
 
+## Cập nhật — Mobile base
+
+Người dùng đã yêu cầu triển khai Mobile tiếp sau REPO-01. Dùng Expo SDK 58,
+React Native 0.88.1, React 19.3.0 theo template Expo đã kiểm chứng từ npm.
+Root pin pnpm 10.34.9, Node tham chiếu 24.13.0; Node 22.13+ cũng tương thích.
+Có lockfile, Router, demo feature, TanStack Query, RHF/Zod, Axios, SecureStore,
+ESLint/Prettier và Jest/RNTL. Metro dùng cấu hình Expo mặc định cho monorepo;
+pnpm hoisted tránh trùng React/native dependencies.
+
+Demo session chỉ nằm trong memory và không tạo token. API mode không cho vào
+demo; đăng nhập/refresh thật phải nối backend adapter trước khi dùng production.
+Không thêm Zustand khi state hiện tại chỉ cần context và Query cache.
+Chưa cấu hình EAS project ID, signing hoặc app identifier giả.
+Các ADR REPO-01 bên dưới ghi lại trạng thái lịch sử của bước dựng repo.
+
 ## ADR-001 — Root monorepo
 
 Chọn repository hiện tại làm root; `apps`, `packages`, `database`, `infrastructure`,
