@@ -1,0 +1,9 @@
+# Enable entries only after real GitHub users/teams have been assigned.
+# Example (commented intentionally; not a configured reviewer):
+# /apps/mobile/ @your-org/mobile-team
+# /apps/api/ @your-org/backend-team
+# /database/ @your-org/backend-team
+# /infrastructure/ @your-org/platform-team
+# /deploy/ @your-org/platform-team
+# /.github/ @your-org/maintainers
+# CODEOWNERS requires branch protection/review rules for enforcement.
