@@ -1,10 +1,12 @@
+using GymBase.AMISBase.API;
 using GymBase.BLSystem.Users;
 using GymBase.DLSystem.Contract;
 using GymBase.DLSystem.Mysql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Mọi route của host này có tiền tố /mobile (ví dụ /mobile/api/v1/users)
+builder.Services.AddControllers(options => options.UseApiChannel(ApiChannel.Mobile));
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 

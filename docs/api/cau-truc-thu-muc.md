@@ -167,6 +167,11 @@ Như vậy một quy tắc nghiệp vụ chỉ được viết một lần, tron
 lập, cũng như deploy và scale riêng. Vì thế `GymBase.MobAPI` tham chiếu BL của cả
 DI và Biz.
 
+Route của hai kênh được phân biệt bằng tiền tố do `Program.cs` gắn: các host web dùng
+`/web/api/v1/...`, MobAPI dùng `/mobile/api/v1/...`. Controller chỉ khai báo phần
+`api/v1/[controller]` (kế thừa từ `BaseApiController`), nên chép controller từ web sang
+MobAPI không phải sửa route. Cách chạy: `apps/api/1.Doc/cach-chay-api.md`.
+
 ### `4. Model` *(suy luận)*
 
 Đây là các lớp dữ liệu dùng chung giữa nhiều nhóm, ví dụ entity ánh xạ tới bảng,
@@ -245,7 +250,7 @@ khi làm AMISBASE ở DB-01.
 Luồng chạy khi app mobile lấy danh sách gói tập:
 
 ```text
-GET /api/v1/packages  ──► MobAPI.PackagesController
+GET /mobile/api/v1/packages  ──► MobAPI.PackagesController
                           ──► BLDI.PackageBL.GetPaging()
                               ──► IPackageDL (DLDI.Contract)
                                   ──► PackageDL (DLDI.Mysql) ── SQL ──► MySQL
