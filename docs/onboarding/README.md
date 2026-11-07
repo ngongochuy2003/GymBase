@@ -50,7 +50,8 @@ trên GitHub rồi cấu hình required checks.
 ## Môi trường ở bước tiếp theo
 
 Mobile đã pin phiên bản và có lockfile; setup Android/iOS theo README Mobile.
-API-01 chốt .NET 9 SDK; DB-01 chốt MySQL và Docker Compose.
+API dùng .NET 10 SDK (ghim ở `apps/api/global.json`); DB-01 chốt MySQL và Docker Compose.
+Cách chạy API: `apps/api/1.Doc/cach-chay-api.md`.
 Sau khi có cấu hình runtime, copy env example vào đúng phạm vi app/service.
 Các file `.env` bị Git ignore; không lưu credential vào appsettings được commit.
 Biến public trong Expo không được chứa secret.

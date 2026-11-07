@@ -1,6 +1,6 @@
 # GymBase API
 
-Backend ASP.NET Core 9 (SDK ghim tại `global.json`), MySQL. Solution duy nhất:
+Backend ASP.NET Core 10 (.NET 10 LTS, SDK ghim tại `global.json`), MySQL. Solution duy nhất:
 `apps/api/GymBase.slnx`. Cấu trúc theo mô hình Management / AMISBASE.
 
 ## Cấu trúc

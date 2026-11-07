@@ -262,7 +262,7 @@ GET /mobile/api/v1/packages  ──► MobAPI.PackagesController
 
 1. Tạo 4 project trong `apps/api/3.Management/Payment/`: `GymBase.PaymentAPI`
    (webapi, `--use-controllers`), `GymBase.BLPayment`, `GymBase.DLPayment.Contract` và
-   `GymBase.DLPayment.Mysql` (classlib). Tất cả dùng `-f net9.0`.
+   `GymBase.DLPayment.Mysql` (classlib). Tất cả dùng `-f net10.0`.
 2. Nối tham chiếu theo đúng chiều ở mục 1.3, và tham chiếu tầng tương ứng của AMISBASE.
 3. Thêm vào solution: `dotnet sln GymBase.slnx add --solution-folder "3. Management/Payment" <csproj...>`.
 4. Chạy `dotnet test GymBase.slnx`. `LayerReferenceTests` tự nhận hai project BL và

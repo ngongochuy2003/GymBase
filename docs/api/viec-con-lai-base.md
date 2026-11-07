@@ -24,7 +24,7 @@ mục 3 thì thay thân hàm bằng SQL, giữ nguyên interface.
 
 | # | Quyết định | Đề xuất | Trạng thái |
 | --- | --- | --- | --- |
-| Q1 | .NET 9 hay .NET 10 (.NET 9 hết hỗ trợ ngày 10/11/2026) | .NET 10 LTS | Chưa chốt |
+| Q1 | .NET 9 hay .NET 10 (.NET 9 hết hỗ trợ ngày 10/11/2026) | .NET 10 LTS | **Đã chốt 08/11**, đã nâng lên |
 | Q2 | Quy ước tên bảng/cột | **Tiếng Việt không dấu snake_case**, property C# trùng tên cột (`tai_khoan`, `ho_ten`, `ngay_tao`, `is_deleted`); DTO trả ra API dùng cùng tên. Riêng khóa chính vẫn là `Id`. Ví dụ đầy đủ: entity `User` (bảng `nguoi_dung`) | **Đã chốt 08/11** |
 | Q3 | Thư viện chạy SQL raw | Dapper + MySqlConnector | Chưa chốt |
 | Q4 | Công cụ migration (không dùng EF nên không có EF migrations) | DbUp (chạy lần lượt các script `.sql`) hoặc FluentMigrator | Chưa chốt |
@@ -39,7 +39,7 @@ mục 3 thì thay thân hàm bằng SQL, giữ nguyên interface.
 
 | # | Phần base | Bên tham khảo có gì | Đặt ở đâu trong GymBase | Xong |
 | --- | --- | --- | --- | --- |
-| 1 | Chốt Q1 và commit khung hiện tại | (.NET 6) | Toàn solution | ☐ |
+| 1 | Chốt Q1 và commit khung hiện tại | (.NET 6) | Toàn solution: đã lên .NET 10, khung đã commit | ☑ |
 | 2 | **Cấu hình và secrets** | `ConnectionStrings`, `Redis`, `Uri` trong appsettings | Options pattern. Connection string đặt trong user-secrets hoặc biến môi trường; `2.Config` chỉ chứa file mẫu | ☐ |
 | 3 | **Kết nối DB** | Pomelo + Dapper, retry khi lỗi | `AMISBase.DL.Mysql`: connection factory (MySqlConnector), Dapper, transaction. Property trùng tên cột nên Dapper không cần cấu hình map tên. Lưu UUID bằng `BINARY(16)` và **kiểm chứng** thứ tự byte giữ được tính tăng dần của UUIDv7 (MySqlConnector `GuidFormat`). Đọc `DateTime` từ DB phải gắn `DateTimeKind.Utc` | ☐ |
 | 4 | **Entity gốc** | `BaseEntity` (id Guid), `BaseAuditableEntity` (ngày/người tạo và sửa), soft delete `is_deleted` | **Đã làm** trong `AMISBase.DL.Contract/Entities`: `BaseEntity` (Id UUIDv7), `BaseAuditableEntity` (`ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`, `nguoi_chinh_sua`), interface `ISoftDelete` (`is_deleted`) và `EntityAuditExtensions` (`MarkCreated`, `MarkUpdated` từ chối thời gian không phải UTC; `MarkDeleted`, `Restore`). Có test `EntityTests` | ☑ |

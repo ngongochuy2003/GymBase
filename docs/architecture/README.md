@@ -4,7 +4,7 @@ Một Git monorepo, nhiều ứng dụng có vòng đời chạy/deploy độc l
 
 ```text
 Mobile (Expo / React Native) ─┐
-                             ├─ HTTPS → ASP.NET Core 9 API → MySQL
+                             ├─ HTTPS → ASP.NET Core 10 API → MySQL
 Web (Next.js, dự kiến V2) ───┘
 ```
 
