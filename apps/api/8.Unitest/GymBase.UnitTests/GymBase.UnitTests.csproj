@@ -21,6 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\3.Management\DI\GymBase.BLDI\GymBase.BLDI.csproj" />
     <ProjectReference Include="..\..\3.Management\BIZ\GymBase.BLBIZ\GymBase.BLBIZ.csproj" />
+    <ProjectReference Include="..\..\3.Management\System\GymBase.BLSystem\GymBase.BLSystem.csproj" />
+    <ProjectReference Include="..\..\3.Management\System\GymBase.DLSystem.Mysql\GymBase.DLSystem.Mysql.csproj" />
   </ItemGroup>
 
 </Project>

@@ -16,6 +16,8 @@
     <ProjectReference Include="..\..\BIZ\GymBase.BLBIZ\GymBase.BLBIZ.csproj" />
     <ProjectReference Include="..\..\BIZ\GymBase.DLBIZ.Mysql\GymBase.DLBIZ.Mysql.csproj" />
     <ProjectReference Include="..\..\..\99.AMISBASE\GymBase.AMISBase.API\GymBase.AMISBase.API.csproj" />
+    <ProjectReference Include="..\..\System\GymBase.BLSystem\GymBase.BLSystem.csproj" />
+    <ProjectReference Include="..\..\System\GymBase.DLSystem.Mysql\GymBase.DLSystem.Mysql.csproj" />
   </ItemGroup>
 
 </Project>
