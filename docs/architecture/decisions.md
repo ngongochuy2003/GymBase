@@ -1,5 +1,26 @@
 # Quyết định kiến trúc và các điểm còn mở
 
+## Cập nhật — Entity gốc (08/11/2026)
+
+Tên bảng/cột dùng tiếng Việt không dấu snake_case; property C# của entity và DTO trùng
+tên cột (ví dụ `tai_khoan`, `ho_ten`, `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`,
+`nguoi_chinh_sua`). Riêng khóa chính giữ tên `Id`.
+Khóa chính là UUIDv7 (`Guid.CreateVersion7()`). Mọi mốc thời gian lưu ở UTC.
+Xóa mềm bằng cờ `is_deleted` (property trùng tên cột).
+Tách `BaseEntity` (chỉ Id) và `BaseAuditableEntity` (thêm 4 trường audit) vì
+bảng nối, log và lịch sử không cần audit; xóa mềm là interface `ISoftDelete` riêng.
+Mã nguồn: `apps/api/99.AMISBASE/GymBase.AMISBase.DL.Contract/Entities`.
+
+## Cập nhật — API base
+
+Theo yêu cầu trực tiếp của chủ repo, `apps/api` dùng cấu trúc Management / AMISBASE
+thay cho modular monolith `GymBase.Modules` ghi trước đó. Mỗi nhóm (DI = danh mục,
+Biz = nghiệp vụ) có 4 project: API (controller), BL (logic, không query DB),
+DL.Contract, DL.Mysql (SQL raw). `Mob/GymBase.MobAPI` là API duy nhất cho mobile,
+gọi lại BL của DI/Biz. AMISBASE chứa nền CRUD dùng chung theo cùng 4 tầng.
+SDK ghim .NET 9.0.300 (roll-forward latestFeature). Lưu ý .NET 9 hết hỗ trợ
+10/11/2026; cân nhắc nâng lên .NET 10 LTS. Chi tiết: `apps/api/README.md`.
+
 ## Cập nhật — Mobile base
 
 Người dùng đã yêu cầu triển khai Mobile tiếp sau REPO-01. Dùng Expo SDK 58,

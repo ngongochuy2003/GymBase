@@ -3,6 +3,9 @@
 Giải thích cấu trúc thư mục backend (Management / AMISBASE, DI, Biz, Mob, các tầng
 API / BL / DL): [cau-truc-thu-muc.md](cau-truc-thu-muc.md).
 
+Danh sách phần base backend còn phải làm, theo mức ưu tiên:
+[viec-con-lai-base.md](viec-con-lai-base.md).
+
 Chưa có endpoint hoặc OpenAPI ở REPO-01. API-01 sẽ tạo host và `/health`;
 API-02 bổ sung conventions, validation, ProblemDetails, logging và OpenAPI.
 
