@@ -119,10 +119,11 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 ## 6. Cho trang web gọi được API
 
 - Gọi qua Bruno, Postman hoặc curl không cần cấu hình gì thêm.
-- Trang web chạy trong trình duyệt ở origin khác (ví dụ `http://localhost:3000`) sẽ bị
-  trình duyệt chặn vì **CORS chưa được cấu hình**. Việc này nằm trong mục 11 của
-  `docs/api/viec-con-lai-base.md`. Khi làm, CORS phải đọc danh sách origin từ cấu hình,
-  không mở cho mọi origin.
+- Trang web chạy trong trình duyệt phải có origin nằm trong cấu hình `Cors:AllowedOrigins`. Khi dev,
+  `appsettings.Development.json` đã có `http://localhost:3000` và `http://localhost:8081` (Expo web).
+- Môi trường thật đặt bằng biến môi trường, mỗi origin một biến: `Cors__AllowedOrigins__0`,
+  `Cors__AllowedOrigins__1`… Không khai báo thì trình duyệt không gọi được từ origin khác.
+- Không dùng `*`: API sẽ báo lỗi ngay khi khởi động.
 
 ## 7. Lỗi thường gặp
 

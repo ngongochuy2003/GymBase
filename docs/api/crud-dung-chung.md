@@ -98,8 +98,7 @@ không có giá trị "lấy tất cả". Quy ước response đầy đủ, gồ
 | Xem, sửa, xóa bản ghi không có | Ném `NotFoundException` ("Không tìm thấy {EntityDisplayName} hoặc … đã bị xóa."); override `EntityDisplayName` để câu báo lỗi nói đúng tên đối tượng |
 
 - Giờ lấy từ `TimeProvider` (đăng ký `TimeProvider.System`), test truyền giờ cố định.
-- `nguoi_tao` / `nguoi_chinh_sua` hiện là `null`; sẽ lấy từ `ICurrentUser` khi làm xác thực
-  (override `CurrentUserName`).
+- `nguoi_tao` / `nguoi_chinh_sua` lấy từ `ICurrentUser`. Chưa có đăng nhập nên hiện vẫn là `null`.
 
 ## 5. Thêm CRUD cho một bảng mới
 
@@ -174,8 +173,8 @@ public sealed class GoiTapUpdateDto
 }
 
 // GoiTapService.cs
-public sealed class GoiTapService(IGoiTapRepository goiTapRepository, TimeProvider timeProvider)
-    : BaseService<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapRepository, timeProvider)
+public sealed class GoiTapService(IGoiTapRepository goiTapRepository, TimeProvider timeProvider, ICurrentUser currentUser)
+    : BaseService<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapRepository, timeProvider, currentUser)
 {
     protected override GoiTapDto ToDto(goi_tap e) => new(e.Id, e.ma_goi, e.ten_goi, e.gia, e.ngay_tao);
 
@@ -223,13 +222,12 @@ Mọi action public của lớp cha đều thành endpoint, nên controller nào
 ### Bước 5: Đăng ký dịch vụ (`GymBase.API/Program.cs`)
 
 ```csharp
-builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAppPersistence(builder.Configuration, typeof(UserRepository).Assembly, typeof(GoiTapRepository).Assembly);
 builder.Services.AddScoped<IGoiTapRepository, GoiTapRepository>();
 builder.Services.AddScoped<GoiTapService>();
 ```
 
-Hai dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và thêm assembly vào
+Dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và thêm assembly vào
 `AddAppPersistence` nếu đây là bảng đầu tiên của nhóm đó.
 
 ### Bước 6: Test và Bruno
@@ -244,5 +242,3 @@ Hai dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và th�
 | Việc | Ghi chú |
 | --- | --- |
 | Thông báo lỗi DataAnnotations bằng tiếng Việt | Mục 8: FluentValidation. Hiện `errors` của lỗi 400 vẫn là câu tiếng Anh mặc định |
-| `nguoi_tao` / `nguoi_chinh_sua` | Mục 10: `ICurrentUser` |
-| URL chữ thường (`Location` đang là `/Users/...`) | Mục 11: `AddAppApi()` dùng chung, bật `LowercaseUrls` |

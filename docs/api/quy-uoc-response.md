@@ -239,8 +239,7 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
   không ghi log lỗi.
 - `ProblemDetailsCustomizer` điền `title`, `detail`, `code`, `trace_id`, `instance` cho mọi
   ProblemDetails, kể cả lỗi framework tự trả.
-- `GymBase.API` gọi `builder.Services.AddAppErrorHandling()` và `app.UseAppErrorHandling()`
-  (đặt trước `UseHttpsRedirection`). Khi làm mục 11 thì gộp vào `AddAppApi()` / `UseAppApi()`.
+- `AddAppApi()` / `UseAppApi()` trong `GymBase.Base.Hosting` đăng ký xử lý lỗi và đặt nó đầu pipeline.
 - Test: `tests/Integration/GymBase.IntegrationTests/ErrorHandlingTests.cs` gọi HTTP thật qua TestServer cho từng
   loại lỗi.
 

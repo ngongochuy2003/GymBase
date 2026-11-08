@@ -279,6 +279,5 @@ trong `src/<Nhóm>/`, tham chiếu theo bảng ở mục 5, thêm vào `GymBase.
 
 ## 12. Còn phải chốt
 
-- **Tên route:** hiện route lấy theo tên controller (`/users`). Có dùng dạng kebab-case
-  (`/pt-sessions`) hay không thì chốt cùng mục 11 trong
-  [viec-con-lai-base.md](viec-con-lai-base.md) (bật `LowercaseUrls`).
+- **Tên route:** route lấy theo tên controller, chữ thường (`/users`). Tên nhiều từ hiện viết liền
+  (`/goitap`). Có dùng dạng kebab-case (`/pt-sessions`) hay không thì chốt trước khi thêm controller đó.
