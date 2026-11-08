@@ -23,7 +23,7 @@ global.json, .gitignore           # Bắt buộc ở gốc; không hiện trong 
   Register/                       # Đăng ký, khởi tạo dữ liệu       GymBase.RegisterAPI     :5072
   Report/                         # Báo cáo, thống kê               GymBase.ReportAPI       :5150
   System/                         # Thiết lập hệ thống              GymBase.SystemAPI       :5020
-4.Model/GymBase.Model             # 4. Model — entity/DTO/enum dùng chung
+4.Model/GymBase.Model             # 4. Model — entity (Entities/<phân hệ>/<tên_bảng>.cs)
 5.Lib/GymBase.Lib                 # 5. Lib — tiện ích không gắn nghiệp vụ
 6.Integration/GymBase.Integration # 6. Integration — tích hợp hệ thống ngoài
 7.Worker/GymBase.Worker           # 7. Worker — tiến trình chạy nền

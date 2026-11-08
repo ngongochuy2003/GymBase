@@ -13,10 +13,11 @@ GymBase**, không chép nguyên cấu trúc. Cấu trúc thư mục hiện tại
 **Đã xong:** khung solution (API-01). Có 42 project, tham chiếu giữa các tầng đã
 nối đúng chiều, mỗi API host có `/health`, và có test giữ quy tắc phân tầng.
 
-**Mẫu đầu tiên đi đủ các tầng:** API người dùng `GET /api/web/v1/users` (SystemAPI) và
-`GET /api/mobile/v1/users` (MobAPI), có phân trang, tìm kiếm và lấy theo `{id}`. Cả hai cùng
-gọi `UserBL` → `IUserDL`. **`UserDL` hiện trả dữ liệu mock trong bộ nhớ**; khi làm
-mục 3 thì thay thân hàm bằng SQL, giữ nguyên interface.
+**Mẫu đầu tiên đi đủ các tầng:** API người dùng. Web (`/api/web/v1/users`, SystemAPI) và
+mobile (`/api/mobile/v1/users`, MobAPI) đều có đủ CRUD qua `BaseCrudController`. Cả hai cùng
+gọi `UserBL : BaseBL` → `IUserDL : IBaseDL<nguoi_dung>`. Entity
+`nguoi_dung` nằm ở `GymBase.Model/Entities/System`, DTO nằm ở `GymBase.BLSystem/NguoiDung`. **`UserDL` hiện lưu trong bộ nhớ** (`InMemoryBaseDL`);
+khi làm mục 3 thì đổi lớp cha sang `BaseDL` chạy SQL, giữ nguyên interface.
 
 ---
 
@@ -25,7 +26,7 @@ mục 3 thì thay thân hàm bằng SQL, giữ nguyên interface.
 | # | Quyết định | Đề xuất | Trạng thái |
 | --- | --- | --- | --- |
 | Q1 | .NET 9 hay .NET 10 (.NET 9 hết hỗ trợ ngày 10/11/2026) | .NET 10 LTS | **Đã chốt 08/11**, đã nâng lên |
-| Q2 | Quy ước tên bảng/cột | **Tiếng Việt không dấu snake_case**, property C# trùng tên cột (`tai_khoan`, `ho_ten`, `ngay_tao`, `is_deleted`); DTO trả ra API dùng cùng tên. Riêng khóa chính vẫn là `Id`. Ví dụ đầy đủ: entity `User` (bảng `nguoi_dung`) | **Đã chốt 08/11** |
+| Q2 | Quy ước tên bảng/cột | **Tiếng Việt không dấu snake_case**, property C# trùng tên cột (`tai_khoan`, `ho_ten`, `ngay_tao`, `is_deleted`); DTO trả ra API dùng cùng tên. Riêng khóa chính vẫn là `Id`. Tên class entity trùng tên bảng. Ví dụ đầy đủ: entity `nguoi_dung` (bảng `nguoi_dung`) | **Đã chốt 08/11** |
 | Q3 | Thư viện chạy SQL raw | Dapper + MySqlConnector | Chưa chốt |
 | Q4 | Công cụ migration (không dùng EF nên không có EF migrations) | DbUp (chạy lần lượt các script `.sql`) hoặc FluentMigrator | Chưa chốt |
 | Q5 | Phiên bản MySQL | 8.x LTS | Chưa chốt |
@@ -43,7 +44,7 @@ mục 3 thì thay thân hàm bằng SQL, giữ nguyên interface.
 | 2 | **Cấu hình và secrets** | `ConnectionStrings`, `Redis`, `Uri` trong appsettings | Options pattern. Connection string đặt trong user-secrets hoặc biến môi trường; `2.Config` chỉ chứa file mẫu | ☐ |
 | 3 | **Kết nối DB** | Pomelo + Dapper, retry khi lỗi | `AMISBase.DL.Mysql`: connection factory (MySqlConnector), Dapper, transaction. Property trùng tên cột nên Dapper không cần cấu hình map tên. Lưu UUID bằng `BINARY(16)` và **kiểm chứng** thứ tự byte giữ được tính tăng dần của UUIDv7 (MySqlConnector `GuidFormat`). Đọc `DateTime` từ DB phải gắn `DateTimeKind.Utc` | ☐ |
 | 4 | **Entity gốc** | `BaseEntity` (id Guid), `BaseAuditableEntity` (ngày/người tạo và sửa), soft delete `is_deleted` | **Đã làm** trong `AMISBase.DL.Contract/Entities`: `BaseEntity` (Id UUIDv7), `BaseAuditableEntity` (`ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`, `nguoi_chinh_sua`), interface `ISoftDelete` (`is_deleted`) và `EntityAuditExtensions` (`MarkCreated`, `MarkUpdated` từ chối thời gian không phải UTC; `MarkDeleted`, `Restore`). Có test `EntityTests` | ☑ |
-| 5 | **CRUD dùng chung** | `BaseCrudApiController` (GetAll, GetById, Create, Update, Delete) + `GetAllQueryHandler` | `IBaseDL<T>` và `BaseDL<T>` → `BaseBL<T>` → `BaseCrudController<T>`, mỗi phần nằm ở tầng tương ứng trong AMISBASE | ☐ |
+| 5 | **CRUD dùng chung** | `BaseCrudApiController` (GetAll, GetById, Create, Update, Delete) + `GetAllQueryHandler` | **Khung đã làm:** `IBaseDL<TEntity>` (DL.Contract) → `BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>` (BL, tự điền audit UTC, xóa mềm) → `BaseCrudController<...>` (API). DL tạm là `InMemoryBaseDL<TEntity>` lưu trong bộ nhớ. **Còn thiếu:** `BaseDL<TEntity>` chạy SQL (chờ mục 3); lỗi nghiệp vụ như trùng tên đăng nhập (chờ mục 7) | ◐ |
 | 6 | **Phân trang, lọc, sắp xếp, tìm kiếm** | `GetAllQuery` (page, page_size, sort, filter, search) và `ResponeListDto` + `Meta` (total, total_page, ranger) | **Một phần:** `PagingRequest` (page, pageSize, search; tự đưa về giá trị hợp lệ, pageSize tối đa 100) và `PagingResult<T>` (items, totalCount, totalPages) đã có trong `AMISBase.DL.Contract/Paging`. **Còn thiếu sort và filter.** Vì viết SQL tay, sort và filter phải giới hạn trong danh sách cột cho phép để tránh SQL injection | ◐ |
 | 7 | **Exception và mã lỗi** | `ErrorCode` (404, 460–464), `NotFoundException`, `RejectException`, `DataExitsException` | Exception đặt trong `AMISBase.BL`. Global exception handler trả ProblemDetails đặt trong `AMISBase.API` | ☐ |
 | 8 | **Validation** | FluentValidation chạy qua pipeline của MediatR | FluentValidation gọi trong `BaseBL` trước khi xuống DL | ☐ |

@@ -2,6 +2,7 @@
   <Folder Name="/1. Doc/">
     <File Path="1.Doc/README.md" />
     <File Path="1.Doc/cach-chay-api.md" />
+    <File Path="1.Doc/crud-dung-chung.md" />
   </Folder>
   <Folder Name="/2. Config/">
     <File Path="2.Config/README.md" />

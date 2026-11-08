@@ -107,7 +107,7 @@ code, tài liệu API hay script mẫu. Thường chỉ gồm file `.md` hoặc 
 project biên dịch.
 **GymBase:** thư mục thật `apps/api/1.Doc`, chứa tài liệu chỉ dành cho backend.
 Solution folder `1. Doc` chỉ gồm các file nằm trong `1.Doc/` (hiện là
-`README.md`, `cach-chay-api.md` và collection Bruno `bruno/`), không đính kèm file ở ngoài. Tài liệu dùng chung của monorepo,
+`README.md`, `cach-chay-api.md`, `crud-dung-chung.md` và collection Bruno `bruno/`), không đính kèm file ở ngoài. Tài liệu dùng chung của monorepo,
 kể cả tài liệu này, vẫn đặt ở `docs/` và không hiện trong solution.
 
 ### `2. Config` *(suy luận)*
@@ -177,10 +177,17 @@ MobAPI không phải sửa route. Cách chạy: `apps/api/1.Doc/cach-chay-api.md
 Đây là các lớp dữ liệu dùng chung giữa nhiều nhóm, ví dụ entity ánh xạ tới bảng,
 DTO, enum hoặc hằng số. Nếu đặt chúng trong từng nhóm thì DI và Biz sẽ phải tham
 chiếu chéo nhau.
-**GymBase:** `apps/api/4.Model/GymBase.Model` (class library rỗng, chưa project nào
-refer). Khi Biz cần dùng model của DI thì đặt model vào đây thay vì để Biz tham
-chiếu thẳng vào DI. Không trả entity trực tiếp
-cho mobile; dùng DTO.
+**GymBase:** `apps/api/4.Model/GymBase.Model` chứa **entity của mọi bảng**:
+`Entities/<phân hệ>/<tên_bảng>.cs`, ví dụ `Entities/System/nguoi_dung.cs`. Tên class trùng
+tên bảng, property trùng tên cột. Namespace chung là `GymBase.Model.Entities` (không theo
+thư mục con, để tránh `...Entities.System` che namespace `System` của .NET). Model chỉ tham
+chiếu `AMISBase.DL.Contract` (lấy `BaseEntity`), không chứa logic hay SQL. `DL*.Contract`
+tham chiếu Model, nên DI và Biz cùng dùng được một entity mà không phải tham chiếu chéo nhau.
+
+**DTO không để ở Model** mà để trong BL của phân hệ, ví dụ
+`GymBase.BLSystem/NguoiDung/NguoiDungDtos.cs`. Chỉ kiểu dữ liệu mà nhiều phân hệ cùng cần
+mới đưa lên Model. Không trả entity ra API; luôn dùng DTO. Chi tiết:
+`apps/api/1.Doc/crud-dung-chung.md`, mục 2.
 
 ### `5. Lib` *(suy luận)*
 
@@ -222,38 +229,45 @@ GymBase chia AMISBASE thành đúng 4 tầng để các tầng của DI và Biz 
 
 | Project | Chứa gì | Ai tham chiếu |
 | --- | --- | --- |
-| `GymBase.AMISBase.API` | `BaseApiController` (đã có), sau này có `BaseCrudController<T>` | `DIAPI`, `BIZAPI`, `MobAPI` |
-| `GymBase.AMISBase.BL` | `BaseBL<T>`: kiểm tra hợp lệ chung, rồi gọi DL | `BLDI`, `BLBIZ` |
-| `GymBase.AMISBase.DL.Contract` | `IBaseDL<T>`: `GetById`, `GetPaging`, `Insert`, `Update`, `Delete` | `DLDI.Contract`, `DLBIZ.Contract` |
-| `GymBase.AMISBase.DL.Mysql` | `BaseDL<T>` hiện thực bằng SQL raw, kèm connection factory | `DLDI.Mysql`, `DLBIZ.Mysql` |
+| `GymBase.AMISBase.API` | `BaseApiController`; `BaseCrudController<TDto, TCreateDto, TUpdateDto>` (GET danh sách, GET `{id}`, POST, PUT `{id}`, DELETE `{id}`); tiền tố route theo kênh | Các host `*API`, `MobAPI` |
+| `GymBase.AMISBase.BL` | `ICrudBL<...>` và `BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>`: chuẩn hóa phân trang, map entity ↔ DTO, tự điền ngày/người tạo, sửa (UTC), xóa mềm nếu entity có `is_deleted` | `BL*` |
+| `GymBase.AMISBase.DL.Contract` | Entity gốc, `IHasId`, phân trang, `IBaseDL<TEntity>`: `GetPaging`, `GetById`, `Insert`, `Update`, `Delete` | `DL*.Contract`, `GymBase.Model` |
+| `GymBase.AMISBase.DL.Mysql` | **Hiện là mock:** `InMemoryStore<T>` (đăng ký singleton) + `InMemoryBaseDL<TEntity>`. Khi nối DB sẽ thêm `BaseDL<TEntity>` chạy SQL raw kèm connection factory | `DL*.Mysql` |
 
-Hiện mới có `BaseApiController`. Phần CRUD dùng chung **chờ DB-01**, vì cần chọn
-trước thư viện chạy SQL raw (Dapper hoặc ADO.NET) và MySQL driver.
+HTTP trả về của controller dùng chung: `GET` 200 / 404, `POST` 201 kèm header `Location`,
+`PUT` 200 / 404, `DELETE` 204 / 404. Body sai hoặc vi phạm DataAnnotations bị `[ApiController]`
+trả 400 trước khi vào BL.
+
+DL hiện lưu trong bộ nhớ, mất dữ liệu khi tắt host. Nối MySQL (mục 3 trong
+[viec-con-lai-base.md](viec-con-lai-base.md)) chỉ phải đổi lớp cha của DL từng bảng từ
+`InMemoryBaseDL` sang `BaseDL`, BL và API giữ nguyên.
 
 ---
 
 ## 3. Ví dụ: thêm danh mục "Gói tập" từ đầu đến cuối
 
-Đoạn code dưới đây **chỉ minh họa** vị trí đặt code. Tên lớp và chữ ký hàm sẽ chốt
-khi làm AMISBASE ở DB-01.
+Làm theo đúng mẫu người dùng (`nguoi_dung`) đang có. Code đầy đủ xem ở
+`GymBase.Model/Entities/System`, `GymBase.DLSystem.*`, `GymBase.BLSystem/NguoiDung`,
+`GymBase.SystemAPI` và `GymBase.MobAPI`. Hướng dẫn kèm code: `apps/api/1.Doc/crud-dung-chung.md`.
 
 | Bước | Project | File | Nội dung |
 | --- | --- | --- | --- |
-| 1 | `GymBase.DLDI.Contract` | `IPackageDL.cs` | `interface IPackageDL : IBaseDL<Package>` và thêm hàm riêng nếu cần, ví dụ `ExistsByCode(code)`. |
-| 2 | `GymBase.DLDI.Mysql` | `PackageDL.cs` | `class PackageDL : BaseDL<Package>, IPackageDL`, viết SQL raw cho các hàm riêng. |
-| 3 | `GymBase.BLDI` | `PackageBL.cs` | Quy tắc nghiệp vụ, ví dụ mã gói không trùng, giá lớn hơn 0. Gọi `IPackageDL`, **không** viết SQL. |
-| 4 | `GymBase.DIAPI` | `Controllers/PackagesController.cs` | `class PackagesController : BaseApiController`, gọi `PackageBL`. |
-| 5 | `GymBase.DIAPI` | `Program.cs` | Đăng ký DI: `IPackageDL → PackageDL`, `PackageBL`. |
-| 6 | `GymBase.MobAPI` | `Controllers/PackagesController.cs` + `Program.cs` | Chỉ mở những endpoint mobile cần, gọi lại `PackageBL` và đăng ký DI tương tự. |
-| 7 | `GymBase.UnitTests` | `PackageBLTests.cs` | Mock `IPackageDL` để test quy tắc của `PackageBL`. |
+| 1 | `GymBase.Model` | `Entities/DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, namespace `GymBase.Model.Entities`, property trùng tên cột. |
+| 2 | `GymBase.DLDI.Contract` | `IGoiTapDL.cs` | `interface IGoiTapDL : IBaseDL<goi_tap>`, thêm hàm riêng nếu cần, ví dụ `ExistsByCode(code)`. |
+| 3 | `GymBase.DLDI.Mysql` | `GoiTapDL.cs` | `class GoiTapDL : InMemoryBaseDL<goi_tap>, IGoiTapDL` (sau này là `BaseDL<goi_tap>`). Override `GetSearchValues` để chọn cột tìm kiếm. |
+| 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapBL.cs` | `GoiTapDto : IHasId`, `GoiTapCreateDto`, `GoiTapUpdateDto` kèm DataAnnotations. `class GoiTapBL : BaseBL<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>`: viết 3 hàm map. Quy tắc riêng (mã không trùng, giá > 0) thì override `CreateAsync` / `UpdateAsync`. **Không** viết SQL. |
+| 5 | `GymBase.DIAPI` | `Controllers/GoiTapController.cs` | `class GoiTapController(GoiTapBL bl) : BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(bl);` là đủ 5 endpoint. |
+| 6 | `GymBase.DIAPI` | `Program.cs` | Đăng ký DI: `TimeProvider.System`, `InMemoryStore<>` (singleton, khi còn mock), `IGoiTapDL → GoiTapDL`, `GoiTapBL`. |
+| 7 | `GymBase.MobAPI` | `Controllers/GoiTapController.cs` + `Program.cs` | Kế thừa `BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>` như web, gọi lại `GoiTapBL`; đăng ký DI tương tự. |
+| 8 | `GymBase.UnitTests` | `GoiTapBLTests.cs` | Tạo `GoiTapBL` trên `GoiTapDL` với `InMemoryStore` riêng cho từng test. |
 
 Luồng chạy khi app mobile lấy danh sách gói tập:
 
 ```text
-GET /api/mobile/v1/packages  ──► MobAPI.PackagesController
-                          ──► BLDI.PackageBL.GetPaging()
-                              ──► IPackageDL (DLDI.Contract)
-                                  ──► PackageDL (DLDI.Mysql) ── SQL ──► MySQL
+GET /api/mobile/v1/goitap  ──► MobAPI.GoiTapController
+                          ──► BLDI.GoiTapBL.GetPagingAsync()
+                              ──► IGoiTapDL (DLDI.Contract)
+                                  ──► GoiTapDL (DLDI.Mysql) ── SQL ──► MySQL
 ```
 
 ---
