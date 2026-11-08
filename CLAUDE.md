@@ -6,7 +6,7 @@ Code tạm (mock, bỏ qua một kiểm tra, chờ phần base khác) luôn kèm
 viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/settings.json`) gom các TODO theo chủ đề.
 
 ```csharp
-// TODO(DB): đổi lớp cha sang BaseDL<nguoi_dung>; dữ liệu mẫu chuyển sang script seed. Mục 3, 13.
+// TODO(DB): đổi lớp cha sang BaseRepository<nguoi_dung>; dữ liệu mẫu chuyển sang script seed. Mục 3, 13.
 // TODO(ERROR): lỗi nghiệp vụ ném exception và trả ProblemDetails qua global exception handler,
 //   không try/catch trong từng action. Mục 7.
 ```
@@ -20,7 +20,7 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 
 | Chủ đề | Việc chờ |
 | --- | --- |
-| `DB` | Nối MySQL bằng EF Core: `DbContext`, `BaseDL` dùng EF Core, migrations, bỏ DL mock `InMemory*`, seed, health check DB |
+| `DB` | Nối MySQL bằng EF Core: `DbContext`, `BaseRepository` dùng EF Core, migrations, bỏ DL mock `InMemory*`, seed, health check DB |
 | `ERROR` | Exception nghiệp vụ + ProblemDetails, chặn dữ liệu trùng |
 | `PAGING` | Sort, filter theo danh sách cột cho phép |
 | `CURRENT-USER` | `ICurrentUser` để ghi `nguoi_tao`, `nguoi_chinh_sua` |

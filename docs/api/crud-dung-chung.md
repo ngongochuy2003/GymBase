@@ -4,35 +4,31 @@ Phần nền CRUD nằm trong `GymBase.Base` và `GymBase.Base.Hosting`. Mỗi b
 entity, DTO và vài hàm map là có đủ API thêm/sửa/xóa/xem. Mẫu đầy đủ đang chạy: **người dùng**
 (bảng `nguoi_dung`, nhóm Auth).
 
-> **Trạng thái:** DL hiện là **mock lưu trong bộ nhớ** (`InMemoryBaseDL`), tắt host là mất
-> dữ liệu. Khi nối MySQL sẽ thêm `BaseDL<TEntity>` dùng EF Core; DL của từng bảng chỉ đổi lớp
-> cha, BL và API giữ nguyên.
-
 ## 1. Các lớp nền
 
 ```text
 HTTP ──► BaseCrudController<TDto, TCreateDto, TUpdateDto>     GymBase.Base.Hosting
-            │ gọi ICrudBL
+            │ gọi ICrudService
             ▼
-         BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>         GymBase.Base (Crud/)
-            │ gọi IBaseDL<TEntity>
+         BaseService<TEntity, TDto, TCreateDto, TUpdateDto>         GymBase.Base (Crud/)
+            │ gọi IBaseRepository<TEntity>
             ▼
-         IBaseDL<TEntity>                                       GymBase.Base (Crud/)
+         IBaseRepository<TEntity>                                       GymBase.Base (Crud/)
             ▲ hiện thực
-         InMemoryBaseDL<TEntity> + InMemoryStore<TEntity>       GymBase.DLBiz.MySql (InMemory/, mock)
+         BaseRepository<TEntity> + AppDbContext (EF Core)               GymBase.DLBiz.MySql (Persistence/)
 ```
 
 | Lớp | Project | Việc làm |
 | --- | --- | --- |
 | `BaseCrudController<TDto, TCreateDto, TUpdateDto>` | `GymBase.Base.Hosting` | Đủ 5 action: `GET` (phân trang, tìm kiếm), `GET {id}`, `POST`, `PUT {id}`, `DELETE {id}`. `TDto` phải có `Id` (`IHasId`). Controller web và mobile cùng kế thừa |
-| `ICrudBL<TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Interface mà controller gọi; controller không biết entity |
-| `BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (UTC), xóa mềm |
-| `IBaseDL<TEntity>` | `GymBase.Base` | `GetPagingAsync`, `GetByIdAsync`, `InsertAsync`, `UpdateAsync`, `DeleteAsync` |
-| `InMemoryBaseDL<TEntity>` | `GymBase.DLBiz.MySql` | Mock của `IBaseDL`: ẩn bản ghi xóa mềm, tìm kiếm, mới tạo trước, phân trang |
-| `InMemoryStore<TEntity>` | `GymBase.DLBiz.MySql` | "Bảng" trong bộ nhớ, đăng ký singleton; luôn trả bản sao như khi đọc DB |
+| `ICrudService<TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Interface mà controller gọi; controller không biết entity |
+| `BaseService<TEntity, TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (UTC), xóa mềm |
+| `IBaseRepository<TEntity>` | `GymBase.Base` | `GetPagingAsync`, `GetByIdAsync`, `InsertAsync`, `UpdateAsync`, `DeleteAsync` |
+| `BaseRepository<TEntity>` | `GymBase.DLBiz.MySql` | Hiện thực `IBaseRepository` bằng EF Core: ẩn bản ghi xóa mềm (query filter), tìm kiếm, mới tạo trước, phân trang; trùng unique index thì ném `ConflictException` |
+| `InMemoryBaseRepository<TEntity>`, `InMemoryStore<TEntity>` | `tests/Shared/GymBase.TestDoubles` | DL giả để test BL không cần MySQL; hành vi phải khớp `BaseRepository` |
 
-`InMemoryBaseDL`, và sau này `AppDbContext` cùng `BaseDL`, nằm trong `DLBiz.MySql` (quyết định Q9),
-nên `DLAuth.MySql` và `DLDI.MySql` tham chiếu `DLBiz.MySql`.
+`AppDbContext` và `BaseRepository` nằm trong `DLBiz.MySql` (quyết định Q9), nên `DLAuth.MySql` và
+`DLDI.MySql` tham chiếu `DLBiz.MySql`.
 
 ## 2. Đặt entity và DTO ở đâu
 
@@ -42,7 +38,7 @@ src/Auth/GymBase.DLAuth.Contract/
                                       namespace GymBase.DLAuth.Contract.Entities
 src/Auth/GymBase.BLAuth/
 └── NguoiDung/                        namespace GymBase.BLAuth.NguoiDung
-    ├── UserBL.cs
+    ├── UserService.cs
     └── NguoiDungDtos.cs              NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto
 ```
 
@@ -91,9 +87,9 @@ Ví dụ danh sách (`?page=2&page_size=20`, có 57 bản ghi):
 không có giá trị "lấy tất cả". Quy ước response đầy đủ, gồm dạng lỗi và mã lỗi:
 [quy-uoc-response.md](quy-uoc-response.md).
 
-## 4. BaseBL tự làm gì
+## 4. BaseService tự làm gì
 
-| Thao tác | Việc BaseBL làm |
+| Thao tác | Việc BaseService làm |
 | --- | --- |
 | Danh sách | `request.Normalize()` (page ≥ 1, page_size 1–100, trim search), gọi DL, map sang DTO |
 | Thêm | `CreateEntity(dto)` → Id UUIDv7 có sẵn → nếu là `BaseAuditableEntity` thì gán `ngay_tao`, `nguoi_tao` → `InsertAsync` |
@@ -126,21 +122,33 @@ public sealed class goi_tap : BaseAuditableEntity, ISoftDelete
 ### Bước 2: DL (`DLDI.Contract` và `DLDI.MySql`)
 
 ```csharp
-// GymBase.DLDI.Contract/IGoiTapDL.cs
-public interface IGoiTapDL : IBaseDL<goi_tap>
+// GymBase.DLDI.Contract/IGoiTapRepository.cs
+public interface IGoiTapRepository : IBaseRepository<goi_tap>
 {
     // Truy vấn riêng nếu cần, ví dụ: Task<bool> ExistsByCodeAsync(string ma_goi, CancellationToken ct);
 }
 
-// GymBase.DLDI.MySql/GoiTapDL.cs
-public sealed class GoiTapDL(InMemoryStore<goi_tap> store) : InMemoryBaseDL<goi_tap>(store), IGoiTapDL
+// GymBase.DLDI.MySql/GoiTapRepository.cs
+public sealed class GoiTapRepository(AppDbContext db) : BaseRepository<goi_tap>(db), IGoiTapRepository
 {
-    protected override IEnumerable<string?> GetSearchValues(goi_tap e) => [e.ma_goi, e.ten_goi];
+    protected override IReadOnlyList<Expression<Func<goi_tap, string?>>> SearchColumns { get; } =
+        [e => e.ma_goi, e => e.ten_goi];
+}
+
+// GymBase.DLDI.MySql/Configurations/GoiTapConfiguration.cs
+public sealed class GoiTapConfiguration : IEntityTypeConfiguration<goi_tap>
+{
+    public void Configure(EntityTypeBuilder<goi_tap> builder)
+    {
+        builder.ToTable(nameof(goi_tap));
+        builder.Property(e => e.ma_goi).HasMaxLength(20);
+        builder.Property(e => e.ten_goi).HasMaxLength(100);
+    }
 }
 ```
 
-`GetSearchValues` chọn cột được tìm kiếm; không override thì tham số `search` bị bỏ qua.
-Muốn có dữ liệu mẫu thì gọi `store.SeedOnce(...)` trong constructor (xem `UserDL`).
+`SearchColumns` chọn cột được tìm kiếm; không override thì tham số `search` bị bỏ qua. Thêm bảng
+thì tạo migration mới theo [cach-chay-api.md](cach-chay-api.md). Dữ liệu mẫu đặt ở `database/seeds`.
 
 ### Bước 3: DTO và BL (`GymBase.BLDI/GoiTap/`)
 
@@ -163,9 +171,9 @@ public sealed class GoiTapUpdateDto
     [Range(0, double.MaxValue)] public decimal gia { get; init; }
 }
 
-// GoiTapBL.cs
-public sealed class GoiTapBL(IGoiTapDL goiTapDL, TimeProvider timeProvider)
-    : BaseBL<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapDL, timeProvider)
+// GoiTapService.cs
+public sealed class GoiTapService(IGoiTapRepository goiTapRepository, TimeProvider timeProvider)
+    : BaseService<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapRepository, timeProvider)
 {
     protected override GoiTapDto ToDto(goi_tap e) => new(e.Id, e.ma_goi, e.ten_goi, e.gia, e.ngay_tao);
 
@@ -185,7 +193,7 @@ public sealed class GoiTapBL(IGoiTapDL goiTapDL, TimeProvider timeProvider)
   kiểm tra rồi gọi `base.CreateAsync(...)`. Vi phạm thì ném exception trong
   `GymBase.Base.Exceptions`, ví dụ trùng thì
   `throw new ConflictException(nameof(GoiTapCreateDto.ma_goi), "Mã gói 'G01' đã tồn tại.", DIErrorCodes.GoiTapCodeTaken)`.
-  Mẫu đầy đủ: `UserBL.CreateAsync`. Bảng exception và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md).
+  Mẫu đầy đủ: `UserService.CreateAsync`. Bảng exception và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md).
   BL **không** viết SQL.
 
 ### Bước 4: Controller
@@ -194,14 +202,14 @@ public sealed class GoiTapBL(IGoiTapDL goiTapDL, TimeProvider timeProvider)
 // GymBase.API/Controllers/GoiTapController.cs      →  /api/v1/web/goitap
 namespace GymBase.API.Controllers;
 
-public sealed class GoiTapController(GoiTapBL goiTapBL)
-    : BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapBL);
+public sealed class GoiTapController(GoiTapService goiTapService)
+    : BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapService);
 
 // GymBase.API/Mob/Controllers/GoiTapController.cs  →  /api/v1/mob/goitap (chỉ khi app mobile cần)
 namespace GymBase.API.Mob.Controllers;
 
-public sealed class GoiTapController(GoiTapBL goiTapBL)
-    : BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapBL);
+public sealed class GoiTapController(GoiTapService goiTapService)
+    : BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapService);
 ```
 
 Route lấy theo tên controller (`[controller]`), tiền tố kênh lấy theo thư mục (namespace).
@@ -214,17 +222,18 @@ Mọi action public của lớp cha đều thành endpoint, nên controller nào
 
 ```csharp
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton(typeof(InMemoryStore<>)); // MOCK, bỏ khi nối DB
-builder.Services.AddScoped<IGoiTapDL, GoiTapDL>();
-builder.Services.AddScoped<GoiTapBL>();
+builder.Services.AddAppPersistence(builder.Configuration, typeof(UserRepository).Assembly, typeof(GoiTapRepository).Assembly);
+builder.Services.AddScoped<IGoiTapRepository, GoiTapRepository>();
+builder.Services.AddScoped<GoiTapService>();
 ```
 
-Hai dòng đầu đã có sẵn trong `Program.cs`, chỉ thêm hai dòng sau.
+Hai dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và thêm assembly vào
+`AddAppPersistence` nếu đây là bảng đầu tiên của nhóm đó.
 
 ### Bước 6: Test và Bruno
 
-- Test BL trên DL mock, mỗi test một `InMemoryStore` riêng để không ảnh hưởng nhau
-  (xem `tests/Unit/GymBase.UnitTests/Auth/UserBLTests.cs`).
+- Test BL trên DL giả trong `GymBase.TestDoubles`, mỗi test một `InMemoryStore` riêng để không ảnh hưởng nhau
+  (xem `tests/Unit/GymBase.UnitTests/Auth/UserServiceTests.cs`).
 - Thêm request vào `docs/api/bruno/web` (và `mobile` nếu có controller mobile) theo mẫu `nguoi-dung-them.bru`, `nguoi-dung-sua.bru`,
   `nguoi-dung-xoa.bru`.
 
@@ -232,7 +241,6 @@ Hai dòng đầu đã có sẵn trong `Program.cs`, chỉ thêm hai dòng sau.
 
 | Việc | Ghi chú |
 | --- | --- |
-| `BaseDL<TEntity>` dùng EF Core + MySQL | Mục 3 trong `docs/api/viec-con-lai-base.md` |
 | Thông báo lỗi DataAnnotations bằng tiếng Việt | Mục 8: FluentValidation. Hiện `errors` của lỗi 400 vẫn là câu tiếng Anh mặc định |
 | Sort, filter | Mục 6; chỉ cho phép cột trong danh sách trắng |
 | `nguoi_tao` / `nguoi_chinh_sua` | Mục 10: `ICurrentUser` |

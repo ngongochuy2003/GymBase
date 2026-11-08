@@ -11,6 +11,30 @@ Backend chỉ có **một host**: `GymBase.API` (`apps/api/src/Host/GymBase.API`
 
 Gọi thiếu tiền tố hoặc sai tiền tố sẽ nhận **404**. `/health` và `/openapi/v1.json` không có tiền tố.
 
+## Chuẩn bị MySQL (làm một lần)
+
+API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Chạy các lệnh sau tại `apps/api`.
+
+1. Đặt connection string vào user-secrets (không ghi vào `appsettings.json`), thay thông tin của bạn:
+
+   ```bash
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Port=3306;Database=gymbase;User=root;Password=<mật-khẩu>" --project src/Host/GymBase.API
+   ```
+
+2. Tạo database và bảng bằng migration:
+
+   ```bash
+   dotnet ef database update --project src/BIZ/GymBase.DLBiz.MySql --startup-project src/Host/GymBase.API
+   ```
+
+3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_nguoi_dung.sql` trên database `gymbase`.
+
+Khi đổi entity, tạo migration mới (đặt tên rõ theo nội dung thay đổi) rồi lặp lại bước 2:
+
+```bash
+dotnet ef migrations add <TenThayDoi> --project src/BIZ/GymBase.DLBiz.MySql --startup-project src/Host/GymBase.API
+```
+
 ## 1. Chạy bằng Visual Studio
 
 1. Mở `apps/api/GymBase.slnx`.
@@ -49,7 +73,7 @@ Dừng bằng Ctrl+C.
 
 ## 4. Kiểm tra đã chạy
 
-- Mở `http://localhost:5020/health`, thấy `Healthy` là được.
+- Mở `http://localhost:5020/health`, thấy `Healthy` là API đã kết nối được MySQL.
 - **Bruno:** mở [Bruno](https://www.usebruno.com/), chọn **Open Collection**, trỏ tới thư mục
   `docs/api/bruno`, chọn environment **local** ở góc trên bên phải. Collection có hai thư mục
   `Web (/api/v1/web)` và `Mobile (/api/v1/mob)`, mỗi request đã có sẵn assert mã trả về. Chạy cả
@@ -57,7 +81,7 @@ Dừng bằng Ctrl+C.
 - **Postman:** **Import** URL `http://localhost:5020/openapi/v1.json` để tạo collection tự động.
   Trang OpenAPI chỉ có ở môi trường Development.
 
-Id người dùng mẫu (dữ liệu mock): `0193f0a0-0000-7000-8000-000000000001` (admin).
+Id người dùng mẫu (sau khi nạp seed): `0193f0a0-0000-7000-8000-000000000001` (admin).
 
 ## 5. Cho app mobile gọi được API
 
@@ -104,6 +128,8 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 
 | Hiện tượng | Nguyên nhân / cách xử lý |
 | --- | --- |
+| API báo `Chưa cấu hình ConnectionStrings:DefaultConnection` khi khởi động | Chưa đặt user-secrets, xem phần Chuẩn bị MySQL. User-secrets chỉ được đọc ở môi trường Development |
+| `/health` trả `Unhealthy` | MySQL chưa chạy, sai thông tin kết nối, hoặc chưa tạo database |
 | 404 khi gọi API | Thiếu hoặc sai tiền tố `/api/v1/web`, `/api/v1/mob` |
 | `address already in use` / cổng 5020 bị chiếm | API đang chạy ở cửa sổ khác. Tắt cửa sổ đó, hoặc tìm và dừng tiến trình `GymBase.API` |
 | Điện thoại không kết nối được | Chưa chạy với `--urls http://0.0.0.0:5020`, sai IP, khác mạng Wi-Fi, hoặc bị firewall chặn |
