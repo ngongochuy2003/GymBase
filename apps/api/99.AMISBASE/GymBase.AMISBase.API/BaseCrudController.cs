@@ -19,7 +19,7 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<T
 {
     protected ICrudBL<TDto, TCreateDto, TUpdateDto> BL { get; } = bl;
 
-    /// <summary>Danh sách có phân trang. Ví dụ: <c>?page=1&amp;pageSize=20&amp;search=abc</c>.</summary>
+    /// <summary>Danh sách có phân trang. Ví dụ: <c>?page=1&amp;page_size=20&amp;search=abc</c>, trả <c>{ data, meta }</c>.</summary>
     [HttpGet]
     public virtual async Task<ActionResult<PagingResult<TDto>>> GetPaging(
         [FromQuery] PagingRequest request, CancellationToken cancellationToken) =>

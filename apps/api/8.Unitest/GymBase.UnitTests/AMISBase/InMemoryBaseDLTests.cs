@@ -37,9 +37,9 @@ public class InMemoryBaseDLTests
         var dl = new TagDL(_store);
         await dl.InsertAsync(new Tag { ten = "a" }, CancellationToken.None);
 
-        var page = await dl.GetPagingAsync(new PagingRequest { Search = "zzz" }.Normalize(), CancellationToken.None);
+        var page = await dl.GetPagingAsync(new PagingRequest { search = "zzz" }.Normalize(), CancellationToken.None);
 
-        Assert.Equal(1, page.TotalCount);
+        Assert.Equal(1, page.meta.total);
     }
 
     [Fact]

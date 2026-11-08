@@ -27,7 +27,7 @@ public abstract class InMemoryBaseDL<TEntity>(InMemoryStore<TEntity> store) : IB
     {
         var query = Store.All().Where(IsVisible);
 
-        if (request.Search is { Length: > 0 } search)
+        if (request.search is { Length: > 0 } search)
         {
             query = query.Where(e => GetSearchValues(e) is not { } values
                 || values.Any(v => v is not null && v.Contains(search, StringComparison.OrdinalIgnoreCase)));
@@ -37,9 +37,9 @@ public abstract class InMemoryBaseDL<TEntity>(InMemoryStore<TEntity> store) : IB
             .OrderByDescending(e => e is BaseAuditableEntity auditable ? auditable.ngay_tao : DateTime.MinValue)
             .ThenByDescending(e => e.Id)
             .ToList();
-        var page = filtered.Skip(request.Skip).Take(request.PageSize).ToList();
+        var page = filtered.Skip(request.Skip).Take(request.page_size).ToList();
 
-        return Task.FromResult(new PagingResult<TEntity>(page, request.Page, request.PageSize, filtered.Count));
+        return Task.FromResult(new PagingResult<TEntity>(page, request.page, request.page_size, filtered.Count));
     }
 
     public Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

@@ -10,7 +10,7 @@ namespace GymBase.AMISBase.DL.Contract;
 /// </summary>
 public interface IBaseDL<TEntity> where TEntity : BaseEntity
 {
-    /// <summary>Một trang bản ghi, lọc theo <see cref="PagingRequest.Search"/>, mới tạo trước.</summary>
+    /// <summary>Một trang bản ghi, lọc theo <see cref="PagingRequest.search"/>, mới tạo trước.</summary>
     Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken);
 
     /// <summary>Một bản ghi theo khóa chính; null nếu không có hoặc đã xóa mềm.</summary>
