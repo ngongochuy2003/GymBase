@@ -19,6 +19,9 @@ public abstract class InMemoryBaseRepository<TEntity>(InMemoryStore<TEntity> sto
     /// </summary>
     protected virtual IEnumerable<string?>? GetSearchValues(TEntity entity) => null;
 
+    /// <summary>Các cột được sort và filter. Khác MySQL: so sánh chuỗi ở đây phân biệt hoa thường.</summary>
+    protected virtual QueryColumns<TEntity> AllowedColumns { get; } = new();
+
     public Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
         var query = Store.All().Where(IsVisible);
@@ -29,11 +32,19 @@ public abstract class InMemoryBaseRepository<TEntity>(InMemoryStore<TEntity> sto
                 || values.Any(v => v is not null && v.Contains(search, StringComparison.OrdinalIgnoreCase)));
         }
 
-        var filtered = query
-            .OrderByDescending(e => e is BaseAuditableEntity auditable ? auditable.ngay_tao : DateTime.MinValue)
-            .ThenByDescending(e => e.Id)
+        var rows = query.AsQueryable();
+
+        if (request.filter is { Length: > 0 } filter)
+        {
+            rows = PagingQuery.ApplyFilter(rows, filter, AllowedColumns);
+        }
+
+        var filtered = (request.sort is { Length: > 0 } sort
+            ? PagingQuery.ApplySort(rows, sort, AllowedColumns)
+            : rows.OrderByDescending(e => e is BaseAuditableEntity ? ((BaseAuditableEntity)(object)e).ngay_tao : DateTime.MinValue)
+                .ThenByDescending(e => e.Id))
             .ToList();
-        var page = filtered.Skip(request.Skip).Take(request.page_size).ToList();
+        var page =filtered.Skip(request.Skip).Take(request.page_size).ToList();
 
         return Task.FromResult(new PagingResult<TEntity>(page, request.page, request.page_size, filtered.Count));
     }

@@ -10,7 +10,11 @@ namespace GymBase.Base.Crud;
 /// </summary>
 public interface IBaseRepository<TEntity> where TEntity : BaseEntity
 {
-    /// <summary>Một trang bản ghi, lọc theo <see cref="PagingRequest.search"/>, mới tạo trước.</summary>
+    /// <summary>
+    /// Một trang bản ghi theo <see cref="PagingRequest.search"/>, <see cref="PagingRequest.filter"/> và
+    /// <see cref="PagingRequest.sort"/>; không có sort thì mới tạo trước.
+    /// </summary>
+    /// <exception cref="GymBase.Base.Exceptions.ValidationFailedException">sort hoặc filter không hợp lệ.</exception>
     Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken);
 
     /// <summary>Một bản ghi theo khóa chính; null nếu không có hoặc đã xóa mềm.</summary>

@@ -1,4 +1,5 @@
 using GymBase.Base.Entities;
+using GymBase.Base.Paging;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.Contract.Entities;
 
@@ -14,6 +15,8 @@ public sealed class InMemoryUserRepository : InMemoryBaseRepository<nguoi_dung>,
 
     protected override IEnumerable<string?> GetSearchValues(nguoi_dung user) =>
         [user.tai_khoan, user.ho_ten, user.email, user.so_dien_thoai];
+
+    protected override QueryColumns<nguoi_dung> AllowedColumns => NguoiDungQueryColumns.Allowed;
 
     public Task<bool> ExistsByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken) =>
         Task.FromResult(Store.All().Any(user =>

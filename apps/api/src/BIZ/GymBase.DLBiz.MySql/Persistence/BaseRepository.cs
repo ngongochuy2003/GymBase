@@ -26,6 +26,9 @@ public abstract class BaseRepository<TEntity>(AppDbContext db) : IBaseRepository
     /// </summary>
     protected virtual IReadOnlyList<Expression<Func<TEntity, string?>>> SearchColumns => [];
 
+    /// <summary>Các cột client được sort và filter. Mặc định rỗng: gửi sort hoặc filter sẽ nhận 400.</summary>
+    protected virtual QueryColumns<TEntity> AllowedColumns { get; } = new();
+
     public async Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
         IQueryable<TEntity> query = Set;
@@ -35,8 +38,17 @@ public abstract class BaseRepository<TEntity>(AppDbContext db) : IBaseRepository
             query = query.Where(MatchesSearch(search));
         }
 
+        if (request.filter is { Length: > 0 } filter)
+        {
+            query = PagingQuery.ApplyFilter(query, filter, AllowedColumns);
+        }
+
+        var sorted = request.sort is { Length: > 0 } sort
+            ? PagingQuery.ApplySort(query, sort, AllowedColumns)
+            : NewestFirst(query);
+
         var total = await query.CountAsync(cancellationToken);
-        var rows = await NewestFirst(query).Skip(request.Skip).Take(request.page_size).ToListAsync(cancellationToken);
+        var rows = await sorted.Skip(request.Skip).Take(request.page_size).ToListAsync(cancellationToken);
 
         return new PagingResult<TEntity>(rows, request.page, request.page_size, total);
     }

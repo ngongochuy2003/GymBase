@@ -1,3 +1,5 @@
+using GymBase.Base.Paging;
+using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.Contract.Entities;
 using GymBase.DLAuth.MySql;
 using GymBase.DLBiz.MySql.Persistence;
@@ -33,6 +35,30 @@ public class AppDbContextModelTests
         var sql = db.Set<nguoi_dung>().ToQueryString();
 
         Assert.Contains("NOT (`n`.`is_deleted`)", sql);
+    }
+
+    [Fact]
+    public void Sort_and_filter_translate_to_sql_with_parameters()
+    {
+        using var db = CreateContext();
+        var columns = NguoiDungQueryColumns.Allowed;
+
+        var filtered = PagingQuery.ApplyFilter(db.Set<nguoi_dung>(), "vai_tro:eq:Trainer,ngay_tao:gte:2026-11-01", columns);
+        var sql = PagingQuery.ApplySort(filtered, "-ho_ten", columns).ToQueryString();
+
+        Assert.Contains("ORDER BY `n`.`ho_ten` DESC, `n`.`Id` DESC", sql);
+        Assert.Contains("`n`.`vai_tro` = ", sql);
+        Assert.Contains("`n`.`ngay_tao` >= @", sql);
+    }
+
+    [Fact]
+    public void Quote_in_filter_value_is_escaped()
+    {
+        using var db = CreateContext();
+
+        var sql = PagingQuery.ApplyFilter(db.Set<nguoi_dung>(), "vai_tro:eq:x' OR '1'='1", NguoiDungQueryColumns.Allowed).ToQueryString();
+
+        Assert.DoesNotContain("'x' OR '1'='1'", sql);
     }
 
     [Fact]
