@@ -1,7 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <!-- Connection string khi dev đặt trong user-secrets, không ghi vào appsettings. -->
+  <PropertyGroup>
+    <UserSecretsId>gymbase-api-dev</UserSecretsId>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <!-- Chỉ dùng lúc chạy dotnet ef, không đi vào bản publish. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Host là composition root: tham chiếu mọi BL, và các DL.*.MySql chỉ để đăng ký dịch vụ. -->

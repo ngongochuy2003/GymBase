@@ -7,7 +7,7 @@ namespace GymBase.Base.Crud;
 /// Nghiệp vụ CRUD mà controller dùng chung (<c>BaseCrudController</c>) gọi; controller không biết entity.
 /// Lỗi nghiệp vụ ném <see cref="BusinessException"/>, không trả null hay false.
 /// </summary>
-public interface ICrudBL<TDto, in TCreateDto, in TUpdateDto>
+public interface ICrudService<TDto, in TCreateDto, in TUpdateDto>
 {
     Task<PagingResult<TDto>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken);
 

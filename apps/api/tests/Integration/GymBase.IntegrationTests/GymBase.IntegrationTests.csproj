@@ -7,7 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Base\GymBase.Base.Hosting\GymBase.Base.Hosting.csproj" />
     <ProjectReference Include="..\..\..\src\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
-    <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
+    <ProjectReference Include="..\..\Shared\GymBase.TestDoubles\GymBase.TestDoubles.csproj" />
   </ItemGroup>
 
 </Project>

@@ -20,7 +20,7 @@ public partial class LayerReferenceTests
     private static partial Regex DataMySqlProject();
 
     /// <summary>
-    /// DbContext và DL mock dùng chung đặt trong DLBiz.MySql (quyết định Q9), nên DL.MySql của nhóm khác
+    /// DbContext và BaseRepository dùng chung đặt trong DLBiz.MySql (quyết định Q9), nên DL.MySql của nhóm khác
     /// được tham chiếu riêng project này.
     /// </summary>
     private const string SharedPersistence = "GymBase.DLBiz.MySql";

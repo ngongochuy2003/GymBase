@@ -3,7 +3,7 @@ using GymBase.Base.Hosting.Errors;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.MySql;
-using GymBase.DLBiz.MySql.InMemory;
+using GymBase.DLBiz.MySql.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,11 +19,12 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
-// Auth: người dùng (UserDL hiện là MOCK, chưa nối DB)
-// TODO(DB): bỏ InMemoryStore khi nối DB; đăng ký AppDbContext (EF Core), thêm health check DbContext. Mục 3, 16.
-builder.Services.AddSingleton(typeof(InMemoryStore<>)); // MOCK: "bảng" trong bộ nhớ, bỏ khi nối DB
-builder.Services.AddScoped<IUserDL, UserDL>();
-builder.Services.AddScoped<UserBL>();
+// Một AppDbContext cho cả DB; mỗi DL.*.MySql có cấu hình entity thì thêm assembly của nó vào đây.
+builder.Services.AddAppPersistence(builder.Configuration, typeof(UserRepository).Assembly);
+
+// Auth: người dùng
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<UserService>();
 
 var app = builder.Build();
 

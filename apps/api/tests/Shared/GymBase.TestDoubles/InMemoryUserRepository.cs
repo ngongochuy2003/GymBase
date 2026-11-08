@@ -1,19 +1,13 @@
 using GymBase.Base.Entities;
-using GymBase.DLBiz.MySql.InMemory;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.Contract.Entities;
 
-namespace GymBase.DLAuth.MySql;
+namespace GymBase.TestDoubles;
 
-// TODO(DB): đổi lớp cha sang BaseDL<nguoi_dung>, thêm IEntityTypeConfiguration<nguoi_dung>;
-//   dữ liệu mẫu chuyển sang seed. Mục 3, 13.
-/// <summary>
-/// MOCK: người dùng lưu trong bộ nhớ (<see cref="InMemoryStore{TEntity}"/>), nạp sẵn 6 bản ghi mẫu.
-/// Khi có DB, đổi lớp cha sang BaseDL dùng EF Core; IUserDL giữ nguyên.
-/// </summary>
-public sealed class UserDL : InMemoryBaseDL<nguoi_dung>, IUserDL
+/// <summary>DL người dùng giả cho test, nạp sẵn 6 bản ghi mẫu (một bản ghi đã xóa mềm).</summary>
+public sealed class InMemoryUserRepository : InMemoryBaseRepository<nguoi_dung>, IUserRepository
 {
-    public UserDL(InMemoryStore<nguoi_dung> store) : base(store)
+    public InMemoryUserRepository(InMemoryStore<nguoi_dung> store) : base(store)
     {
         store.SeedOnce(CreateMockUsers);
     }
@@ -21,9 +15,6 @@ public sealed class UserDL : InMemoryBaseDL<nguoi_dung>, IUserDL
     protected override IEnumerable<string?> GetSearchValues(nguoi_dung user) =>
         [user.tai_khoan, user.ho_ten, user.email, user.so_dien_thoai];
 
-    // TODO(DB): unique index trên tai_khoan phải cho phép trùng với bản ghi đã xóa mềm (BL chỉ chặn
-    //   trùng với người dùng còn hiệu lực); lỗi vi phạm unique khi hai request thêm cùng lúc đổi thành
-    //   ConflictException. Mục 3, 7.
     public Task<bool> ExistsByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken) =>
         Task.FromResult(Store.All().Any(user =>
             !user.is_deleted && string.Equals(user.tai_khoan, taiKhoan, StringComparison.OrdinalIgnoreCase)));

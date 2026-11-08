@@ -7,11 +7,11 @@ namespace GymBase.BLAuth.NguoiDung;
 
 /// <summary>
 /// Nghiệp vụ người dùng, dùng chung cho controller web (Controllers/) và mobile (Mob/Controllers/).
-/// CRUD lấy từ <see cref="BaseBL{TEntity,TDto,TCreateDto,TUpdateDto}"/>; ở đây map entity ↔ DTO
+/// CRUD lấy từ <see cref="BaseService{TEntity,TDto,TCreateDto,TUpdateDto}"/>; ở đây map entity ↔ DTO
 /// và chặn trùng tên đăng nhập.
 /// </summary>
-public sealed class UserBL(IUserDL userDL, TimeProvider timeProvider)
-    : BaseBL<nguoi_dung, NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userDL, timeProvider)
+public sealed class UserService(IUserRepository userRepository, TimeProvider timeProvider)
+    : BaseService<nguoi_dung, NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userRepository, timeProvider)
 {
     protected override string EntityDisplayName => "người dùng";
 
@@ -22,7 +22,7 @@ public sealed class UserBL(IUserDL userDL, TimeProvider timeProvider)
     public override async Task<NguoiDungDto> CreateAsync(NguoiDungCreateDto dto, CancellationToken cancellationToken)
     {
         var taiKhoan = dto.tai_khoan.Trim();
-        if (await userDL.ExistsByTaiKhoanAsync(taiKhoan, cancellationToken))
+        if (await userRepository.ExistsByTaiKhoanAsync(taiKhoan, cancellationToken))
         {
             throw new ConflictException(
                 nameof(NguoiDungCreateDto.tai_khoan),

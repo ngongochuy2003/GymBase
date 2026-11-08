@@ -15,23 +15,23 @@ namespace GymBase.Base.Hosting;
 /// Muốn đổi hành vi một action thì override (các action đều virtual).
 /// </summary>
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError, "application/problem+json")]
-public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<TDto, TCreateDto, TUpdateDto> bl)
+public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudService<TDto, TCreateDto, TUpdateDto> service)
     : BaseApiController
     where TDto : IHasId
 {
-    protected ICrudBL<TDto, TCreateDto, TUpdateDto> BL { get; } = bl;
+    protected ICrudService<TDto, TCreateDto, TUpdateDto> Service { get; } = service;
 
     /// <summary>Danh sách có phân trang. Ví dụ: <c>?page=1&amp;page_size=20&amp;search=abc</c>, trả <c>{ data, meta }</c>.</summary>
     [HttpGet]
     public virtual async Task<ActionResult<PagingResult<TDto>>> GetPaging(
         [FromQuery] PagingRequest request, CancellationToken cancellationToken) =>
-        Ok(await BL.GetPagingAsync(request, cancellationToken));
+        Ok(await Service.GetPagingAsync(request, cancellationToken));
 
     /// <summary>Chi tiết một bản ghi; 404 nếu không có hoặc đã xóa.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public virtual async Task<ActionResult<TDto>> GetById(Guid id, CancellationToken cancellationToken) =>
-        Ok(await BL.GetByIdAsync(id, cancellationToken));
+        Ok(await Service.GetByIdAsync(id, cancellationToken));
 
     /// <summary>Thêm mới; 201 kèm header Location trỏ tới bản ghi vừa tạo.</summary>
     [HttpPost]
@@ -39,7 +39,7 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<T
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
     public virtual async Task<ActionResult<TDto>> Create([FromBody] TCreateDto dto, CancellationToken cancellationToken)
     {
-        var created = await BL.CreateAsync(dto, cancellationToken);
+        var created = await Service.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
@@ -49,7 +49,7 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<T
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public virtual async Task<ActionResult<TDto>> Update(
         Guid id, [FromBody] TUpdateDto dto, CancellationToken cancellationToken) =>
-        Ok(await BL.UpdateAsync(id, dto, cancellationToken));
+        Ok(await Service.UpdateAsync(id, dto, cancellationToken));
 
     /// <summary>Xóa (xóa mềm nếu entity có is_deleted); 204 nếu thành công, 404 nếu không có.</summary>
     [HttpDelete("{id:guid}")]
@@ -57,7 +57,7 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<T
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public virtual async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await BL.DeleteAsync(id, cancellationToken);
+        await Service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

@@ -2,17 +2,13 @@ using GymBase.Base.Crud;
 using GymBase.Base.Entities;
 using GymBase.Base.Paging;
 
-namespace GymBase.DLBiz.MySql.InMemory;
+namespace GymBase.TestDoubles;
 
-// TODO(DB): thêm BaseDL<TEntity> dùng EF Core (DbSet, query filter xóa mềm), DL từng bảng đổi lớp cha sang đó;
-//   xóa thư mục InMemory khi không còn bảng nào dùng. Mục 3, docs/api/viec-con-lai-base.md.
 /// <summary>
-/// MOCK: hiện thực <see cref="IBaseDL{TEntity}"/> trên <see cref="InMemoryStore{TEntity}"/>, dùng tạm đến khi
-/// nối MySQL (mục 3 trong docs/api/viec-con-lai-base.md). Khi có DB thì thêm <c>BaseDL&lt;TEntity&gt;</c> dùng EF Core
-/// và đổi lớp cha của DL từng bảng. Hành vi (ẩn xóa mềm, tìm kiếm, mới tạo trước, phân trang)
-/// phải giữ nguyên để BL và API không phải sửa.
+/// DL giả cho test, hiện thực <see cref="IBaseRepository{TEntity}"/> trên <see cref="InMemoryStore{TEntity}"/>.
+/// Hành vi (ẩn xóa mềm, tìm kiếm, mới tạo trước, phân trang) phải khớp <c>BaseRepository</c> dùng EF Core.
 /// </summary>
-public abstract class InMemoryBaseDL<TEntity>(InMemoryStore<TEntity> store) : IBaseDL<TEntity>
+public abstract class InMemoryBaseRepository<TEntity>(InMemoryStore<TEntity> store) : IBaseRepository<TEntity>
     where TEntity : BaseEntity
 {
     protected InMemoryStore<TEntity> Store { get; } = store;

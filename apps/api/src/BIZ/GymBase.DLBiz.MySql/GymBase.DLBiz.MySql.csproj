@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Microting.EntityFrameworkCore.MySql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
     <ProjectReference Include="..\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />
   </ItemGroup>

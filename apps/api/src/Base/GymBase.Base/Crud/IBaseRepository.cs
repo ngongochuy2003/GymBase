@@ -5,10 +5,10 @@ namespace GymBase.Base.Crud;
 
 /// <summary>
 /// Thao tác dữ liệu dùng chung cho mọi bảng. DL của từng bảng kế thừa interface này
-/// (ví dụ <c>IUserDL : IBaseDL&lt;nguoi_dung&gt;</c>) rồi thêm truy vấn riêng nếu cần.
+/// (ví dụ <c>IUserRepository : IBaseRepository&lt;nguoi_dung&gt;</c>) rồi thêm truy vấn riêng nếu cần.
 /// Bản ghi đã xóa mềm (<see cref="ISoftDelete"/>) không bao giờ được trả về.
 /// </summary>
-public interface IBaseDL<TEntity> where TEntity : BaseEntity
+public interface IBaseRepository<TEntity> where TEntity : BaseEntity
 {
     /// <summary>Một trang bản ghi, lọc theo <see cref="PagingRequest.search"/>, mới tạo trước.</summary>
     Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken);

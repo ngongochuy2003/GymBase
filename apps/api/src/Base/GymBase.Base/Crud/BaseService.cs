@@ -15,13 +15,13 @@ namespace GymBase.Base.Crud;
 /// <typeparam name="TDto">Dữ liệu trả ra API.</typeparam>
 /// <typeparam name="TCreateDto">Body khi thêm mới.</typeparam>
 /// <typeparam name="TUpdateDto">Body khi sửa.</typeparam>
-/// <param name="dl">DL của bảng, ví dụ <c>IUserDL</c>.</param>
+/// <param name="repository">DL của bảng, ví dụ <c>IUserRepository</c>.</param>
 /// <param name="timeProvider">Nguồn giờ UTC để ghi ngày tạo, ngày sửa; test truyền giờ cố định.</param>
-public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEntity> dl, TimeProvider timeProvider)
-    : ICrudBL<TDto, TCreateDto, TUpdateDto>
+public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseRepository<TEntity> repository, TimeProvider timeProvider)
+    : ICrudService<TDto, TCreateDto, TUpdateDto>
     where TEntity : BaseEntity
 {
-    protected IBaseDL<TEntity> DL { get; } = dl;
+    protected IBaseRepository<TEntity> Repository { get; } = repository;
 
     protected TimeProvider TimeProvider { get; } = timeProvider;
 
@@ -39,7 +39,7 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
 
     public virtual async Task<PagingResult<TDto>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
-        var page = await DL.GetPagingAsync(request.Normalize(), cancellationToken);
+        var page = await Repository.GetPagingAsync(request.Normalize(), cancellationToken);
         return page.Map(ToDto);
     }
 
@@ -54,7 +54,7 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
             auditable.MarkCreated(CurrentUserName, UtcNow);
         }
 
-        await DL.InsertAsync(entity, cancellationToken);
+        await Repository.InsertAsync(entity, cancellationToken);
         return ToDto(entity);
     }
 
@@ -66,7 +66,7 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
         MarkUpdated(entity);
 
         // Bản ghi bị xóa giữa lúc đọc và lúc ghi.
-        if (!await DL.UpdateAsync(entity, cancellationToken))
+        if (!await Repository.UpdateAsync(entity, cancellationToken))
         {
             throw NotFound();
         }
@@ -84,11 +84,11 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
         {
             softDelete.MarkDeleted();
             MarkUpdated(entity);
-            deleted = await DL.UpdateAsync(entity, cancellationToken);
+            deleted = await Repository.UpdateAsync(entity, cancellationToken);
         }
         else
         {
-            deleted = await DL.DeleteAsync(id, cancellationToken);
+            deleted = await Repository.DeleteAsync(id, cancellationToken);
         }
 
         if (!deleted)
@@ -102,7 +102,7 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
 
     /// <summary>Đọc bản ghi còn hiệu lực; không có hoặc đã xóa thì ném <see cref="NotFoundException"/>.</summary>
     protected async Task<TEntity> GetEntityOrThrowAsync(Guid id, CancellationToken cancellationToken) =>
-        await DL.GetByIdAsync(id, cancellationToken) ?? throw NotFound();
+        await Repository.GetByIdAsync(id, cancellationToken) ?? throw NotFound();
 
     protected NotFoundException NotFound() =>
         new($"Không tìm thấy {EntityDisplayName} hoặc {EntityDisplayName} đã bị xóa.");

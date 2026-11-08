@@ -31,6 +31,9 @@
     <Project Path="src/BIZ/GymBase.DLBiz.Contract/GymBase.DLBiz.Contract.csproj" />
     <Project Path="src/BIZ/GymBase.DLBiz.MySql/GymBase.DLBiz.MySql.csproj" />
   </Folder>
+  <Folder Name="/tests/Shared/">
+    <Project Path="tests/Shared/GymBase.TestDoubles/GymBase.TestDoubles.csproj" />
+  </Folder>
   <Folder Name="/tests/Unit/">
     <Project Path="tests/Unit/GymBase.UnitTests/GymBase.UnitTests.csproj" />
   </Folder>

@@ -3,8 +3,7 @@ using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Errors;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.MySql;
-using GymBase.DLBiz.MySql.InMemory;
+using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -29,8 +28,8 @@ namespace GymBase.IntegrationTests
             builder.Services.AddAppErrorHandling();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
-            builder.Services.AddScoped<IUserDL, UserDL>();
-            builder.Services.AddScoped<UserBL>();
+            builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
+            builder.Services.AddScoped<UserService>();
 
             var app = builder.Build();
             app.UseAppErrorHandling();
@@ -44,8 +43,8 @@ namespace GymBase.IntegrationTests
 namespace GymBase.IntegrationTests.Controllers
 {
     /// <summary>CRUD người dùng cho web: /api/v1/web/testusers.</summary>
-    public sealed class TestUsersController(UserBL bl)
-        : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(bl);
+    public sealed class TestUsersController(UserService service)
+        : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(service);
 
     /// <summary>Action ném lỗi có chủ đích: /api/v1/web/errortest/...</summary>
     public sealed class ErrorTestController : BaseApiController
@@ -61,6 +60,6 @@ namespace GymBase.IntegrationTests.Controllers
 namespace GymBase.IntegrationTests.Mob.Controllers
 {
     /// <summary>Cùng tên với controller web nhưng ở Mob/Controllers: /api/v1/mob/testusers.</summary>
-    public sealed class TestUsersController(UserBL bl)
-        : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(bl);
+    public sealed class TestUsersController(UserService service)
+        : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(service);
 }

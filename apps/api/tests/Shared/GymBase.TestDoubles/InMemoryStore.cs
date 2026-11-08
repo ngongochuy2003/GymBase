@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using GymBase.Base.Entities;
 
-namespace GymBase.DLBiz.MySql.InMemory;
+namespace GymBase.TestDoubles;
 
 /// <summary>
 /// MOCK: "bảng" trong bộ nhớ cho một loại entity, đăng ký singleton để dữ liệu sống qua các request.

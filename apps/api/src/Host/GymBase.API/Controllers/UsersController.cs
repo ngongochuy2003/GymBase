@@ -7,5 +7,5 @@ namespace GymBase.API.Controllers;
 /// API người dùng cho web (trang quản trị): /api/v1/web/users. Đủ CRUD từ <see cref="BaseCrudController{TDto,TCreateDto,TUpdateDto}"/>:
 /// GET danh sách, GET {id}, POST, PUT {id}, DELETE {id} (xóa mềm).
 /// </summary>
-public sealed class UsersController(UserBL userBL)
-    : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userBL);
+public sealed class UsersController(UserService userService)
+    : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userService);
