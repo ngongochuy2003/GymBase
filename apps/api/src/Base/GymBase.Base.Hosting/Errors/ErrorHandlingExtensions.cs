@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GymBase.Base.Hosting.Errors;
 
-// TODO(HOST): gộp vào AddAppApi()/UseAppApi() khi làm mục 11.
 /// <summary>Đăng ký xử lý lỗi dùng chung cho mọi host: lỗi nào cũng trả ProblemDetails theo một dạng.</summary>
 public static class ErrorHandlingExtensions
 {

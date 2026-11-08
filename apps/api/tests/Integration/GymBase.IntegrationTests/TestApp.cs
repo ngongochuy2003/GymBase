@@ -1,6 +1,5 @@
 using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
-using GymBase.Base.Hosting.Errors;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
 using GymBase.TestDoubles;
@@ -19,21 +18,21 @@ namespace GymBase.IntegrationTests
     /// </summary>
     internal static class TestApp
     {
+        public const string AllowedOrigin = "https://admin.gymbase.test";
+
         public static async Task<WebApplication> StartAsync()
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Production });
             builder.WebHost.UseTestServer();
-            builder.Services.AddControllers(options => options.UseApiChannels())
+            builder.Configuration[$"{AppApiExtensions.CorsOriginsSection}:0"] = AllowedOrigin;
+            builder.Services.AddAppApi(builder.Configuration)
                 .AddApplicationPart(typeof(TestApp).Assembly);
-            builder.Services.AddAppErrorHandling();
-            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
             builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
             builder.Services.AddScoped<UserService>();
 
             var app = builder.Build();
-            app.UseAppErrorHandling();
-            app.MapControllers();
+            app.UseAppApi();
             await app.StartAsync();
             return app;
         }

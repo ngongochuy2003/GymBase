@@ -1,3 +1,4 @@
+using GymBase.Base.Auth;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Entities;
 using GymBase.Base.Paging;
@@ -17,7 +18,9 @@ namespace GymBase.Base.Crud;
 /// <typeparam name="TUpdateDto">Body khi sửa.</typeparam>
 /// <param name="repository">DL của bảng, ví dụ <c>IUserRepository</c>.</param>
 /// <param name="timeProvider">Nguồn giờ UTC để ghi ngày tạo, ngày sửa; test truyền giờ cố định.</param>
-public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseRepository<TEntity> repository, TimeProvider timeProvider)
+/// <param name="currentUser">Người đang thao tác, ghi vào người tạo, người sửa.</param>
+public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
+    IBaseRepository<TEntity> repository, TimeProvider timeProvider, ICurrentUser currentUser)
     : ICrudService<TDto, TCreateDto, TUpdateDto>
     where TEntity : BaseEntity
 {
@@ -25,9 +28,8 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseRe
 
     protected TimeProvider TimeProvider { get; } = timeProvider;
 
-    // TODO(CURRENT-USER): lấy tên người đang thao tác từ ICurrentUser (claims của JWT). Mục 10.
-    /// <summary>Tên người đang thao tác, ghi vào nguoi_tao / nguoi_chinh_sua. Tạm null đến khi có ICurrentUser.</summary>
-    protected virtual string? CurrentUserName => null;
+    /// <summary>Người đang thao tác; null khi chưa đăng nhập.</summary>
+    protected ICurrentUser CurrentUser { get; } = currentUser;
 
     protected abstract TDto ToDto(TEntity entity);
 
@@ -51,7 +53,7 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseRe
         var entity = CreateEntity(dto);
         if (entity is BaseAuditableEntity auditable)
         {
-            auditable.MarkCreated(CurrentUserName, UtcNow);
+            auditable.MarkCreated(CurrentUser.UserName, UtcNow);
         }
 
         await Repository.InsertAsync(entity, cancellationToken);
@@ -113,7 +115,7 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseRe
     {
         if (entity is BaseAuditableEntity auditable)
         {
-            auditable.MarkUpdated(CurrentUserName, UtcNow);
+            auditable.MarkUpdated(CurrentUser.UserName, UtcNow);
         }
     }
 }

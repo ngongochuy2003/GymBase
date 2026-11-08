@@ -1,3 +1,4 @@
+using GymBase.Base.Auth;
 using GymBase.Base.Crud;
 using GymBase.Base.Exceptions;
 using GymBase.DLAuth.Contract;
@@ -10,8 +11,8 @@ namespace GymBase.BLAuth.NguoiDung;
 /// CRUD lấy từ <see cref="BaseService{TEntity,TDto,TCreateDto,TUpdateDto}"/>; ở đây map entity ↔ DTO
 /// và chặn trùng tên đăng nhập.
 /// </summary>
-public sealed class UserService(IUserRepository userRepository, TimeProvider timeProvider)
-    : BaseService<nguoi_dung, NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userRepository, timeProvider)
+public sealed class UserService(IUserRepository userRepository, TimeProvider timeProvider, ICurrentUser currentUser)
+    : BaseService<nguoi_dung, NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userRepository, timeProvider, currentUser)
 {
     protected override string EntityDisplayName => "người dùng";
 

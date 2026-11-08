@@ -18,7 +18,35 @@ public class UserServiceTests
     private static readonly Guid DeletedId = Guid.Parse("0193f0a0-0000-7000-8000-000000000006");
     private static readonly DateTime Now = new(2026, 11, 20, 8, 30, 0, DateTimeKind.Utc);
 
-    private readonly UserService _service = new(new InMemoryUserRepository(new InMemoryStore<nguoi_dung>()), new FixedTimeProvider(Now));
+    private readonly InMemoryStore<nguoi_dung> _store = new();
+
+    private readonly UserService _service;
+
+    public UserServiceTests()
+    {
+        _service = new UserService(new InMemoryUserRepository(_store), new FixedTimeProvider(Now), new FakeCurrentUser("nv.thu"));
+    }
+
+    [Fact]
+    public async Task Create_and_update_record_the_current_user()
+    {
+        var created = await _service.CreateAsync(NewUser, CancellationToken.None);
+        Assert.Equal("nv.thu", _store.Find(created.Id)!.nguoi_tao);
+
+        var update = new NguoiDungUpdateDto { ho_ten = "Tên mới", vai_tro = "Trainee" };
+        await _service.UpdateAsync(AdminId, update, CancellationToken.None);
+        Assert.Equal("nv.thu", _store.Find(AdminId)!.nguoi_chinh_sua);
+    }
+
+    [Fact]
+    public async Task Audit_user_is_null_when_not_signed_in()
+    {
+        var service = new UserService(new InMemoryUserRepository(_store), new FixedTimeProvider(Now), new FakeCurrentUser());
+
+        var created = await service.CreateAsync(NewUser, CancellationToken.None);
+
+        Assert.Null(_store.Find(created.Id)!.nguoi_tao);
+    }
 
     private static readonly NguoiDungCreateDto NewUser = NewUserWith(" hv.moi ");
 
