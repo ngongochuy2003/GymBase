@@ -1,4 +1,14 @@
 {
   "dotnet.server.useOmnisharp": false,
-  "dotnet.defaultSolution": "apps/api/GymBase.slnx"
+  "dotnet.defaultSolution": "apps/api/GymBase.slnx",
+
+  "todo-tree.general.tags": ["TODO", "FIXME", "BUG"],
+  "todo-tree.regex.subTagRegex": "^\\s*\\(([^)]*)\\):?\\s*",
+  "todo-tree.tree.buttons.groupBySubTag": true,
+  "todo-tree.filtering.excludeGlobs": ["**/node_modules/*/**", "**/bin/**", "**/obj/**", "**/CLAUDE.md"],
+  "todo-tree.highlights.customHighlight": {
+    "TODO": { "icon": "checklist", "iconColour": "#E2A72E", "foreground": "#1E1E1E", "background": "#E2A72E", "type": "tag" },
+    "FIXME": { "icon": "flame", "iconColour": "#E05D44", "foreground": "#FFFFFF", "background": "#E05D44", "type": "tag" },
+    "BUG": { "icon": "bug", "iconColour": "#E05D44", "foreground": "#FFFFFF", "background": "#E05D44", "type": "tag" }
+  }
 }
