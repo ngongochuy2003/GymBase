@@ -66,7 +66,7 @@ Route có tiền tố kênh (`/api/web` hoặc `/api/mobile`), ví dụ `/api/we
 
 | Request | Thành công | Lỗi |
 | --- | --- | --- |
-| `GET /v1/users?page=1&pageSize=20&search=abc` | 200, `PagingResult<TDto>` (`items`, `page`, `pageSize`, `totalCount`, `totalPages`) | |
+| `GET /v1/users?page=1&page_size=20&search=abc` | 200, `PagingResult<TDto>`: `data` (mảng `TDto`) và `meta` (`page`, `page_size`, `total`, `total_page`, `ranger` gồm `from`, `to`) | |
 | `GET /v1/users/{id}` | 200, `TDto` | 404 nếu không có hoặc đã xóa |
 | `POST /v1/users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 nếu body vi phạm DataAnnotations |
 | `PUT /v1/users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 nếu không có hoặc đã xóa |
@@ -74,11 +74,23 @@ Route có tiền tố kênh (`/api/web` hoặc `/api/mobile`), ví dụ `/api/we
 
 Lỗi 400 do `[ApiController]` tự trả (ProblemDetails, có `errors` theo từng trường) trước khi vào BL.
 
+Ví dụ danh sách (`?page=2&page_size=20`, có 57 bản ghi):
+
+```json
+{
+  "data": [ { "id": "…", "tai_khoan": "an.nv", "ho_ten": "Nguyễn Văn An" } ],
+  "meta": { "page": 2, "page_size": 20, "total": 57, "total_page": 3, "ranger": { "from": 21, "to": 40 } }
+}
+```
+
+`ranger` là 0–0 khi không có bản ghi hoặc trang vượt quá `total_page`. `page_size` tối đa 100,
+không có giá trị "lấy tất cả".
+
 ## 4. BaseBL tự làm gì
 
 | Thao tác | Việc BaseBL làm |
 | --- | --- |
-| Danh sách | `request.Normalize()` (page ≥ 1, pageSize 1–100, trim search), gọi DL, map sang DTO |
+| Danh sách | `request.Normalize()` (page ≥ 1, page_size 1–100, trim search), gọi DL, map sang DTO |
 | Thêm | `CreateEntity(dto)` → Id UUIDv7 có sẵn → nếu là `BaseAuditableEntity` thì gán `ngay_tao`, `nguoi_tao` → `InsertAsync` |
 | Sửa | Đọc bản ghi → `ApplyUpdate(entity, dto)` → gán `ngay_chinh_sua`, `nguoi_chinh_sua` → `UpdateAsync` |
 | Xóa | Entity có `ISoftDelete` thì đặt `is_deleted = true` rồi `UpdateAsync` (xóa mềm); không có thì `DeleteAsync` (xóa hẳn) |
