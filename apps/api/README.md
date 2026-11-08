@@ -76,8 +76,8 @@ Gọi thử API bằng collection Bruno ở `1.Doc/bruno`.
 
 ## Còn mở
 
-- DB-01: chọn thư viện chạy SQL raw (Dapper hoặc ADO.NET) + MySQL driver, connection
-  factory, migration và Docker; sau đó dựng CRUD dùng chung trong AMISBASE.
+- DB-01: EF Core (đã chốt) + chọn provider MySQL, `DbContext`, EF Core migrations và
+  Docker; sau đó thay DL mock của CRUD dùng chung trong AMISBASE bằng `BaseDL` dùng EF Core.
 - API-02: validation, ProblemDetails, logging, chuẩn response.
 - Phân các nghiệp vụ (Trainers, Trainees, Workouts, PtSessions, SessionPackages)
   vào DI hoặc BIZ.

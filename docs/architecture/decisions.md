@@ -24,7 +24,7 @@ Mã nguồn: `apps/api/99.AMISBASE/GymBase.AMISBase.DL.Contract/Entities`.
 Theo yêu cầu trực tiếp của chủ repo, `apps/api` dùng cấu trúc Management / AMISBASE
 thay cho modular monolith `GymBase.Modules` ghi trước đó. Mỗi nhóm (DI = danh mục,
 Biz = nghiệp vụ) có 4 project: API (controller), BL (logic, không query DB),
-DL.Contract, DL.Mysql (SQL raw). `Mob/GymBase.MobAPI` là API duy nhất cho mobile,
+DL.Contract, DL.Mysql (EF Core). `Mob/GymBase.MobAPI` là API duy nhất cho mobile,
 gọi lại BL của DI/Biz. AMISBASE chứa nền CRUD dùng chung theo cùng 4 tầng.
 SDK ban đầu ghim .NET 9, sau đó đã nâng lên .NET 10 (xem mục trên).
 Chi tiết: `apps/api/README.md`.
@@ -87,7 +87,9 @@ push hoặc merge. Leader chọn luồng PR phù hợp trước khi chia việc 
 
 ## Cần chốt ở các task sau
 
-- MySQL provider (Dapper + MySqlConnector), MySQL version và bộ Expo/Node/pnpm. SDK đã chốt: .NET 10.
+- Provider EF Core cho MySQL (Pomelo hoặc Oracle `MySql.EntityFrameworkCore`), MySQL version và bộ Expo/Node/pnpm.
+  Đã chốt: SDK .NET 10; truy cập DB bằng EF Core, migration bằng EF Core migrations
+  (xem `docs/api/viec-con-lai-base.md`, Q3, Q4).
 - API auth/refresh/error contract, authorization matrix và public exports.
 - ERD, quy ước tên bảng/cột, timezone, concurrency và quy tắc khiếu nại.
 - GitHub reviewers thật, branch protection và required CI checks.

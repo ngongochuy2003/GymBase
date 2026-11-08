@@ -20,7 +20,7 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 
 | Chủ đề | Việc chờ |
 | --- | --- |
-| `DB` | Nối MySQL: `BaseDL` chạy SQL, bỏ DL mock `InMemory*`, seed, health check DB |
+| `DB` | Nối MySQL bằng EF Core: `DbContext`, `BaseDL` dùng EF Core, migrations, bỏ DL mock `InMemory*`, seed, health check DB |
 | `ERROR` | Exception nghiệp vụ + ProblemDetails, chặn dữ liệu trùng |
 | `PAGING` | Sort, filter theo danh sách cột cho phép |
 | `CURRENT-USER` | `ICurrentUser` để ghi `nguoi_tao`, `nguoi_chinh_sua` |

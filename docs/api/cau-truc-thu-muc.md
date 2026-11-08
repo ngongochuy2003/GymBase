@@ -52,7 +52,7 @@ Nhóm `BIZ` trong ảnh là mẫu chuẩn. Mỗi nhóm chức năng gồm 4 proj
 | `MISA.Salon.BIZAPI` | `GymBase.BIZAPI` | Web | Chứa **Controller**. Nhận HTTP request, kiểm tra đầu vào cơ bản, gọi BL rồi trả response. Đây là project chạy được (host). |
 | `MISA.Salon.BLBIZ` | `GymBase.BLBIZ` | Class library | **Business Logic** (tương đương tầng Application). Chứa quy tắc nghiệp vụ, tính toán và kiểm tra hợp lệ. **Không query DB.** Khi cần dữ liệu thì gọi qua interface của DL. |
 | `MISA.Salon.DLBIZ.Contract` | `GymBase.DLBIZ.Contract` | Class library | **Hợp đồng** của tầng dữ liệu: các interface như `IPackageDL` và các model đầu vào/đầu ra của DL. Không chứa code SQL. |
-| `MISA.Salon.DLBIZ.Mysql` | `GymBase.DLBIZ.Mysql` | Class library | **Hiện thực** các interface trên cho MySQL. Đây là nơi viết **SQL raw** và gọi DB. |
+| `MISA.Salon.DLBIZ.Mysql` | `GymBase.DLBIZ.Mysql` | Class library | **Hiện thực** các interface trên cho MySQL. Đây là nơi duy nhất dùng **EF Core** (`DbContext`, cấu hình entity) và gọi DB. |
 
 Lý do tách `Contract` ra khỏi `Mysql`:
 
@@ -232,7 +232,7 @@ GymBase chia AMISBASE thành đúng 4 tầng để các tầng của DI và Biz 
 | `GymBase.AMISBase.API` | `BaseApiController`; `BaseCrudController<TDto, TCreateDto, TUpdateDto>` (GET danh sách, GET `{id}`, POST, PUT `{id}`, DELETE `{id}`); tiền tố route theo kênh | Các host `*API`, `MobAPI` |
 | `GymBase.AMISBase.BL` | `ICrudBL<...>` và `BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>`: chuẩn hóa phân trang, map entity ↔ DTO, tự điền ngày/người tạo, sửa (UTC), xóa mềm nếu entity có `is_deleted` | `BL*` |
 | `GymBase.AMISBase.DL.Contract` | Entity gốc, `IHasId`, phân trang, `IBaseDL<TEntity>`: `GetPaging`, `GetById`, `Insert`, `Update`, `Delete` | `DL*.Contract`, `GymBase.Model` |
-| `GymBase.AMISBase.DL.Mysql` | **Hiện là mock:** `InMemoryStore<T>` (đăng ký singleton) + `InMemoryBaseDL<TEntity>`. Khi nối DB sẽ thêm `BaseDL<TEntity>` chạy SQL raw kèm connection factory | `DL*.Mysql` |
+| `GymBase.AMISBase.DL.Mysql` | **Hiện là mock:** `InMemoryStore<T>` (đăng ký singleton) + `InMemoryBaseDL<TEntity>`. Khi nối DB sẽ thêm lớp nền `DbContext` và `BaseDL<TEntity>` dùng EF Core | `DL*.Mysql` |
 
 HTTP trả về của controller dùng chung: `GET` 200 / 404, `POST` 201 kèm header `Location`,
 `PUT` 200 / 404, `DELETE` 204 / 404. Body sai hoặc vi phạm DataAnnotations bị `[ApiController]`

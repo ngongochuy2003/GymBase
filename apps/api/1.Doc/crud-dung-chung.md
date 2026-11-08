@@ -4,7 +4,7 @@ Phần nền CRUD nằm trong `99.AMISBASE`. Mỗi bảng mới chỉ cần khai
 vài hàm map là có đủ API thêm/sửa/xóa/xem. Mẫu đầy đủ đang chạy: **người dùng** (bảng `nguoi_dung`).
 
 > **Trạng thái:** DL hiện là **mock lưu trong bộ nhớ** (`InMemoryBaseDL`), tắt host là mất
-> dữ liệu. Khi nối MySQL sẽ thêm `BaseDL<TEntity>` chạy SQL; DL của từng bảng chỉ đổi lớp
+> dữ liệu. Khi nối MySQL sẽ thêm `BaseDL<TEntity>` dùng EF Core; DL của từng bảng chỉ đổi lớp
 > cha, BL và API giữ nguyên.
 
 ## 1. Các lớp nền
@@ -206,7 +206,7 @@ Hai dòng đầu chỉ cần một lần cho mỗi host.
 
 | Việc | Ghi chú |
 | --- | --- |
-| `BaseDL<TEntity>` chạy SQL (Dapper + MySQL) | Mục 3 trong `docs/api/viec-con-lai-base.md` |
+| `BaseDL<TEntity>` dùng EF Core + MySQL | Mục 3 trong `docs/api/viec-con-lai-base.md` |
 | Lỗi nghiệp vụ (trùng mã, không được phép…) trả mã lỗi chuẩn | Mục 7: exception + ProblemDetails. Hiện chưa chặn trùng `tai_khoan` |
 | Sort, filter | Mục 6; chỉ cho phép cột trong danh sách trắng |
 | `nguoi_tao` / `nguoi_chinh_sua` | Mục 10: `ICurrentUser` |
