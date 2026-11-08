@@ -13,7 +13,7 @@ builder.Services.AddHealthChecks();
 
 // System: người dùng (UserDL hiện là MOCK, chưa nối DB)
 builder.Services.AddSingleton(TimeProvider.System);
-// TODO(DB): bỏ InMemoryStore khi nối DB; đăng ký connection factory, thêm health check MySQL. Mục 3, 16.
+// TODO(DB): bỏ InMemoryStore khi nối DB; đăng ký DbContext (EF Core), thêm health check DbContext. Mục 3, 16.
 builder.Services.AddSingleton(typeof(InMemoryStore<>)); // MOCK: "bảng" trong bộ nhớ, bỏ khi nối DB
 builder.Services.AddScoped<IUserDL, UserDL>();
 builder.Services.AddScoped<UserBL>();

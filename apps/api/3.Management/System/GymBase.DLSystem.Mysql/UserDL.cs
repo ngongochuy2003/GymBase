@@ -5,10 +5,11 @@ using GymBase.Model.Entities;
 
 namespace GymBase.DLSystem.Mysql;
 
-// TODO(DB): đổi lớp cha sang BaseDL<nguoi_dung>; dữ liệu mẫu chuyển sang script seed. Mục 3, 13.
+// TODO(DB): đổi lớp cha sang BaseDL<nguoi_dung>, thêm IEntityTypeConfiguration<nguoi_dung>;
+//   dữ liệu mẫu chuyển sang seed. Mục 3, 13.
 /// <summary>
 /// MOCK: người dùng lưu trong bộ nhớ (<see cref="InMemoryStore{TEntity}"/>), nạp sẵn 6 bản ghi mẫu.
-/// Khi có DB, đổi lớp cha sang BaseDL chạy SQL; IUserDL giữ nguyên.
+/// Khi có DB, đổi lớp cha sang BaseDL dùng EF Core; IUserDL giữ nguyên.
 /// </summary>
 public sealed class UserDL : InMemoryBaseDL<nguoi_dung>, IUserDL
 {
