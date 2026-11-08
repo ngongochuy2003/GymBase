@@ -1,9 +1,12 @@
 using GymBase.AMISBase.DL.Contract.Entities;
 
-namespace GymBase.DLSystem.Contract.Entities;
+namespace GymBase.Model.Entities;
 
-/// <summary>Người dùng hệ thống (bảng <c>nguoi_dung</c>). Tên property trùng tên cột.</summary>
-public sealed class User : BaseAuditableEntity, ISoftDelete
+/// <summary>
+/// Người dùng hệ thống. Tên class trùng tên bảng <c>nguoi_dung</c>, property trùng tên cột.
+/// Thư mục <c>System</c> chỉ để sắp xếp theo phân hệ; namespace chung là <c>GymBase.Model.Entities</c>.
+/// </summary>
+public sealed class nguoi_dung : BaseAuditableEntity, ISoftDelete
 {
     /// <summary>Tên đăng nhập, duy nhất.</summary>
     public string tai_khoan { get; set; } = string.Empty;
@@ -14,6 +17,7 @@ public sealed class User : BaseAuditableEntity, ISoftDelete
 
     public string? so_dien_thoai { get; set; }
 
+    // TODO(AUTH): chuẩn hóa vai trò (enum hoặc bảng vai_tro) khi làm phân quyền. Mục 12.
     /// <summary>Vai trò: Admin, Trainer, Trainee. Sẽ chuẩn hóa khi làm phân quyền.</summary>
     public string vai_tro { get; set; } = string.Empty;
 

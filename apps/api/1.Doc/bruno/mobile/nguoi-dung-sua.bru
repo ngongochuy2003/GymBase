@@ -1,0 +1,32 @@
+meta {
+  name: Người dùng - sửa
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{mobileApi}}/users/{{createdUserId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "ho_ten": "Học viên đã sửa",
+    "email": "moi@gymbase.local",
+    "vai_tro": "Trainee",
+    "dang_hoat_dong": false
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Chạy "Người dùng - thêm" trước. Không đổi được tai_khoan.
+}

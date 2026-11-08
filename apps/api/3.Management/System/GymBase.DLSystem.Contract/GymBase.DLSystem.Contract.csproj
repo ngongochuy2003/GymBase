@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\99.AMISBASE\GymBase.AMISBase.DL.Contract\GymBase.AMISBase.DL.Contract.csproj" />
+    <ProjectReference Include="..\..\..\4.Model\GymBase.Model\GymBase.Model.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

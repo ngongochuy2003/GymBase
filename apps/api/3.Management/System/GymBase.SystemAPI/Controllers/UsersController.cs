@@ -1,28 +1,11 @@
 using GymBase.AMISBase.API;
-using GymBase.AMISBase.DL.Contract.Paging;
-using GymBase.BLSystem.Users;
-using Microsoft.AspNetCore.Mvc;
+using GymBase.BLSystem.NguoiDung;
 
 namespace GymBase.SystemAPI.Controllers;
 
 /// <summary>
-/// API người dùng cho web (trang quản trị). Route: /api/web/v1/users (tiền tố /api/web do Program.cs gắn).
-/// Chỉ nhận request và gọi <see cref="UserBL"/>; logic dùng chung với
-/// MobAPI nằm trong BL.
+/// API người dùng cho web (trang quản trị): /api/web/v1/users. Đủ CRUD từ <see cref="BaseCrudController{TDto,TCreateDto,TUpdateDto}"/>:
+/// GET danh sách, GET {id}, POST, PUT {id}, DELETE {id} (xóa mềm).
 /// </summary>
-public sealed class UsersController(UserBL userBL) : BaseApiController
-{
-    /// <summary>Danh sách người dùng có phân trang. Ví dụ: GET /api/web/v1/users?page=1&amp;pageSize=20&amp;search=pt</summary>
-    [HttpGet]
-    public async Task<ActionResult<PagingResult<UserDto>>> GetPaging(
-        [FromQuery] PagingRequest request, CancellationToken cancellationToken) =>
-        Ok(await userBL.GetPagingAsync(request, cancellationToken));
-
-    /// <summary>Chi tiết một người dùng; 404 nếu không tồn tại.</summary>
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<UserDto>> GetById(Guid id, CancellationToken cancellationToken)
-    {
-        var user = await userBL.GetByIdAsync(id, cancellationToken);
-        return user is null ? NotFound() : Ok(user);
-    }
-}
+public sealed class UsersController(UserBL userBL)
+    : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userBL);

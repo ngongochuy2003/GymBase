@@ -1,0 +1,23 @@
+meta {
+  name: Người dùng - xóa
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{mobileApi}}/users/{{createdUserId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Xóa mềm. Gọi lại lần nữa sẽ nhận 404.
+}

@@ -1,0 +1,37 @@
+meta {
+  name: Người dùng - thêm
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{mobileApi}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "tai_khoan": "hv.moi",
+    "ho_ten": "Học viên mới",
+    "email": "moi@gymbase.local",
+    "so_dien_thoai": "0900000099",
+    "vai_tro": "Trainee"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+script:post-response {
+  bru.setVar("createdUserId", res.body.id);
+}
+
+docs {
+  Lưu Id vừa tạo vào biến createdUserId để các request sửa/xóa dùng. Dữ liệu mock mất khi tắt host.
+}
