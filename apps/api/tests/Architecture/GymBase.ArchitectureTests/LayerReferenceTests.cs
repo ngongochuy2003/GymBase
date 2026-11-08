@@ -19,11 +19,13 @@ public partial class LayerReferenceTests
     [GeneratedRegex(@"^GymBase\.DL(?<group>\w+)\.MySql$")]
     private static partial Regex DataMySqlProject();
 
-    /// <summary>
-    /// DbContext và BaseRepository dùng chung đặt trong DLBiz.MySql (quyết định Q9), nên DL.MySql của nhóm khác
-    /// được tham chiếu riêng project này.
-    /// </summary>
-    private const string SharedPersistence = "GymBase.DLBiz.MySql";
+    [GeneratedRegex(@"GymBase\.Entities\.(?<group>\w+)")]
+    private static partial Regex EntityNamespace();
+
+    private const string Entities = "GymBase.Entities";
+
+    /// <summary>AppDbContext, BaseRepository và migrations dùng chung cho mọi nhóm (quyết định Q9).</summary>
+    private const string SharedPersistence = "GymBase.Persistence";
 
     public static TheoryData<string> SourceProjects() => new(SourceProjectFiles().Keys.Order());
 
@@ -53,13 +55,53 @@ public partial class LayerReferenceTests
             $"{projectName} không được tham chiếu: {string.Join(", ", violations)}");
     }
 
+    /// <summary>
+    /// Mọi nhóm cùng tham chiếu GymBase.Entities, nên ranh giới giữa các nhóm được giữ ở đây: BL và DL của một nhóm
+    /// chỉ dùng entity của chính nhóm đó. Cần dữ liệu nhóm khác thì đi qua ModuleContracts.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SourceProjects))]
+    public void Group_projects_use_only_their_own_entities(string projectName)
+    {
+        var group = GroupOf(projectName);
+        if (group is null)
+        {
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(SourceProjectFiles()[projectName])!;
+        var violations = Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Split(Path.DirectorySeparatorChar).Any(part => part is "bin" or "obj"))
+            .SelectMany(f => EntityNamespace().Matches(File.ReadAllText(f))
+                .Where(match => !match.Groups["group"].Value.Equals(group, StringComparison.OrdinalIgnoreCase))
+                .Select(match => $"{Path.GetFileName(f)}: {match.Value}"))
+            .ToList();
+
+        Assert.True(violations.Count == 0, $"{projectName} dùng entity của nhóm khác: {string.Join(", ", violations)}");
+    }
+
+    private static string? GroupOf(string project) =>
+        new[] { BusinessProject(), DataContractProject(), DataMySqlProject() }
+            .Select(regex => regex.Match(project))
+            .FirstOrDefault(match => match.Success)?.Groups["group"].Value;
+
     /// <summary>Quy tắc cho từng loại project; project không thuộc loại nào thì không được tham chiếu gì.</summary>
     private static Func<string, bool> AllowedReferences(string project)
     {
         if (project == "GymBase.API")
         {
-            // Composition root: được tham chiếu mọi BL, Base.Hosting và DL.*.MySql (chỉ để đăng ký dịch vụ).
-            return r => r == "GymBase.Base.Hosting" || BusinessProject().IsMatch(r) || DataMySqlProject().IsMatch(r);
+            // Composition root: được tham chiếu mọi BL, Base.Hosting, DL.*.MySql và Persistence (chỉ để đăng ký dịch vụ).
+            return r => r == "GymBase.Base.Hosting" || r == SharedPersistence || BusinessProject().IsMatch(r) || DataMySqlProject().IsMatch(r);
+        }
+
+        if (project == Entities)
+        {
+            return r => r == "GymBase.Base";
+        }
+
+        if (project == SharedPersistence)
+        {
+            return r => r is "GymBase.Base" or Entities;
         }
 
         if (project is "GymBase.Base.Hosting" or "GymBase.ModuleContracts")
@@ -75,7 +117,7 @@ public partial class LayerReferenceTests
 
         if (DataContractProject().IsMatch(project))
         {
-            return r => r == "GymBase.Base";
+            return r => r is "GymBase.Base" or Entities;
         }
 
         if (DataMySqlProject().Match(project) is { Success: true } dl)

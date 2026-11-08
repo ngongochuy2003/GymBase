@@ -5,7 +5,7 @@ using GymBase.BLAuth.NguoiDung;
 using GymBase.BLAuth.XacThuc;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.MySql;
-using GymBase.DLBiz.MySql.Persistence;
+using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
 builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly);
 
-// Một AppDbContext cho cả DB; mỗi DL.*.MySql có cấu hình entity thì thêm assembly của nó vào đây.
-builder.Services.AddAppPersistence(builder.Configuration, typeof(UserRepository).Assembly);
+// Một AppDbContext cho cả DB.
+builder.Services.AddAppPersistence(builder.Configuration);
 
 // Auth: người dùng, đăng nhập
 builder.Services.AddAuthBusiness();

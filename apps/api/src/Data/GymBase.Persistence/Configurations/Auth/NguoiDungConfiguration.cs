@@ -1,8 +1,8 @@
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GymBase.DLAuth.MySql.Configurations;
+namespace GymBase.Persistence.Configurations.Auth;
 
 /// <summary>Bảng <c>nguoi_dung</c>. Độ dài cột khớp DataAnnotations trong DTO của BLAuth.</summary>
 public sealed class NguoiDungConfiguration : IEntityTypeConfiguration<nguoi_dung>

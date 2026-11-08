@@ -7,7 +7,7 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Validation;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 
 namespace GymBase.BLAuth.XacThuc;

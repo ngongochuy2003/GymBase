@@ -1,5 +1,5 @@
 using GymBase.Base.Paging;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 
 namespace GymBase.DLAuth.Contract;
 

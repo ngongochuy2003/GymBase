@@ -16,6 +16,10 @@
   <Folder Name="/src/Contracts/">
     <Project Path="src/Contracts/GymBase.ModuleContracts/GymBase.ModuleContracts.csproj" />
   </Folder>
+  <Folder Name="/src/Data/">
+    <Project Path="src/Data/GymBase.Entities/GymBase.Entities.csproj" />
+    <Project Path="src/Data/GymBase.Persistence/GymBase.Persistence.csproj" />
+  </Folder>
   <Folder Name="/src/Auth/">
     <Project Path="src/Auth/GymBase.BLAuth/GymBase.BLAuth.csproj" />
     <Project Path="src/Auth/GymBase.DLAuth.Contract/GymBase.DLAuth.Contract.csproj" />

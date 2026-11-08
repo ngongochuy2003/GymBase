@@ -8,7 +8,7 @@ using GymBase.TestDoubles;
 using GymBase.BLAuth;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;

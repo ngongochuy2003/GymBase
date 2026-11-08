@@ -1,8 +1,8 @@
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GymBase.DLAuth.MySql.Configurations;
+namespace GymBase.Persistence.Configurations.Auth;
 
 /// <summary>Bảng <c>phien_dang_nhap</c>. SHA-256 dạng hex dài đúng 64 ký tự.</summary>
 public sealed class PhienDangNhapConfiguration : IEntityTypeConfiguration<phien_dang_nhap>

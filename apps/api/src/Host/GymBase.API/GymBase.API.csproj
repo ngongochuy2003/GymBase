@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
     <ProjectReference Include="..\..\DI\GymBase.DLDI.MySql\GymBase.DLDI.MySql.csproj" />
     <ProjectReference Include="..\..\BIZ\GymBase.DLBiz.MySql\GymBase.DLBiz.MySql.csproj" />
+    <ProjectReference Include="..\..\Data\GymBase.Persistence\GymBase.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

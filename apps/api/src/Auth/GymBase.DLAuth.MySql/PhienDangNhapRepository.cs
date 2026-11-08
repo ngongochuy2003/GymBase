@@ -1,6 +1,6 @@
 using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.Contract.Entities;
-using GymBase.DLBiz.MySql.Persistence;
+using GymBase.Entities.Auth;
+using GymBase.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymBase.DLAuth.MySql;

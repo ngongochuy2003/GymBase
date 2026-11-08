@@ -1,5 +1,5 @@
 using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 
 namespace GymBase.TestDoubles;
 

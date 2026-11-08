@@ -1,10 +1,9 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 
-namespace GymBase.DLBiz.MySql.Persistence;
+namespace GymBase.Persistence;
 
 public static class PersistenceServiceCollectionExtensions
 {
@@ -14,10 +13,8 @@ public static class PersistenceServiceCollectionExtensions
     /// <summary>
     /// Đăng ký <see cref="AppDbContext"/> (scoped theo request) và health check DB.
     /// </summary>
-    /// <param name="configurationAssemblies">Các assembly <c>DL*.MySql</c> chứa cấu hình entity.</param>
     /// <exception cref="InvalidOperationException">Chưa cấu hình <c>ConnectionStrings:DefaultConnection</c>.</exception>
-    public static IServiceCollection AddAppPersistence(
-        this IServiceCollection services, IConfiguration configuration, params Assembly[] configurationAssemblies)
+    public static IServiceCollection AddAppPersistence(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -26,7 +23,6 @@ public static class PersistenceServiceCollectionExtensions
                 "Chưa cấu hình ConnectionStrings:DefaultConnection. Khi dev, đặt bằng dotnet user-secrets (xem docs/api/cach-chay-api.md).");
         }
 
-        services.AddSingleton(new EntityConfigurationAssemblies(configurationAssemblies));
         services.AddDbContext<AppDbContext>(options => ConfigureMySql(options, connectionString));
         services.AddHealthChecks().AddDbContextCheck<AppDbContext>("mysql");
 

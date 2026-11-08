@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace GymBase.DLBiz.MySql.Migrations
+namespace GymBase.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class AddPhienDangNhap : Migration

@@ -1,6 +1,6 @@
 using GymBase.Base.Entities;
 
-namespace GymBase.DLAuth.Contract.Entities;
+namespace GymBase.Entities.Auth;
 
 /// <summary>
 /// Người dùng hệ thống. Tên class trùng tên bảng <c>nguoi_dung</c>, property trùng tên cột.

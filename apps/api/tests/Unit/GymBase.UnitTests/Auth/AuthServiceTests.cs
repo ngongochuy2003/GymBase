@@ -3,7 +3,7 @@ using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.BLAuth;
 using GymBase.BLAuth.XacThuc;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;

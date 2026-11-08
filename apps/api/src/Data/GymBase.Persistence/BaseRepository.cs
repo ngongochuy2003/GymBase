@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using MySqlConnector;
 
-namespace GymBase.DLBiz.MySql.Persistence;
+namespace GymBase.Persistence;
 
 /// <summary>
 /// Hiện thực <see cref="IBaseRepository{TEntity}"/> bằng EF Core. DL của từng bảng kế thừa lớp này.

@@ -1,6 +1,6 @@
 using GymBase.BLAuth.NguoiDung;
 using GymBase.BLAuth.XacThuc;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 

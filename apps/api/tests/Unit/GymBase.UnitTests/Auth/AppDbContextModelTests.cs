@@ -1,8 +1,7 @@
 using GymBase.Base.Paging;
 using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.Contract.Entities;
-using GymBase.DLAuth.MySql;
-using GymBase.DLBiz.MySql.Persistence;
+using GymBase.Entities.Auth;
+using GymBase.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymBase.UnitTests.Auth;
@@ -14,7 +13,7 @@ public class AppDbContextModelTests
     {
         var options = new DbContextOptionsBuilder<AppDbContext>();
         PersistenceServiceCollectionExtensions.ConfigureMySql(options, "Server=localhost;Database=model_only");
-        return new AppDbContext(options.Options, new EntityConfigurationAssemblies([typeof(UserRepository).Assembly]));
+        return new AppDbContext(options.Options);
     }
 
     [Fact]

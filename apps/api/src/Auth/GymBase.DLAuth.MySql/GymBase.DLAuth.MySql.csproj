@@ -3,7 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
     <ProjectReference Include="..\GymBase.DLAuth.Contract\GymBase.DLAuth.Contract.csproj" />
-    <ProjectReference Include="..\..\BIZ\GymBase.DLBiz.MySql\GymBase.DLBiz.MySql.csproj" />
+    <ProjectReference Include="..\..\Data\GymBase.Persistence\GymBase.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,22 +1,16 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using GymBase.Base.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace GymBase.DLBiz.MySql.Persistence;
-
-/// <summary>Các assembly <c>DL*.MySql</c> chứa <see cref="IEntityTypeConfiguration{TEntity}"/>, do host truyền vào.</summary>
-public sealed record EntityConfigurationAssemblies(IReadOnlyList<Assembly> Assemblies);
+namespace GymBase.Persistence;
 
 /// <summary>
 /// DbContext duy nhất của cả database. Bảng của từng nhóm được khai báo bằng
-/// <see cref="IEntityTypeConfiguration{TEntity}"/> trong <c>DL*.MySql</c> của nhóm đó.
+/// <see cref="IEntityTypeConfiguration{TEntity}"/> trong thư mục <c>Configurations/&lt;Nhóm&gt;</c>.
 /// Bản ghi <see cref="ISoftDelete"/> đã xóa mềm tự động bị ẩn khỏi mọi truy vấn.
 /// </summary>
-public sealed class AppDbContext(
-    DbContextOptions<AppDbContext> options,
-    EntityConfigurationAssemblies configurationAssemblies) : DbContext(options)
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -26,10 +20,7 @@ public sealed class AppDbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        foreach (var assembly in configurationAssemblies.Assemblies)
-        {
-            modelBuilder.ApplyConfigurationsFromAssembly(assembly);
-        }
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
                      .Where(t => typeof(ISoftDelete).IsAssignableFrom(t.ClrType)))

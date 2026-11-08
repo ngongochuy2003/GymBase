@@ -21,6 +21,9 @@ apps/api/
 │   │   └── GymBase.Base.Hosting/ # Controller gốc, route theo kênh, xử lý lỗi ProblemDetails
 │   ├── Contracts/
 │   │   └── GymBase.ModuleContracts/  # Interface công khai giữa các nhóm
+│   ├── Data/
+│   │   ├── GymBase.Entities/     # Entity và enum của cột, chia theo nhóm
+│   │   └── GymBase.Persistence/  # AppDbContext, BaseRepository, cấu hình bảng, migrations
 │   ├── Auth/                     # Tài khoản, xác thực, phân quyền: BLAuth, DLAuth.Contract, DLAuth.MySql
 │   ├── DI/                       # Danh mục: BLDI, DLDI.Contract, DLDI.MySql
 │   └── BIZ/                      # Nghiệp vụ PT, học viên, buổi tập: BLBiz, DLBiz.Contract, DLBiz.MySql
@@ -42,8 +45,8 @@ Mob/Controllers/ ───┘
 
 - Controller chỉ gọi BL. BL chỉ gọi `DL<nhóm>.Contract`, không biết EF/MySQL.
 - `GymBase.API` tham chiếu các `DL*.MySql` chỉ để đăng ký dịch vụ.
-- `AppDbContext` và DL mock dùng chung nằm trong `GymBase.DLBiz.MySql`; `DLAuth.MySql`,
-  `DLDI.MySql` được tham chiếu riêng project này.
+- `AppDbContext`, cấu hình bảng và migrations nằm trong `GymBase.Persistence`, entity nằm trong `GymBase.Entities`.
+  BL và DL của một nhóm chỉ được dùng entity của chính nhóm đó.
 - `GymBase.ArchitectureTests` kiểm tra ma trận tham chiếu project mỗi lần chạy test.
 
 ## Lệnh

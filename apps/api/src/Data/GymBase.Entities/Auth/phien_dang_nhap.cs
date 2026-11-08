@@ -1,6 +1,6 @@
 using GymBase.Base.Entities;
 
-namespace GymBase.DLAuth.Contract.Entities;
+namespace GymBase.Entities.Auth;
 
 /// <summary>
 /// Một phiên đăng nhập trên một thiết bị. Chỉ lưu SHA-256 của refresh token, không lưu bản gốc.

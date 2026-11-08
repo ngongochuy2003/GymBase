@@ -4,7 +4,7 @@ using GymBase.BLAuth;
 using GymBase.TestDoubles;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.MySql;
-using GymBase.DLAuth.Contract.Entities;
+using GymBase.Entities.Auth;
 
 namespace GymBase.UnitTests.Auth;
 
