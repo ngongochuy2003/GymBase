@@ -19,7 +19,7 @@ Chỉ chạy những host mà client đang gọi tới.
 | Muốn dùng | Startup project | Base URL |
 | --- | --- | --- |
 | API cho **mobile** | `GymBase.MobAPI` | `http://localhost:5106/api/mobile/v1/` |
-| API cho **web**, hiện chỉ có người dùng | `GymBase.SystemAPI` | `http://localhost:5020/api/web/v1/` |
+| API cho **web** | `GymBase.SystemAPI` | `http://localhost:5020/api/web/v1/` |
 | Cả hai | `GymBase.SystemAPI` + `GymBase.MobAPI` | Như trên |
 
 Sau này, khi nhóm khác có endpoint, web phải bật thêm host của nhóm đó:
@@ -37,7 +37,7 @@ Sau này, khi nhóm khác có endpoint, web phải bật thêm host của nhóm 
 
 Cổng lấy từ `Properties/launchSettings.json` của từng host, profile `http`.
 
-## 2. Chạy bằng Visual Studio
+## 2a. Chạy bằng Visual Studio
 
 1. Mở `apps/api/GymBase.slnx`.
 2. Chuột phải vào Solution, chọn **Configure Startup Projects…**, chọn **Multiple startup projects**.
@@ -68,17 +68,11 @@ Nhấn `Ctrl+Shift+P`, chọn **Tasks: Run Task**, rồi chọn task:
 App mobile mặc định chạy chế độ demo (không gọi API). Muốn app gọi MobAPI thì cấu hình
 `apps/mobile/.env` theo mục 5.
 
-**Extension C#:** solution dùng định dạng `.slnx`, mà server OmniSharp không đọc được (báo lỗi
-*"OmniSharp only supports being launched with a directory path or a path to a solution (.sln, .slnf)"*).
-`.vscode/settings.json` đã tắt OmniSharp (`dotnet.server.useOmnisharp: false`) để extension dùng
-server Roslyn, vốn hỗ trợ `.slnx`. Sau khi pull về, chạy **Developer: Reload Window** một lần.
-Với C# Dev Kit (VS Code bản Microsoft) thì không cần làm gì thêm.
-
 Mỗi API chạy trong một terminal riêng. Muốn dừng thì bấm vào terminal đó rồi nhấn
 Ctrl+C, hoặc chạy **Tasks: Terminate Task**. Task chạy API luôn build trước một lần
 rồi mới chạy với `--no-build`, để hai API không build chồng lên nhau cùng lúc.
 
-## 3. Chạy bằng dòng lệnh
+## 2c. Chạy bằng dòng lệnh
 
 Mở hai terminal tại `apps/api`, mỗi terminal chạy một host:
 
@@ -92,11 +86,13 @@ dotnet run --project 3.Management/Mob/GymBase.MobAPI --launch-profile http
 
 Dừng bằng Ctrl+C.
 
-## 4. Kiểm tra đã chạy
+## 3. Kiểm tra đã chạy
 
 - Mở `http://localhost:5020/health` và `http://localhost:5106/health`, thấy `Healthy` là được.
-- **File `.http`:** mở `GymBase.SystemAPI.http` hoặc `GymBase.MobAPI.http` trong Visual Studio, bấm
-  **Send request** trên từng request.
+- **Bruno:** mở [Bruno](https://www.usebruno.com/), chọn **Open Collection**, trỏ tới thư mục
+  `apps/api/1.Doc/bruno`, chọn environment **local** ở góc trên bên phải. Collection có hai thư mục
+  `Web (SystemAPI)` và `Mobile (MobAPI)`, mỗi request đã có sẵn assert mã trả về. Chạy cả
+  collection bằng **Run** để kiểm tra nhanh.
 - **Postman:** **Import** URL `http://localhost:5020/openapi/v1.json` (web) hoặc
   `http://localhost:5106/openapi/v1.json` (mobile) để tạo collection tự động. Trang
   OpenAPI chỉ có ở môi trường Development.
@@ -114,8 +110,8 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 
 | App chạy trên | `EXPO_PUBLIC_API_URL` | Cách chạy MobAPI |
 | --- | --- | --- |
-| Trình duyệt (Expo web), iOS Simulator | `http://localhost:5106/api/mobile/v1` | Như mục 2 hoặc 3 |
-| Android Emulator | `http://10.0.2.2:5106/api/mobile/v1` | Như mục 2 hoặc 3 |
+| Trình duyệt (Expo web), iOS Simulator | `http://localhost:5106/api/mobile/v1`  | Như mục 2 |
+| Android Emulator | `http://10.0.2.2:5106/api/mobile/v1` | Như mục 2 |
 | Điện thoại thật | `http://<IP-máy-tính>:5106/api/mobile/v1` | Phải lắng nghe trên mọi địa chỉ mạng, xem bên dưới |
 
 `10.0.2.2` là địa chỉ mà Android Emulator dùng để trỏ về máy tính chạy nó.
@@ -137,7 +133,7 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 
 ## 6. Cho trang web gọi được API
 
-- Gọi qua Postman, file `.http` hoặc curl không cần cấu hình gì thêm.
+- Gọi qua Bruno, Postman hoặc curl không cần cấu hình gì thêm.
 - Trang web chạy trong trình duyệt ở origin khác (ví dụ `http://localhost:3000`) sẽ bị
   trình duyệt chặn vì **CORS chưa được cấu hình**. Việc này nằm trong mục 11 của
   `docs/api/viec-con-lai-base.md`. Khi làm, CORS phải đọc danh sách origin từ cấu hình,

@@ -1,0 +1,27 @@
+meta {
+  name: Người dùng - tìm kiếm
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{mobileApi}}/users?search=pt
+  body: none
+  auth: none
+}
+
+params:query {
+  search: pt
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Tìm theo tên đăng nhập, họ tên, email, số điện thoại.
+}

@@ -1,3 +1,0 @@
-@GymBase.ReportAPI_HostAddress = http://localhost:5150
-
-GET {{GymBase.ReportAPI_HostAddress}}/health

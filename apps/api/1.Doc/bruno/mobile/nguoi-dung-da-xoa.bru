@@ -1,0 +1,19 @@
+meta {
+  name: Người dùng - đã xóa mềm (404)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{mobileApi}}/users/{{deletedUserId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 404
+}

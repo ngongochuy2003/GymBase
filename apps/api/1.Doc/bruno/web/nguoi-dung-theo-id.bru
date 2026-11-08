@@ -1,0 +1,19 @@
+meta {
+  name: Người dùng - theo id (admin)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{webApi}}/users/{{adminId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}

@@ -107,7 +107,7 @@ code, tài liệu API hay script mẫu. Thường chỉ gồm file `.md` hoặc 
 project biên dịch.
 **GymBase:** thư mục thật `apps/api/1.Doc`, chứa tài liệu chỉ dành cho backend.
 Solution folder `1. Doc` chỉ gồm các file nằm trong `1.Doc/` (hiện là
-`1.Doc/README.md`), không đính kèm file ở ngoài. Tài liệu dùng chung của monorepo,
+`README.md`, `cach-chay-api.md` và collection Bruno `bruno/`), không đính kèm file ở ngoài. Tài liệu dùng chung của monorepo,
 kể cả tài liệu này, vẫn đặt ở `docs/` và không hiện trong solution.
 
 ### `2. Config` *(suy luận)*

@@ -1,0 +1,24 @@
+meta {
+  name: Người dùng - phân trang
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{mobileApi}}/users?page=2&pageSize=2
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 2
+  pageSize: 2
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}

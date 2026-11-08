@@ -72,6 +72,7 @@ dotnet run --project 3.Management/BIZ/GymBase.BIZAPI
 Mỗi host có `/health` và OpenAPI ở `/openapi/v1.json` (môi trường Development).
 Route API có tiền tố kênh: host web dùng `/api/web/v1/...`, MobAPI dùng `/api/mobile/v1/...`.
 Cần chạy host nào, cho mobile/điện thoại thật truy cập thế nào: xem `1.Doc/cach-chay-api.md`.
+Gọi thử API bằng collection Bruno ở `1.Doc/bruno`.
 
 ## Còn mở
 
