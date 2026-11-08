@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using GymBase.Base.Entities;
 
 namespace GymBase.BLAuth.NguoiDung;
@@ -15,48 +14,32 @@ public sealed record NguoiDungDto(
     DateTime ngay_tao,
     DateTime? ngay_chinh_sua) : IHasId;
 
-// TODO(AUTH): nhận mật khẩu, băm rồi lưu vào mat_khau_hash. Mục 12.
-/// <summary>Body khi thêm người dùng. Id, ngày tạo, mật khẩu không nhận từ client.</summary>
+/// <summary>Body khi thêm người dùng. Id, ngày tạo không nhận từ client. Quy tắc: <see cref="NguoiDungCreateValidator"/>.</summary>
 public sealed class NguoiDungCreateDto
 {
-    [Required]
-    [StringLength(50, MinimumLength = 3)]
     public string tai_khoan { get; init; } = string.Empty;
 
-    [Required]
-    [StringLength(100)]
+    /// <summary>Mật khẩu ban đầu do Admin đặt; chỉ lưu bản đã băm.</summary>
+    public string mat_khau { get; init; } = string.Empty;
+
     public string ho_ten { get; init; } = string.Empty;
 
-    [EmailAddress]
-    [StringLength(100)]
     public string? email { get; init; }
 
-    [Phone]
-    [StringLength(20)]
     public string? so_dien_thoai { get; init; }
 
-    [Required]
-    [StringLength(20)]
     public string vai_tro { get; init; } = string.Empty;
 }
 
-/// <summary>Body khi sửa người dùng. Không đổi được tên đăng nhập.</summary>
+/// <summary>Body khi sửa người dùng. Không đổi được tên đăng nhập. Quy tắc: <see cref="NguoiDungUpdateValidator"/>.</summary>
 public sealed class NguoiDungUpdateDto
 {
-    [Required]
-    [StringLength(100)]
     public string ho_ten { get; init; } = string.Empty;
 
-    [EmailAddress]
-    [StringLength(100)]
     public string? email { get; init; }
 
-    [Phone]
-    [StringLength(20)]
     public string? so_dien_thoai { get; init; }
 
-    [Required]
-    [StringLength(20)]
     public string vai_tro { get; init; } = string.Empty;
 
     public bool dang_hoat_dong { get; init; } = true;

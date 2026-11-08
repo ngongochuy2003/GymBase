@@ -24,7 +24,34 @@ public class UserServiceTests
 
     public UserServiceTests()
     {
-        _service = new UserService(new InMemoryUserRepository(_store), new FixedTimeProvider(Now), new FakeCurrentUser("nv.thu"));
+        _service = CreateService(new FakeCurrentUser("nv.thu"));
+    }
+
+    private UserService CreateService(FakeCurrentUser currentUser) => new(
+        new InMemoryUserRepository(_store),
+        new FixedTimeProvider(Now),
+        currentUser,
+        new NguoiDungCreateValidator(),
+        new NguoiDungUpdateValidator(),
+        AuthTestHelpers.FastHasher);
+
+    [Fact]
+    public async Task Invalid_body_is_rejected_before_touching_data()
+    {
+        var before = _store.All().Count;
+
+        var error = await Assert.ThrowsAsync<ValidationFailedException>(
+            () => _service.CreateAsync(new NguoiDungCreateDto { tai_khoan = null!, ho_ten = "", vai_tro = "Trainee" }, CancellationToken.None));
+
+        Assert.Equal(["ho_ten", "mat_khau", "tai_khoan"], error.Errors!.Keys.Order());
+        Assert.Equal(before, _store.All().Count);
+    }
+
+    [Fact]
+    public async Task Update_validates_body_before_checking_the_record_exists()
+    {
+        await Assert.ThrowsAsync<ValidationFailedException>(
+            () => _service.UpdateAsync(Guid.NewGuid(), new NguoiDungUpdateDto(), CancellationToken.None));
     }
 
     [Fact]
@@ -41,7 +68,7 @@ public class UserServiceTests
     [Fact]
     public async Task Audit_user_is_null_when_not_signed_in()
     {
-        var service = new UserService(new InMemoryUserRepository(_store), new FixedTimeProvider(Now), new FakeCurrentUser());
+        var service = CreateService(new FakeCurrentUser());
 
         var created = await service.CreateAsync(NewUser, CancellationToken.None);
 
@@ -53,6 +80,7 @@ public class UserServiceTests
     private static NguoiDungCreateDto NewUserWith(string taiKhoan) => new()
     {
         tai_khoan = taiKhoan,
+        mat_khau = AuthTestHelpers.ValidPassword,
         ho_ten = "Học viên mới",
         email = "moi@gymbase.local",
         vai_tro = "Trainee",

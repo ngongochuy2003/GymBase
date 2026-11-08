@@ -8,4 +8,7 @@ public interface ICurrentUser
 
     /// <summary>Tên đăng nhập, dùng để ghi nguoi_tao và nguoi_chinh_sua.</summary>
     string? UserName { get; }
+
+    /// <summary>Id phiên đăng nhập của token hiện tại.</summary>
+    Guid? SessionId { get; }
 }

@@ -1,3 +1,5 @@
+using System.Reflection;
+using FluentValidation;
 using GymBase.Base.Auth;
 using GymBase.Base.Hosting.Auth;
 using GymBase.Base.Hosting.Errors;
@@ -16,13 +18,17 @@ public static class AppApiExtensions
 
     /// <summary>
     /// Đăng ký controller theo kênh, xử lý lỗi, OpenAPI, health check, CORS, URL chữ thường,
-    /// <see cref="TimeProvider"/> và <see cref="ICurrentUser"/>.
+    /// <see cref="TimeProvider"/>, <see cref="ICurrentUser"/> và các validator.
     /// </summary>
+    /// <param name="validatorAssemblies">Các assembly BL chứa validator.</param>
     /// <returns>Builder của MVC, để test thêm controller riêng.</returns>
     /// <exception cref="InvalidOperationException">Danh sách origin có <c>*</c>.</exception>
-    public static IMvcBuilder AddAppApi(this IServiceCollection services, IConfiguration configuration)
+    public static IMvcBuilder AddAppApi(
+        this IServiceCollection services, IConfiguration configuration, params Assembly[] validatorAssemblies)
     {
         var origins = ReadCorsOrigins(configuration);
+
+        services.AddValidatorsFromAssemblies(validatorAssemblies);
 
         services.AddAppErrorHandling();
         services.AddOpenApi();
@@ -30,6 +36,7 @@ public static class AppApiExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
+        services.AddAppAuthentication(configuration);
         services.AddRouting(options => options.LowercaseUrls = true);
         services.AddCors(options => options.AddDefaultPolicy(policy => policy
             .WithOrigins(origins)
@@ -37,7 +44,14 @@ public static class AppApiExtensions
             .AllowAnyMethod()
             .WithExposedHeaders("Location")));
 
-        return services.AddControllers(options => options.UseApiChannels());
+        return services.AddControllers(options =>
+        {
+            options.UseApiChannels();
+
+            // Kiểm tra dữ liệu do FluentValidation làm trong BaseService. Không tắt thì MVC tự coi mọi
+            // string không-null là bắt buộc và trả lỗi tiếng Anh trước khi vào service.
+            options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+        });
     }
 
     /// <summary>Dựng pipeline và map endpoint. OpenAPI chỉ bật ở môi trường Development.</summary>
@@ -46,15 +60,17 @@ public static class AppApiExtensions
         app.UseAppErrorHandling();
         app.UseHttpsRedirection();
         app.UseCors();
+        app.UseAuthentication();
+        app.UseRateLimiter();
         app.UseAuthorization();
 
         if (app.Environment.IsDevelopment())
         {
-            app.MapOpenApi();
+            app.MapOpenApi().AllowAnonymous();
         }
 
         app.MapControllers();
-        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/health").AllowAnonymous();
 
         return app;
     }

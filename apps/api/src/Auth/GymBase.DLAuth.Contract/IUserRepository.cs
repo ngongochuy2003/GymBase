@@ -14,4 +14,7 @@ public interface IUserRepository : IBaseRepository<nguoi_dung>
     /// hoa thường, giống collation mặc định của MySQL.
     /// </summary>
     Task<bool> ExistsByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken);
+
+    /// <summary>Người dùng còn hiệu lực theo tên đăng nhập, không phân biệt hoa thường; null nếu không có.</summary>
+    Task<nguoi_dung?> FindByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken);
 }

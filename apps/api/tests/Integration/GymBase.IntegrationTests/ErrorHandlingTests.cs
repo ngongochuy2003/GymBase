@@ -60,6 +60,7 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
         var response = await _client.PostAsJsonAsync(Users, new
         {
             tai_khoan = "pt.minh",
+            mat_khau = "Mk-thu-nghiem-1",
             ho_ten = "Trùng tên",
             vai_tro = "Trainer",
         });
@@ -110,7 +111,9 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
     [Fact]
     public async Task Unknown_route_returns_problem_details()
     {
-        var response = await _client.GetAsync("/api/v1/web/khong-co");
+        using var client = TestApp.ClientWithRole(_app, "Trainee");
+
+        var response = await client.GetAsync("/api/v1/web/khong-co");
 
         var problem = await ReadProblemAsync(response, HttpStatusCode.NotFound);
         Assert.Equal(ErrorCodes.NotFound, problem.GetProperty("code").GetString());

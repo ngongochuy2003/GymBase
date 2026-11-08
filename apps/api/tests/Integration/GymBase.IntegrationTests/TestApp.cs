@@ -1,10 +1,15 @@
+using System.Net.Http.Headers;
+using GymBase.Base.Auth;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
+using GymBase.BLAuth;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
 using GymBase.TestDoubles;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,32 +25,51 @@ namespace GymBase.IntegrationTests
     {
         public const string AllowedOrigin = "https://admin.gymbase.test";
 
+        /// <summary>Khóa ký chỉ dùng trong test (Base64 của 32 byte).</summary>
+        public const string SigningKey = "dGVzdC1vbmx5LXNpZ25pbmcta2V5LTMyLWJ5dGVzLWxvbmc=";
+
         public static async Task<WebApplication> StartAsync()
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Production });
             builder.WebHost.UseTestServer();
             builder.Configuration[$"{AppApiExtensions.CorsOriginsSection}:0"] = AllowedOrigin;
-            builder.Services.AddAppApi(builder.Configuration)
-                .AddApplicationPart(typeof(TestApp).Assembly);
+            builder.Configuration["Jwt:SigningKey"] = SigningKey;
+            builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly)
+                .AddApplicationPart(typeof(TestApp).Assembly)
+                .AddApplicationPart(typeof(GymBase.API.Controllers.AuthController).Assembly);
+            builder.Services.AddAuthBusiness();
+            builder.Services.Configure<PasswordHasherOptions>(options => options.IterationCount = 1_000);
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
             builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
-            builder.Services.AddScoped<UserService>();
+            builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
 
             var app = builder.Build();
             app.UseAppApi();
             await app.StartAsync();
             return app;
         }
+
+        /// <summary>Client mang access token thật do app cấp, với vai trò cho trước.</summary>
+        public static HttpClient ClientWithRole(WebApplication app, string role)
+        {
+            var token = app.Services.GetRequiredService<ITokenIssuer>()
+                .CreateAccessToken(new AccessTokenRequest(Guid.CreateVersion7(), "test.user", role, Guid.CreateVersion7()));
+            var client = app.GetTestClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+            return client;
+        }
     }
 }
 
 namespace GymBase.IntegrationTests.Controllers
 {
-    /// <summary>CRUD người dùng cho web: /api/v1/web/testusers.</summary>
+    /// <summary>CRUD người dùng cho web, không cần đăng nhập: /api/v1/web/testusers.</summary>
+    [AllowAnonymous]
     public sealed class TestUsersController(UserService service)
         : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(service);
 
     /// <summary>Action ném lỗi có chủ đích: /api/v1/web/errortest/...</summary>
+    [AllowAnonymous]
     public sealed class ErrorTestController : BaseApiController
     {
         [HttpGet("rule")]
@@ -59,6 +83,7 @@ namespace GymBase.IntegrationTests.Controllers
 namespace GymBase.IntegrationTests.Mob.Controllers
 {
     /// <summary>Cùng tên với controller web nhưng ở Mob/Controllers: /api/v1/mob/testusers.</summary>
+    [AllowAnonymous]
     public sealed class TestUsersController(UserService service)
         : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(service);
 }

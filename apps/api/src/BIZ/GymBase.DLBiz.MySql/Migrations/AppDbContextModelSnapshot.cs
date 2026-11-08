@@ -89,6 +89,66 @@ namespace GymBase.DLBiz.MySql.Migrations
 
                     b.ToTable("nguoi_dung", (string)null);
                 });
+
+            modelBuilder.Entity("GymBase.DLAuth.Contract.Entities.phien_dang_nhap", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("binary(16)");
+
+                    b.Property<DateTime>("ngay_het_han")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ngay_het_han_toi_da")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ngay_tao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ngay_thu_hoi")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ngay_xoay_vong")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("nguoi_dung_id")
+                        .HasColumnType("binary(16)");
+
+                    b.Property<string>("ten_thiet_bi")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("token_hash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<string>("token_hash_truoc")
+                        .HasMaxLength(64)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("nguoi_dung_id");
+
+                    b.HasIndex("token_hash")
+                        .IsUnique();
+
+                    b.HasIndex("token_hash_truoc");
+
+                    b.ToTable("phien_dang_nhap", (string)null);
+                });
+
+            modelBuilder.Entity("GymBase.DLAuth.Contract.Entities.phien_dang_nhap", b =>
+                {
+                    b.HasOne("GymBase.DLAuth.Contract.Entities.nguoi_dung", null)
+                        .WithMany()
+                        .HasForeignKey("nguoi_dung_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
 #pragma warning restore 612, 618
         }
     }

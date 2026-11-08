@@ -1,11 +1,14 @@
+using GymBase.Base.Auth;
 using GymBase.Base.Hosting;
 using GymBase.BLAuth.NguoiDung;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GymBase.API.Mob.Controllers;
 
 /// <summary>
-/// API người dùng cho app mobile: /api/v1/mob/users. Đủ CRUD từ <see cref="BaseCrudController{TDto,TCreateDto,TUpdateDto}"/>,
-/// dùng chung <see cref="UserService"/> với web.
+/// API quản lý người dùng trên kênh mobile: /api/v1/mob/users, chỉ Admin, dùng chung
+/// <see cref="UserService"/> với web. Học viên và PT xem thông tin của mình qua /auth/me.
 /// </summary>
+[Authorize(Roles = AppRoles.Admin)]
 public sealed class UsersController(UserService userService)
     : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userService);

@@ -9,4 +9,7 @@ public static class AuthErrorCodes
 {
     /// <summary>409: thêm người dùng trùng tai_khoan với một người dùng còn hiệu lực.</summary>
     public const string UserUsernameTaken = "USER_USERNAME_TAKEN";
+
+    /// <summary>401: đăng nhập không thành công, không nói rõ lý do để tránh lộ trạng thái tài khoản.</summary>
+    public const string InvalidCredentials = "AUTH_INVALID_CREDENTIALS";
 }

@@ -1,28 +1,22 @@
-using System.Security.Claims;
 using GymBase.Base.Auth;
 using Microsoft.AspNetCore.Http;
 
 namespace GymBase.Base.Hosting.Auth;
 
-// TODO(AUTH): chốt tên claim khi phát hành JWT; JWT phải có tên đăng nhập và Id dạng Guid. Mục 12.
-/// <summary>Đọc người dùng hiện tại từ claims của request đã xác thực.</summary>
+/// <summary>Đọc người dùng hiện tại từ claims của request đã xác thực. Tên claim: docs/api/xac-thuc.md, mục 3.</summary>
 public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : ICurrentUser
 {
-    private static readonly string[] IdClaims = [ClaimTypes.NameIdentifier, "sub"];
-    private static readonly string[] NameClaims = [ClaimTypes.Name, "unique_name", "preferred_username", "name"];
+    public Guid? UserId => ReadGuid(JwtClaimNames.Subject);
 
-    public Guid? UserId => Guid.TryParse(FindClaim(IdClaims), out var id) ? id : null;
+    public string? UserName => ReadClaim(JwtClaimNames.UserName);
 
-    public string? UserName => FindClaim(NameClaims);
+    public Guid? SessionId => ReadGuid(JwtClaimNames.Session);
 
-    private string? FindClaim(string[] claimTypes)
+    private Guid? ReadGuid(string claimType) => Guid.TryParse(ReadClaim(claimType), out var value) ? value : null;
+
+    private string? ReadClaim(string claimType)
     {
         var user = httpContextAccessor.HttpContext?.User;
-        if (user?.Identity?.IsAuthenticated != true)
-        {
-            return null;
-        }
-
-        return claimTypes.Select(user.FindFirstValue).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+        return user?.Identity?.IsAuthenticated == true ? user.FindFirst(claimType)?.Value : null;
     }
 }

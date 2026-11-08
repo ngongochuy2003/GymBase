@@ -2,6 +2,8 @@ using GymBase.Base.Auth;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Entities;
 using GymBase.Base.Paging;
+using GymBase.Base.Validation;
+using FluentValidation;
 
 namespace GymBase.Base.Crud;
 
@@ -19,8 +21,14 @@ namespace GymBase.Base.Crud;
 /// <param name="repository">DL của bảng, ví dụ <c>IUserRepository</c>.</param>
 /// <param name="timeProvider">Nguồn giờ UTC để ghi ngày tạo, ngày sửa; test truyền giờ cố định.</param>
 /// <param name="currentUser">Người đang thao tác, ghi vào người tạo, người sửa.</param>
+/// <param name="createValidator">Kiểm tra body khi thêm, chạy trước mọi thao tác khác.</param>
+/// <param name="updateValidator">Kiểm tra body khi sửa, chạy trước mọi thao tác khác.</param>
 public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
-    IBaseRepository<TEntity> repository, TimeProvider timeProvider, ICurrentUser currentUser)
+    IBaseRepository<TEntity> repository,
+    TimeProvider timeProvider,
+    ICurrentUser currentUser,
+    IValidator<TCreateDto> createValidator,
+    IValidator<TUpdateDto> updateValidator)
     : ICrudService<TDto, TCreateDto, TUpdateDto>
     where TEntity : BaseEntity
 {
@@ -39,6 +47,9 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
     /// <summary>Chép các trường được phép sửa từ body vào entity.</summary>
     protected abstract void ApplyUpdate(TEntity entity, TUpdateDto dto);
 
+    /// <summary>Kiểm tra nghiệp vụ trước khi thêm, ví dụ chặn trùng mã. Chạy sau validator nên dto đã hợp lệ.</summary>
+    protected virtual Task BeforeCreateAsync(TCreateDto dto, CancellationToken cancellationToken) => Task.CompletedTask;
+
     public virtual async Task<PagingResult<TDto>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
         var page = await Repository.GetPagingAsync(request.Normalize(), cancellationToken);
@@ -50,6 +61,9 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
 
     public virtual async Task<TDto> CreateAsync(TCreateDto dto, CancellationToken cancellationToken)
     {
+        await createValidator.ValidateOrThrowAsync(dto, cancellationToken);
+        await BeforeCreateAsync(dto, cancellationToken);
+
         var entity = CreateEntity(dto);
         if (entity is BaseAuditableEntity auditable)
         {
@@ -62,6 +76,8 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
 
     public virtual async Task<TDto> UpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken)
     {
+        await updateValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
         var entity = await GetEntityOrThrowAsync(id, cancellationToken);
 
         ApplyUpdate(entity, dto);
@@ -110,6 +126,7 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
         new($"Không tìm thấy {EntityDisplayName} hoặc {EntityDisplayName} đã bị xóa.");
 
     private DateTime UtcNow => TimeProvider.GetUtcNow().UtcDateTime;
+
 
     private void MarkUpdated(TEntity entity)
     {

@@ -1,8 +1,10 @@
 using GymBase.Base.Auth;
 using GymBase.Base.Crud;
 using GymBase.Base.Exceptions;
+using FluentValidation;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.Contract.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace GymBase.BLAuth.NguoiDung;
 
@@ -11,8 +13,15 @@ namespace GymBase.BLAuth.NguoiDung;
 /// CRUD lấy từ <see cref="BaseService{TEntity,TDto,TCreateDto,TUpdateDto}"/>; ở đây map entity ↔ DTO
 /// và chặn trùng tên đăng nhập.
 /// </summary>
-public sealed class UserService(IUserRepository userRepository, TimeProvider timeProvider, ICurrentUser currentUser)
-    : BaseService<nguoi_dung, NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userRepository, timeProvider, currentUser)
+public sealed class UserService(
+    IUserRepository userRepository,
+    TimeProvider timeProvider,
+    ICurrentUser currentUser,
+    IValidator<NguoiDungCreateDto> createValidator,
+    IValidator<NguoiDungUpdateDto> updateValidator,
+    IPasswordHasher<nguoi_dung> passwordHasher)
+    : BaseService<nguoi_dung, NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(
+        userRepository, timeProvider, currentUser, createValidator, updateValidator)
 {
     protected override string EntityDisplayName => "người dùng";
 
@@ -20,7 +29,7 @@ public sealed class UserService(IUserRepository userRepository, TimeProvider tim
     /// <see cref="AuthErrorCodes.UserUsernameTaken"/>: đã có người dùng còn hiệu lực trùng tai_khoan
     /// (không phân biệt hoa thường). Tên đăng nhập của người dùng đã xóa được dùng lại.
     /// </exception>
-    public override async Task<NguoiDungDto> CreateAsync(NguoiDungCreateDto dto, CancellationToken cancellationToken)
+    protected override async Task BeforeCreateAsync(NguoiDungCreateDto dto, CancellationToken cancellationToken)
     {
         var taiKhoan = dto.tai_khoan.Trim();
         if (await userRepository.ExistsByTaiKhoanAsync(taiKhoan, cancellationToken))
@@ -30,8 +39,6 @@ public sealed class UserService(IUserRepository userRepository, TimeProvider tim
                 $"Tên đăng nhập '{taiKhoan}' đã tồn tại.",
                 AuthErrorCodes.UserUsernameTaken);
         }
-
-        return await base.CreateAsync(dto, cancellationToken);
     }
 
     protected override NguoiDungDto ToDto(nguoi_dung entity) => new(
@@ -45,14 +52,19 @@ public sealed class UserService(IUserRepository userRepository, TimeProvider tim
         entity.ngay_tao,
         entity.ngay_chinh_sua);
 
-    protected override nguoi_dung CreateEntity(NguoiDungCreateDto dto) => new()
+    protected override nguoi_dung CreateEntity(NguoiDungCreateDto dto)
     {
-        tai_khoan = dto.tai_khoan.Trim(),
-        ho_ten = dto.ho_ten.Trim(),
-        email = dto.email?.Trim(),
-        so_dien_thoai = dto.so_dien_thoai?.Trim(),
-        vai_tro = dto.vai_tro,
-    };
+        var user = new nguoi_dung
+        {
+            tai_khoan = dto.tai_khoan.Trim(),
+            ho_ten = dto.ho_ten.Trim(),
+            email = dto.email?.Trim(),
+            so_dien_thoai = dto.so_dien_thoai?.Trim(),
+            vai_tro = dto.vai_tro,
+        };
+        user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
+        return user;
+    }
 
     protected override void ApplyUpdate(nguoi_dung entity, NguoiDungUpdateDto dto)
     {

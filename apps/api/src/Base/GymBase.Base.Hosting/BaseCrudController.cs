@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GymBase.Base.Hosting;
 
-// TODO(AUTH): khi có xác thực, controller cần giới hạn quyền ghi thì override action và gắn [Authorize(Roles = ...)]. Mục 12.
 /// <summary>
 /// Controller CRUD dùng chung, đủ 5 action: GET danh sách, GET {id}, POST, PUT {id}, DELETE {id}.
 /// Action không try/catch: BL ném exception nghiệp vụ (không tìm thấy, trùng…), global exception

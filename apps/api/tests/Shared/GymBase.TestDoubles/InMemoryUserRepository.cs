@@ -22,6 +22,10 @@ public sealed class InMemoryUserRepository : InMemoryBaseRepository<nguoi_dung>,
         Task.FromResult(Store.All().Any(user =>
             !user.is_deleted && string.Equals(user.tai_khoan, taiKhoan, StringComparison.OrdinalIgnoreCase)));
 
+    public Task<nguoi_dung?> FindByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken) =>
+        Task.FromResult(Store.All().FirstOrDefault(user =>
+            !user.is_deleted && string.Equals(user.tai_khoan, taiKhoan, StringComparison.OrdinalIgnoreCase)));
+
     private static IEnumerable<nguoi_dung> CreateMockUsers() =>
     [
         CreateMock("0193f0a0-0000-7000-8000-000000000001", "admin", "Quản trị viên", "admin@gymbase.local", "0900000001", "Admin", true, false, 1),

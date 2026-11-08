@@ -17,4 +17,7 @@ public sealed class UserRepository(AppDbContext db) : BaseRepository<nguoi_dung>
 
     public Task<bool> ExistsByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken) =>
         Set.AnyAsync(u => u.tai_khoan == taiKhoan, cancellationToken);
+
+    public Task<nguoi_dung?> FindByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken) =>
+        Set.FirstOrDefaultAsync(u => u.tai_khoan == taiKhoan, cancellationToken);
 }
