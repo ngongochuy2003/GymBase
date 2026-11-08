@@ -16,4 +16,5 @@ headers {
 
 assert {
   res.status: eq 404
+  res.body.code: eq NOT_FOUND
 }

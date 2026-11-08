@@ -1,0 +1,33 @@
+meta {
+  name: Người dùng - thêm trùng tên đăng nhập (409)
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{mobileApi}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "tai_khoan": "ADMIN",
+    "ho_ten": "Trùng tên đăng nhập",
+    "vai_tro": "Admin"
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.code: eq USER_USERNAME_TAKEN
+}
+
+docs {
+  "ADMIN" trùng với người dùng mẫu "admin" (so khớp không phân biệt hoa thường).
+  Trả ProblemDetails có detail tiếng Việt và errors.tai_khoan.
+}

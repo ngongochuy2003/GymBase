@@ -24,5 +24,5 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 | `ERROR` | Exception nghiệp vụ + ProblemDetails, chặn dữ liệu trùng |
 | `PAGING` | Sort, filter theo danh sách cột cho phép |
 | `CURRENT-USER` | `ICurrentUser` để ghi `nguoi_tao`, `nguoi_chinh_sua` |
-| `HOST` | `AddGymBaseApi()` / `UseGymBaseApi()` dùng chung cho các host: CORS, LowercaseUrls… |
+| `HOST` | `AddAppApi()` / `UseAppApi()` dùng chung cho các host: CORS, LowercaseUrls… |
 | `AUTH` | Xác thực, phân quyền, mật khẩu |

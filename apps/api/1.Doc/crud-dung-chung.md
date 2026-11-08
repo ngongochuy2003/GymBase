@@ -67,12 +67,14 @@ Route có tiền tố kênh (`/api/web` hoặc `/api/mobile`), ví dụ `/api/we
 | Request | Thành công | Lỗi |
 | --- | --- | --- |
 | `GET /v1/users?page=1&page_size=20&search=abc` | 200, `PagingResult<TDto>`: `data` (mảng `TDto`) và `meta` (`page`, `page_size`, `total`, `total_page`, `ranger` gồm `from`, `to`) | |
-| `GET /v1/users/{id}` | 200, `TDto` | 404 nếu không có hoặc đã xóa |
-| `POST /v1/users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 nếu body vi phạm DataAnnotations |
-| `PUT /v1/users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 nếu không có hoặc đã xóa |
-| `DELETE /v1/users/{id}` | 204 | 404 nếu không có hoặc đã xóa |
+| `GET /v1/users/{id}` | 200, `TDto` | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
+| `POST /v1/users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 `VALIDATION_FAILED` nếu body vi phạm DataAnnotations; 409 `USER_USERNAME_TAKEN` nếu trùng `tai_khoan` |
+| `PUT /v1/users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 `NOT_FOUND` nếu không có hoặc đã xóa |
+| `DELETE /v1/users/{id}` | 204 | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
 
-Lỗi 400 do `[ApiController]` tự trả (ProblemDetails, có `errors` theo từng trường) trước khi vào BL.
+Mọi lỗi trả ProblemDetails có `code`, `detail` tiếng Việt và `trace_id`. Lỗi 400 do `[ApiController]`
+tự trả trước khi vào BL, có `errors` theo từng trường. Các lỗi khác do BL ném exception, global
+exception handler đổi thành ProblemDetails; controller không try/catch.
 
 Ví dụ danh sách (`?page=2&page_size=20`, có 57 bản ghi):
 
@@ -95,6 +97,7 @@ không có giá trị "lấy tất cả". Quy ước response đầy đủ, gồ
 | Thêm | `CreateEntity(dto)` → Id UUIDv7 có sẵn → nếu là `BaseAuditableEntity` thì gán `ngay_tao`, `nguoi_tao` → `InsertAsync` |
 | Sửa | Đọc bản ghi → `ApplyUpdate(entity, dto)` → gán `ngay_chinh_sua`, `nguoi_chinh_sua` → `UpdateAsync` |
 | Xóa | Entity có `ISoftDelete` thì đặt `is_deleted = true` rồi `UpdateAsync` (xóa mềm); không có thì `DeleteAsync` (xóa hẳn) |
+| Xem, sửa, xóa bản ghi không có | Ném `NotFoundException` ("Không tìm thấy {EntityDisplayName} hoặc … đã bị xóa."); override `EntityDisplayName` để câu báo lỗi nói đúng tên đối tượng |
 
 - Giờ lấy từ `TimeProvider` (đăng ký `TimeProvider.System`), test truyền giờ cố định.
 - `nguoi_tao` / `nguoi_chinh_sua` hiện là `null`; sẽ lấy từ `ICurrentUser` khi làm xác thực
@@ -178,7 +181,11 @@ public sealed class GoiTapBL(IGoiTapDL goiTapDL, TimeProvider timeProvider)
 
 - `Create` và `Update` dùng DTO riêng để client không gửi được `Id`, `ngay_tao`, `is_deleted`…
 - Quy tắc nghiệp vụ riêng (ví dụ mã gói không trùng) thì override `CreateAsync` / `UpdateAsync`,
-  kiểm tra rồi gọi `base.CreateAsync(...)`. BL **không** viết SQL.
+  kiểm tra rồi gọi `base.CreateAsync(...)`. Vi phạm thì ném exception trong
+  `GymBase.AMISBase.BL.Exceptions`, ví dụ trùng thì
+  `throw new ConflictException(nameof(GoiTapCreateDto.ma_goi), "Mã gói 'G01' đã tồn tại.", DIErrorCodes.GoiTapCodeTaken)`.
+  Mẫu đầy đủ: `UserBL.CreateAsync`. Bảng exception và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md).
+  BL **không** viết SQL.
 
 ### Bước 4: Controller
 
@@ -220,7 +227,7 @@ Hai dòng đầu chỉ cần một lần cho mỗi host.
 | Việc | Ghi chú |
 | --- | --- |
 | `BaseDL<TEntity>` dùng EF Core + MySQL | Mục 3 trong `docs/api/viec-con-lai-base.md` |
-| Lỗi nghiệp vụ (trùng mã, không được phép…) trả mã lỗi chuẩn | Mục 7: exception + ProblemDetails. Hiện chưa chặn trùng `tai_khoan` |
+| Thông báo lỗi DataAnnotations bằng tiếng Việt | Mục 8: FluentValidation. Hiện `errors` của lỗi 400 vẫn là câu tiếng Anh mặc định |
 | Sort, filter | Mục 6; chỉ cho phép cột trong danh sách trắng |
 | `nguoi_tao` / `nguoi_chinh_sua` | Mục 10: `ICurrentUser` |
-| URL chữ thường (`Location` đang là `/Users/...`) | Mục 11: `AddGymBaseApi()` dùng chung, bật `LowercaseUrls` |
+| URL chữ thường (`Location` đang là `/Users/...`) | Mục 11: `AddAppApi()` dùng chung, bật `LowercaseUrls` |

@@ -8,7 +8,7 @@ web và mobile. Đây là nội dung của task **API-02** và mục 6, 7 trong
 | --- | --- |
 | Dạng danh sách `{ data, meta }` | **Đã chốt 08/11, đã làm** (`PagingResult<T>`) |
 | Các response thành công khác | **Đã làm** trong `BaseCrudController` |
-| Dạng lỗi (ProblemDetails), bộ mã lỗi, exception | **Đề xuất**, chưa làm (mục 7) |
+| Dạng lỗi (ProblemDetails), bộ mã lỗi, exception | **Đã làm 08/11** (mục 7): exception ở `AMISBase.BL/Exceptions`, handler ở `AMISBase.API/Errors`, mobile đọc qua `toApiError` |
 | Sort, filter | **Đề xuất**, chưa làm (mục 6) |
 
 Khi một phần đề xuất được chốt hoặc làm xong, sửa bảng trên.
@@ -102,22 +102,20 @@ Trang vượt quá số trang **không phải lỗi**: trả 200, `data` rỗng.
 
 ## 3. Khi lỗi
 
-> Phần này là **đề xuất**, sẽ làm ở mục 7. Hiện tại chỉ có lỗi 400 (do `[ApiController]` tự trả)
-> và 404 (body rỗng).
-
-Mọi lỗi trả header `Content-Type: application/problem+json` và body:
+Mọi lỗi trả header `Content-Type: application/problem+json` và body (response thật của
+`POST /api/web/v1/users` khi trùng tên đăng nhập):
 
 ```json
 {
-  "type": "https://gymbase.local/errors/duplicate",
-  "title": "Dữ liệu bị trùng",
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Dữ liệu bị xung đột",
   "status": 409,
   "detail": "Tên đăng nhập 'an.nv' đã tồn tại.",
   "instance": "/api/web/v1/users",
   "code": "USER_USERNAME_TAKEN",
   "trace_id": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
   "errors": {
-    "tai_khoan": ["Tên đăng nhập đã tồn tại."]
+    "tai_khoan": ["Tên đăng nhập 'an.nv' đã tồn tại."]
   }
 }
 ```
@@ -125,17 +123,20 @@ Mọi lỗi trả header `Content-Type: application/problem+json` và body:
 | Trường | Bắt buộc | Ý nghĩa |
 | --- | --- | --- |
 | `status` | Có | Trùng mã HTTP |
-| `title` | Có | Tên ngắn của loại lỗi, cố định theo `status` |
-| `type` | Có | URI định danh loại lỗi (chỉ để định danh, không cần mở được). Tên miền `gymbase.local` là tạm, đổi khi có tên miền thật |
+| `title` | Có | Tên ngắn tiếng Việt của loại lỗi, cố định theo `status` (mục 4.1) |
+| `type` | Có | Link tới mục tương ứng của RFC 9110, do ASP.NET Core tự điền theo `status`. Client không cần dùng |
 | `detail` | Có | Câu tiếng Việt **hiển thị được ngay cho người dùng**. Lỗi 500 chỉ có câu chung chung |
 | `instance` | Có | Đường dẫn của request bị lỗi |
 | `code` | Có | Mã lỗi (mục 4). **Client rẽ nhánh theo `code`**, không so chuỗi `detail` |
 | `trace_id` | Có | Dùng để tìm log tương ứng. Khi báo lỗi, gửi kèm giá trị này |
 | `errors` | Không | Chỉ có khi lỗi gắn với từng ô nhập. Khóa là tên trường JSON, giá trị là danh sách thông báo |
 
-Lỗi 400 do `[ApiController]` tự trả (body sai kiểu, vi phạm DataAnnotations) cũng phải theo đúng
-dạng trên, tức là có thêm `code` = `VALIDATION_FAILED` và `trace_id`. Phần này cấu hình bằng
-`AddProblemDetails(o => o.CustomizeProblemDetails = …)` trong `AddGymBaseApi()` (mục 11).
+Lỗi do framework tự trả cũng theo đúng dạng trên: 400 khi body sai kiểu hoặc vi phạm
+DataAnnotations (có `errors`), 404 khi sai đường dẫn, 405 khi sai method… `ProblemDetailsCustomizer`
+điền `title`, `detail`, `code`, `trace_id` cho mọi ProblemDetails, kể cả những lỗi này.
+
+**Hạn chế hiện tại:** thông báo trong `errors` của lỗi DataAnnotations vẫn là câu tiếng Anh mặc
+định (`"The tai_khoan field is required."`). Mục 8 (FluentValidation) sẽ đổi sang tiếng Việt.
 
 ---
 
@@ -149,13 +150,15 @@ dạng trên, tức là có thêm `code` = `VALIDATION_FAILED` và `trace_id`. P
 | 401 | `UNAUTHORIZED` | Chưa xác thực | Chưa đăng nhập, token sai hoặc hết hạn, sai tên đăng nhập hoặc mật khẩu | Gọi API không kèm token |
 | 403 | `FORBIDDEN` | Không có quyền | Đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa | Học viên gọi API quản trị |
 | 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id. Bản ghi đã xóa mềm cũng tính là không có | `GET /users/{id}` với id không tồn tại |
-| 409 | `DUPLICATE` | Dữ liệu bị trùng | Trùng giá trị phải duy nhất | Trùng `tai_khoan` |
-| 409 | `CONCURRENCY_CONFLICT` | Dữ liệu đã thay đổi | Bản ghi đã bị người khác sửa trước, client cần tải lại | Hai người cùng sửa một hội viên |
+| 409 | `DUPLICATE` | Dữ liệu bị xung đột | Trùng giá trị phải duy nhất | Trùng mã gói tập |
+| 409 | `CONCURRENCY_CONFLICT` | Dữ liệu bị xung đột | Bản ghi đã bị người khác sửa trước, client cần tải lại | Hai người cùng sửa một hội viên |
 | 422 | `BUSINESS_RULE` | Không thực hiện được | Dữ liệu đúng định dạng nhưng vi phạm quy tắc nghiệp vụ | Gia hạn gói tập đã hủy |
 | 500 | `INTERNAL_ERROR` | Lỗi hệ thống | Lỗi không lường trước, kể cả lỗi DB. `detail` luôn là câu chung chung | Mất kết nối MySQL |
 
-Hai mã có thể dùng sau, khi có nhu cầu: 429 `TOO_MANY_REQUESTS` (giới hạn số lần gọi, ví dụ đăng
-nhập sai nhiều lần) và 503 `SERVICE_UNAVAILABLE` (bảo trì).
+Mã HTTP khác do framework trả (405 sai method, 415 sai Content-Type…) có `code` = `HTTP_<mã>`, ví
+dụ `HTTP_405`, `detail` = "Yêu cầu không hợp lệ.". Mã 5xx khác 500 cũng chỉ có câu chung chung.
+Khi cần, có thể thêm mã riêng như 429 `TOO_MANY_REQUESTS` (giới hạn số lần gọi, ví dụ đăng nhập sai
+nhiều lần) hoặc 503 `SERVICE_UNAVAILABLE` (bảo trì).
 
 **Tại sao lỗi nhập liệu là 400 chứ không phải 422?** `[ApiController]` của ASP.NET Core tự trả 400
 khi body sai. Dùng 400 cho mọi lỗi nhập liệu thì lỗi do framework bắt và lỗi do FluentValidation
@@ -176,22 +179,21 @@ HTTP của mã chung tương ứng**.
   dấu ngừng dùng trong bảng, không dùng lại tên đó cho nghĩa khác.
 - Không cần mã chi tiết thì dùng mã chung ở mục 4.1.
 
-| HTTP | `code` | Khi nào |
-| --- | --- | --- |
-| 409 | `USER_USERNAME_TAKEN` | Thêm người dùng trùng `tai_khoan` |
-| 401 | `AUTH_INVALID_CREDENTIALS` | Sai tên đăng nhập hoặc mật khẩu |
-| 403 | `AUTH_ACCOUNT_LOCKED` | Tài khoản đang bị khóa |
-| 422 | `MEMBERSHIP_EXPIRED` | *(ví dụ)* Thao tác trên gói tập đã hết hạn |
+| HTTP | `code` | Hằng số | Khi nào | Trạng thái |
+| --- | --- | --- | --- | --- |
+| 409 | `USER_USERNAME_TAKEN` | `SystemErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `tai_khoan` với người dùng còn hiệu lực (không phân biệt hoa thường). `errors` có `tai_khoan` | Đang dùng |
+| 401 | `AUTH_INVALID_CREDENTIALS` | | Sai tên đăng nhập hoặc mật khẩu | Dự kiến, mục 12 |
+| 403 | `AUTH_ACCOUNT_LOCKED` | | Tài khoản đang bị khóa | Dự kiến, mục 12 |
 
 Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code dùng mã đó.
 
 ---
 
-## 5. Hiện thực ở backend (đề xuất cho mục 7)
+## 5. Hiện thực ở backend
 
-| Exception (`AMISBase.BL`) | HTTP | `code` mặc định |
+| Exception (`GymBase.AMISBase.BL.Exceptions`) | HTTP | `code` mặc định |
 | --- | --- | --- |
-| `ValidationException` | 400 | `VALIDATION_FAILED` |
+| `ValidationFailedException` | 400 | `VALIDATION_FAILED` |
 | `UnauthorizedException` | 401 | `UNAUTHORIZED` |
 | `ForbiddenException` | 403 | `FORBIDDEN` |
 | `NotFoundException` | 404 | `NOT_FOUND` |
@@ -200,16 +202,33 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
 | `BusinessRuleException` | 422 | `BUSINESS_RULE` |
 | Exception khác | 500 | `INTERNAL_ERROR` |
 
-- Tất cả kế thừa `BusinessException(string code, string detail)`. Hàm khởi tạo nhận `code` để
-  ghi đè bằng mã chi tiết, ví dụ `throw new ConflictException("USER_USERNAME_TAKEN", "Tên đăng nhập 'an.nv' đã tồn tại.")`.
-- Hằng số mã lỗi đặt trong lớp tĩnh `ErrorCodes`: mã chung ở AMISBase, mã chi tiết ở BL của
-  từng module.
-- Một **global exception handler** (`IExceptionHandler`) ở `AMISBase.API` đổi exception thành
-  ProblemDetails. Controller **không** viết `try/catch`.
-- Lỗi 4xx ghi log mức Information hoặc Warning. Lỗi 500 ghi log mức Error kèm stack trace, rồi
-  trả `detail` chung chung.
-- BL ném `NotFoundException` thay vì trả `null`, nên `BaseCrudController` bỏ được các nhánh
-  `dto is null ? NotFound() : …`.
+- Tất cả kế thừa `BusinessException`, có `Kind` (loại lỗi), `Code`, `Message` (thành `detail`) và
+  `Errors` (thành `errors`). BL chỉ biết `BusinessErrorKind`, không biết mã HTTP; tầng API đổi
+  `Kind` sang mã HTTP (`AppExceptionHandler.ToStatusCode`).
+- Hàm khởi tạo nhận `code` để thay bằng mã chi tiết. Lỗi gắn với một trường thì truyền tên trường
+  để có `errors`, ví dụ trong `UserBL.CreateAsync`:
+
+  ```csharp
+  throw new ConflictException(
+      nameof(NguoiDungCreateDto.tai_khoan),
+      $"Tên đăng nhập '{taiKhoan}' đã tồn tại.",
+      SystemErrorCodes.UserUsernameTaken);
+  ```
+
+- Hằng số mã lỗi: mã chung ở `ErrorCodes` (AMISBase.BL), mã chi tiết ở `<Module>ErrorCodes` trong
+  BL của module (ví dụ `GymBase.BLSystem.SystemErrorCodes`).
+- `BaseBL` tự ném `NotFoundException` khi xem, sửa, xóa bản ghi không có. Câu báo lỗi dùng
+  `EntityDisplayName` (ví dụ `UserBL` đặt là "người dùng").
+- `AppExceptionHandler` (`IExceptionHandler`, ở `AMISBase.API/Errors`) đổi exception thành
+  ProblemDetails. Controller **không** viết `try/catch`. Lỗi 4xx ghi log mức Information; lỗi
+  khác ghi log mức Error kèm stack trace, rồi trả `detail` chung chung. Request bị client hủy
+  không ghi log lỗi.
+- `ProblemDetailsCustomizer` điền `title`, `detail`, `code`, `trace_id`, `instance` cho mọi
+  ProblemDetails, kể cả lỗi framework tự trả.
+- Mỗi host gọi `builder.Services.AddAppErrorHandling()` và `app.UseAppErrorHandling()`
+  (đặt trước `UseHttpsRedirection`). Khi làm mục 11 thì gộp vào `AddAppApi()` / `UseAppApi()`.
+- Test: `8.Unitest/.../AMISBase/ErrorHandlingTests.cs` gọi HTTP thật qua TestServer cho từng
+  loại lỗi.
 
 **So với dự án tham khảo (dev-HuyNgo).** Dự án đó có `ErrorCode` 404, 460–464, nhưng các số này
 không thành mã HTTP: mọi lỗi nghiệp vụ, kể cả không tìm thấy, đều trả 400, còn lỗi khác trả 500
@@ -229,7 +248,7 @@ rõ lý do, và quy tắc "`detail` của lỗi 4xx luôn hiện được".
 - Rẽ nhánh theo `code`. Gặp `code` lạ thì xử lý theo mã HTTP.
 - Khi báo lỗi cho người dùng hoặc gửi log, kèm `trace_id`.
 
-**Mobile cần sửa khi làm mục 7:** `apps/mobile/src/core/api/api-error.ts` hiện chỉ đoán thông
-báo theo mã HTTP. Nó hiểu 422 là "thông tin chưa hợp lệ" và 409 là "dữ liệu đã thay đổi", tức là
-lệch với bảng ở mục 4.1. Cần sửa `toApiError` để đọc `code`, `detail`, `errors`, `trace_id` từ
-ProblemDetails. Thông báo theo mã HTTP chỉ giữ làm phương án dự phòng khi không có body.
+**Mobile:** `toApiError` trong `apps/mobile/src/core/api/api-error.ts` đọc ProblemDetails thành
+`ApiError` có `message` (là `detail` với lỗi 4xx), `status`, `code`, `fieldErrors` (từ `errors`) và
+`traceId`. Lỗi 5xx và response không có ProblemDetails dùng câu dự phòng theo mã HTTP, `code` là
+`HTTP_<mã>`; lỗi mạng là `NETWORK`, hết thời gian chờ là `TIMEOUT`.
