@@ -1,5 +1,6 @@
 namespace GymBase.AMISBase.DL.Contract.Paging;
 
+// TODO(PAGING): thêm sort và filter; chỉ nhận cột nằm trong danh sách cho phép để tránh SQL injection. Mục 6.
 /// <summary>
 /// Tham số lấy danh sách có phân trang, nhận từ query string (?page=1&amp;pageSize=20&amp;search=...).
 /// Đặt ở DL.Contract để cả BL và DL dùng chung.
