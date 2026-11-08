@@ -10,6 +10,7 @@ này chỉ chứa file nằm trong `1.Doc/`, không đính kèm file ở ngoài.
 | --- | --- |
 | `cach-chay-api.md` | Chạy host nào cho web/mobile, task VS Code, điện thoại thật |
 | `crud-dung-chung.md` | Lớp nền CRUD trong AMISBASE và các bước thêm CRUD cho một bảng mới |
+| `quy-uoc-response.md` | Dạng response khi thành công và khi lỗi, phân trang, bộ mã lỗi |
 | `bruno/` | Collection [Bruno](https://www.usebruno.com/) để gọi thử API (thay cho file `.http`) |
 
 Tài liệu dùng chung của monorepo nằm ở `docs/` ở gốc repo, ví dụ:

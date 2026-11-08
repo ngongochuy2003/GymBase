@@ -84,7 +84,8 @@ Ví dụ danh sách (`?page=2&page_size=20`, có 57 bản ghi):
 ```
 
 `ranger` là 0–0 khi không có bản ghi hoặc trang vượt quá `total_page`. `page_size` tối đa 100,
-không có giá trị "lấy tất cả".
+không có giá trị "lấy tất cả". Quy ước response đầy đủ, gồm dạng lỗi và mã lỗi:
+[quy-uoc-response.md](quy-uoc-response.md).
 
 ## 4. BaseBL tự làm gì
 

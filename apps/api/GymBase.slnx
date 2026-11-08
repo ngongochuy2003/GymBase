@@ -3,6 +3,7 @@
     <File Path="1.Doc/README.md" />
     <File Path="1.Doc/cach-chay-api.md" />
     <File Path="1.Doc/crud-dung-chung.md" />
+    <File Path="1.Doc/quy-uoc-response.md" />
   </Folder>
   <Folder Name="/2. Config/">
     <File Path="2.Config/README.md" />
