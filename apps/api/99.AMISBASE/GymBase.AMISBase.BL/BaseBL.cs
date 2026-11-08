@@ -1,3 +1,4 @@
+using GymBase.AMISBase.BL.Exceptions;
 using GymBase.AMISBase.DL.Contract;
 using GymBase.AMISBase.DL.Contract.Entities;
 using GymBase.AMISBase.DL.Contract.Paging;
@@ -7,7 +8,9 @@ namespace GymBase.AMISBase.BL;
 /// <summary>
 /// CRUD dùng chung: chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (giờ UTC) và xóa mềm.
 /// BL của từng bảng chỉ cần viết 3 hàm map. Muốn thêm kiểm tra nghiệp vụ thì override
-/// <see cref="CreateAsync"/>, <see cref="UpdateAsync"/> hoặc <see cref="DeleteAsync"/>.
+/// <see cref="CreateAsync"/>, <see cref="UpdateAsync"/> hoặc <see cref="DeleteAsync"/> và ném
+/// exception trong <see cref="Exceptions"/> (trùng → <see cref="ConflictException"/>, vi phạm quy tắc →
+/// <see cref="BusinessRuleException"/>…). Không có bản ghi thì tự ném <see cref="NotFoundException"/>.
 /// </summary>
 /// <typeparam name="TEntity">Entity ánh xạ tới bảng.</typeparam>
 /// <typeparam name="TDto">Dữ liệu trả ra API.</typeparam>
@@ -41,11 +44,8 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
         return page.Map(ToDto);
     }
 
-    public virtual async Task<TDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
-    {
-        var entity = await DL.GetByIdAsync(id, cancellationToken);
-        return entity is null ? default : ToDto(entity);
-    }
+    public virtual async Task<TDto> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        ToDto(await GetEntityOrThrowAsync(id, cancellationToken));
 
     public virtual async Task<TDto> CreateAsync(TCreateDto dto, CancellationToken cancellationToken)
     {
@@ -59,38 +59,54 @@ public abstract class BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>(IBaseDL<TEnt
         return ToDto(entity);
     }
 
-    public virtual async Task<TDto?> UpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken)
+    public virtual async Task<TDto> UpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken)
     {
-        var entity = await DL.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
-        {
-            return default;
-        }
+        var entity = await GetEntityOrThrowAsync(id, cancellationToken);
 
         ApplyUpdate(entity, dto);
         MarkUpdated(entity);
 
-        return await DL.UpdateAsync(entity, cancellationToken) ? ToDto(entity) : default;
+        // Bản ghi bị xóa giữa lúc đọc và lúc ghi.
+        if (!await DL.UpdateAsync(entity, cancellationToken))
+        {
+            throw NotFound();
+        }
+
+        return ToDto(entity);
     }
 
     /// <summary>Entity có <see cref="ISoftDelete"/> thì xóa mềm, còn lại xóa hẳn.</summary>
-    public virtual async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public virtual async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entity = await DL.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        var entity = await GetEntityOrThrowAsync(id, cancellationToken);
+
+        bool deleted;
+        if (entity is ISoftDelete softDelete)
         {
-            return false;
+            softDelete.MarkDeleted();
+            MarkUpdated(entity);
+            deleted = await DL.UpdateAsync(entity, cancellationToken);
+        }
+        else
+        {
+            deleted = await DL.DeleteAsync(id, cancellationToken);
         }
 
-        if (entity is not ISoftDelete softDelete)
+        if (!deleted)
         {
-            return await DL.DeleteAsync(id, cancellationToken);
+            throw NotFound();
         }
-
-        softDelete.MarkDeleted();
-        MarkUpdated(entity);
-        return await DL.UpdateAsync(entity, cancellationToken);
     }
+
+    /// <summary>Tên đối tượng trong câu báo lỗi, ví dụ "người dùng" → "Không tìm thấy người dùng…".</summary>
+    protected virtual string EntityDisplayName => "dữ liệu";
+
+    /// <summary>Đọc bản ghi còn hiệu lực; không có hoặc đã xóa thì ném <see cref="NotFoundException"/>.</summary>
+    protected async Task<TEntity> GetEntityOrThrowAsync(Guid id, CancellationToken cancellationToken) =>
+        await DL.GetByIdAsync(id, cancellationToken) ?? throw NotFound();
+
+    protected NotFoundException NotFound() =>
+        new($"Không tìm thấy {EntityDisplayName} hoặc {EntityDisplayName} đã bị xóa.");
 
     private DateTime UtcNow => TimeProvider.GetUtcNow().UtcDateTime;
 

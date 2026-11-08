@@ -1,4 +1,5 @@
 using GymBase.AMISBase.API;
+using GymBase.AMISBase.API.Errors;
 using GymBase.AMISBase.DL.Mysql.InMemory;
 using GymBase.BLSystem.NguoiDung;
 using GymBase.DLSystem.Contract;
@@ -6,11 +7,12 @@ using GymBase.DLSystem.Mysql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// TODO(HOST): gom cấu hình chung của 8 host vào AddGymBaseApi()/UseGymBaseApi() trong AMISBase.API:
-//   CORS đọc origin từ cấu hình, LowercaseUrls, exception handler, TimeProvider. Mục 11.
+// TODO(HOST): gom cấu hình chung của 8 host vào AddAppApi()/UseAppApi() trong AMISBase.API:
+//   CORS đọc origin từ cấu hình, LowercaseUrls, xử lý lỗi (AddAppErrorHandling), TimeProvider. Mục 11.
 
 // Mọi route của host này có tiền tố /api/web (ví dụ /api/web/v1/users)
 builder.Services.AddControllers(options => options.UseApiChannel(ApiChannel.Web));
+builder.Services.AddAppErrorHandling(); // Lỗi nào cũng trả ProblemDetails (code, trace_id)
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
@@ -28,6 +30,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseAppErrorHandling();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 

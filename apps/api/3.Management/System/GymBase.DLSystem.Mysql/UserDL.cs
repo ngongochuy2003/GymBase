@@ -21,6 +21,13 @@ public sealed class UserDL : InMemoryBaseDL<nguoi_dung>, IUserDL
     protected override IEnumerable<string?> GetSearchValues(nguoi_dung user) =>
         [user.tai_khoan, user.ho_ten, user.email, user.so_dien_thoai];
 
+    // TODO(DB): unique index trên tai_khoan phải cho phép trùng với bản ghi đã xóa mềm (BL chỉ chặn
+    //   trùng với người dùng còn hiệu lực); lỗi vi phạm unique khi hai request thêm cùng lúc đổi thành
+    //   ConflictException. Mục 3, 7.
+    public Task<bool> ExistsByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken) =>
+        Task.FromResult(Store.All().Any(user =>
+            !user.is_deleted && string.Equals(user.tai_khoan, taiKhoan, StringComparison.OrdinalIgnoreCase)));
+
     private static IEnumerable<nguoi_dung> CreateMockUsers() =>
     [
         CreateMock("0193f0a0-0000-7000-8000-000000000001", "admin", "Quản trị viên", "admin@gymbase.local", "0900000001", "Admin", true, false, 1),

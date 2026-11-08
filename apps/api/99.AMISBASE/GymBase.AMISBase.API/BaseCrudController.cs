@@ -1,18 +1,20 @@
 using GymBase.AMISBase.BL;
 using GymBase.AMISBase.DL.Contract.Entities;
 using GymBase.AMISBase.DL.Contract.Paging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymBase.AMISBase.API;
 
-// TODO(ERROR): lỗi nghiệp vụ (trùng, không hợp lệ, không có quyền) ném exception và trả ProblemDetails
-//   qua global exception handler, không try/catch trong từng action. Mục 7.
 // TODO(AUTH): khi có xác thực, controller cần giới hạn quyền ghi thì override action và gắn [Authorize(Roles = ...)]. Mục 12.
 /// <summary>
 /// Controller CRUD dùng chung, đủ 5 action: GET danh sách, GET {id}, POST, PUT {id}, DELETE {id}.
-/// Body sai kiểu hoặc vi phạm DataAnnotations của DTO bị [ApiController] trả 400 trước khi vào action.
+/// Action không try/catch: BL ném exception nghiệp vụ (không tìm thấy, trùng…), global exception
+/// handler đổi thành ProblemDetails (xem <c>Errors/AppExceptionHandler</c>). Body sai kiểu hoặc vi
+/// phạm DataAnnotations của DTO bị [ApiController] trả 400 trước khi vào action.
 /// Muốn đổi hành vi một action thì override (các action đều virtual).
 /// </summary>
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError, "application/problem+json")]
 public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<TDto, TCreateDto, TUpdateDto> bl)
     : BaseApiController
     where TDto : IHasId
@@ -27,14 +29,14 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<T
 
     /// <summary>Chi tiết một bản ghi; 404 nếu không có hoặc đã xóa.</summary>
     [HttpGet("{id:guid}")]
-    public virtual async Task<ActionResult<TDto>> GetById(Guid id, CancellationToken cancellationToken)
-    {
-        var dto = await BL.GetByIdAsync(id, cancellationToken);
-        return dto is null ? NotFound() : Ok(dto);
-    }
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    public virtual async Task<ActionResult<TDto>> GetById(Guid id, CancellationToken cancellationToken) =>
+        Ok(await BL.GetByIdAsync(id, cancellationToken));
 
     /// <summary>Thêm mới; 201 kèm header Location trỏ tới bản ghi vừa tạo.</summary>
     [HttpPost]
+    [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
     public virtual async Task<ActionResult<TDto>> Create([FromBody] TCreateDto dto, CancellationToken cancellationToken)
     {
         var created = await BL.CreateAsync(dto, cancellationToken);
@@ -43,15 +45,19 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudBL<T
 
     /// <summary>Sửa; 404 nếu không có hoặc đã xóa.</summary>
     [HttpPut("{id:guid}")]
+    [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public virtual async Task<ActionResult<TDto>> Update(
-        Guid id, [FromBody] TUpdateDto dto, CancellationToken cancellationToken)
-    {
-        var updated = await BL.UpdateAsync(id, dto, cancellationToken);
-        return updated is null ? NotFound() : Ok(updated);
-    }
+        Guid id, [FromBody] TUpdateDto dto, CancellationToken cancellationToken) =>
+        Ok(await BL.UpdateAsync(id, dto, cancellationToken));
 
     /// <summary>Xóa (xóa mềm nếu entity có is_deleted); 204 nếu thành công, 404 nếu không có.</summary>
     [HttpDelete("{id:guid}")]
-    public virtual async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken) =>
-        await BL.DeleteAsync(id, cancellationToken) ? NoContent() : NotFound();
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    public virtual async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await BL.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

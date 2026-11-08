@@ -1,4 +1,5 @@
 using GymBase.AMISBase.API;
+using GymBase.AMISBase.API.Errors;
 using GymBase.AMISBase.DL.Mysql.InMemory;
 using GymBase.BLSystem.NguoiDung;
 using GymBase.DLSystem.Contract;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Mọi route của host này có tiền tố /api/mobile (ví dụ /api/mobile/v1/users)
 builder.Services.AddControllers(options => options.UseApiChannel(ApiChannel.Mobile));
+builder.Services.AddAppErrorHandling(); // Lỗi nào cũng trả ProblemDetails (code, trace_id)
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
@@ -25,6 +27,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseAppErrorHandling();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 

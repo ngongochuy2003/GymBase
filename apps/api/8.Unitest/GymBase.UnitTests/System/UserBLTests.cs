@@ -1,4 +1,6 @@
+using GymBase.AMISBase.BL.Exceptions;
 using GymBase.AMISBase.DL.Contract.Paging;
+using GymBase.BLSystem;
 using GymBase.AMISBase.DL.Mysql.InMemory;
 using GymBase.BLSystem.NguoiDung;
 using GymBase.DLSystem.Mysql;
@@ -18,9 +20,11 @@ public class UserBLTests
 
     private readonly UserBL _bl = new(new UserDL(new InMemoryStore<nguoi_dung>()), new FixedTimeProvider(Now));
 
-    private static readonly NguoiDungCreateDto NewUser = new()
+    private static readonly NguoiDungCreateDto NewUser = NewUserWith(" hv.moi ");
+
+    private static NguoiDungCreateDto NewUserWith(string taiKhoan) => new()
     {
-        tai_khoan = " hv.moi ",
+        tai_khoan = taiKhoan,
         ho_ten = "Học viên mới",
         email = "moi@gymbase.local",
         vai_tro = "Trainee",
@@ -74,15 +78,17 @@ public class UserBLTests
     {
         var user = await _bl.GetByIdAsync(AdminId, CancellationToken.None);
 
-        Assert.NotNull(user);
         Assert.Equal("admin", user.tai_khoan);
     }
 
     [Fact]
-    public async Task GetById_returns_null_for_missing_or_deleted_user()
+    public async Task GetById_throws_not_found_for_missing_or_deleted_user()
     {
-        Assert.Null(await _bl.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
-        Assert.Null(await _bl.GetByIdAsync(DeletedId, CancellationToken.None));
+        var missing = await Assert.ThrowsAsync<NotFoundException>(() => _bl.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => _bl.GetByIdAsync(DeletedId, CancellationToken.None));
+
+        Assert.Equal(ErrorCodes.NotFound, missing.Code);
+        Assert.Equal("Không tìm thấy người dùng hoặc người dùng đã bị xóa.", missing.Message);
     }
 
     [Fact]
@@ -101,6 +107,28 @@ public class UserBLTests
         Assert.Equal(created.Id, page.data[0].Id);
     }
 
+    [Theory]
+    [InlineData("pt.minh")]
+    [InlineData("  PT.Minh ")] // không phân biệt hoa thường, bỏ khoảng trắng
+    public async Task Create_rejects_username_of_active_user(string taiKhoan)
+    {
+        var ex = await Assert.ThrowsAsync<ConflictException>(
+            () => _bl.CreateAsync(NewUserWith(taiKhoan), CancellationToken.None));
+
+        Assert.Equal(SystemErrorCodes.UserUsernameTaken, ex.Code);
+        Assert.Equal(BusinessErrorKind.Conflict, ex.Kind);
+        Assert.Equal(["tai_khoan"], ex.Errors!.Keys);
+        Assert.Equal(5, (await _bl.GetPagingAsync(new PagingRequest(), CancellationToken.None)).meta.total);
+    }
+
+    [Fact]
+    public async Task Create_allows_username_of_deleted_user()
+    {
+        var created = await _bl.CreateAsync(NewUserWith("hv.daxoa"), CancellationToken.None);
+
+        Assert.Equal("hv.daxoa", created.tai_khoan);
+    }
+
     [Fact]
     public async Task Update_changes_allowed_fields_and_sets_modified_time()
     {
@@ -108,32 +136,31 @@ public class UserBLTests
 
         var updated = await _bl.UpdateAsync(AdminId, update, CancellationToken.None);
 
-        Assert.NotNull(updated);
         Assert.Equal("Admin mới", updated.ho_ten);
         Assert.Equal("admin", updated.tai_khoan);
         Assert.False(updated.dang_hoat_dong);
         Assert.Equal(Now, updated.ngay_chinh_sua);
-        Assert.Equal("Admin mới", (await _bl.GetByIdAsync(AdminId, CancellationToken.None))!.ho_ten);
+        Assert.Equal("Admin mới", (await _bl.GetByIdAsync(AdminId, CancellationToken.None)).ho_ten);
     }
 
     [Fact]
-    public async Task Update_returns_null_for_missing_or_deleted_user()
+    public async Task Update_throws_not_found_for_missing_or_deleted_user()
     {
         var update = new NguoiDungUpdateDto { ho_ten = "X", vai_tro = "Trainee" };
 
-        Assert.Null(await _bl.UpdateAsync(Guid.NewGuid(), update, CancellationToken.None));
-        Assert.Null(await _bl.UpdateAsync(DeletedId, update, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => _bl.UpdateAsync(Guid.NewGuid(), update, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => _bl.UpdateAsync(DeletedId, update, CancellationToken.None));
     }
 
     [Fact]
     public async Task Delete_soft_deletes_user_once()
     {
-        Assert.True(await _bl.DeleteAsync(AdminId, CancellationToken.None));
+        await _bl.DeleteAsync(AdminId, CancellationToken.None);
 
-        Assert.Null(await _bl.GetByIdAsync(AdminId, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => _bl.GetByIdAsync(AdminId, CancellationToken.None));
         Assert.Equal(4, (await _bl.GetPagingAsync(new PagingRequest(), CancellationToken.None)).meta.total);
-        Assert.False(await _bl.DeleteAsync(AdminId, CancellationToken.None));
-        Assert.False(await _bl.DeleteAsync(Guid.NewGuid(), CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => _bl.DeleteAsync(AdminId, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => _bl.DeleteAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider

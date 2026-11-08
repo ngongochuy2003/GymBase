@@ -9,4 +9,9 @@ namespace GymBase.DLSystem.Contract;
 /// </summary>
 public interface IUserDL : IBaseDL<nguoi_dung>
 {
+    /// <summary>
+    /// Đã có người dùng còn hiệu lực (chưa xóa) với tên đăng nhập này chưa; so khớp không phân biệt
+    /// hoa thường, giống collation mặc định của MySQL.
+    /// </summary>
+    Task<bool> ExistsByTaiKhoanAsync(string taiKhoan, CancellationToken cancellationToken);
 }
