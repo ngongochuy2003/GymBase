@@ -38,6 +38,6 @@ Dữ liệu danh mục (gói tập, loại bài tập, chi nhánh…) thuộc nh
 Mobile: `app → features → core/shared`; route chỉ gọi screen. Feature không import
 vòng hoặc tùy ý truy cập nội bộ feature khác. Backend trao đổi giữa các nhóm qua interface
 trong `GymBase.ModuleContracts`; API là nơi quyết định quyền, số buổi và tính phí.
-EF migrations đặt trong `GymBase.DLBiz.MySql/Migrations`, solution nằm tại `apps/api/GymBase.slnx`.
+EF migrations đặt trong `GymBase.Persistence/Migrations`, solution nằm tại `apps/api/GymBase.slnx`.
 
 Chuẩn kiến trúc backend: `docs/api/cau-truc-thu-muc.md`.

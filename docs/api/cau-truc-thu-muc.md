@@ -12,7 +12,7 @@ review PR và mở rộng V1 → V3. Cấu trúc trong `apps/api` hiện đã th
 | Nhóm chức năng | Auth / DI (Danh mục) / BIZ, cùng phần nền Base |
 | Tầng project | Mỗi nhóm có BL, DL.Contract, DL.MySql |
 | Dữ liệu | Một MySQL 8.4 dùng chung ở V1; mỗi bảng thuộc đúng một nhóm |
-| DbContext | Một `AppDbContext` duy nhất, đặt trong `GymBase.DLBiz.MySql` |
+| Entity, DbContext, migration | Gom một chỗ: entity ở `GymBase.Entities`, `AppDbContext`, cấu hình bảng và migrations ở `GymBase.Persistence` |
 | Web và mobile | Dùng chung host, BL, DL; chỉ tách controller (`Controllers/` và `Mob/Controllers/`) |
 | Định hướng | Không chuyển sang microservices sớm; chỉ tách module khi có nhu cầu thực tế |
 
@@ -39,6 +39,9 @@ apps/api/
 │   │   └── GymBase.Base.Hosting/   # Controller gốc, route theo kênh, xử lý lỗi ProblemDetails
 │   ├── Contracts/
 │   │   └── GymBase.ModuleContracts/    # Interface công khai cho giao tiếp giữa các nhóm
+│   ├── Data/
+│   │   ├── GymBase.Entities/       # Entity và enum của cột, chia theo nhóm: Auth/, DI/, BIZ/
+│   │   └── GymBase.Persistence/    # AppDbContext, BaseRepository, Configurations/, Migrations/
 │   ├── Auth/
 │   │   ├── GymBase.BLAuth/
 │   │   ├── GymBase.DLAuth.Contract/
@@ -50,7 +53,7 @@ apps/api/
 │   └── BIZ/
 │       ├── GymBase.BLBiz/
 │       ├── GymBase.DLBiz.Contract/
-│       └── GymBase.DLBiz.MySql/    # Có thêm AppDbContext, BaseRepository và Migrations dùng chung
+│       └── GymBase.DLBiz.MySql/
 └── tests/
     ├── Shared/GymBase.TestDoubles/ # DL giả lưu trong bộ nhớ, chỉ project test tham chiếu
     ├── Unit/GymBase.UnitTests/
@@ -62,7 +65,7 @@ Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (co
 `docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
 
 Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
-(`NguoiDung/`, `Entities/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
+(`NguoiDung/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
 thêm thư mục hay chức năng; phải có lý do về ranh giới.
 
 **Quy ước đặt tên:** `BIZ` cho thư mục nhóm, `Biz` trong tên project (`GymBase.BLBiz`);
@@ -81,12 +84,14 @@ tầng và tên project (`GymBase.BLAuth`, `GymBase.DLAuth.MySql`).
 | `GymBase.Base.Hosting` | `BaseApiController`, `BaseCrudController`, route theo kênh, xử lý lỗi ProblemDetails, extension đăng ký dịch vụ nền | Quy tắc nghiệp vụ riêng |
 | `GymBase.ModuleContracts` | Interface công khai và DTO tối thiểu cho giao tiếp giữa các nhóm | DbContext, repository nội bộ, controller |
 | `GymBase.BLAuth` | Người dùng, đăng nhập, refresh/logout, phân quyền, chính sách tài khoản | Truy vấn EF trực tiếp, controller |
-| `GymBase.DLAuth.Contract` | Entity của bảng Auth (`nguoi_dung`…), interface DL (`IUserRepository`) | Hiện thực MySQL |
-| `GymBase.DLAuth.MySql` | Hiện thực DL của Auth, cấu hình entity, truy vấn | Quy tắc nghiệp vụ, gọi BLAuth |
+| `GymBase.Entities` | Entity và enum của cột, chia thư mục theo nhóm sở hữu bảng | Nghiệp vụ, EF Core |
+| `GymBase.Persistence` | `AppDbContext`, `BaseRepository`, cấu hình bảng, migrations, đăng ký EF Core | Nghiệp vụ, repository riêng của từng bảng |
+| `GymBase.DLAuth.Contract` | Interface DL (`IUserRepository`), danh sách cột sort/filter | Hiện thực MySQL |
+| `GymBase.DLAuth.MySql` | Hiện thực DL của Auth, truy vấn | Quy tắc nghiệp vụ, gọi BLAuth |
 | `GymBase.BLDI` | CRUD và ràng buộc danh mục, phân loại, kiểm tra mã danh mục | Quy tắc trừ buổi tập |
-| `GymBase.DLDI.Contract` / `.MySql` | Entity, interface DL của danh mục / hiện thực MySQL | Nghiệp vụ thanh toán, PT |
+| `GymBase.DLDI.Contract` / `.MySql` | Interface DL của danh mục / hiện thực MySQL | Nghiệp vụ thanh toán, PT |
 | `GymBase.BLBiz` | Nghiệp vụ PT, học viên, buổi tập, gói PT, nhật ký, khiếu nại | SQL, DbContext, logic HTTP |
-| `GymBase.DLBiz.Contract` / `.MySql` | Entity, interface DL của BIZ / hiện thực MySQL; **`AppDbContext`, `BaseRepository` và Migrations dùng chung** | Điều phối nghiệp vụ xuyên nhóm |
+| `GymBase.DLBiz.Contract` / `.MySql` | Interface DL của BIZ / hiện thực MySQL | Điều phối nghiệp vụ xuyên nhóm |
 
 ## 4. Bên trong BL và DL
 
@@ -99,11 +104,13 @@ GymBase.BLAuth/
 │   └── UserService.cs               # Nghiệp vụ, kế thừa BaseService
 └── AuthErrorCodes.cs           # Mã lỗi chi tiết của nhóm
 GymBase.DLAuth.Contract/
-├── Entities/nguoi_dung.cs      # Tên class trùng tên bảng, property trùng tên cột
 └── IUserRepository.cs
 GymBase.DLAuth.MySql/
-├── Configurations/NguoiDungConfiguration.cs # Cấu hình bảng nguoi_dung
 └── UserRepository.cs                   # Hiện thực IUserRepository, kế thừa BaseRepository
+GymBase.Entities/Auth/
+└── nguoi_dung.cs               # Tên class trùng tên bảng, property trùng tên cột
+GymBase.Persistence/Configurations/Auth/
+└── NguoiDungConfiguration.cs   # Cấu hình bảng nguoi_dung
 ```
 
 Chức năng lớn hơn trong BIZ thì chia thêm thư mục con, ví dụ:
@@ -119,27 +126,37 @@ GymBase.BLBiz/
     ├── SessionPackageService.cs     # Mua, trừ buổi, khiếu nại…
     └── Rules/                  # Điều kiện trừ gói, giới hạn buổi
 GymBase.DLBiz.Contract/
-├── Entities/
 ├── PTSessions/IPTSessionRepository.cs
 └── SessionPackages/ISessionPackageRepository.cs
 GymBase.DLBiz.MySql/
-├── Persistence/AppDbContext.cs
-├── Configurations/             # IEntityTypeConfiguration của BIZ
-├── PTSessions/PTSessionRepository.cs
-└── Migrations/
+└── PTSessions/PTSessionRepository.cs
 ```
 
-Controller chỉ gọi BL. Interface DL nằm ở `DL<nhóm>.Contract`, hiện thực và DbContext nằm ở
-`DL<nhóm>.MySql`. Entity đặt ở `DL<nhóm>.Contract/Entities` của nhóm sở hữu bảng đó.
+Controller chỉ gọi BL. Interface DL nằm ở `DL<nhóm>.Contract`, hiện thực nằm ở `DL<nhóm>.MySql`.
+Entity đặt ở `GymBase.Entities/<Nhóm>/`, cấu hình bảng ở `GymBase.Persistence/Configurations/<Nhóm>/`.
+
+**Enum:**
+
+| Enum dùng cho | Đặt ở |
+| --- | --- |
+| Cột trong bảng | `GymBase.Entities/<Nhóm>/Enums/`, lưu DB dạng chuỗi bằng `HasConversion<string>()` |
+| Chỉ dùng trong nghiệp vụ hoặc DTO | Cạnh DTO trong `BL<nhóm>` |
+| Nhóm khác cần dùng | `GymBase.ModuleContracts` |
+| Hạ tầng chung | `GymBase.Base` |
+
+**Ranh giới giữa các nhóm:** mọi nhóm cùng tham chiếu `GymBase.Entities`, nhưng BL và DL của một nhóm chỉ được dùng
+entity của chính nhóm đó (`LayerReferenceTests` kiểm tra). Cần dữ liệu nhóm khác thì đi qua `ModuleContracts`.
 
 ## 5. Ma trận tham chiếu project
 
 | Project | Được tham chiếu | Không được tham chiếu |
 | --- | --- | --- |
-| `GymBase.API` | `Base.Hosting`, mọi `BL*`; các `DL*.MySql` **chỉ để đăng ký dịch vụ** | Controller gọi thẳng DL hoặc DbContext |
+| `GymBase.API` | `Base.Hosting`, mọi `BL*`; các `DL*.MySql` và `Persistence` **chỉ để đăng ký dịch vụ** | Controller gọi thẳng DL hoặc DbContext |
 | `BL<nhóm>` | `Base`, `ModuleContracts`, `DL<cùng nhóm>.Contract` | `DL*.MySql`, API, BL nhóm khác |
-| `DL<nhóm>.Contract` | `Base` | `BL*`, API, `DL*.MySql` |
-| `DL<nhóm>.MySql` | `Base`, `DL<cùng nhóm>.Contract`, `GymBase.DLBiz.MySql` (lấy `AppDbContext`, `BaseRepository`) | `BL*`, API, Contract của nhóm khác |
+| `GymBase.Entities` | `Base` | Mọi project khác |
+| `GymBase.Persistence` | `Base`, `Entities`, EF Core | `BL*`, `DL*`, API |
+| `DL<nhóm>.Contract` | `Base`, `Entities` | `BL*`, API, `DL*.MySql` |
+| `DL<nhóm>.MySql` | `Base`, `DL<cùng nhóm>.Contract`, `Persistence` | `BL*`, API, Contract của nhóm khác |
 | `GymBase.ModuleContracts` | `Base` | `BL*`, `DL*`, API, EF Core |
 | `GymBase.Base` | Thư viện .NET chuẩn, FluentValidation | Auth, DI, BIZ, API |
 | `GymBase.Base.Hosting` | `Base`, ASP.NET Core | Logic nghiệp vụ BIZ |
@@ -205,8 +222,8 @@ cả PT và học viên nhập nhật ký nhưng phải có lịch sử chỉnh 
 
 - Auth sở hữu tài khoản, refresh session và các bảng xác thực. DI sở hữu bảng danh mục. BIZ sở hữu
   bảng nghiệp vụ. Không sửa bảng của nhóm khác nếu chưa qua review.
-- Một DB, **một `AppDbContext`** (trong `DLBiz.MySql`), nạp `IEntityTypeConfiguration` từ các
-  `DL*.MySql` khi đăng ký. Không có hai DbContext cùng migrate một bảng.
+- Một DB, **một `AppDbContext`** (trong `GymBase.Persistence`), tự nạp mọi `IEntityTypeConfiguration` trong
+  project đó. Không có hai DbContext cùng migrate một bảng.
 - Migration phải được review, đặt tên rõ, chỉ roll forward; không sửa migration đã áp dụng trên
   môi trường dùng chung. Không gọi `Database.Migrate()` khi khởi động production.
 - Seed danh mục phải idempotent. Không lưu bí mật trong `appsettings.json` hay trong repo.
@@ -261,9 +278,9 @@ Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [crud-dung-c
 
 | Bước | Project | File | Nội dung |
 | --- | --- | --- | --- |
-| 1 | `GymBase.DLDI.Contract` | `Entities/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, property trùng tên cột |
+| 1 | `GymBase.Entities` | `DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, property trùng tên cột |
 | 2 | `GymBase.DLDI.Contract` | `IGoiTapRepository.cs` | `interface IGoiTapRepository : IBaseRepository<goi_tap>` |
-| 3 | `GymBase.DLDI.MySql` | `GoiTapRepository.cs`, `Configurations/GoiTapConfiguration.cs` | `class GoiTapRepository : BaseRepository<goi_tap>, IGoiTapRepository`; cấu hình bảng; tạo migration mới |
+| 3 | `GymBase.DLDI.MySql`, `GymBase.Persistence` | `GoiTapRepository.cs`, `Configurations/DI/GoiTapConfiguration.cs` | `class GoiTapRepository : BaseRepository<goi_tap>, IGoiTapRepository`; cấu hình bảng; tạo migration mới |
 | 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapValidators.cs`, `GoiTap/GoiTapService.cs` | DTO và validator; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |
 | 5 | `GymBase.API` | `Controllers/GoiTapController.cs` | Web: kế thừa `BaseCrudController<...>` là đủ 5 endpoint |
 | 6 | `GymBase.API` | `Mob/Controllers/GoiTapController.cs` | Mobile (nếu app cần): như trên, gọi lại `GoiTapService` |

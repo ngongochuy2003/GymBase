@@ -24,7 +24,7 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
 2. Tạo database và bảng bằng migration:
 
    ```bash
-   dotnet ef database update --project src/BIZ/GymBase.DLBiz.MySql --startup-project src/Host/GymBase.API
+   dotnet ef database update --project src/Data/GymBase.Persistence --startup-project src/Host/GymBase.API
    ```
 
 3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_nguoi_dung.sql` trên database `gymbase`. Các tài khoản mẫu không
@@ -51,7 +51,7 @@ Môi trường thật đặt khóa ký bằng biến `Jwt__SigningKey`. Đổi k
 Khi đổi entity, tạo migration mới (đặt tên rõ theo nội dung thay đổi) rồi lặp lại bước 2:
 
 ```bash
-dotnet ef migrations add <TenThayDoi> --project src/BIZ/GymBase.DLBiz.MySql --startup-project src/Host/GymBase.API
+dotnet ef migrations add <TenThayDoi> --project src/Data/GymBase.Persistence --startup-project src/Host/GymBase.API
 ```
 
 ## 1. Chạy bằng Visual Studio

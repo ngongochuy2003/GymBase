@@ -32,6 +32,10 @@ Người dùng chuyển từ nhóm System cũ sang Auth; entity đặt ở `DL<n
 SDK ban đầu ghim .NET 9, sau đó đã nâng lên .NET 10 (xem mục trên).
 Chi tiết: `docs/api/cau-truc-thu-muc.md`.
 
+Cùng ngày, gom entity vào `GymBase.Entities`, còn `AppDbContext`, cấu hình bảng và migrations vào
+`GymBase.Persistence` để quản lý cấu trúc DB một chỗ, thay cho cách đặt ở `DL<nhóm>.Contract` và `GymBase.DLBiz.MySql`.
+Ranh giới giữa các nhóm do `LayerReferenceTests` giữ.
+
 ## Cập nhật — Mobile base
 
 Người dùng đã yêu cầu triển khai Mobile tiếp sau REPO-01. Dùng Expo SDK 58,
@@ -93,7 +97,7 @@ push hoặc merge. Leader chọn luồng PR phù hợp trước khi chia việc 
 - Bộ Expo/Node/pnpm.
   Đã chốt 08/11: SDK .NET 10; truy cập DB bằng EF Core với provider
   `Microting.EntityFrameworkCore.MySql` (Pomelo chưa hỗ trợ EF Core 10); MySQL 8.4 LTS; migration
-  bằng EF Core migrations; một `AppDbContext` duy nhất ở `GymBase.DLBiz.MySql`
+  bằng EF Core migrations; một `AppDbContext` duy nhất ở `GymBase.Persistence`
   (xem `docs/api/viec-con-lai-base.md`, Q3, Q4, Q5, Q9).
 - API auth/refresh/error contract, authorization matrix và public exports.
 - ERD, quy ước tên bảng/cột, timezone, concurrency và quy tắc khiếu nại.

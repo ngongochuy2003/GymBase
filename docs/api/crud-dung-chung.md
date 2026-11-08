@@ -15,7 +15,7 @@ HTTP ──► BaseCrudController<TDto, TCreateDto, TUpdateDto>     GymBase.Base
             ▼
          IBaseRepository<TEntity>                                       GymBase.Base (Crud/)
             ▲ hiện thực
-         BaseRepository<TEntity> + AppDbContext (EF Core)               GymBase.DLBiz.MySql (Persistence/)
+         BaseRepository<TEntity> + AppDbContext (EF Core)               GymBase.Persistence
 ```
 
 | Lớp | Project | Việc làm |
@@ -24,18 +24,17 @@ HTTP ──► BaseCrudController<TDto, TCreateDto, TUpdateDto>     GymBase.Base
 | `ICrudService<TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Interface mà controller gọi; controller không biết entity |
 | `BaseService<TEntity, TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (UTC), xóa mềm |
 | `IBaseRepository<TEntity>` | `GymBase.Base` | `GetPagingAsync`, `GetByIdAsync`, `InsertAsync`, `UpdateAsync`, `DeleteAsync` |
-| `BaseRepository<TEntity>` | `GymBase.DLBiz.MySql` | Hiện thực `IBaseRepository` bằng EF Core: ẩn bản ghi xóa mềm (query filter), tìm kiếm, mới tạo trước, phân trang; trùng unique index thì ném `ConflictException` |
+| `BaseRepository<TEntity>` | `GymBase.Persistence` | Hiện thực `IBaseRepository` bằng EF Core: ẩn bản ghi xóa mềm (query filter), tìm kiếm, mới tạo trước, phân trang; trùng unique index thì ném `ConflictException` |
 | `InMemoryBaseRepository<TEntity>`, `InMemoryStore<TEntity>` | `tests/Shared/GymBase.TestDoubles` | DL giả để test BL không cần MySQL; hành vi phải khớp `BaseRepository` |
 
-`AppDbContext` và `BaseRepository` nằm trong `DLBiz.MySql` (quyết định Q9), nên `DLAuth.MySql` và
-`DLDI.MySql` tham chiếu `DLBiz.MySql`.
+`AppDbContext` và `BaseRepository` nằm trong `GymBase.Persistence` (quyết định Q9), mọi `DL*.MySql` tham chiếu project này.
 
 ## 2. Đặt entity và DTO ở đâu
 
 ```text
-src/Auth/GymBase.DLAuth.Contract/
-└── Entities/nguoi_dung.cs            class nguoi_dung (bảng nguoi_dung)
-                                      namespace GymBase.DLAuth.Contract.Entities
+src/Data/GymBase.Entities/
+└── Auth/nguoi_dung.cs                class nguoi_dung (bảng nguoi_dung)
+                                      namespace GymBase.Entities.Auth
 src/Auth/GymBase.BLAuth/
 └── NguoiDung/                        namespace GymBase.BLAuth.NguoiDung
     ├── UserService.cs
@@ -44,10 +43,10 @@ src/Auth/GymBase.BLAuth/
 
 | Loại | Đặt ở | Quy ước |
 | --- | --- | --- |
-| **Entity** (cấu trúc bảng) | `GymBase.DL<Nhóm>.Contract/Entities/<tên_bảng>.cs` của **nhóm sở hữu bảng** | Tên class **trùng tên bảng** (`nguoi_dung`), property trùng tên cột, riêng `Id` giữ nguyên |
+| **Entity** (cấu trúc bảng) | `GymBase.Entities/<Nhóm>/<tên_bảng>.cs` theo **nhóm sở hữu bảng** | Tên class **trùng tên bảng** (`nguoi_dung`), property trùng tên cột, riêng `Id` giữ nguyên |
 | **DTO** (dữ liệu vào/ra API) | BL của nhóm: `GymBase.BL<Nhóm>/<TênPascal>/<TênPascal>Dtos.cs` | Tên PascalCase: `NguoiDungDto`, `NguoiDungCreateDto`, `NguoiDungUpdateDto`. Property cùng tên cột |
 
-- Namespace theo thư mục (`GymBase.DLAuth.Contract.Entities`). `.editorconfig` của `apps/api` tắt
+- Namespace theo thư mục (`GymBase.Entities.Auth`). `.editorconfig` của `apps/api` tắt
   gợi ý "tên phải PascalCase" vì entity và DTO cố ý đặt tên snake_case.
 - **DTO để trong BL, không để ở DL**: DTO đổi theo nghiệp vụ/màn hình còn entity đổi theo DB;
   BL là nơi map nên DTO ở cạnh BL; API đã tham chiếu BL nên dùng được DTO; DL không nhìn thấy DTO.
@@ -104,10 +103,10 @@ không có giá trị "lấy tất cả". Quy ước response đầy đủ, gồ
 
 Ví dụ danh mục **Gói tập** (bảng `goi_tap`) thuộc nhóm DI.
 
-### Bước 1: Entity (`GymBase.DLDI.Contract/Entities/goi_tap.cs`)
+### Bước 1: Entity (`GymBase.Entities/DI/goi_tap.cs`)
 
 ```csharp
-namespace GymBase.DLDI.Contract.Entities;
+namespace GymBase.Entities.DI;
 
 public sealed class goi_tap : BaseAuditableEntity, ISoftDelete
 {
@@ -118,7 +117,7 @@ public sealed class goi_tap : BaseAuditableEntity, ISoftDelete
 }
 ```
 
-### Bước 2: DL (`DLDI.Contract` và `DLDI.MySql`)
+### Bước 2: DL (`DLDI.Contract`, `DLDI.MySql`) và cấu hình bảng (`GymBase.Persistence`)
 
 ```csharp
 // GymBase.DLDI.Contract/IGoiTapRepository.cs
@@ -134,7 +133,7 @@ public sealed class GoiTapRepository(AppDbContext db) : BaseRepository<goi_tap>(
         [e => e.ma_goi, e => e.ten_goi];
 }
 
-// GymBase.DLDI.MySql/Configurations/GoiTapConfiguration.cs
+// GymBase.Persistence/Configurations/DI/GoiTapConfiguration.cs
 public sealed class GoiTapConfiguration : IEntityTypeConfiguration<goi_tap>
 {
     public void Configure(EntityTypeBuilder<goi_tap> builder)
@@ -252,13 +251,11 @@ Mọi action public của lớp cha đều thành endpoint, nên controller nào
 ### Bước 5: Đăng ký dịch vụ (`GymBase.API/Program.cs`)
 
 ```csharp
-builder.Services.AddAppPersistence(builder.Configuration, typeof(UserRepository).Assembly, typeof(GoiTapRepository).Assembly);
 builder.Services.AddScoped<IGoiTapRepository, GoiTapRepository>();
 builder.Services.AddScoped<GoiTapService>();
 ```
 
-Dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và thêm assembly vào
-`AddAppPersistence` nếu đây là bảng đầu tiên của nhóm đó.
+Thêm hai dòng này vào `Program.cs`. Cấu hình bảng được `AppDbContext` tự nạp, không cần đăng ký.
 
 ### Bước 6: Test và Bruno
 
