@@ -168,8 +168,8 @@ lập, cũng như deploy và scale riêng. Vì thế `GymBase.MobAPI` tham chi�
 DI và Biz.
 
 Route của hai kênh được phân biệt bằng tiền tố do `Program.cs` gắn: các host web dùng
-`/web/api/v1/...`, MobAPI dùng `/mobile/api/v1/...`. Controller chỉ khai báo phần
-`api/v1/[controller]` (kế thừa từ `BaseApiController`), nên chép controller từ web sang
+`/api/web/v1/...`, MobAPI dùng `/api/mobile/v1/...`. Controller chỉ khai báo phần
+`v1/[controller]` (kế thừa từ `BaseApiController`), nên chép controller từ web sang
 MobAPI không phải sửa route. Cách chạy: `apps/api/1.Doc/cach-chay-api.md`.
 
 ### `4. Model` *(suy luận)*
@@ -250,7 +250,7 @@ khi làm AMISBASE ở DB-01.
 Luồng chạy khi app mobile lấy danh sách gói tập:
 
 ```text
-GET /mobile/api/v1/packages  ──► MobAPI.PackagesController
+GET /api/mobile/v1/packages  ──► MobAPI.PackagesController
                           ──► BLDI.PackageBL.GetPaging()
                               ──► IPackageDL (DLDI.Contract)
                                   ──► PackageDL (DLDI.Mysql) ── SQL ──► MySQL

@@ -13,8 +13,8 @@ GymBase**, không chép nguyên cấu trúc. Cấu trúc thư mục hiện tại
 **Đã xong:** khung solution (API-01). Có 42 project, tham chiếu giữa các tầng đã
 nối đúng chiều, mỗi API host có `/health`, và có test giữ quy tắc phân tầng.
 
-**Mẫu đầu tiên đi đủ các tầng:** API người dùng `GET /web/api/v1/users` (SystemAPI) và
-`GET /mobile/api/v1/users` (MobAPI), có phân trang, tìm kiếm và lấy theo `{id}`. Cả hai cùng
+**Mẫu đầu tiên đi đủ các tầng:** API người dùng `GET /api/web/v1/users` (SystemAPI) và
+`GET /api/mobile/v1/users` (MobAPI), có phân trang, tìm kiếm và lấy theo `{id}`. Cả hai cùng
 gọi `UserBL` → `IUserDL`. **`UserDL` hiện trả dữ liệu mock trong bộ nhớ**; khi làm
 mục 3 thì thay thân hàm bằng SQL, giữ nguyên interface.
 
@@ -92,4 +92,4 @@ MobAPI), WebSocket, Vault, middleware chặn IP, license phần cứng.
 | CORS cho phép mọi nguồn (`AllowAll`) | Danh sách origin đọc từ cấu hình |
 | Bỏ kiểm tra khóa ký JWT, bỏ qua kiểm tra chứng chỉ SSL | Luôn kiểm tra chữ ký, issuer, audience, thời hạn |
 | `Database.Migrate()` chạy mỗi lần khởi động | Migration chạy bằng lệnh hoặc pipeline riêng |
-| `BaseApiController` gán cứng route `api/nguoi-dung` | Route gốc `api/v1/[controller]` như `BaseApiController` hiện tại, kèm tiền tố kênh `/web` hoặc `/mobile` |
+| `BaseApiController` gán cứng route `api/nguoi-dung` | Route gốc `v1/[controller]` như `BaseApiController` hiện tại, kèm tiền tố kênh `/api/web` hoặc `/api/mobile` |

@@ -5,10 +5,10 @@ namespace GymBase.AMISBase.API;
 /// <summary>
 /// Controller gốc cho mọi API (DIAPI, BIZAPI, MobAPI).
 /// Controller chỉ nhận request và gọi BL; không chứa logic nghiệp vụ, không truy cập DB.
-/// Route thực tế có thêm tiền tố kênh: /web/api/v1/... hoặc /mobile/api/v1/... (xem <see cref="RoutePrefixConvention"/>).
+/// Controller chỉ khai báo v1/[controller]; route thực tế có thêm tiền tố kênh: /api/web/v1/... hoặc /api/mobile/v1/... (xem <see cref="RoutePrefixConvention"/>).
 /// </summary>
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("v1/[controller]")]
 public abstract class BaseApiController : ControllerBase
 {
 }

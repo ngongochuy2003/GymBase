@@ -5,7 +5,7 @@ using GymBase.DLSystem.Mysql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Mọi route của host này có tiền tố /mobile (ví dụ /mobile/api/v1/users)
+// Mọi route của host này có tiền tố /api/mobile (ví dụ /api/mobile/v1/users)
 builder.Services.AddControllers(options => options.UseApiChannel(ApiChannel.Mobile));
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();

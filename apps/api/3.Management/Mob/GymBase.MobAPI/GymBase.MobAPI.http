@@ -4,21 +4,21 @@
 GET {{GymBase.MobAPI_HostAddress}}/health
 
 ### Người dùng (mobile) - danh sách, mặc định page=1, pageSize=20
-GET {{GymBase.MobAPI_HostAddress}}/mobile/api/v1/users
+GET {{GymBase.MobAPI_HostAddress}}/api/mobile/v1/users
 Accept: application/json
 
 ### Người dùng - phân trang
-GET {{GymBase.MobAPI_HostAddress}}/mobile/api/v1/users?page=2&pageSize=2
+GET {{GymBase.MobAPI_HostAddress}}/api/mobile/v1/users?page=2&pageSize=2
 Accept: application/json
 
 ### Người dùng - tìm kiếm (tên đăng nhập, họ tên, email, số điện thoại)
-GET {{GymBase.MobAPI_HostAddress}}/mobile/api/v1/users?search=pt
+GET {{GymBase.MobAPI_HostAddress}}/api/mobile/v1/users?search=pt
 Accept: application/json
 
 ### Người dùng - chi tiết (admin trong dữ liệu mock)
-GET {{GymBase.MobAPI_HostAddress}}/mobile/api/v1/users/0193f0a0-0000-7000-8000-000000000001
+GET {{GymBase.MobAPI_HostAddress}}/api/mobile/v1/users/0193f0a0-0000-7000-8000-000000000001
 Accept: application/json
 
 ### Người dùng - đã xóa mềm, kỳ vọng 404
-GET {{GymBase.MobAPI_HostAddress}}/mobile/api/v1/users/0193f0a0-0000-7000-8000-000000000006
+GET {{GymBase.MobAPI_HostAddress}}/api/mobile/v1/users/0193f0a0-0000-7000-8000-000000000006
 Accept: application/json

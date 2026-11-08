@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymBase.SystemAPI.Controllers;
 
 /// <summary>
-/// API người dùng cho web (trang quản trị). Route: /web/api/v1/users (tiền tố /web do Program.cs gắn).
+/// API người dùng cho web (trang quản trị). Route: /api/web/v1/users (tiền tố /api/web do Program.cs gắn).
 /// Chỉ nhận request và gọi <see cref="UserBL"/>; logic dùng chung với
 /// MobAPI nằm trong BL.
 /// </summary>
 public sealed class UsersController(UserBL userBL) : BaseApiController
 {
-    /// <summary>Danh sách người dùng có phân trang. Ví dụ: GET /web/api/v1/users?page=1&amp;pageSize=20&amp;search=pt</summary>
+    /// <summary>Danh sách người dùng có phân trang. Ví dụ: GET /api/web/v1/users?page=1&amp;pageSize=20&amp;search=pt</summary>
     [HttpGet]
     public async Task<ActionResult<PagingResult<UserDto>>> GetPaging(
         [FromQuery] PagingRequest request, CancellationToken cancellationToken) =>

@@ -10,8 +10,8 @@ public class RoutePrefixConventionTests
     private sealed class SampleController : BaseApiController;
 
     [Theory]
-    [InlineData(ApiChannel.Web, "web/api/v1/[controller]")]
-    [InlineData(ApiChannel.Mobile, "mobile/api/v1/[controller]")]
+    [InlineData(ApiChannel.Web, "api/web/v1/[controller]")]
+    [InlineData(ApiChannel.Mobile, "api/mobile/v1/[controller]")]
     public void Prefixes_controller_route_with_channel(string channel, string expected)
     {
         var selector = new SelectorModel
@@ -24,7 +24,8 @@ public class RoutePrefixConventionTests
         var application = new ApplicationModel();
         application.Controllers.Add(controller);
 
-        new RoutePrefixConvention(channel).Apply(application);
+        var convention = new MvcOptions().UseApiChannel(channel).Conventions.Single();
+        convention.Apply(application);
 
         Assert.Equal(expected, selector.AttributeRouteModel!.Template);
     }

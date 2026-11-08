@@ -6,10 +6,10 @@ kênh client**, do `Program.cs` của host gắn (xem `RoutePrefixConvention` tr
 
 | Kênh | Tiền tố | Host | Ví dụ |
 | --- | --- | --- | --- |
-| Web (trang quản trị) | `/web` | SystemAPI, DIAPI, BIZAPI, AuthAPI, ReportAPI… | `GET http://localhost:5020/web/api/v1/users` |
-| Mobile | `/mobile` | Chỉ MobAPI | `GET http://localhost:5106/mobile/api/v1/users` |
+| Web (trang quản trị) | `/api/web` | SystemAPI, DIAPI, BIZAPI, AuthAPI, ReportAPI… | `GET http://localhost:5020/api/web/v1/users` |
+| Mobile | `/api/mobile` | Chỉ MobAPI | `GET http://localhost:5106/api/mobile/v1/users` |
 
-Gọi sai tiền tố (ví dụ `/mobile/...` vào SystemAPI, hoặc thiếu tiền tố) sẽ nhận **404**.
+Gọi sai tiền tố (ví dụ `/api/mobile/...` vào SystemAPI, hoặc thiếu tiền tố) sẽ nhận **404**.
 `/health` và `/openapi/v1.json` không có tiền tố.
 
 ## 1. Cần chạy project nào
@@ -18,22 +18,22 @@ Chỉ chạy những host mà client đang gọi tới.
 
 | Muốn dùng | Startup project | Base URL |
 | --- | --- | --- |
-| API cho **mobile** | `GymBase.MobAPI` | `http://localhost:5106/mobile/api/v1/` |
-| API cho **web**, hiện chỉ có người dùng | `GymBase.SystemAPI` | `http://localhost:5020/web/api/v1/` |
+| API cho **mobile** | `GymBase.MobAPI` | `http://localhost:5106/api/mobile/v1/` |
+| API cho **web**, hiện chỉ có người dùng | `GymBase.SystemAPI` | `http://localhost:5020/api/web/v1/` |
 | Cả hai | `GymBase.SystemAPI` + `GymBase.MobAPI` | Như trên |
 
 Sau này, khi nhóm khác có endpoint, web phải bật thêm host của nhóm đó:
 
 | Host | Cổng http | Base URL |
 | --- | --- | --- |
-| `GymBase.SystemAPI` | 5020 | `http://localhost:5020/web/api/v1/` |
-| `GymBase.DIAPI` | 5055 | `http://localhost:5055/web/api/v1/` |
-| `GymBase.RegisterAPI` | 5072 | `http://localhost:5072/web/api/v1/` |
-| `GymBase.BIZAPI` | 5084 | `http://localhost:5084/web/api/v1/` |
-| `GymBase.ImportExportAPI` | 5100 | `http://localhost:5100/web/api/v1/` |
-| `GymBase.MobAPI` | 5106 | `http://localhost:5106/mobile/api/v1/` |
-| `GymBase.ReportAPI` | 5150 | `http://localhost:5150/web/api/v1/` |
-| `GymBase.AuthAPI` | 5152 | `http://localhost:5152/web/api/v1/` |
+| `GymBase.SystemAPI` | 5020 | `http://localhost:5020/api/web/v1/` |
+| `GymBase.DIAPI` | 5055 | `http://localhost:5055/api/web/v1/` |
+| `GymBase.RegisterAPI` | 5072 | `http://localhost:5072/api/web/v1/` |
+| `GymBase.BIZAPI` | 5084 | `http://localhost:5084/api/web/v1/` |
+| `GymBase.ImportExportAPI` | 5100 | `http://localhost:5100/api/web/v1/` |
+| `GymBase.MobAPI` | 5106 | `http://localhost:5106/api/mobile/v1/` |
+| `GymBase.ReportAPI` | 5150 | `http://localhost:5150/api/web/v1/` |
+| `GymBase.AuthAPI` | 5152 | `http://localhost:5152/api/web/v1/` |
 
 Cổng lấy từ `Properties/launchSettings.json` của từng host, profile `http`.
 
@@ -92,7 +92,7 @@ Id người dùng mẫu (dữ liệu mock): `0193f0a0-0000-7000-8000-00000000000
 
 ## 5. Cho app mobile gọi được API
 
-Cấu hình `apps/mobile/.env` (xem `.env.example`). Base URL **gồm cả tiền tố `/mobile/api/v1`**:
+Cấu hình `apps/mobile/.env` (xem `.env.example`). Base URL **gồm cả tiền tố `/api/mobile/v1`**:
 
 ```text
 EXPO_PUBLIC_DATA_MODE=api
@@ -101,9 +101,9 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 
 | App chạy trên | `EXPO_PUBLIC_API_URL` | Cách chạy MobAPI |
 | --- | --- | --- |
-| Trình duyệt (Expo web), iOS Simulator | `http://localhost:5106/mobile/api/v1` | Như mục 2 hoặc 3 |
-| Android Emulator | `http://10.0.2.2:5106/mobile/api/v1` | Như mục 2 hoặc 3 |
-| Điện thoại thật | `http://<IP-máy-tính>:5106/mobile/api/v1` | Phải lắng nghe trên mọi địa chỉ mạng, xem bên dưới |
+| Trình duyệt (Expo web), iOS Simulator | `http://localhost:5106/api/mobile/v1` | Như mục 2 hoặc 3 |
+| Android Emulator | `http://10.0.2.2:5106/api/mobile/v1` | Như mục 2 hoặc 3 |
+| Điện thoại thật | `http://<IP-máy-tính>:5106/api/mobile/v1` | Phải lắng nghe trên mọi địa chỉ mạng, xem bên dưới |
 
 `10.0.2.2` là địa chỉ mà Android Emulator dùng để trỏ về máy tính chạy nó.
 
@@ -134,7 +134,7 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 
 | Hiện tượng | Nguyên nhân / cách xử lý |
 | --- | --- |
-| 404 khi gọi API | Thiếu tiền tố `/web` hoặc `/mobile`, gọi nhầm host, hoặc host của nhóm đó chưa chạy |
+| 404 khi gọi API | Thiếu tiền tố `/api/web` hoặc `/api/mobile`, gọi nhầm host, hoặc host của nhóm đó chưa chạy |
 | `address already in use` / cổng bị chiếm | Host đó đang chạy ở cửa sổ khác. Tắt cửa sổ đó, hoặc tìm và dừng tiến trình `GymBase.*API` |
 | Điện thoại không kết nối được | Chưa chạy với `--urls http://0.0.0.0:5106`, sai IP, khác mạng Wi-Fi, hoặc bị firewall chặn |
 | Lỗi chứng chỉ khi gọi `https://localhost:7xxx` | Chạy `dotnet dev-certs https --trust` một lần, hoặc dùng profile `http` |
