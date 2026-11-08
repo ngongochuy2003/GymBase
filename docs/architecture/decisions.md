@@ -87,9 +87,11 @@ push hoặc merge. Leader chọn luồng PR phù hợp trước khi chia việc 
 
 ## Cần chốt ở các task sau
 
-- Provider EF Core cho MySQL (Pomelo hoặc Oracle `MySql.EntityFrameworkCore`), MySQL version và bộ Expo/Node/pnpm.
-  Đã chốt: SDK .NET 10; truy cập DB bằng EF Core, migration bằng EF Core migrations
-  (xem `docs/api/viec-con-lai-base.md`, Q3, Q4).
+- Bộ Expo/Node/pnpm.
+  Đã chốt 08/11: SDK .NET 10; truy cập DB bằng EF Core với provider
+  `Microting.EntityFrameworkCore.MySql` (Pomelo chưa hỗ trợ EF Core 10); MySQL 8.4 LTS; migration
+  bằng EF Core migrations; một `AppDbContext` duy nhất ở `AMISBase.DL.Mysql`
+  (xem `docs/api/viec-con-lai-base.md`, Q3, Q4, Q5, Q9).
 - API auth/refresh/error contract, authorization matrix và public exports.
 - ERD, quy ước tên bảng/cột, timezone, concurrency và quy tắc khiếu nại.
 - GitHub reviewers thật, branch protection và required CI checks.

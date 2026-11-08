@@ -232,7 +232,7 @@ GymBase chia AMISBASE thành đúng 4 tầng để các tầng của DI và Biz 
 | `GymBase.AMISBase.API` | `BaseApiController`; `BaseCrudController<TDto, TCreateDto, TUpdateDto>` (GET danh sách, GET `{id}`, POST, PUT `{id}`, DELETE `{id}`); tiền tố route theo kênh | Các host `*API`, `MobAPI` |
 | `GymBase.AMISBase.BL` | `ICrudBL<...>` và `BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>`: chuẩn hóa phân trang, map entity ↔ DTO, tự điền ngày/người tạo, sửa (UTC), xóa mềm nếu entity có `is_deleted` | `BL*` |
 | `GymBase.AMISBase.DL.Contract` | Entity gốc, `IHasId`, phân trang, `IBaseDL<TEntity>`: `GetPaging`, `GetById`, `Insert`, `Update`, `Delete` | `DL*.Contract`, `GymBase.Model` |
-| `GymBase.AMISBase.DL.Mysql` | **Hiện là mock:** `InMemoryStore<T>` (đăng ký singleton) + `InMemoryBaseDL<TEntity>`. Khi nối DB sẽ thêm lớp nền `DbContext` và `BaseDL<TEntity>` dùng EF Core | `DL*.Mysql` |
+| `GymBase.AMISBase.DL.Mysql` | **Hiện là mock:** `InMemoryStore<T>` (đăng ký singleton) + `InMemoryBaseDL<TEntity>`. Khi nối DB sẽ thêm `AppDbContext` (DbContext duy nhất của cả DB) và `BaseDL<TEntity>` dùng EF Core | `DL*.Mysql` |
 
 HTTP trả về của controller dùng chung: `GET` 200 / 404, `POST` 201 kèm header `Location`,
 `PUT` 200 / 404, `DELETE` 204 / 404. Body sai hoặc vi phạm DataAnnotations bị `[ApiController]`
