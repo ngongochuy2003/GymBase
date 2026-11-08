@@ -1,285 +1,280 @@
-# Cấu trúc thư mục backend (mô hình Management / AMISBASE)
+# Chuẩn kiến trúc backend
 
-Tài liệu này giải thích từng thư mục trong solution mẫu `MISA.Salon` mà GymBase
-đang làm theo, và cho biết mỗi thư mục tương ứng với chỗ nào trong `apps/api`.
+Backend GymBase là **modular monolith theo mô hình BL / DL** trên .NET 10: một API host, một
+solution, các nhóm chức năng là class library. Tài liệu này là chuẩn cho nhóm phát triển,
+review PR và mở rộng V1 → V3. Cấu trúc trong `apps/api` hiện đã theo đúng chuẩn này.
 
-> **Độ tin cậy của thông tin.** Phần **AMISBASE, Management, DI, Biz, Mob** và cách
-> chia API / BL / DL đã được chủ repo xác nhận. Các thư mục còn lại được **suy luận từ
-> tên** theo quy ước phổ biến trong solution .NET. Chúng được đánh dấu *(suy luận)* và
-> cần hỏi lại người hướng dẫn trước khi dựa vào.
+## 1. Quyết định kiến trúc
 
----
-
-## 1. Hai khái niệm cần nắm trước
-
-### 1.1. Solution folder không phải là thư mục thật
-
-Trong Visual Studio, các mục có biểu tượng thư mục vàng như `3. Management` hay `BIZ`
-là **solution folder**. Chúng chỉ là nhóm ảo, được khai báo trong file solution
-(`.sln` / `.slnx`), và **không nhất thiết** trùng với thư mục trên ổ đĩa.
-
-Ở GymBase, solution folder được khai báo trong `apps/api/GymBase.slnx`:
-
-```xml
-<Folder Name="/3. Management/BIZ/">
-  <Project Path="3.Management/BIZ/GymBase.BIZAPI/GymBase.BIZAPI.csproj" />
-  ...
-</Folder>
-```
-
-Trong Visual Studio bạn sẽ thấy `3. Management > BIZ > GymBase.BIZAPI`, còn trên ổ
-đĩa file nằm ở `apps/api/3.Management/BIZ/GymBase.BIZAPI/`.
-
-**Quy tắc của GymBase: thư mục thật = tên solution folder bỏ dấu cách sau số thứ tự**
-(`"3. Management"` → `3.Management`). Giữ số để thứ tự trong Explorer giống Visual
-Studio; bỏ dấu cách để gõ lệnh CLI, viết CI hay Dockerfile không phải đặt trong ngoặc kép.
-Thư mục con không có số (như `BIZ`, `DI`) giữ nguyên tên.
-
-| Solution folder | Thư mục thật (trong `apps/api/`) |
+| Quyết định | Chuẩn áp dụng |
 | --- | --- |
-| `3. Management/DI`, `/BIZ`, `/Mob`… | `3.Management/DI`, `3.Management/BIZ`, `3.Management/Mob`… |
-| `4. Model` … `7. Worker` | `4.Model`, `5.Lib`, `6.Integration`, `7.Worker` |
-| `8. Unitest` | `8.Unitest` |
-| `99. AMISBASE` | `99.AMISBASE` |
-| `1. Doc`, `2. Config` | `1.Doc`, `2.Config` (chỉ chứa file, không có project) |
+| Kiểu triển khai | Modular monolith; **một API host** (`GymBase.API`); một Docker image cho V1 |
+| Nhóm chức năng | Auth / DI (Danh mục) / BIZ, cùng phần nền Base |
+| Tầng project | Mỗi nhóm có BL, DL.Contract, DL.MySql |
+| Dữ liệu | Một MySQL 8.4 dùng chung ở V1; mỗi bảng thuộc đúng một nhóm |
+| DbContext | Một `AppDbContext` duy nhất, đặt trong `GymBase.DLBiz.MySql` |
+| Web và mobile | Dùng chung host, BL, DL; chỉ tách controller (`Controllers/` và `Mob/Controllers/`) |
+| Định hướng | Không chuyển sang microservices sớm; chỉ tách module khi có nhu cầu thực tế |
 
-### 1.2. Bộ 4 project của một nhóm chức năng
+**"DI" trong tên nhóm nghĩa là Danh mục, không phải Dependency Injection.** Khi nói về cơ chế
+injection của .NET, tài liệu dùng "đăng ký dịch vụ (IoC)".
 
-Nhóm `BIZ` trong ảnh là mẫu chuẩn. Mỗi nhóm chức năng gồm 4 project:
-
-| Project (Salon) | Project (GymBase) | Loại | Vai trò |
-| --- | --- | --- | --- |
-| `MISA.Salon.BIZAPI` | `GymBase.BIZAPI` | Web | Chứa **Controller**. Nhận HTTP request, kiểm tra đầu vào cơ bản, gọi BL rồi trả response. Đây là project chạy được (host). |
-| `MISA.Salon.BLBIZ` | `GymBase.BLBIZ` | Class library | **Business Logic** (tương đương tầng Application). Chứa quy tắc nghiệp vụ, tính toán và kiểm tra hợp lệ. **Không query DB.** Khi cần dữ liệu thì gọi qua interface của DL. |
-| `MISA.Salon.DLBIZ.Contract` | `GymBase.DLBIZ.Contract` | Class library | **Hợp đồng** của tầng dữ liệu: các interface như `IPackageDL` và các model đầu vào/đầu ra của DL. Không chứa code SQL. |
-| `MISA.Salon.DLBIZ.Mysql` | `GymBase.DLBIZ.Mysql` | Class library | **Hiện thực** các interface trên cho MySQL. Đây là nơi duy nhất dùng **EF Core** (`DbContext`, cấu hình entity) và gọi DB. |
-
-Lý do tách `Contract` ra khỏi `Mysql`:
-
-- BL chỉ biết interface, nên muốn test BL thì chỉ cần mock DL, không cần DB thật.
-- Nếu sau này đổi sang hệ quản trị CSDL khác, chỉ cần thêm `DLBIZ.SqlServer` cài
-  đặt cùng Contract. BL và API giữ nguyên.
-- Trình biên dịch tự chặn việc BL gọi thẳng SQL, vì BL không tham chiếu project `Mysql`.
-
-### 1.3. Chiều phụ thuộc
+## 2. Cây thư mục
 
 ```text
-            ┌──────────────┐
- HTTP ───►  │   BIZAPI     │  Controller
-            └──────┬───────┘
-                   │ gọi
-            ┌──────▼───────┐
-            │   BLBIZ      │  Logic nghiệp vụ, không có SQL
-            └──────┬───────┘
-                   │ chỉ biết interface
-            ┌──────▼───────────┐      hiện thực     ┌──────────────────┐
-            │ DLBIZ.Contract   │ ◄───────────────── │ DLBIZ.Mysql      │ ──► MySQL
-            └──────────────────┘                    └──────────────────┘
+apps/api/
+├── GymBase.slnx                    # Solution duy nhất của backend
+├── global.json                     # Ghim .NET SDK
+├── Directory.Build.props           # net10.0, nullable, implicit usings, coi cảnh báo là lỗi
+├── Directory.Packages.props        # Phiên bản NuGet tập trung
+├── .editorconfig                   # Quy ước C# (namespace theo thư mục, tên snake_case cho entity/DTO)
+├── src/
+│   ├── Host/GymBase.API/           # HOST DUY NHẤT (Web SDK)
+│   │   ├── Program.cs              # Composition root: đăng ký dịch vụ, middleware
+│   │   ├── Controllers/            # Controller cho web       → /api/v1/web/...
+│   │   ├── Mob/Controllers/        # Controller cho mobile    → /api/v1/mob/...
+│   │   └── appsettings.json
+│   ├── Base/
+│   │   ├── GymBase.Base/           # Entity gốc, phân trang, CRUD dùng chung, exception
+│   │   └── GymBase.Base.Hosting/   # Controller gốc, route theo kênh, xử lý lỗi ProblemDetails
+│   ├── Contracts/
+│   │   └── GymBase.ModuleContracts/    # Interface công khai cho giao tiếp giữa các nhóm
+│   ├── Auth/
+│   │   ├── GymBase.BLAuth/
+│   │   ├── GymBase.DLAuth.Contract/
+│   │   └── GymBase.DLAuth.MySql/
+│   ├── DI/
+│   │   ├── GymBase.BLDI/
+│   │   ├── GymBase.DLDI.Contract/
+│   │   └── GymBase.DLDI.MySql/
+│   └── BIZ/
+│       ├── GymBase.BLBiz/
+│       ├── GymBase.DLBiz.Contract/
+│       └── GymBase.DLBiz.MySql/    # Có thêm AppDbContext và DL mock dùng chung
+└── tests/
+    ├── Unit/GymBase.UnitTests/
+    ├── Integration/GymBase.IntegrationTests/
+    └── Architecture/GymBase.ArchitectureTests/
 ```
 
-- `BIZAPI` tham chiếu `BLBIZ`. Nó tham chiếu thêm `DLBIZ.Mysql`, nhưng **chỉ để đăng
-  ký Dependency Injection** (gắn `IPackageDL` → `PackageDL`) trong `Program.cs`.
-  Controller không được gọi DL trực tiếp.
-- `BLBIZ` chỉ tham chiếu `DLBIZ.Contract`.
-- Test `LayerReferenceTests` ở `apps/api/8.Unitest/GymBase.UnitTests` sẽ báo lỗi nếu
-  BL hoặc Contract tham chiếu tới `*.Mysql`.
+Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (compose, Nginx, CI/CD),
+`docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
 
----
+Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
+(`NguoiDung/`, `Entities/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
+thêm thư mục hay chức năng; phải có lý do về ranh giới.
 
-## 2. Giải thích từng thư mục
+**Quy ước đặt tên:** `BIZ` cho thư mục nhóm, `Biz` trong tên project (`GymBase.BLBiz`);
+`MySql` (không phải `Mysql` hay `MySQL`) trong tên project; `DI`, `Auth` giữ nguyên.
 
-### `External Sources`
+## 3. Trách nhiệm từng project
 
-Đây **không phải thư mục của solution**. Visual Studio tự tạo nút này để hiển thị mã
-nguồn bên ngoài (thư viện NuGet, mã đã decompile) khi bạn debug hoặc nhấn F12 vào
-code không thuộc solution. Bạn có thể bỏ qua.
-
-### `0. AI` *(suy luận)*
-
-Theo tên gọi, đây là nơi chứa tính năng liên quan tới AI, chẳng hạn gợi ý hoặc
-chatbot, hoặc tích hợp với dịch vụ AI.
-**GymBase:** không tạo. Chỉ thêm khi có yêu cầu.
-
-### `1. Doc` *(suy luận)*
-
-Đây là tài liệu đặt ngay trong solution để mở được từ Visual Studio, ví dụ quy ước
-code, tài liệu API hay script mẫu. Thường chỉ gồm file `.md` hoặc `.txt`, không có
-project biên dịch.
-**GymBase:** thư mục thật `apps/api/1.Doc`, chứa tài liệu chỉ dành cho backend.
-Solution folder `1. Doc` chỉ gồm các file nằm trong `1.Doc/` (hiện là
-`README.md`, `cach-chay-api.md`, `crud-dung-chung.md` và collection Bruno `bruno/`), không đính kèm file ở ngoài. Tài liệu dùng chung của monorepo,
-kể cả tài liệu này, vẫn đặt ở `docs/` và không hiện trong solution.
-
-### `2. Config` *(suy luận)*
-
-Đây là cấu hình dùng chung cho nhiều project, ví dụ `appsettings` mẫu, cấu hình
-log, `Directory.Build.props` (thuộc tính MSBuild chung) hoặc file `.editorconfig`.
-**GymBase:** thư mục thật `apps/api/2.Config`, chứa cấu hình mẫu dùng chung.
-Solution folder `2. Config` chỉ gồm các file nằm trong `2.Config/` (hiện là
-`2.Config/README.md`). Riêng `global.json` (ghim SDK), `.gitignore` và
-`Directory.Build.props` (khi cần) **bắt buộc nằm ở gốc `apps/api/`**, vì
-dotnet/MSBuild/Git tìm chúng theo thư mục; các file này không hiện trong solution,
-mở bằng Explorer hoặc trình soạn thảo. Theo quy định của repo,
-**không** để credentials ở đây; dùng biến môi trường hoặc user-secrets.
-
-### `3. Management`
-
-Đây là **phần chính của ứng dụng**, nơi chứa toàn bộ tính năng quản lý. Mỗi thư mục
-con là một nhóm chức năng, và đều theo bộ 4 project API / BL / DL.Contract /
-DL.Mysql đã mô tả ở mục 1.2 (trừ `Mob` chỉ có API). Các nhóm *(suy luận)* đã có đủ
-project nhưng **chưa có code**: API host chỉ có `/health`, các class library rỗng.
-
-| Thư mục con | Ý nghĩa | Ghi chú |
+| Project | Được chứa | Không được chứa |
 | --- | --- | --- |
-| `Auth` | Đăng nhập, đăng xuất, cấp và làm mới token, phân quyền *(suy luận)* | `GymBase.AuthAPI` (:5152) + BL/DL. Sẽ dùng khi làm xác thực cho mobile. |
-| `Base` | Phần nền **riêng của Salon** dùng chung cho các nhóm trong Management, ví dụ controller hay service cơ sở đã gắn thêm cấu hình của sản phẩm *(suy luận)* | Khác `99. AMISBASE`: AMISBASE dùng chung cho **nhiều sản phẩm**, còn `Base` chỉ dùng chung **trong một sản phẩm**. GymBase: `GymBase.BaseAPI`, `BLBase`, `DLBase.*`, **đều là class library** (không chạy được), refer AMISBASE. Các nhóm khác **chưa** refer Base; khi Base có code thì chuyển chúng sang refer Base. |
-| `BIZ` | **Business**: chức năng nghiệp vụ chính của sản phẩm (đã xác nhận) | `GymBase.BIZAPI` (:5084) + BL/DL. |
-| `DI` | **Dictionary, tức danh mục**: dữ liệu nền ít thay đổi và được nghiệp vụ tham chiếu tới (đã xác nhận) | `GymBase.DIAPI` (:5055) + BL/DL. |
-| `ImportExport` | Nhập và xuất dữ liệu bằng Excel hoặc CSV *(suy luận)* | `GymBase.ImportExportAPI` (:5100) + BL/DL. |
-| `Mob` | **Mobile**: chỉ có một project API dành riêng cho app mobile (đã xác nhận) | `GymBase.MobAPI` (:5106). |
-| `Register` | Đăng ký tài khoản hoặc tenant mới, khởi tạo dữ liệu ban đầu cho khách hàng mới *(suy luận)* | `GymBase.RegisterAPI` (:5072) + BL/DL. |
-| `Report` | Báo cáo và thống kê, thường là các truy vấn tổng hợp nặng *(suy luận)* | `GymBase.ReportAPI` (:5150) + BL/DL. |
-| `System` | Thiết lập hệ thống: tham số, cấu hình chung, người dùng hoặc vai trò, nhật ký *(suy luận)* | `GymBase.SystemAPI` (:5020) + BL/DL. |
+| `GymBase.API` | `Controllers/` cho web, `Mob/Controllers/` cho mobile; request/response HTTP, policy, đăng ký dịch vụ, OpenAPI | Quy tắc nghiệp vụ, SQL, DbContext; BL/DL riêng cho mobile |
+| `GymBase.Base` | Entity gốc (`BaseEntity`, `BaseAuditableEntity`, `ISoftDelete`), phân trang, CRUD dùng chung (`IBaseDL`, `BaseBL`, `ICrudBL`), exception nghiệp vụ và mã lỗi | Logic PT, gói tập; tham chiếu tới Auth, DI, BIZ |
+| `GymBase.Base.Hosting` | `BaseApiController`, `BaseCrudController`, route theo kênh, xử lý lỗi ProblemDetails, extension đăng ký dịch vụ nền | Quy tắc nghiệp vụ riêng |
+| `GymBase.ModuleContracts` | Interface công khai và DTO tối thiểu cho giao tiếp giữa các nhóm | DbContext, repository nội bộ, controller |
+| `GymBase.BLAuth` | Người dùng, đăng nhập, refresh/logout, phân quyền, chính sách tài khoản | Truy vấn EF trực tiếp, controller |
+| `GymBase.DLAuth.Contract` | Entity của bảng Auth (`nguoi_dung`…), interface DL (`IUserDL`) | Hiện thực MySQL |
+| `GymBase.DLAuth.MySql` | Hiện thực DL của Auth, cấu hình entity, truy vấn | Quy tắc nghiệp vụ, gọi BLAuth |
+| `GymBase.BLDI` | CRUD và ràng buộc danh mục, phân loại, kiểm tra mã danh mục | Quy tắc trừ buổi tập |
+| `GymBase.DLDI.Contract` / `.MySql` | Entity, interface DL của danh mục / hiện thực MySQL | Nghiệp vụ thanh toán, PT |
+| `GymBase.BLBiz` | Nghiệp vụ PT, học viên, buổi tập, gói PT, nhật ký, khiếu nại | SQL, DbContext, logic HTTP |
+| `GymBase.DLBiz.Contract` / `.MySql` | Entity, interface DL của BIZ / hiện thực MySQL; **`AppDbContext` và DL mock dùng chung** | Điều phối nghiệp vụ xuyên nhóm |
 
-#### DI và Biz khác nhau thế nào?
+## 4. Bên trong BL và DL
 
-- **DI (danh mục)** giống như các "từ điển" dữ liệu: thêm, sửa, xóa, xem danh sách
-  là chính, và logic thường đơn giản. Ví dụ trong GymBase có thể là: gói tập, loại
-  bài tập, nhóm cơ, chi nhánh hoặc phòng tập.
-- **Biz (nghiệp vụ)** là các luồng có quy tắc và trạng thái. Ví dụ trong GymBase
-  có thể là: đặt và hủy buổi PT, trừ buổi trong gói khi điểm danh, ghi nhận buổi
-  tập, khiếu nại.
+Một chức năng có vị trí song song trong BL và DL. Mẫu đang có (người dùng):
 
-Cách phân biệt nhanh: nếu bản ghi chủ yếu được **chọn từ một danh sách** trong
-nghiệp vụ khác thì đó là danh mục (DI). Nếu nó **diễn ra theo thời gian và có quy
-tắc** thì đó là nghiệp vụ (Biz). Việc xếp Trainers, Trainees, Workouts… vào DI hay
-Biz **chưa được chốt**.
+```text
+GymBase.BLAuth/
+├── NguoiDung/
+│   ├── NguoiDungDtos.cs        # DTO trả ra API và body thêm/sửa
+│   └── UserBL.cs               # Nghiệp vụ, kế thừa BaseBL
+└── AuthErrorCodes.cs           # Mã lỗi chi tiết của nhóm
+GymBase.DLAuth.Contract/
+├── Entities/nguoi_dung.cs      # Tên class trùng tên bảng, property trùng tên cột
+└── IUserDL.cs
+GymBase.DLAuth.MySql/
+└── UserDL.cs                   # Hiện thực IUserDL
+```
 
-#### Mob: vì sao chỉ có một project?
+Chức năng lớn hơn trong BIZ thì chia thêm thư mục con, ví dụ:
 
-Mobile không có logic riêng. Quy trình là:
+```text
+GymBase.BLBiz/
+├── PTSessions/
+│   ├── PTSessionBL.cs          # Hoàn thành, hủy buổi tập…
+│   ├── Rules/                  # Điều kiện chuyển trạng thái
+│   ├── Dtos/
+│   └── Validators/
+└── SessionPackages/
+    ├── SessionPackageBL.cs     # Mua, trừ buổi, khiếu nại…
+    └── Rules/                  # Điều kiện trừ gói, giới hạn buổi
+GymBase.DLBiz.Contract/
+├── Entities/
+├── PTSessions/IPTSessionDL.cs
+└── SessionPackages/ISessionPackageDL.cs
+GymBase.DLBiz.MySql/
+├── Persistence/AppDbContext.cs
+├── Configurations/             # IEntityTypeConfiguration của BIZ
+├── PTSessions/PTSessionDL.cs
+└── Migrations/
+```
 
-1. Viết controller ở web (`DIAPI` hoặc `BIZAPI`), gọi BL rồi tới DL.
-2. Thêm controller tương ứng ở `MobAPI`, gọi **lại đúng BL đó**.
+Controller chỉ gọi BL. Interface DL nằm ở `DL<nhóm>.Contract`, hiện thực và DbContext nằm ở
+`DL<nhóm>.MySql`. Entity đặt ở `DL<nhóm>.Contract/Entities` của nhóm sở hữu bảng đó.
 
-Như vậy một quy tắc nghiệp vụ chỉ được viết một lần, trong BL. `MobAPI` tách riêng
-để có thể dùng route, response gọn hơn cho mobile, xác thực và phiên bản API độc
-lập, cũng như deploy và scale riêng. Vì thế `GymBase.MobAPI` tham chiếu BL của cả
-DI và Biz.
+## 5. Ma trận tham chiếu project
 
-Route của hai kênh được phân biệt bằng tiền tố do `Program.cs` gắn: các host web dùng
-`/api/web/v1/...`, MobAPI dùng `/api/mobile/v1/...`. Controller chỉ khai báo phần
-`v1/[controller]` (kế thừa từ `BaseApiController`), nên chép controller từ web sang
-MobAPI không phải sửa route. Cách chạy: `apps/api/1.Doc/cach-chay-api.md`.
-
-### `4. Model` *(suy luận)*
-
-Đây là các lớp dữ liệu dùng chung giữa nhiều nhóm, ví dụ entity ánh xạ tới bảng,
-DTO, enum hoặc hằng số. Nếu đặt chúng trong từng nhóm thì DI và Biz sẽ phải tham
-chiếu chéo nhau.
-**GymBase:** `apps/api/4.Model/GymBase.Model` chứa **entity của mọi bảng**:
-`Entities/<phân hệ>/<tên_bảng>.cs`, ví dụ `Entities/System/nguoi_dung.cs`. Tên class trùng
-tên bảng, property trùng tên cột. Namespace chung là `GymBase.Model.Entities` (không theo
-thư mục con, để tránh `...Entities.System` che namespace `System` của .NET). Model chỉ tham
-chiếu `AMISBase.DL.Contract` (lấy `BaseEntity`), không chứa logic hay SQL. `DL*.Contract`
-tham chiếu Model, nên DI và Biz cùng dùng được một entity mà không phải tham chiếu chéo nhau.
-
-**DTO không để ở Model** mà để trong BL của phân hệ, ví dụ
-`GymBase.BLSystem/NguoiDung/NguoiDungDtos.cs`. Chỉ kiểu dữ liệu mà nhiều phân hệ cùng cần
-mới đưa lên Model. Không trả entity ra API; luôn dùng DTO. Chi tiết:
-`apps/api/1.Doc/crud-dung-chung.md`, mục 2.
-
-### `5. Lib` *(suy luận)*
-
-Đây là thư viện tiện ích không gắn với nghiệp vụ, ví dụ xử lý chuỗi hoặc ngày giờ,
-mã hóa, đọc ghi Excel, gửi email, hoặc wrapper cho thư viện bên thứ ba.
-**GymBase:** `apps/api/5.Lib/GymBase.Lib` (class library rỗng).
-
-### `6. Integration` *(suy luận)*
-
-Đây là nơi tích hợp với hệ thống bên ngoài, ví dụ cổng thanh toán, SMS hoặc Zalo,
-hóa đơn điện tử, hay API của đối tác. Mỗi tích hợp thường là một project riêng.
-**GymBase:** `apps/api/6.Integration/GymBase.Integration` (class library rỗng). Khi có
-nhiều tích hợp thì tách mỗi tích hợp một project trong thư mục này.
-
-### `7. Worker` *(suy luận)*
-
-Đây là các tiến trình chạy nền, không phục vụ request trực tiếp, ví dụ job theo
-lịch (nhắc lịch tập, báo gói tập sắp hết hạn) hoặc consumer đọc message queue.
-Trong .NET thường là project kiểu `worker` (`BackgroundService`). Worker cũng gọi
-BL như API.
-**GymBase:** `apps/api/7.Worker/GymBase.Worker` (project `worker`, mới chỉ khởi động host,
-chưa có job nào).
-
-### `8. Unitest`
-
-Đây là các project kiểm thử. Tên "Unitest" là cách viết của solution gốc.
-**GymBase:** `apps/api/8.Unitest/GymBase.UnitTests`, nằm trong solution folder `8. Unitest`.
-Hiện có `LayerReferenceTests`, dùng để giữ quy tắc phân tầng. Test tự tìm mọi project
-`GymBase.BL*` và `*.Contract`, nên nhóm mới không cần khai báo thêm. Test cho BL sẽ mock
-interface trong `DL*.Contract`.
-
-### `99. AMISBASE`
-
-Đây là **nền thêm, sửa, xóa dùng chung**, được các nhóm khác tham chiếu tới (đã
-xác nhận). Trong MISA, AMISBASE là bộ khung chung cho nhiều sản phẩm AMIS: viết
-CRUD một lần, sau đó mỗi danh mục hay nghiệp vụ chỉ cần kế thừa.
-
-GymBase chia AMISBASE thành đúng 4 tầng để các tầng của DI và Biz kế thừa tương ứng:
-
-| Project | Chứa gì | Ai tham chiếu |
+| Project | Được tham chiếu | Không được tham chiếu |
 | --- | --- | --- |
-| `GymBase.AMISBase.API` | `BaseApiController`; `BaseCrudController<TDto, TCreateDto, TUpdateDto>` (GET danh sách, GET `{id}`, POST, PUT `{id}`, DELETE `{id}`); tiền tố route theo kênh | Các host `*API`, `MobAPI` |
-| `GymBase.AMISBase.BL` | `ICrudBL<...>` và `BaseBL<TEntity, TDto, TCreateDto, TUpdateDto>`: chuẩn hóa phân trang, map entity ↔ DTO, tự điền ngày/người tạo, sửa (UTC), xóa mềm nếu entity có `is_deleted` | `BL*` |
-| `GymBase.AMISBase.DL.Contract` | Entity gốc, `IHasId`, phân trang, `IBaseDL<TEntity>`: `GetPaging`, `GetById`, `Insert`, `Update`, `Delete` | `DL*.Contract`, `GymBase.Model` |
-| `GymBase.AMISBase.DL.Mysql` | **Hiện là mock:** `InMemoryStore<T>` (đăng ký singleton) + `InMemoryBaseDL<TEntity>`. Khi nối DB sẽ thêm `AppDbContext` (DbContext duy nhất của cả DB) và `BaseDL<TEntity>` dùng EF Core | `DL*.Mysql` |
+| `GymBase.API` | `Base.Hosting`, mọi `BL*`; các `DL*.MySql` **chỉ để đăng ký dịch vụ** | Controller gọi thẳng DL hoặc DbContext |
+| `BL<nhóm>` | `Base`, `ModuleContracts`, `DL<cùng nhóm>.Contract` | `DL*.MySql`, API, BL nhóm khác |
+| `DL<nhóm>.Contract` | `Base` | `BL*`, API, `DL*.MySql` |
+| `DL<nhóm>.MySql` | `Base`, `DL<cùng nhóm>.Contract`, `GymBase.DLBiz.MySql` (lấy `AppDbContext`, DL dùng chung) | `BL*`, API, Contract của nhóm khác |
+| `GymBase.ModuleContracts` | `Base` | `BL*`, `DL*`, API, EF Core |
+| `GymBase.Base` | Thư viện .NET chuẩn | Auth, DI, BIZ, API |
+| `GymBase.Base.Hosting` | `Base`, ASP.NET Core | Logic nghiệp vụ BIZ |
 
-HTTP trả về của controller dùng chung: `GET` 200 / 404, `POST` 201 kèm header `Location`,
-`PUT` 200 / 404, `DELETE` 204 / 404. Body sai hoặc vi phạm DataAnnotations bị `[ApiController]`
-trả 400 trước khi vào BL.
+`GymBase.ArchitectureTests/LayerReferenceTests` kiểm tra bảng này mỗi lần chạy test, tự quét mọi
+`.csproj` trong `src/`, nên nhóm hay project mới không cần sửa test.
 
-DL hiện lưu trong bộ nhớ, mất dữ liệu khi tắt host. Nối MySQL (mục 3 trong
-[viec-con-lai-base.md](viec-con-lai-base.md)) chỉ phải đổi lớp cha của DL từng bảng từ
-`InMemoryBaseDL` sang `BaseDL`, BL và API giữ nguyên.
+**BIZ cần dữ liệu danh mục:** `BLBiz` phụ thuộc interface tra cứu công khai trong
+`ModuleContracts`; `BLDI` hiện thực interface đó và được host đăng ký. Không tham chiếu `BLDI`
+trực tiếp để tránh phụ thuộc chéo.
 
----
+## 6. Controller cho web và mobile
 
-## 3. Ví dụ: thêm danh mục "Gói tập" từ đầu đến cuối
+Web và mobile dùng chung `GymBase.API` và toàn bộ BL/DL; chỉ tách lớp HTTP. Không tạo
+`BLMob`, `DLMob`, cũng không dựng host thứ hai.
 
-Làm theo đúng mẫu người dùng (`nguoi_dung`) đang có. Code đầy đủ xem ở
-`GymBase.Model/Entities/System`, `GymBase.DLSystem.*`, `GymBase.BLSystem/NguoiDung`,
-`GymBase.SystemAPI` và `GymBase.MobAPI`. Hướng dẫn kèm code: `apps/api/1.Doc/crud-dung-chung.md`.
+```text
+GymBase.API/
+├── Controllers/                    # WEB  → GymBase.API.Controllers
+│   └── UsersController.cs
+└── Mob/Controllers/                # MOBILE → GymBase.API.Mob.Controllers
+    └── UsersController.cs
+
+Cả hai nhóm controller → BLAuth / BLDI / BLBiz → DL<nhóm>.Contract ◄── DL<nhóm>.MySql
+```
+
+- **Route:** controller chỉ khai báo `[controller]` (kế thừa `BaseApiController`).
+  `ChannelRouteConvention` gắn tiền tố theo namespace: `api/v1/mob` nếu namespace có đoạn `Mob`,
+  còn lại `api/v1/web`. Ví dụ `/api/v1/web/users` và `/api/v1/mob/users`.
+- Controller web và mobile được **trùng tên** ở hai namespace. Kênh được gắn làm route value
+  `area`, nên link sinh ra (header `Location` của `POST`) luôn đúng kênh.
+- `Mob/Controllers/` được tùy chỉnh response, DTO hoặc gộp dữ liệu cho app, nhưng gọi cùng BL và
+  **không chép logic nghiệp vụ**.
+- DTO HTTP riêng của từng kênh (khi schema khác nhau) đặt cạnh controller của kênh đó; không đưa
+  DTO thuần HTTP xuống DL.
+- Quy tắc khác nhau theo vai trò thì kiểm tra theo user, role và policy, không dựa vào đường dẫn
+  `/mob`. **Tiền tố `mob` không phải ranh giới bảo mật**: backend phải kiểm tra quyền cho cả hai kênh.
+- Endpoint có cùng contract và hành vi trên cả hai kênh thì không bắt buộc tạo bản sao cho Mob.
+
+Ví dụ luồng:
+
+```text
+GET /api/v1/web/users/{id} → Controllers/UsersController     ┐
+GET /api/v1/mob/users/{id} → Mob/Controllers/UsersController ┴→ UserBL.GetByIdAsync → IUserDL → MySQL
+```
+
+## 7. Ví dụ một luồng nghiệp vụ V1: PT hoàn thành buổi tập
+
+1. PT gọi `POST /api/v1/mob/pt-sessions/{id}/complete`; API kiểm tra xác thực rồi gọi `BLBiz`.
+2. `BLBiz` tải buổi tập và gói qua interface trong `DLBiz.Contract`; kiểm tra đúng PT, đúng trạng
+   thái, buổi có PT trực tiếp, gói còn lượt.
+3. `BLBiz` cập nhật trạng thái và số buổi trong cùng một unit of work; chống hoàn thành hoặc trừ
+   buổi hai lần bằng điều kiện trạng thái hoặc concurrency token.
+4. `DLBiz.MySql` lưu mọi thay đổi trong một transaction; ghi audit/outbox trong cùng transaction
+   nếu cần.
+5. API trả response theo [quy-uoc-response.md](quy-uoc-response.md); thông báo gửi bất đồng bộ
+   sau commit qua outbox/worker nếu có.
+
+Quy tắc V1: chỉ trừ lượt khi có PT trực tiếp; PT xác nhận hoàn thành; học viên được khiếu nại;
+cả PT và học viên nhập nhật ký nhưng phải có lịch sử chỉnh sửa. Các trường hợp đồng thời phải có test.
+
+## 8. Sở hữu dữ liệu và migration
+
+- Auth sở hữu tài khoản, refresh session và các bảng xác thực. DI sở hữu bảng danh mục. BIZ sở hữu
+  bảng nghiệp vụ. Không sửa bảng của nhóm khác nếu chưa qua review.
+- Một DB, **một `AppDbContext`** (trong `DLBiz.MySql`), nạp `IEntityTypeConfiguration` từ các
+  `DL*.MySql` khi đăng ký. Không có hai DbContext cùng migrate một bảng.
+- Migration phải được review, đặt tên rõ, chỉ roll forward; không sửa migration đã áp dụng trên
+  môi trường dùng chung. Không gọi `Database.Migrate()` khi khởi động production.
+- Seed danh mục phải idempotent. Không lưu bí mật trong `appsettings.json` hay trong repo.
+
+## 9. Build, test, deploy
+
+Chạy tại `apps/api`:
+
+```bash
+dotnet restore GymBase.slnx
+```
+
+```bash
+dotnet build GymBase.slnx -c Release --no-restore
+```
+
+```bash
+dotnet test GymBase.slnx -c Release --no-restore
+```
+
+```bash
+dotnet run --project src/Host/GymBase.API
+```
+
+| Tệp / công cụ | Quy định |
+| --- | --- |
+| `global.json` | Ghim SDK; CI và máy dev dùng cùng SDK |
+| `Directory.Build.props` | Nullable, implicit usings, coi cảnh báo là lỗi, cấu hình project test |
+| `Directory.Packages.props` | Central Package Management; `.csproj` chỉ ghi tên gói, không ghi phiên bản |
+| `.editorconfig` | Định dạng, đặt tên, cảnh báo; thống nhất trước khi review |
+| CI | Restore → Build → Unit/Architecture test → Integration test → Docker build |
+| Docker | Build từ `apps/api` bằng một Dockerfile multi-stage; chỉ publish `GymBase.API` |
+
+## 10. Quy tắc review bắt buộc
+
+1. Controller trong `Controllers/` và `Mob/Controllers/` chỉ gọi BL; không chứa SQL hay xử lý trừ buổi PT.
+2. BL chỉ tham chiếu `DL<nhóm>.Contract` hoặc `ModuleContracts`; không dùng trực tiếp EF hay MySQL.
+3. `DL*.MySql` không tham chiếu BL, không cài quy tắc nghiệp vụ.
+4. `Base` không thành "sọt chung" cho DTO và logic của BIZ.
+5. DI (Danh mục) chỉ quản lý dữ liệu danh mục và quy tắc nội tại của danh mục.
+6. Không tạo `.csproj` mới chỉ vì có thêm thư mục hay chức năng.
+7. Không có tham chiếu vòng; mọi project restore và build được từ bản clone mới.
+8. Nghiệp vụ nhiều bảng phải có transaction và test chạy đồng thời; mọi bug sửa phải kèm test hồi quy.
+9. Không commit mật khẩu, JWT secret, connection string thật.
+10. PR đổi schema phải kèm migration và mô tả ảnh hưởng tương thích.
+
+## 11. Thêm chức năng mới
+
+### Thêm danh mục "Gói tập" (nhóm DI)
+
+Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [crud-dung-chung.md](crud-dung-chung.md).
 
 | Bước | Project | File | Nội dung |
 | --- | --- | --- | --- |
-| 1 | `GymBase.Model` | `Entities/DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, namespace `GymBase.Model.Entities`, property trùng tên cột. |
-| 2 | `GymBase.DLDI.Contract` | `IGoiTapDL.cs` | `interface IGoiTapDL : IBaseDL<goi_tap>`, thêm hàm riêng nếu cần, ví dụ `ExistsByCode(code)`. |
-| 3 | `GymBase.DLDI.Mysql` | `GoiTapDL.cs` | `class GoiTapDL : InMemoryBaseDL<goi_tap>, IGoiTapDL` (sau này là `BaseDL<goi_tap>`). Override `GetSearchValues` để chọn cột tìm kiếm. |
-| 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapBL.cs` | `GoiTapDto : IHasId`, `GoiTapCreateDto`, `GoiTapUpdateDto` kèm DataAnnotations. `class GoiTapBL : BaseBL<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>`: viết 3 hàm map. Quy tắc riêng (mã không trùng, giá > 0) thì override `CreateAsync` / `UpdateAsync`. **Không** viết SQL. |
-| 5 | `GymBase.DIAPI` | `Controllers/GoiTapController.cs` | `class GoiTapController(GoiTapBL bl) : BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(bl);` là đủ 5 endpoint. |
-| 6 | `GymBase.DIAPI` | `Program.cs` | Đăng ký DI: `TimeProvider.System`, `InMemoryStore<>` (singleton, khi còn mock), `IGoiTapDL → GoiTapDL`, `GoiTapBL`. |
-| 7 | `GymBase.MobAPI` | `Controllers/GoiTapController.cs` + `Program.cs` | Kế thừa `BaseCrudController<GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>` như web, gọi lại `GoiTapBL`; đăng ký DI tương tự. |
-| 8 | `GymBase.UnitTests` | `GoiTapBLTests.cs` | Tạo `GoiTapBL` trên `GoiTapDL` với `InMemoryStore` riêng cho từng test. |
+| 1 | `GymBase.DLDI.Contract` | `Entities/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, property trùng tên cột |
+| 2 | `GymBase.DLDI.Contract` | `IGoiTapDL.cs` | `interface IGoiTapDL : IBaseDL<goi_tap>` |
+| 3 | `GymBase.DLDI.MySql` | `GoiTapDL.cs` | `class GoiTapDL : InMemoryBaseDL<goi_tap>, IGoiTapDL` (sau này là `BaseDL<goi_tap>`) |
+| 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapBL.cs` | DTO kèm DataAnnotations; `GoiTapBL : BaseBL<...>` viết 3 hàm map, quy tắc riêng thì override |
+| 5 | `GymBase.API` | `Controllers/GoiTapController.cs` | Web: kế thừa `BaseCrudController<...>` là đủ 5 endpoint |
+| 6 | `GymBase.API` | `Mob/Controllers/GoiTapController.cs` | Mobile (nếu app cần): như trên, gọi lại `GoiTapBL` |
+| 7 | `GymBase.API` | `Program.cs` | Đăng ký `IGoiTapDL → GoiTapDL`, `GoiTapBL` |
+| 8 | `GymBase.UnitTests` | `DI/GoiTapBLTests.cs` | Test BL trên DL mock, mỗi test một `InMemoryStore` riêng |
 
-Luồng chạy khi app mobile lấy danh sách gói tập:
+### Thêm một nhóm mới
 
-```text
-GET /api/mobile/v1/goitap  ──► MobAPI.GoiTapController
-                          ──► BLDI.GoiTapBL.GetPagingAsync()
-                              ──► IGoiTapDL (DLDI.Contract)
-                                  ──► GoiTapDL (DLDI.Mysql) ── SQL ──► MySQL
-```
+Chỉ thêm nhóm khi ranh giới đủ độc lập; V2 ưu tiên thêm chức năng vào nhóm sẵn có (thường là BIZ).
+Khi cần, tạo bộ 3 project `GymBase.BL<Nhóm>`, `GymBase.DL<Nhóm>.Contract`, `GymBase.DL<Nhóm>.MySql`
+trong `src/<Nhóm>/`, tham chiếu theo bảng ở mục 5, thêm vào `GymBase.slnx`, rồi chạy
+`dotnet test GymBase.slnx`. `LayerReferenceTests` tự nhận các project mới.
 
----
+## 12. Còn phải chốt
 
-## 4. Thêm một nhóm mới (ví dụ `Payment`)
-
-1. Tạo 4 project trong `apps/api/3.Management/Payment/`: `GymBase.PaymentAPI`
-   (webapi, `--use-controllers`), `GymBase.BLPayment`, `GymBase.DLPayment.Contract` và
-   `GymBase.DLPayment.Mysql` (classlib). Tất cả dùng `-f net10.0`.
-2. Nối tham chiếu theo đúng chiều ở mục 1.3, và tham chiếu tầng tương ứng của AMISBASE.
-3. Thêm vào solution: `dotnet sln GymBase.slnx add --solution-folder "3. Management/Payment" <csproj...>`.
-4. Chạy `dotnet test GymBase.slnx`. `LayerReferenceTests` tự nhận hai project BL và
-   Contract mới, không cần sửa test.
-
-Lệnh scaffold và build xem thêm tại `apps/api/README.md`.
+- **Hậu tố tên lớp:** hiện dùng `UserBL` / `IUserDL` theo tên tầng. Có đổi sang `UserService` /
+  `IUserRepository` hay không thì chốt trước khi viết nhiều nghiệp vụ, rồi áp dụng nhất quán.
+- **Tên route:** hiện route lấy theo tên controller (`/users`). Có dùng dạng kebab-case
+  (`/pt-sessions`) hay không thì chốt cùng mục 11 trong
+  [viec-con-lai-base.md](viec-con-lai-base.md) (bật `LowercaseUrls`).

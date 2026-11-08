@@ -16,7 +16,7 @@ Tất cả thư mục dưới đây nằm cùng cấp với `GymBase.docx`, ngay
 GymBase/
 ├── apps/
 │   ├── mobile/                 # Expo / React Native chạy được, feature-first
-│   └── api/                    # Backend ASP.NET Core 10
+│   └── api/                    # Backend ASP.NET Core 10, một host GymBase.API
 ├── packages/                  # Quy ước packages TypeScript dùng chung
 ├── database/
 │   ├── diagrams/

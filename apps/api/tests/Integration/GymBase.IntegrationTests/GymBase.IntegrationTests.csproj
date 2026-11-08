@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Base\GymBase.Base.Hosting\GymBase.Base.Hosting.csproj" />
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
+  </ItemGroup>
+
+</Project>

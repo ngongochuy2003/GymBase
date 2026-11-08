@@ -17,17 +17,20 @@ Khóa chính là UUIDv7 (`Guid.CreateVersion7()`). Mọi mốc thời gian lưu 
 Xóa mềm bằng cờ `is_deleted` (property trùng tên cột).
 Tách `BaseEntity` (chỉ Id) và `BaseAuditableEntity` (thêm 4 trường audit) vì
 bảng nối, log và lịch sử không cần audit; xóa mềm là interface `ISoftDelete` riêng.
-Mã nguồn: `apps/api/99.AMISBASE/GymBase.AMISBase.DL.Contract/Entities`.
+Mã nguồn: `apps/api/src/Base/GymBase.Base/Entities`.
 
 ## Cập nhật — API base
 
-Theo yêu cầu trực tiếp của chủ repo, `apps/api` dùng cấu trúc Management / AMISBASE
-thay cho modular monolith `GymBase.Modules` ghi trước đó. Mỗi nhóm (DI = danh mục,
-Biz = nghiệp vụ) có 4 project: API (controller), BL (logic, không query DB),
-DL.Contract, DL.Mysql (EF Core). `Mob/GymBase.MobAPI` là API duy nhất cho mobile,
-gọi lại BL của DI/Biz. AMISBASE chứa nền CRUD dùng chung theo cùng 4 tầng.
+Ngày 08/11/2026 chuẩn hóa `apps/api` theo tài liệu "Chuẩn kiến trúc backend .NET 10":
+modular monolith theo BL / DL, **một API host** `GymBase.API` phục vụ cả web
+(`Controllers/`, `/api/v1/web`) và mobile (`Mob/Controllers/`, `/api/v1/mob`), thay cho
+cấu trúc nhiều host trước đó. Ba nhóm Auth / DI (danh mục) / BIZ, mỗi nhóm có BL,
+DL.Contract, DL.MySql; phần nền dùng chung là `GymBase.Base` và `GymBase.Base.Hosting`.
+Người dùng chuyển từ nhóm System cũ sang Auth; entity đặt ở `DL<nhóm>.Contract/Entities`;
+`AppDbContext` và DL mock dùng chung đặt trong `GymBase.DLBiz.MySql`. Các nhóm khung rỗng
+(ImportExport, Register, Report, Lib, Integration, Worker) bị bỏ, khi cần thì thêm lại.
 SDK ban đầu ghim .NET 9, sau đó đã nâng lên .NET 10 (xem mục trên).
-Chi tiết: `apps/api/README.md`.
+Chi tiết: `docs/api/cau-truc-thu-muc.md`.
 
 ## Cập nhật — Mobile base
 
@@ -90,7 +93,7 @@ push hoặc merge. Leader chọn luồng PR phù hợp trước khi chia việc 
 - Bộ Expo/Node/pnpm.
   Đã chốt 08/11: SDK .NET 10; truy cập DB bằng EF Core với provider
   `Microting.EntityFrameworkCore.MySql` (Pomelo chưa hỗ trợ EF Core 10); MySQL 8.4 LTS; migration
-  bằng EF Core migrations; một `AppDbContext` duy nhất ở `AMISBase.DL.Mysql`
+  bằng EF Core migrations; một `AppDbContext` duy nhất ở `GymBase.DLBiz.MySql`
   (xem `docs/api/viec-con-lai-base.md`, Q3, Q4, Q5, Q9).
 - API auth/refresh/error contract, authorization matrix và public exports.
 - ERD, quy ước tên bảng/cột, timezone, concurrency và quy tắc khiếu nại.

@@ -9,7 +9,7 @@ Web (Next.js, dự kiến V2) ───┘
 ```
 
 Mobile đã có demo chạy được; API/MySQL/Web vẫn là kiến trúc mục tiêu.
-Backend dùng modular monolith, chưa chia microservices. Mobile tổ chức feature-first.
+Backend dùng modular monolith theo BL / DL với một host `GymBase.API`, chưa chia microservices. Mobile tổ chức feature-first.
 
 | Khu vực | Trách nhiệm và ranh giới |
 | --- | --- |
@@ -24,18 +24,20 @@ Backend dùng modular monolith, chưa chia microservices. Mobile tổ chức fea
 
 ## Module V1
 
-| Backend dự kiến | Mobile tương ứng | Phạm vi |
+| Backend (nhóm / chức năng) | Mobile tương ứng | Phạm vi |
 | --- | --- | --- |
-| Identity | auth | Danh tính, session, phân quyền |
-| Trainers | trainers | Hồ sơ và tác vụ PT |
-| Trainees | trainees | Hồ sơ và tác vụ học viên |
-| Workouts | workouts | Kế hoạch và nhật ký tập |
-| PtSessions | pt-sessions | Buổi PT, xác nhận, khiếu nại |
-| SessionPackages | Bổ sung feature khi có màn hình | Gói và số lượt buổi PT |
+| Auth | auth | Danh tính, session, phân quyền |
+| BIZ / Trainers | trainers | Hồ sơ và tác vụ PT |
+| BIZ / Trainees | trainees | Hồ sơ và tác vụ học viên |
+| BIZ / Workouts | workouts | Kế hoạch và nhật ký tập |
+| BIZ / PTSessions | pt-sessions | Buổi PT, xác nhận, khiếu nại |
+| BIZ / SessionPackages | Bổ sung feature khi có màn hình | Gói và số lượt buổi PT |
+
+Dữ liệu danh mục (gói tập, loại bài tập, chi nhánh…) thuộc nhóm DI (Danh mục).
 
 Mobile: `app → features → core/shared`; route chỉ gọi screen. Feature không import
-vòng hoặc tùy ý truy cập nội bộ feature khác. Backend trao đổi liên module bằng
-contract/service nội bộ; API là nơi quyết định quyền, số buổi và tính phí.
-EF migrations đặt trong Infrastructure, solution nằm tại `apps/api/GymBase.slnx`.
+vòng hoặc tùy ý truy cập nội bộ feature khác. Backend trao đổi giữa các nhóm qua interface
+trong `GymBase.ModuleContracts`; API là nơi quyết định quyền, số buổi và tính phí.
+EF migrations đặt trong `GymBase.DLBiz.MySql/Migrations`, solution nằm tại `apps/api/GymBase.slnx`.
 
-Xem README của từng app để biết cây source sẽ được tạo ở các task tiếp theo.
+Chuẩn kiến trúc backend: `docs/api/cau-truc-thu-muc.md`.

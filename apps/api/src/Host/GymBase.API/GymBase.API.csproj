@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <!-- Host là composition root: tham chiếu mọi BL, và các DL.*.MySql chỉ để đăng ký dịch vụ. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\GymBase.Base.Hosting\GymBase.Base.Hosting.csproj" />
+    <ProjectReference Include="..\..\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
+    <ProjectReference Include="..\..\DI\GymBase.BLDI\GymBase.BLDI.csproj" />
+    <ProjectReference Include="..\..\BIZ\GymBase.BLBiz\GymBase.BLBiz.csproj" />
+    <ProjectReference Include="..\..\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
+    <ProjectReference Include="..\..\DI\GymBase.DLDI.MySql\GymBase.DLDI.MySql.csproj" />
+    <ProjectReference Include="..\..\BIZ\GymBase.DLBiz.MySql\GymBase.DLBiz.MySql.csproj" />
+  </ItemGroup>
+
+</Project>

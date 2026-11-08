@@ -1,61 +1,54 @@
 # GymBase API
 
-Backend ASP.NET Core 10 (.NET 10 LTS, SDK ghim tại `global.json`), MySQL. Solution duy nhất:
-`apps/api/GymBase.slnx`. Cấu trúc theo mô hình Management / AMISBASE.
+Backend ASP.NET Core 10 (.NET 10 LTS, SDK ghim tại `global.json`), EF Core, MySQL 8.4.
+Kiến trúc **modular monolith theo BL / DL**: một API host (`GymBase.API`) phục vụ cả web và
+mobile, một solution `GymBase.slnx`. Chuẩn kiến trúc đầy đủ:
+[`docs/api/cau-truc-thu-muc.md`](../../docs/api/cau-truc-thu-muc.md).
 
 ## Cấu trúc
 
-Quy tắc đặt tên: **thư mục thật = tên solution folder bỏ dấu cách sau số thứ tự**
-(ví dụ `3. Management/BIZ` → `3.Management/BIZ`, `99. AMISBASE` → `99.AMISBASE`).
-
 ```text
-GymBase.slnx
-global.json, .gitignore           # Bắt buộc ở gốc; không hiện trong solution
-1.Doc/                            # 1. Doc — tài liệu riêng của backend (không có project)
-2.Config/                         # 2. Config — cấu hình mẫu dùng chung (không có project)
-3.Management/                     # 3. Management — mỗi nhóm: API / BL / DL.Contract / DL.Mysql
-  Auth/                           # Xác thực, phân quyền            GymBase.AuthAPI         :5152
-  Base/                           # Nền riêng của GymBase (toàn class library, không chạy được)
-  BIZ/                            # Nghiệp vụ                       GymBase.BIZAPI          :5084
-  DI/                             # Danh mục                        GymBase.DIAPI           :5055
-  ImportExport/                   # Nhập/xuất Excel, CSV            GymBase.ImportExportAPI :5100
-  Mob/                            # Chỉ có API cho mobile           GymBase.MobAPI          :5106
-  Register/                       # Đăng ký, khởi tạo dữ liệu       GymBase.RegisterAPI     :5072
-  Report/                         # Báo cáo, thống kê               GymBase.ReportAPI       :5150
-  System/                         # Thiết lập hệ thống              GymBase.SystemAPI       :5020
-4.Model/GymBase.Model             # 4. Model — entity (Entities/<phân hệ>/<tên_bảng>.cs)
-5.Lib/GymBase.Lib                 # 5. Lib — tiện ích không gắn nghiệp vụ
-6.Integration/GymBase.Integration # 6. Integration — tích hợp hệ thống ngoài
-7.Worker/GymBase.Worker           # 7. Worker — tiến trình chạy nền
-8.Unitest/GymBase.UnitTests       # 8. Unitest
-99.AMISBASE/                      # 99. AMISBASE — nền thêm/sửa/xóa dùng chung
-  GymBase.AMISBase.API            # BaseApiController
-  GymBase.AMISBase.BL
-  GymBase.AMISBase.DL.Contract
-  GymBase.AMISBase.DL.Mysql
+apps/api/
+├── GymBase.slnx                  # Solution duy nhất
+├── global.json                   # Ghim .NET SDK
+├── Directory.Build.props         # net10.0, nullable, implicit usings, coi cảnh báo là lỗi
+├── Directory.Packages.props      # Phiên bản NuGet tập trung (Central Package Management)
+├── .editorconfig                 # Quy ước C# của backend
+├── src/
+│   ├── Host/GymBase.API/         # HOST DUY NHẤT: Controllers/ (web), Mob/Controllers/ (mobile)
+│   ├── Base/
+│   │   ├── GymBase.Base/         # Entity gốc, phân trang, CRUD dùng chung, exception
+│   │   └── GymBase.Base.Hosting/ # Controller gốc, route theo kênh, xử lý lỗi ProblemDetails
+│   ├── Contracts/
+│   │   └── GymBase.ModuleContracts/  # Interface công khai giữa các nhóm
+│   ├── Auth/                     # Tài khoản, xác thực, phân quyền: BLAuth, DLAuth.Contract, DLAuth.MySql
+│   ├── DI/                       # Danh mục: BLDI, DLDI.Contract, DLDI.MySql
+│   └── BIZ/                      # Nghiệp vụ PT, học viên, buổi tập: BLBiz, DLBiz.Contract, DLBiz.MySql
+└── tests/
+    ├── Unit/GymBase.UnitTests/
+    ├── Integration/GymBase.IntegrationTests/
+    └── Architecture/GymBase.ArchitectureTests/
 ```
 
-Ví dụ nhóm BIZ gồm `GymBase.BIZAPI`, `GymBase.BLBIZ`, `GymBase.DLBIZ.Contract` và
-`GymBase.DLBIZ.Mysql`; các nhóm khác đặt tên theo đúng mẫu đó. Hiện chỉ có khung:
-các API host mới có `/health`, các class library còn rỗng. Giải thích chi tiết từng
-thư mục: `docs/api/cau-truc-thu-muc.md`.
+"DI" trong tên nhóm nghĩa là **Danh mục**, không phải Dependency Injection.
 
 ## Luồng phụ thuộc
 
 ```text
-API  ──► BL ──► DL.Contract ◄── DL.Mysql
- └──────────────────────────────────┘   (API chỉ refer Mysql để đăng ký DI)
+Controllers/ (web) ─┐
+                    ├─► BLAuth / BLDI / BLBiz ──► DL<nhóm>.Contract ◄── DL<nhóm>.MySql
+Mob/Controllers/ ───┘
 ```
 
-- Mỗi tầng refer tầng tương ứng trong AMISBASE.
-- BL và DL.Contract **không** refer `*.Mysql`; `LayerReferenceTests` kiểm tra quy tắc này.
-- Mobile: viết controller ở DIAPI/BIZAPI trước, sau đó thêm controller tương ứng ở
-  MobAPI và gọi lại cùng BL → DL. MobAPI không chứa logic riêng.
-- Nhóm mới trong Management dùng lại bộ 4 project API / BL / DL.Contract / DL.Mysql.
-  `LayerReferenceTests` tự nhận project BL và Contract mới.
-- `3.Management/Base` refer AMISBASE; các nhóm khác hiện vẫn refer thẳng AMISBASE.
+- Controller chỉ gọi BL. BL chỉ gọi `DL<nhóm>.Contract`, không biết EF/MySQL.
+- `GymBase.API` tham chiếu các `DL*.MySql` chỉ để đăng ký dịch vụ.
+- `AppDbContext` và DL mock dùng chung nằm trong `GymBase.DLBiz.MySql`; `DLAuth.MySql`,
+  `DLDI.MySql` được tham chiếu riêng project này.
+- `GymBase.ArchitectureTests` kiểm tra ma trận tham chiếu project mỗi lần chạy test.
 
 ## Lệnh
+
+Chạy tại `apps/api`:
 
 ```bash
 dotnet build GymBase.slnx
@@ -66,21 +59,22 @@ dotnet test GymBase.slnx
 ```
 
 ```bash
-dotnet run --project 3.Management/BIZ/GymBase.BIZAPI
+dotnet run --project src/Host/GymBase.API --launch-profile http
 ```
 
-Mỗi host có `/health` và OpenAPI ở `/openapi/v1.json` (môi trường Development).
-Route API có tiền tố kênh: host web dùng `/api/web/v1/...`, MobAPI dùng `/api/mobile/v1/...`.
-Cần chạy host nào, cho mobile/điện thoại thật truy cập thế nào: xem `1.Doc/cach-chay-api.md`.
-Gọi thử API bằng collection Bruno ở `1.Doc/bruno`.
+Host nghe ở `http://localhost:5020`. Route web: `/api/v1/web/...`, route mobile:
+`/api/v1/mob/...`. Có `/health` và OpenAPI ở `/openapi/v1.json` (môi trường Development).
+Hướng dẫn chạy chi tiết: [`docs/api/cach-chay-api.md`](../../docs/api/cach-chay-api.md).
+Gọi thử API bằng collection Bruno ở `docs/api/bruno`.
 
-## Còn mở
+## Tài liệu khác
 
-- DB-01: EF Core (đã chốt) + chọn provider MySQL, `DbContext`, EF Core migrations và
-  Docker; sau đó thay DL mock của CRUD dùng chung trong AMISBASE bằng `BaseDL` dùng EF Core.
-- API-02: validation, ProblemDetails, logging, chuẩn response.
-- Phân các nghiệp vụ (Trainers, Trainees, Workouts, PtSessions, SessionPackages)
-  vào DI hoặc BIZ.
+| File | Nội dung |
+| --- | --- |
+| `docs/api/cau-truc-thu-muc.md` | Chuẩn kiến trúc: trách nhiệm từng project, ma trận tham chiếu, quy tắc review |
+| `docs/api/crud-dung-chung.md` | Lớp nền CRUD và các bước thêm CRUD cho một bảng mới |
+| `docs/api/quy-uoc-response.md` | Dạng response khi thành công và khi lỗi, bộ mã lỗi |
+| `docs/api/viec-con-lai-base.md` | Phần base còn phải làm, quyết định đã chốt |
 
 Chỉ cấu hình credentials qua biến môi trường hoặc user-secrets.
 Không tự động migrate production khi API khởi động.

@@ -4,7 +4,7 @@ import { isAxiosError } from 'axios';
 export type FieldErrors = Record<string, string[]>;
 
 /**
- * Lỗi đã chuẩn hóa từ response của API (ProblemDetails, xem apps/api/1.Doc/quy-uoc-response.md).
+ * Lỗi đã chuẩn hóa từ response của API (ProblemDetails, xem docs/api/quy-uoc-response.md).
  * `message` luôn hiển thị được cho người dùng; rẽ nhánh theo `code`, không so chuỗi `message`.
  */
 export class ApiError extends Error {

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
+  </ItemGroup>
+
+</Project>
