@@ -7,12 +7,16 @@ meta {
 get {
   url: {{webApi}}/users?page=2&page_size=2
   body: none
-  auth: none
+  auth: bearer
 }
 
 params:query {
   page: 2
   page_size: 2
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {

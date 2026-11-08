@@ -7,7 +7,11 @@ meta {
 post {
   url: {{webApi}}/users
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {
@@ -17,6 +21,7 @@ headers {
 body:json {
   {
     "tai_khoan": "ADMIN",
+    "mat_khau": "Mk-thu-nghiem-1",
     "ho_ten": "Trùng tên đăng nhập",
     "vai_tro": "Admin"
   }

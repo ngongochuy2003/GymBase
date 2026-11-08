@@ -7,11 +7,15 @@ meta {
 get {
   url: {{webApi}}/users?sort=mat_khau_hash
   body: none
-  auth: none
+  auth: bearer
 }
 
 params:query {
   sort: mat_khau_hash
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {

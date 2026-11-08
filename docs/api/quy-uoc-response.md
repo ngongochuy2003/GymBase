@@ -145,12 +145,15 @@ Mọi lỗi trả header `Content-Type: application/problem+json` và body (resp
 | `trace_id` | Có | Dùng để tìm log tương ứng. Khi báo lỗi, gửi kèm giá trị này |
 | `errors` | Không | Chỉ có khi lỗi gắn với từng ô nhập. Khóa là tên trường JSON, giá trị là danh sách thông báo |
 
-Lỗi do framework tự trả cũng theo đúng dạng trên: 400 khi body sai kiểu hoặc vi phạm
-DataAnnotations (có `errors`), 404 khi sai đường dẫn, 405 khi sai method… `ProblemDetailsCustomizer`
-điền `title`, `detail`, `code`, `trace_id` cho mọi ProblemDetails, kể cả những lỗi này.
+Lỗi nhập liệu (thiếu trường, sai độ dài, sai định dạng) do validator trong `BaseService` trả, thông
+báo tiếng Việt, mỗi trường một lỗi.
 
-**Hạn chế hiện tại:** thông báo trong `errors` của lỗi DataAnnotations vẫn là câu tiếng Anh mặc
-định (`"The tai_khoan field is required."`). Mục 8 (FluentValidation) sẽ đổi sang tiếng Việt.
+Lỗi do framework tự trả cũng theo đúng dạng trên: 400 khi JSON hỏng hoặc sai kiểu (có `errors`), 404
+khi sai đường dẫn, 405 khi sai method… `ProblemDetailsCustomizer` điền `title`, `detail`, `code`,
+`trace_id` cho mọi ProblemDetails, kể cả những lỗi này.
+
+**Hạn chế hiện tại:** lỗi JSON hỏng hoặc sai kiểu có khóa dạng `$.tai_khoan` và thông báo tiếng Anh
+của framework. Client không nên hiện `errors` của các lỗi này cho người dùng.
 
 ---
 
@@ -196,8 +199,7 @@ HTTP của mã chung tương ứng**.
 | HTTP | `code` | Hằng số | Khi nào | Trạng thái |
 | --- | --- | --- | --- | --- |
 | 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `tai_khoan` với người dùng còn hiệu lực (không phân biệt hoa thường). `errors` có `tai_khoan` | Đang dùng |
-| 401 | `AUTH_INVALID_CREDENTIALS` | | Sai tên đăng nhập hoặc mật khẩu | Dự kiến, mục 12 |
-| 403 | `AUTH_ACCOUNT_LOCKED` | | Tài khoản đang bị khóa | Dự kiến, mục 12 |
+| 401 | `AUTH_INVALID_CREDENTIALS` | | Đăng nhập không thành công: sai tên đăng nhập, sai mật khẩu, hoặc tài khoản bị khóa (dùng chung một mã để không lộ trạng thái tài khoản, xem [xac-thuc.md](xac-thuc.md)) | Đang dùng |
 
 Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code dùng mã đó.
 
@@ -220,7 +222,7 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
   `Errors` (thành `errors`). BL chỉ biết `BusinessErrorKind`, không biết mã HTTP; tầng API đổi
   `Kind` sang mã HTTP (`AppExceptionHandler.ToStatusCode`).
 - Hàm khởi tạo nhận `code` để thay bằng mã chi tiết. Lỗi gắn với một trường thì truyền tên trường
-  để có `errors`, ví dụ trong `UserService.CreateAsync`:
+  để có `errors`, ví dụ trong `UserService.BeforeCreateAsync`:
 
   ```csharp
   throw new ConflictException(

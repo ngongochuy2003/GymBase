@@ -27,7 +27,26 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    dotnet ef database update --project src/BIZ/GymBase.DLBiz.MySql --startup-project src/Host/GymBase.API
    ```
 
-3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_nguoi_dung.sql` trên database `gymbase`.
+3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_nguoi_dung.sql` trên database `gymbase`. Các tài khoản mẫu không
+   đăng nhập được vì không có mật khẩu thật.
+
+4. Tạo khóa ký JWT (chuỗi ngẫu nhiên, mỗi môi trường một khóa, không dùng chung):
+
+   ```powershell
+   $bytes = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+   dotnet user-secrets set "Jwt:SigningKey" ([Convert]::ToBase64String($bytes)) --project src/Host/GymBase.API
+   ```
+
+5. Tạo tài khoản Admin. Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh. Tên đã tồn tại thì đặt lại
+   mật khẩu và chuyển thành Admin:
+
+   ```powershell
+   $env:GYMBASE_ADMIN_PASSWORD = Read-Host "Mật khẩu Admin"
+   dotnet run --project src/Host/GymBase.API --launch-profile http -- create-admin admin
+   Remove-Item Env:GYMBASE_ADMIN_PASSWORD
+   ```
+
+Môi trường thật đặt khóa ký bằng biến `Jwt__SigningKey`. Đổi khóa thì mọi access token cũ hết hiệu lực ngay.
 
 Khi đổi entity, tạo migration mới (đặt tên rõ theo nội dung thay đổi) rồi lặp lại bước 2:
 
@@ -130,6 +149,10 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 | Hiện tượng | Nguyên nhân / cách xử lý |
 | --- | --- |
 | API báo `Chưa cấu hình ConnectionStrings:DefaultConnection` khi khởi động | Chưa đặt user-secrets, xem phần Chuẩn bị MySQL. User-secrets chỉ được đọc ở môi trường Development |
+| API báo `Chưa cấu hình Jwt:SigningKey` khi khởi động | Chưa tạo khóa ký, xem phần Chuẩn bị MySQL bước 4 |
+| Mọi request trả 401, kể cả sai đường dẫn | Chưa gửi token. Đăng nhập qua `POST /auth/login` rồi gửi header `Authorization: Bearer <access_token>` |
+| Gọi `/users` trả 403 | API này chỉ dành cho `Admin` |
+| Đăng nhập trả 429 | Vượt 20 lần gọi mỗi phút, chờ một phút |
 | `/health` trả `Unhealthy` | MySQL chưa chạy, sai thông tin kết nối, hoặc chưa tạo database |
 | 404 khi gọi API | Thiếu hoặc sai tiền tố `/api/v1/web`, `/api/v1/mob` |
 | `address already in use` / cổng 5020 bị chiếm | API đang chạy ở cửa sổ khác. Tắt cửa sổ đó, hoặc tìm và dừng tiến trình `GymBase.API` |

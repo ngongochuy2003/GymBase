@@ -7,7 +7,11 @@ meta {
 post {
   url: {{mobileApi}}/users
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {
@@ -17,6 +21,7 @@ headers {
 body:json {
   {
     "tai_khoan": "{{newUserName}}",
+    "mat_khau": "Mk-thu-nghiem-1",
     "ho_ten": "Học viên mới",
     "email": "moi@gymbase.local",
     "so_dien_thoai": "0900000099",
@@ -38,5 +43,5 @@ script:post-response {
 }
 
 docs {
-  Tên đăng nhập sinh mới mỗi lần gửi. Lưu Id vừa tạo vào biến createdUserId để các request sửa/xóa dùng. Dữ liệu mock mất khi tắt host.
+  Tên đăng nhập sinh mới mỗi lần gửi. Lưu Id vừa tạo vào biến createdUserId để các request sửa/xóa dùng.
 }

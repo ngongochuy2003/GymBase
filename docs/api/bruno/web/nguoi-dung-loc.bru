@@ -7,11 +7,15 @@ meta {
 get {
   url: {{webApi}}/users?filter=vai_tro:eq:Trainer,dang_hoat_dong:eq:true
   body: none
-  auth: none
+  auth: bearer
 }
 
 params:query {
   filter: vai_tro:eq:Trainer,dang_hoat_dong:eq:true
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {

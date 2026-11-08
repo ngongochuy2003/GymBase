@@ -141,7 +141,7 @@ Controller chỉ gọi BL. Interface DL nằm ở `DL<nhóm>.Contract`, hiện t
 | `DL<nhóm>.Contract` | `Base` | `BL*`, API, `DL*.MySql` |
 | `DL<nhóm>.MySql` | `Base`, `DL<cùng nhóm>.Contract`, `GymBase.DLBiz.MySql` (lấy `AppDbContext`, `BaseRepository`) | `BL*`, API, Contract của nhóm khác |
 | `GymBase.ModuleContracts` | `Base` | `BL*`, `DL*`, API, EF Core |
-| `GymBase.Base` | Thư viện .NET chuẩn | Auth, DI, BIZ, API |
+| `GymBase.Base` | Thư viện .NET chuẩn, FluentValidation | Auth, DI, BIZ, API |
 | `GymBase.Base.Hosting` | `Base`, ASP.NET Core | Logic nghiệp vụ BIZ |
 
 `GymBase.ArchitectureTests/LayerReferenceTests` kiểm tra bảng này mỗi lần chạy test, tự quét mọi
@@ -264,7 +264,7 @@ Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [crud-dung-c
 | 1 | `GymBase.DLDI.Contract` | `Entities/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, property trùng tên cột |
 | 2 | `GymBase.DLDI.Contract` | `IGoiTapRepository.cs` | `interface IGoiTapRepository : IBaseRepository<goi_tap>` |
 | 3 | `GymBase.DLDI.MySql` | `GoiTapRepository.cs`, `Configurations/GoiTapConfiguration.cs` | `class GoiTapRepository : BaseRepository<goi_tap>, IGoiTapRepository`; cấu hình bảng; tạo migration mới |
-| 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapService.cs` | DTO kèm DataAnnotations; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |
+| 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapValidators.cs`, `GoiTap/GoiTapService.cs` | DTO và validator; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |
 | 5 | `GymBase.API` | `Controllers/GoiTapController.cs` | Web: kế thừa `BaseCrudController<...>` là đủ 5 endpoint |
 | 6 | `GymBase.API` | `Mob/Controllers/GoiTapController.cs` | Mobile (nếu app cần): như trên, gọi lại `GoiTapService` |
 | 7 | `GymBase.API` | `Program.cs` | Đăng ký `IGoiTapRepository → GoiTapRepository`, `GoiTapService` |

@@ -9,6 +9,7 @@ Tài liệu backend:
 | [crud-dung-chung.md](crud-dung-chung.md) | Lớp nền CRUD và các bước thêm CRUD cho một bảng mới |
 | [quy-uoc-response.md](quy-uoc-response.md) | Dạng response khi thành công và khi lỗi, phân trang, bộ mã lỗi |
 | [sort-va-filter.md](sort-va-filter.md) | Cú pháp `sort` và `filter`, lỗi trả về, cách bật cho một bảng mới |
+| [xac-thuc.md](xac-thuc.md) | Thiết kế xác thực và phân quyền: JWT, refresh token, mật khẩu, đăng nhập Google (chưa triển khai) |
 | [viec-con-lai-base.md](viec-con-lai-base.md) | Phần base còn phải làm theo mức ưu tiên, quyết định đã chốt |
 | [bruno/](bruno) | Collection [Bruno](https://www.usebruno.com/) để gọi thử API |
 

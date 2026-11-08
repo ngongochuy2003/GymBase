@@ -66,7 +66,7 @@ controller trong `Mob/Controllers/`. Bảng dưới ghi phần sau tiền tố.
 | --- | --- | --- |
 | `GET /users?page=1&page_size=20&search=abc` | 200, `PagingResult<TDto>`: `data` (mảng `TDto`) và `meta` (`page`, `page_size`, `total`, `total_page`, `ranger` gồm `from`, `to`) | |
 | `GET /users/{id}` | 200, `TDto` | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
-| `POST /users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 `VALIDATION_FAILED` nếu body vi phạm DataAnnotations; 409 `USER_USERNAME_TAKEN` nếu trùng `tai_khoan` |
+| `POST /users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 `VALIDATION_FAILED` nếu body không qua validator; 409 `USER_USERNAME_TAKEN` nếu trùng `tai_khoan` |
 | `PUT /users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 `NOT_FOUND` nếu không có hoặc đã xóa |
 | `DELETE /users/{id}` | 204 | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
 
@@ -161,20 +161,46 @@ public sealed record GoiTapDto(Guid Id, string ma_goi, string ten_goi, decimal g
 
 public sealed class GoiTapCreateDto
 {
-    [Required, StringLength(20)] public string ma_goi { get; init; } = string.Empty;
-    [Required, StringLength(100)] public string ten_goi { get; init; } = string.Empty;
-    [Range(0, double.MaxValue)] public decimal gia { get; init; }
+    public string ma_goi { get; init; } = string.Empty;
+    public string ten_goi { get; init; } = string.Empty;
+    public decimal gia { get; init; }
 }
 
 public sealed class GoiTapUpdateDto
 {
-    [Required, StringLength(100)] public string ten_goi { get; init; } = string.Empty;
-    [Range(0, double.MaxValue)] public decimal gia { get; init; }
+    public string ten_goi { get; init; } = string.Empty;
+    public decimal gia { get; init; }
+}
+
+// GoiTapValidators.cs
+public sealed class GoiTapCreateValidator : AppValidator<GoiTapCreateDto>
+{
+    public GoiTapCreateValidator()
+    {
+        RuleFor(x => x.ma_goi).NotEmpty().MaximumLength(20).WithName("Mã gói");
+        RuleFor(x => x.ten_goi).NotEmpty().MaximumLength(100).WithName("Tên gói");
+        RuleFor(x => x.gia).GreaterThanOrEqualTo(0).WithName("Giá");
+    }
+}
+
+public sealed class GoiTapUpdateValidator : AppValidator<GoiTapUpdateDto>
+{
+    public GoiTapUpdateValidator()
+    {
+        RuleFor(x => x.ten_goi).NotEmpty().MaximumLength(100).WithName("Tên gói");
+        RuleFor(x => x.gia).GreaterThanOrEqualTo(0).WithName("Giá");
+    }
 }
 
 // GoiTapService.cs
-public sealed class GoiTapService(IGoiTapRepository goiTapRepository, TimeProvider timeProvider, ICurrentUser currentUser)
-    : BaseService<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(goiTapRepository, timeProvider, currentUser)
+public sealed class GoiTapService(
+    IGoiTapRepository goiTapRepository,
+    TimeProvider timeProvider,
+    ICurrentUser currentUser,
+    IValidator<GoiTapCreateDto> createValidator,
+    IValidator<GoiTapUpdateDto> updateValidator)
+    : BaseService<goi_tap, GoiTapDto, GoiTapCreateDto, GoiTapUpdateDto>(
+        goiTapRepository, timeProvider, currentUser, createValidator, updateValidator)
 {
     protected override GoiTapDto ToDto(goi_tap e) => new(e.Id, e.ma_goi, e.ten_goi, e.gia, e.ngay_tao);
 
@@ -190,11 +216,15 @@ public sealed class GoiTapService(IGoiTapRepository goiTapRepository, TimeProvid
 ```
 
 - `Create` và `Update` dùng DTO riêng để client không gửi được `Id`, `ngay_tao`, `is_deleted`…
-- Quy tắc nghiệp vụ riêng (ví dụ mã gói không trùng) thì override `CreateAsync` / `UpdateAsync`,
-  kiểm tra rồi gọi `base.CreateAsync(...)`. Vi phạm thì ném exception trong
+- Validator là tham số bắt buộc của `BaseService`, chạy trước mọi thao tác. Thiếu validator thì
+  container báo lỗi không dựng được service. DTO **không** dùng DataAnnotations. Có validator trong
+  một BL mới thì thêm assembly của BL đó vào `AddAppApi` ở `Program.cs`.
+- Entity và DTO map tay trong 3 hàm trên, không dùng thư viện map (mục 9).
+- Quy tắc cần đọc DB khi thêm (ví dụ mã gói không trùng) thì override `BeforeCreateAsync`, chạy sau
+  validator. Khi sửa thì override `UpdateAsync`. Vi phạm thì ném exception trong
   `GymBase.Base.Exceptions`, ví dụ trùng thì
   `throw new ConflictException(nameof(GoiTapCreateDto.ma_goi), "Mã gói 'G01' đã tồn tại.", DIErrorCodes.GoiTapCodeTaken)`.
-  Mẫu đầy đủ: `UserService.CreateAsync`. Bảng exception và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md).
+  Mẫu đầy đủ: `UserService.BeforeCreateAsync`. Bảng exception và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md).
   BL **không** viết SQL.
 
 ### Bước 4: Controller
@@ -241,4 +271,3 @@ Dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và thêm a
 
 | Việc | Ghi chú |
 | --- | --- |
-| Thông báo lỗi DataAnnotations bằng tiếng Việt | Mục 8: FluentValidation. Hiện `errors` của lỗi 400 vẫn là câu tiếng Anh mặc định |

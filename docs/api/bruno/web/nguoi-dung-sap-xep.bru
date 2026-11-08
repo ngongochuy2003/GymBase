@@ -7,11 +7,15 @@ meta {
 get {
   url: {{webApi}}/users?sort=-ngay_tao,ho_ten
   body: none
-  auth: none
+  auth: bearer
 }
 
 params:query {
   sort: -ngay_tao,ho_ten
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {

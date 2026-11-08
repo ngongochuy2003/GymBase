@@ -7,11 +7,15 @@ meta {
 get {
   url: {{webApi}}/users?search=pt
   body: none
-  auth: none
+  auth: bearer
 }
 
 params:query {
   search: pt
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {

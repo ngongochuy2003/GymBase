@@ -7,7 +7,11 @@ meta {
 get {
   url: {{mobileApi}}/users/{{deletedUserId}}
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
 
 headers {
