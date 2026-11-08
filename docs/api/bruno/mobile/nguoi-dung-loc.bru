@@ -1,0 +1,27 @@
+meta {
+  name: Người dùng - lọc
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{mobileApi}}/users?filter=vai_tro:eq:Trainer,dang_hoat_dong:eq:true
+  body: none
+  auth: none
+}
+
+params:query {
+  filter: vai_tro:eq:Trainer,dang_hoat_dong:eq:true
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Dạng cot:toan_tu:gia_tri, các điều kiện kết hợp AND. Xem quy-uoc-response.md mục 2.1.
+}

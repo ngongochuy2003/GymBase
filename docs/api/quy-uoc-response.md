@@ -9,7 +9,7 @@ web và mobile. Đây là nội dung của task **API-02** và mục 6, 7 trong
 | Dạng danh sách `{ data, meta }` | **Đã chốt 08/11, đã làm** (`PagingResult<T>`) |
 | Các response thành công khác | **Đã làm** trong `BaseCrudController` |
 | Dạng lỗi (ProblemDetails), bộ mã lỗi, exception | **Đã làm 08/11** (mục 7): exception ở `GymBase.Base/Exceptions`, handler ở `GymBase.Base.Hosting/Errors`, mobile đọc qua `toApiError` |
-| Sort, filter | **Đề xuất**, chưa làm (mục 6) |
+| Sort, filter | **Đã chốt 08/11, đã làm** (`PagingQuery`, `QueryColumns`) |
 
 Khi một phần đề xuất được chốt hoặc làm xong, sửa bảng trên.
 
@@ -65,11 +65,25 @@ Request: `GET /api/v1/web/users?page=2&page_size=20&search=an`
 | `page` | 1 | Nhỏ hơn 1 thì tự đưa về 1 |
 | `page_size` | 20 | Tối đa 100; nhỏ hơn 1 thì về 20. **Không có giá trị "lấy tất cả"** |
 | `search` | (trống) | Tự cắt khoảng trắng; mỗi màn hình tự quyết định tìm theo cột nào |
-| `sort` | mới tạo trước | *Đề xuất, chưa làm:* `sort=-ngay_tao,ho_ten`, dấu `-` là giảm dần |
-| `filter` | (trống) | *Đề xuất, chưa làm:* dạng tham số cụ thể chốt khi làm mục 6 |
+| `sort` | mới tạo trước | `sort=-ngay_tao,ho_ten`, dấu `-` là giảm dần |
+| `filter` | (trống) | `filter=vai_tro:eq:Trainer,ngay_tao:gte:2026-11-01`, các điều kiện kết hợp AND |
 
-Mỗi bảng khai báo danh sách cột được phép sort và filter. Gửi cột ngoài danh sách thì trả 400
-`VALIDATION_FAILED`.
+Mỗi điều kiện `filter` có dạng `cot:toan_tu:gia_tri`:
+
+| Toán tử | Ý nghĩa | Dùng cho |
+| --- | --- | --- |
+| `eq`, `ne` | Bằng, khác | Mọi kiểu |
+| `gt`, `gte`, `lt`, `lte` | Lớn hơn, lớn hơn hoặc bằng, nhỏ hơn, nhỏ hơn hoặc bằng | Số, thời gian |
+| `contains` | Chứa chuỗi | Chuỗi |
+
+- Giá trị không được chứa dấu phẩy. Thời gian không ghi múi giờ được hiểu là UTC.
+- So sánh chuỗi theo collation của cột, tức không phân biệt hoa thường.
+- Client phải mã hóa URL cho giá trị có ký tự đặc biệt.
+- Luôn sắp thêm theo Id giảm dần ở cuối để thứ tự giữa các trang ổn định.
+
+Mỗi bảng khai báo danh sách cột được phép sort và filter. Gửi cột ngoài danh sách, sai cú pháp, toán
+tử không hợp với kiểu cột, hoặc giá trị sai kiểu thì trả 400 `VALIDATION_FAILED`, `errors` có khóa
+`sort` hoặc `filter`.
 
 Response:
 

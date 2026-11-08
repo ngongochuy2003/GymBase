@@ -147,7 +147,9 @@ public sealed class GoiTapConfiguration : IEntityTypeConfiguration<goi_tap>
 }
 ```
 
-`SearchColumns` chọn cột được tìm kiếm; không override thì tham số `search` bị bỏ qua. Thêm bảng
+`SearchColumns` chọn cột được tìm kiếm; không override thì tham số `search` bị bỏ qua. Muốn cho
+sort và filter thì override `AllowedColumns`, chỉ liệt kê cột được lộ ra API (mẫu:
+`NguoiDungQueryColumns`); không override thì gửi `sort` hoặc `filter` sẽ nhận 400. Thêm bảng
 thì tạo migration mới theo [cach-chay-api.md](cach-chay-api.md). Dữ liệu mẫu đặt ở `database/seeds`.
 
 ### Bước 3: DTO và BL (`GymBase.BLDI/GoiTap/`)
@@ -242,6 +244,5 @@ Hai dòng đầu đã có sẵn trong `Program.cs`. Thêm hai dòng sau, và th�
 | Việc | Ghi chú |
 | --- | --- |
 | Thông báo lỗi DataAnnotations bằng tiếng Việt | Mục 8: FluentValidation. Hiện `errors` của lỗi 400 vẫn là câu tiếng Anh mặc định |
-| Sort, filter | Mục 6; chỉ cho phép cột trong danh sách trắng |
 | `nguoi_tao` / `nguoi_chinh_sua` | Mục 10: `ICurrentUser` |
 | URL chữ thường (`Location` đang là `/Users/...`) | Mục 11: `AddAppApi()` dùng chung, bật `LowercaseUrls` |
