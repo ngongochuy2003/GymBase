@@ -6,10 +6,10 @@ kênh client**, do `Program.cs` của host gắn (xem `RoutePrefixConvention` tr
 
 | Kênh | Tiền tố | Host | Ví dụ |
 | --- | --- | --- | --- |
-| Web (trang quản trị) | `/api/web` | SystemAPI, DIAPI, BIZAPI, AuthAPI, ReportAPI… | `GET http://localhost:5020/api/web/v1/users` |
-| Mobile | `/api/mobile` | Chỉ MobAPI | `GET http://localhost:5106/api/mobile/v1/users` |
+| Web (trang quản trị) | `/web` | SystemAPI, DIAPI, BIZAPI, AuthAPI, ReportAPI… | `GET http://localhost:5020/api/web/v1/users` |
+| Mobile | `/mobile` | Chỉ MobAPI | `GET http://localhost:5106/api/mobile/v1/users` |
 
-Gọi sai tiền tố (ví dụ `/api/mobile/...` vào SystemAPI, hoặc thiếu tiền tố) sẽ nhận **404**.
+Gọi sai tiền tố (ví dụ `/mobile/...` vào SystemAPI, hoặc thiếu tiền tố) sẽ nhận **404**.
 `/health` và `/openapi/v1.json` không có tiền tố.
 
 ## 1. Cần chạy project nào
@@ -60,6 +60,19 @@ Nhấn `Ctrl+Shift+P`, chọn **Tasks: Run Task**, rồi chọn task:
 | `API: chạy mobile cho điện thoại thật (LAN)` | Như trên nhưng nghe trên mọi địa chỉ mạng (xem mục 5) |
 | `API: build` | Build solution. Phím tắt `Ctrl+Shift+B` |
 | `API: test` | Chạy toàn bộ unit test |
+| **`Dev: MobAPI + Expo`** | Build API, rồi chạy song song MobAPI (5106) và Expo (8081). Dùng khi làm app mobile |
+| `Mobile: chạy Expo` | `pnpm mobile`. Trong terminal của task nhấn `a` (Android), `w` (web), `r` (reload) |
+| `Mobile: chạy Expo (xóa cache)` | Như trên kèm `-c`, dùng khi app hiển thị code cũ hoặc lỗi bundle lạ |
+| `Mobile: kiểm tra (lint + typecheck + test)` | `pnpm mobile:check` |
+
+App mobile mặc định chạy chế độ demo (không gọi API). Muốn app gọi MobAPI thì cấu hình
+`apps/mobile/.env` theo mục 5.
+
+**Extension C#:** solution dùng định dạng `.slnx`, mà server OmniSharp không đọc được (báo lỗi
+*"OmniSharp only supports being launched with a directory path or a path to a solution (.sln, .slnf)"*).
+`.vscode/settings.json` đã tắt OmniSharp (`dotnet.server.useOmnisharp: false`) để extension dùng
+server Roslyn, vốn hỗ trợ `.slnx`. Sau khi pull về, chạy **Developer: Reload Window** một lần.
+Với C# Dev Kit (VS Code bản Microsoft) thì không cần làm gì thêm.
 
 Mỗi API chạy trong một terminal riêng. Muốn dừng thì bấm vào terminal đó rồi nhấn
 Ctrl+C, hoặc chạy **Tasks: Terminate Task**. Task chạy API luôn build trước một lần
@@ -134,7 +147,7 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 
 | Hiện tượng | Nguyên nhân / cách xử lý |
 | --- | --- |
-| 404 khi gọi API | Thiếu tiền tố `/api/web` hoặc `/api/mobile`, gọi nhầm host, hoặc host của nhóm đó chưa chạy |
+| 404 khi gọi API | Thiếu tiền tố `/web` hoặc `/mobile`, gọi nhầm host, hoặc host của nhóm đó chưa chạy |
 | `address already in use` / cổng bị chiếm | Host đó đang chạy ở cửa sổ khác. Tắt cửa sổ đó, hoặc tìm và dừng tiến trình `GymBase.*API` |
 | Điện thoại không kết nối được | Chưa chạy với `--urls http://0.0.0.0:5106`, sai IP, khác mạng Wi-Fi, hoặc bị firewall chặn |
 | Lỗi chứng chỉ khi gọi `https://localhost:7xxx` | Chạy `dotnet dev-certs https --trust` một lần, hoặc dùng profile `http` |
