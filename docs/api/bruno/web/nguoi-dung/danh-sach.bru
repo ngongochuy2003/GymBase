@@ -1,0 +1,27 @@
+meta {
+  name: Danh sách
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{webApi}}/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Mặc định page=1, page_size=20.
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Chuẩn bị: đăng nhập tài khoản thử
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{webApi}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "tai_khoan": "{{testUserName}}",
+    "mat_khau": "Mk-thu-nghiem-1"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  bru.setVar("testAccessToken", res.body.access_token);
+}

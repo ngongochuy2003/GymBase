@@ -1,0 +1,28 @@
+meta {
+  name: Đã xóa mềm (404)
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{mobileApi}}/users/{{createdUserId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 404
+  res.body.code: eq NOT_FOUND
+}
+
+docs {
+  Chạy "Thêm" rồi "Xóa" trước. Bản ghi đã xóa mềm không còn đọc được.
+}

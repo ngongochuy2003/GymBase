@@ -72,8 +72,8 @@ await axios.get(`${baseUrl}/users`, {
 });
 ```
 
-Các request mẫu trong Bruno: `nguoi-dung-sap-xep.bru`, `nguoi-dung-loc.bru`,
-`nguoi-dung-sap-xep-sai-cot.bru` (thư mục `docs/api/bruno/web` và `mobile`).
+Các request mẫu trong Bruno: `sap-xep.bru`, `loc.bru`, `sap-xep-sai-cot.bru`
+(thư mục `docs/api/bruno/web/nguoi-dung` và `docs/api/bruno/mobile/nguoi-dung`).
 
 ## 4. Khi sai
 

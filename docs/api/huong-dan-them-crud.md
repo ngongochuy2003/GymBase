@@ -368,7 +368,7 @@ dotnet run --project src/Host/GymBase.API --launch-profile http
 ```
 
 Mở [Bruno](https://www.usebruno.com/), mở collection ở `docs/api/bruno`, chọn environment **local**
-rồi chạy request `auth-dang-nhap` trong thư mục Web để lấy token. Sau đó tạo request mới:
+rồi chạy request **Đăng nhập** trong thư mục `Web > Xác thực` để lấy token. Sau đó tạo request mới:
 
 - Method `POST`, URL `{{webApi}}/goitap`
 - Auth chọn **Bearer**, token là `{{accessToken}}`
@@ -481,8 +481,8 @@ Chạy toàn bộ test tại `apps/api`:
 dotnet test GymBase.slnx
 ```
 
-Cuối cùng, lưu các request đã thử vào `docs/api/bruno/web` để người khác dùng lại. Xem mẫu ở
-`nguoi-dung-them.bru`, `nguoi-dung-sua.bru` và `nguoi-dung-xoa.bru`.
+Cuối cùng, lưu các request đã thử vào một thư mục riêng của chức năng, ví dụ `docs/api/bruno/web/goi-tap`, để
+người khác dùng lại. Thư mục cần có `folder.bru` để đặt tên và thứ tự. Xem mẫu ở `docs/api/bruno/web/nguoi-dung`.
 
 ## 6. Khi cần thêm tính năng
 
@@ -525,7 +525,7 @@ override, ví dụ để đặt quyền riêng cho `GET`. Mẫu thêm action: `R
 | Gọi API báo 500, log có `Table 'gymbase.goi_tap' doesn't exist` | Chưa chạy `dotnet ef database update` (bước 2) |
 | `dotnet ef migrations add` tạo migration rỗng | Thiếu lớp cấu hình bảng ở bước 2, hoặc chưa lưu file |
 | 404 khi gọi API | Sai tiền tố `/api/v1/web` hoặc `/api/v1/mob`, hoặc sai tên controller |
-| 401 | Chưa gửi token hoặc token đã hết hạn. Chạy lại `auth-dang-nhap` |
+| 401 | Chưa gửi token hoặc token đã hết hạn. Chạy lại request **Đăng nhập** |
 | 403 | Tài khoản không có vai trò mà `[Authorize]` yêu cầu |
 | 400 khi gửi `sort` hoặc `filter` | Bảng chưa khai báo `AllowedColumns` |
 | Test kiến trúc `LayerReferenceTests` báo lỗi | Project tham chiếu sai lớp. Xem ma trận trong [cau-truc-thu-muc.md](cau-truc-thu-muc.md) |

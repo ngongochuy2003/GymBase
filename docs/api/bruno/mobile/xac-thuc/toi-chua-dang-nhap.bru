@@ -1,0 +1,19 @@
+meta {
+  name: Thông tin của tôi khi chưa đăng nhập (401)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{mobileApi}}/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 401
+}

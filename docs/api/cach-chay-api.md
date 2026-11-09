@@ -94,9 +94,11 @@ Dừng bằng Ctrl+C.
 
 - Mở `http://localhost:5020/health`, thấy `Healthy` là API đã kết nối được MySQL.
 - **Bruno:** mở [Bruno](https://www.usebruno.com/), chọn **Open Collection**, trỏ tới thư mục
-  `docs/api/bruno`, chọn environment **local** ở góc trên bên phải. Collection có hai thư mục
-  `Web (/api/v1/web)` và `Mobile (/api/v1/mob)`, mỗi request đã có sẵn assert mã trả về. Chạy cả
-  collection bằng **Run** để kiểm tra nhanh.
+  `docs/api/bruno`, chọn environment **local** ở góc trên bên phải. Collection chia thành `Hệ thống`,
+  `Web (/api/v1/web)` và `Mobile (/api/v1/mob)`; trong mỗi kênh có thư mục theo chức năng (`Xác thực`,
+  `Người dùng`). Đặt mật khẩu Admin vào biến bí mật `adminPassword` của environment, rồi chạy **Đăng nhập**
+  trước khi gọi các request khác. Mỗi request đã có sẵn assert mã trả về. Chạy cả collection bằng **Run** để
+  kiểm tra nhanh; các endpoint xác thực giới hạn 20 lần mỗi phút, nên chờ một phút rồi mới chạy lại.
 - **Postman:** **Import** URL `http://localhost:5020/openapi/v1.json` để tạo collection tự động.
   Trang OpenAPI chỉ có ở môi trường Development.
 
