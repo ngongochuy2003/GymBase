@@ -274,7 +274,7 @@ dotnet run --project src/Host/GymBase.API
 
 ### Thêm danh mục "Gói tập" (nhóm DI)
 
-Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [crud-dung-chung.md](crud-dung-chung.md).
+Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [huong-dan-them-crud.md](huong-dan-them-crud.md).
 
 | Bước | Project | File | Nội dung |
 | --- | --- | --- | --- |

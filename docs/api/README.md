@@ -6,7 +6,8 @@ Tài liệu backend:
 | --- | --- |
 | [cau-truc-thu-muc.md](cau-truc-thu-muc.md) | Chuẩn kiến trúc: một host `GymBase.API`, nhóm Auth / DI / BIZ, trách nhiệm từng project, ma trận tham chiếu, quy tắc review |
 | [cach-chay-api.md](cach-chay-api.md) | Chạy API cho web và mobile, điện thoại thật, lỗi thường gặp |
-| [crud-dung-chung.md](crud-dung-chung.md) | Lớp nền CRUD và các bước thêm CRUD cho một bảng mới |
+| [crud-dung-chung.md](crud-dung-chung.md) | Lớp nền CRUD: các lớp, nơi đặt entity và DTO, hành vi HTTP |
+| [huong-dan-them-crud.md](huong-dan-them-crud.md) | Hướng dẫn từng bước thêm CRUD cho một bảng mới, dành cho người mới |
 | [quy-uoc-response.md](quy-uoc-response.md) | Dạng response khi thành công và khi lỗi, phân trang, bộ mã lỗi |
 | [sort-va-filter.md](sort-va-filter.md) | Cú pháp `sort` và `filter`, lỗi trả về, cách bật cho một bảng mới |
 | [xac-thuc.md](xac-thuc.md) | Thiết kế xác thực và phân quyền: JWT, refresh token, mật khẩu, đăng nhập Google (chưa triển khai) |
