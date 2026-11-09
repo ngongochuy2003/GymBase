@@ -1,0 +1,41 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: gymbase-poc-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console UI
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_poc_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: gymbase-poc-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO...';
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      echo 'Creating bucket gymbase-media...';
+      /usr/bin/mc mb --ignore-existing myminio/gymbase-media;
+      echo 'Setting lifecycle rule for staging/ (expire after 1 day)...';
+      /usr/bin/mc ilm rule add --prefix 'staging/' --expire-days 1 myminio/gymbase-media;
+      echo 'MinIO initialization complete!';
+      exit 0;
+      "
+
+volumes:
+  minio_poc_data:
+    name: gymbase_poc_minio_data
