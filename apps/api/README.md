@@ -77,6 +77,7 @@ Gọi thử API bằng collection Bruno ở `docs/api/bruno`.
 | `docs/api/cau-truc-thu-muc.md` | Chuẩn kiến trúc: trách nhiệm từng project, ma trận tham chiếu, quy tắc review |
 | `docs/api/crud-dung-chung.md` | Lớp nền CRUD: các lớp, nơi đặt entity và DTO, hành vi HTTP |
 | `docs/api/huong-dan-them-crud.md` | Hướng dẫn từng bước thêm CRUD cho một bảng mới, dành cho người mới |
+| `docs/api/logging.md` | Log kỹ thuật (Serilog) và audit log (bảng `system_log`) |
 | `docs/api/quy-uoc-response.md` | Dạng response khi thành công và khi lỗi, bộ mã lỗi |
 | `docs/api/viec-con-lai-base.md` | Phần base còn phải làm, quyết định đã chốt |
 
