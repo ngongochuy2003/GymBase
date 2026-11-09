@@ -3,6 +3,7 @@ using FluentValidation;
 using GymBase.Base.Auth;
 using GymBase.Base.Hosting.Auth;
 using GymBase.Base.Hosting.Errors;
+using GymBase.Base.Hosting.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +48,9 @@ public static class AppApiExtensions
         return services.AddControllers(options =>
         {
             options.UseApiChannels();
+
+            // Chạy ngoài cùng để ghi nhận cả request bị ModelStateInvalidFilter trả 400.
+            options.Filters.Add<AuditLogFilter>(int.MinValue);
 
             // Kiểm tra dữ liệu do FluentValidation làm trong BaseService. Không tắt thì MVC tự coi mọi
             // string không-null là bắt buộc và trả lỗi tiếng Anh trước khi vào service.

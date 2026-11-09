@@ -1,5 +1,6 @@
 using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
+using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.BLAuth.XacThuc;
@@ -13,6 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 // controller trong Mob/Controllers/ có tiền tố /api/v1/mob.
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
 builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly);
+
+// Log kỹ thuật ra console và file, cấu hình ở mục "Serilog" của appsettings.
+builder.Services.AddAppLogging(builder.Configuration);
 
 // Một AppDbContext cho cả DB.
 builder.Services.AddAppPersistence(builder.Configuration);

@@ -1,7 +1,9 @@
+using GymBase.Base.Logging;
 using GymBase.Base.Paging;
 using GymBase.DLAuth.Contract;
 using GymBase.Entities.Auth;
 using GymBase.Persistence;
+using GymBase.Persistence.Logging;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymBase.UnitTests.Auth;
@@ -58,6 +60,30 @@ public class AppDbContextModelTests
         var sql = PagingQuery.ApplyFilter(db.Set<nguoi_dung>(), "vai_tro:eq:x' OR '1'='1", NguoiDungQueryColumns.Allowed).ToQueryString();
 
         Assert.DoesNotContain("'x' OR '1'='1'", sql);
+    }
+
+    [Fact]
+    public void System_log_has_expected_table_and_time_index()
+    {
+        using var db = CreateContext();
+
+        var script = db.Database.GenerateCreateScript();
+
+        Assert.Contains("CREATE TABLE `system_log`", script);
+        Assert.Contains("`duong_dan` varchar(500)", script);
+        Assert.Contains("ON `system_log` (`thoi_diem`)", script);
+    }
+
+    [Fact]
+    public void Audit_entry_longer_than_columns_is_truncated()
+    {
+        var entry = new AuditLogEntry(new string('u', 60), "POST", new string('p', 600), 201, 5, "trace", null, DateTime.UtcNow);
+
+        var row = SystemLogWriter.ToRow(entry);
+
+        Assert.Equal(50, row.nguoi_dung!.Length);
+        Assert.Equal(500, row.duong_dan.Length);
+        Assert.Null(row.ip);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using GymBase.Base.Auth;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
+using GymBase.Base.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.DLAuth.Contract;
@@ -40,6 +41,8 @@ namespace GymBase.IntegrationTests
             builder.Services.AddAuthBusiness();
             builder.Services.Configure<PasswordHasherOptions>(options => options.IterationCount = 1_000);
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
+            builder.Services.AddSingleton<RecordingAuditLogWriter>();
+            builder.Services.AddSingleton<IAuditLogWriter>(services => services.GetRequiredService<RecordingAuditLogWriter>());
             builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
 
