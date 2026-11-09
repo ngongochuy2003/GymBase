@@ -12,10 +12,17 @@ namespace GymBase.Persistence;
 /// </summary>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    /// <summary>Độ dài UUID dạng chữ, ví dụ <c>0193f0a0-0000-7000-8000-000000000001</c>.</summary>
+    private const int GuidTextLength = 36;
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
         configurationBuilder.Properties<DateTime?>().HaveConversion<UtcDateTimeConverter>();
+
+        // Mọi cột Guid lưu dạng varchar(36), đọc được trực tiếp trong công cụ DB (quyết định Q6).
+        configurationBuilder.Properties<Guid>().HaveConversion<GuidToStringConverter>().HaveMaxLength(GuidTextLength);
+        configurationBuilder.Properties<Guid?>().HaveConversion<GuidToStringConverter>().HaveMaxLength(GuidTextLength);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

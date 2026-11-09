@@ -3,7 +3,6 @@ using GymBase.Persistence.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MySqlConnector;
 
 namespace GymBase.Persistence;
 
@@ -55,11 +54,8 @@ public static class PersistenceServiceCollectionExtensions
     /// <summary>Cấu hình provider MySQL dùng chung cho app và test kiểm tra model.</summary>
     public static void ConfigureMySql(DbContextOptionsBuilder options, string connectionString)
     {
-        // Binary16 giữ thứ tự byte của UUID, nên UUIDv7 vẫn tăng dần trong index (Q6).
-        var connection = new MySqlConnectionStringBuilder(connectionString) { GuidFormat = MySqlGuidFormat.Binary16 };
-
         options
-            .UseMySql(connection.ConnectionString, ServerVersion, mysql => mysql.EnableRetryOnFailure())
+            .UseMySql(connectionString, ServerVersion, mysql => mysql.EnableRetryOnFailure())
             .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     }
 }

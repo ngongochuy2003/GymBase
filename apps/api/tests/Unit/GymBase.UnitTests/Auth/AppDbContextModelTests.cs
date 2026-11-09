@@ -19,13 +19,35 @@ public class AppDbContextModelTests
     }
 
     [Fact]
-    public void Id_is_stored_as_binary16()
+    public void Id_is_stored_as_varchar36()
     {
         using var db = CreateContext();
 
         var id = db.Model.FindEntityType(typeof(nguoi_dung))!.FindProperty(nameof(nguoi_dung.Id))!;
 
-        Assert.Equal("binary(16)", id.GetColumnType());
+        Assert.Equal("varchar(36)", id.GetColumnType());
+    }
+
+    [Fact]
+    public void Foreign_key_uses_same_type_as_primary_key()
+    {
+        using var db = CreateContext();
+
+        var script = db.Database.GenerateCreateScript();
+
+        Assert.Contains("`nguoi_dung_id` varchar(36)", script);
+        Assert.DoesNotContain("binary(16)", script);
+    }
+
+    [Fact]
+    public void Guid_is_compared_as_lowercase_text()
+    {
+        using var db = CreateContext();
+        var id = Guid.Parse("0193F0A0-0000-7000-8000-000000000001");
+
+        var sql = db.Set<nguoi_dung>().Where(u => u.Id == id).ToQueryString();
+
+        Assert.Contains("'0193f0a0-0000-7000-8000-000000000001'", sql);
     }
 
     [Fact]

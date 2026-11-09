@@ -24,9 +24,10 @@ namespace GymBase.Persistence.Migrations
 
             modelBuilder.Entity("GymBase.Entities.Auth.nguoi_dung", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("binary(16)");
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("dang_hoat_dong")
                         .HasColumnType("tinyint(1)");
@@ -92,9 +93,10 @@ namespace GymBase.Persistence.Migrations
 
             modelBuilder.Entity("GymBase.Entities.Auth.phien_dang_nhap", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("binary(16)");
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
 
                     b.Property<DateTime>("ngay_het_han")
                         .HasColumnType("datetime(6)");
@@ -111,8 +113,10 @@ namespace GymBase.Persistence.Migrations
                     b.Property<DateTime?>("ngay_xoay_vong")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("nguoi_dung_id")
-                        .HasColumnType("binary(16)");
+                    b.Property<string>("nguoi_dung_id")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("ten_thiet_bi")
                         .HasMaxLength(100)
@@ -143,9 +147,10 @@ namespace GymBase.Persistence.Migrations
 
             modelBuilder.Entity("GymBase.Entities.Logging.system_log", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("binary(16)");
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("duong_dan")
                         .IsRequired()
