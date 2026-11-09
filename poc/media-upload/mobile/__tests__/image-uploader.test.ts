@@ -1,6 +1,7 @@
 import {
   setCustomManipulator,
   uploadImage,
+  uploadMultipartFile,
 } from '../src/services/image-uploader';
 import { ConfirmUploadResponse, UploadUrlResponse } from '../src/types/media.types';
 
@@ -223,5 +224,72 @@ describe('image-uploader', () => {
         signal: controller.signal,
       })
     ).rejects.toThrow('Upload cancelled by user');
+  });
+
+  describe('uploadMultipartFile (Chuẩn V1)', () => {
+    it('gửi multipart/form-data tới /api/files và trả về FileUploadResult', async () => {
+      global.fetch = jest.fn((url: RequestInfo | URL, init?: RequestInit) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/mock-compressed.jpg')) {
+          return Promise.resolve({
+            blob: () => Promise.resolve({ size: 1024 * 15, type: 'image/jpeg' }),
+          } as unknown as Response);
+        }
+        if (urlStr.includes('/api/files')) {
+          expect(init?.method).toBe('POST');
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () =>
+              Promise.resolve({
+                file_id: '12345678-1234-1234-1234-123456789abc',
+                original_name: 'mock-compressed.jpg',
+                content_type: 'image/webp',
+                size: 8192,
+                purpose: 'avatar',
+                provider: 'LOCAL',
+                blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4',
+                content_url: '/api/files/12345678-1234-1234-1234-123456789abc/content',
+              }),
+          } as unknown as Response);
+        }
+        return Promise.reject(new Error(`Unhandled URL: ${urlStr}`));
+      });
+
+      const res = await uploadMultipartFile('file:///original.jpg', 'avatar', {
+        apiBaseUrl: 'http://localhost:5242',
+        authToken: 'jwt-token-123',
+      });
+
+      expect(res.file_id).toBe('12345678-1234-1234-1234-123456789abc');
+      expect(res.provider).toBe('LOCAL');
+      expect(res.content_type).toBe('image/webp');
+      expect(res.content_url).toBe('/api/files/12345678-1234-1234-1234-123456789abc/content');
+    });
+
+    it('ném lỗi chi tiết khi /api/files trả về lỗi 400', async () => {
+      global.fetch = jest.fn((url: RequestInfo | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/mock-compressed.jpg')) {
+          return Promise.resolve({
+            blob: () => Promise.resolve({ size: 1024 * 10, type: 'image/jpeg' }),
+          } as unknown as Response);
+        }
+        if (urlStr.includes('/api/files')) {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            text: () => Promise.resolve('{"error":"Tệp tin tải lên rỗng."}'),
+          } as unknown as Response);
+        }
+        return Promise.reject(new Error(`Unhandled: ${urlStr}`));
+      });
+
+      await expect(
+        uploadMultipartFile('file:///original.jpg', 'avatar', {
+          apiBaseUrl: 'http://localhost:5242',
+        })
+      ).rejects.toThrow('Upload file multipart thất bại (400)');
+    });
   });
 });

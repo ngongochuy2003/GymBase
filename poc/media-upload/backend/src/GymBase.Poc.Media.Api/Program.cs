@@ -1,22 +1,21 @@
 using GymBase.Poc.Media.Endpoints;
 using GymBase.Poc.Media.Extensions;
-using GymBase.Poc.Media.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Thêm OpenAPI / Swagger
+// 1. Thêm Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
     {
-        Title = "GymBase Media Upload POC API",
+        Title = "GymBase V1 Storage API (Local Storage & S3 Ready)",
         Version = "v1",
-        Description = "POC kiến trúc upload ảnh trực tiếp S3 với Presigned URL, biến thể WebP, Blurhash và Deduplication."
+        Description = "API lưu trữ file chuẩn V1: Local Storage trước, sẵn sàng chuyển S3, bảng tep_tin với nha_cung_cap."
     });
 });
 
-// 2. Cấu hình CORS cho Mobile App (Expo development server & emulator)
+// 2. CORS cho Mobile App (Expo development server & emulator)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllForDev", policy =>
@@ -27,7 +26,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 3. Đăng ký Media Upload Module
+// 3. Đăng ký Hạ tầng lưu trữ chuẩn V1 + Presigned URL S3
+builder.Services.AddGymBaseFileStorage(builder.Configuration);
 builder.Services.AddMediaUpload(builder.Configuration);
 
 var app = builder.Build();
@@ -39,36 +39,23 @@ if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Ena
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "GymBase Media API v1");
-        c.RoutePrefix = string.Empty; // Mở Swagger ngay tại root URL
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "GymBase V1 Storage API");
+        c.RoutePrefix = string.Empty; // Mở Swagger tại root URL
     });
 }
 
-// 4. Endpoint kiểm tra sức khỏe
+// 4. Health Check
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "Healthy",
     timestamp = DateTime.UtcNow,
-    module = "GymBase.Poc.Media"
+    module = "GymBase.V1.Storage",
+    mode = "Local Storage (S3-Ready)"
 })).WithTags("Health");
 
-// 5. Đăng ký toàn bộ Media Endpoints
+// 5. Đăng ký Endpoints chuẩn V1 (/api/files) và Direct S3 (/api/v1/media)
+app.MapFilesEndpoints();
 app.MapMediaEndpoints();
-
-// 6. Endpoint Mock PUT cho InMemory Storage (cho phép test upload trực tiếp mà không cần khởi động MinIO)
-app.MapPut("/mock-s3-upload/{*key}", async (string key, HttpContext context, IMediaStorage storage) =>
-{
-    if (storage is InMemoryMediaStorage inMemory)
-    {
-        using var ms = new MemoryStream();
-        await context.Request.Body.CopyToAsync(ms);
-        var bytes = ms.ToArray();
-        var contentType = context.Request.ContentType ?? "image/jpeg";
-        inMemory.DirectPut(key, bytes, contentType);
-        return Results.Ok(new { message = "Mock S3 PUT uploaded successfully", key, size = bytes.Length });
-    }
-    return Results.BadRequest(new { error = "Not running in InMemory storage mode." });
-}).ExcludeFromDescription();
 
 app.Run();
 

@@ -36,6 +36,30 @@ export interface ConfirmUploadResponse {
   is_deduplicated: boolean;
 }
 
+// Chuẩn V1: File Storage (Local Storage & S3 Ready)
+export interface FileUploadResult {
+  file_id: string;
+  original_name: string;
+  content_type: string;
+  size: number;
+  purpose: string;
+  provider: string;
+  blurhash?: string;
+  content_url: string;
+}
+
+export interface TepTinMetadata {
+  id: string;
+  original_name: string;
+  content_type: string;
+  size: number;
+  purpose: string;
+  provider: string;
+  status: string;
+  blurhash?: string;
+  created_at: string;
+}
+
 export type UploadState = 'idle' | 'compressing' | 'uploading' | 'confirming' | 'done' | 'error';
 
 export interface UploadOptions {

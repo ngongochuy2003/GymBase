@@ -1,6 +1,7 @@
 import {
   ConfirmUploadRequest,
   ConfirmUploadResponse,
+  FileUploadResult,
   MediaPurpose,
   UploadOptions,
   UploadUrlRequest,
@@ -218,4 +219,72 @@ export async function uploadImage(
   }
 
   return (await confirmRes.json()) as ConfirmUploadResponse;
+}
+
+/**
+ * Chuẩn V1: Upload file multipart/form-data trực tiếp lên Backend GymBase (/api/files).
+ * Backend sẽ nén/xử lý WebP và lưu vào Local Storage hoặc S3 tùy môi trường cấu hình.
+ */
+export async function uploadMultipartFile(
+  localUri: string,
+  purpose: MediaPurpose = 'avatar',
+  options?: UploadOptions
+): Promise<FileUploadResult> {
+  const baseUrl = options?.apiBaseUrl || DEFAULT_API_BASE;
+  const authHeaders: Record<string, string> = {};
+  if (options?.authToken) {
+    authHeaders.Authorization = `Bearer ${options.authToken}`;
+  }
+
+  // 1. Nén và chuẩn hóa ảnh trên thiết bị trước khi gửi
+  const compressed = await compressImageOnDevice(localUri);
+
+  if (options?.signal?.aborted) {
+    throw new Error('Upload cancelled by user');
+  }
+
+  // 2. Chuẩn bị FormData
+  const formData = new FormData();
+  formData.append('purpose', purpose);
+
+  const fileName = compressed.uri.split('/').pop() || `upload_${Date.now()}.jpg`;
+
+  // Hỗ trợ cả React Native FormData payload và Web/Node Blob
+  if (typeof Blob !== 'undefined' && !compressed.uri.startsWith('file://')) {
+    try {
+      const blobRes = await fetch(compressed.uri);
+      const blob = await blobRes.blob();
+      formData.append('file', blob, fileName);
+    } catch {
+      // Fallback sang object React Native
+      // @ts-ignore
+      formData.append('file', {
+        uri: compressed.uri,
+        type: compressed.contentType,
+        name: fileName,
+      });
+    }
+  } else {
+    // React Native FormData format
+    // @ts-ignore
+    formData.append('file', {
+      uri: compressed.uri,
+      type: compressed.contentType,
+      name: fileName,
+    });
+  }
+
+  const response = await fetch(`${baseUrl}/api/files`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: formData,
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Upload file multipart thất bại (${response.status}): ${errorText}`);
+  }
+
+  return (await response.json()) as FileUploadResult;
 }

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GymBase.Poc.Notification/GymBase.Poc.Notification.csproj" />
+    <Project Path="src/GymBase.Poc.Notification.Api/GymBase.Poc.Notification.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GymBase.Poc.Notification.Tests/GymBase.Poc.Notification.Tests.csproj" />
+  </Folder>
+</Solution>
