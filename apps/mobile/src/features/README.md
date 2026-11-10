@@ -1,7 +1,14 @@
 # Feature boundaries
 
-`auth` là màn hình vào demo; `pt-sessions` có màn hình lịch tập, typed repository,
-query keys, hook và UI; `profile` chứa tùy chỉnh giao diện/thoát phiên.
+`auth` là màn hình vào demo; `feed` là Trang chủ (bảng tin) và `composer` là màn Đăng bài, cả hai dựng từ `ScreenConfig` qua `ScreenRenderer` (`shared/screen-config`); `profile` chứa tùy chỉnh giao diện/thoát phiên.
+
+## Thêm section/chức năng vào màn hình
+
+1. Component nhận props là mảng cấu hình (items/actions/options...).
+2. `registerSection('type', Component)` (trong screen của feature).
+3. Thêm một object `{ id, type, props }` vào `sections` của config màn hình. Chip, tab, action, chủ đề mới = thêm một phần tử vào mảng mock/config tương ứng.
+
+Design tokens ở `shared/theme/tokens.ts`, icon ở `shared/icons` (`registerIcon`).
 
 Các module V1 tiếp theo: `trainers`, `trainees`, `workouts`, `session-packages`.
 Tạo thư mục khi triển khai use case thực tế; không tạo screen rỗng để giả đã có chức năng.

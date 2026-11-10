@@ -3,6 +3,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
     <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
+    <ProjectReference Include="..\..\..\src\File\GymBase.BLFile\GymBase.BLFile.csproj" />
+    <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
     <ProjectReference Include="..\..\Shared\GymBase.TestDoubles\GymBase.TestDoubles.csproj" />
   </ItemGroup>
 

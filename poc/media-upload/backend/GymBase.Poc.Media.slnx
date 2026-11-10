@@ -1,9 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/GymBase.Poc.Media/GymBase.Poc.Media.csproj" />
-    <Project Path="src/GymBase.Poc.Media.Api/GymBase.Poc.Media.Api.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/GymBase.Poc.Media.Tests/GymBase.Poc.Media.Tests.csproj" />
-  </Folder>
-</Solution>

@@ -1,4 +1,4 @@
-# GymBase Mobile
+﻿# GymBase Mobile
 
 Base Expo/React Native theo kiến trúc feature-first. Chạy độc lập với backend bằng
 dữ liệu demo rõ ràng; không tạo tài khoản hoặc xác nhận buổi PT tính phí thật.
@@ -28,7 +28,7 @@ npx --yes pnpm@10.34.9 --filter @gymbase/mobile ios
 ```
 
 Màn hình mở đầu: nhập tên ít nhất 2 ký tự → **Khám phá bản demo**.
-Tab **Hôm nay**: lịch tập mẫu, đánh dấu/bỏ đánh dấu đã tập để cập nhật tiến trình.
+Tab **Trang chủ**: preview các chức năng (Tạo bài viết, Gửi thông báo) dựng từ registry.
 Tab **Cá nhân**: đổi giao diện sáng/tối hoặc thoát demo.
 Phiên demo không lưu tài khoản/token; reload hoặc thoát sẽ bắt đầu lại.
 
@@ -39,7 +39,8 @@ src/
   app/                       # Expo Router, thin routes, guest/protected layouts
   features/
     auth/                    # Demo entry form: RHF + Zod
-    pt-sessions/             # Typed repository → query hook → screen/components
+    home/                    # Trang chủ dựng từ registry các chức năng
+    posts/ notifications/    # Preview chức năng cho trang chủ
     profile/                 # Theme settings / exit demo
   core/
     api/                     # Axios factory, safe error mapping, refresh seam
@@ -112,3 +113,4 @@ của chủ dự án. Không tự submit store hoặc deploy production.
 - [Expo monorepo](https://docs.expo.dev/guides/monorepos/)
 - [Expo unit testing](https://docs.expo.dev/develop/unit-testing/)
 - [Expo Router](https://docs.expo.dev/router/introduction/)
+

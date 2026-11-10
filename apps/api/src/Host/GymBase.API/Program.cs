@@ -4,8 +4,12 @@ using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.NguoiDung;
 using GymBase.BLAuth.XacThuc;
+using GymBase.BLFile;
+using GymBase.BLFile.Files;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.MySql;
+using GymBase.DLFile.Contract;
+using GymBase.DLFile.MySql;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +29,10 @@ builder.Services.AddAppPersistence(builder.Configuration);
 builder.Services.AddAuthBusiness();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
+
+// File: lưu trữ tệp tin (Local/S3) và push notification
+builder.Services.AddFileBusiness(builder.Configuration);
+builder.Services.AddScoped<ITepTinRepository, TepTinRepository>();
 
 var app = builder.Build();
 
@@ -55,6 +63,13 @@ if (args is ["create-admin", var adminUserName])
 }
 
 app.UseAppApi();
+
+// Endpoint tải nội dung file công khai dùng chung cho mobile và web (/api/files/{id}/content)
+app.MapGet("/api/files/{id:guid}/content", async (Guid id, IFileService fileService, HttpContext ctx, CancellationToken ct) =>
+{
+    var streamResult = await fileService.OpenAuthorizedAsync(ctx.User, id, ct);
+    return Results.File(streamResult.Stream, streamResult.ContentType, enableRangeProcessing: true);
+}).AllowAnonymous();
 
 app.Run();
 return 0;

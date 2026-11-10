@@ -4,7 +4,8 @@ import EntryRoute from '@/app/index';
 import AuthLayout from '@/app/(auth)/_layout';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
-import TodayRoute from '@/app/(protected)/today';
+import HomeRoute from '@/app/(protected)/home';
+import ComposeRoute from '@/app/(protected)/compose';
 import ProfileRoute from '@/app/(protected)/profile';
 import NotFound from '@/app/+not-found';
 
@@ -20,7 +21,8 @@ test('protects deep links and returns to login after logout instead of not-found
       '(auth)/_layout': AuthLayout,
       '(auth)/login': LoginRoute,
       '(protected)/_layout': ProtectedLayout,
-      '(protected)/today': TodayRoute,
+      '(protected)/home': HomeRoute,
+      '(protected)/compose': ComposeRoute,
       '(protected)/profile': ProfileRoute,
       '+not-found': NotFound,
     },
@@ -31,7 +33,11 @@ test('protects deep links and returns to login after logout instead of not-found
   expect(screen.queryByText('Không gian của bạn')).toBeNull();
   await fireEvent.changeText(screen.getByLabelText('Tên của bạn'), 'Minh Anh');
   await fireEvent.press(screen.getByRole('button', { name: 'Khám phá bản demo' }));
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
+  expect(await screen.findByText(/Buổi Push hôm nay/)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('tab', { name: 'Đăng bài' }));
+  await waitFor(() => expect(screen).toHavePathname('/compose'));
+  expect(await screen.findByText('Quyền xem')).toBeTruthy();
   await testRouter.navigate('/profile');
   await fireEvent.press(await screen.findByRole('button', { name: 'Thoát bản demo' }));
   await waitFor(() => expect(screen).toHavePathname('/login'));

@@ -1,11 +1,14 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { AppProviders } from '@/providers/app-providers';
 import { useSession } from '@/core/auth/session';
 import { LoginScreen } from '@/features/auth';
-import { DashboardScreen } from '@/features/pt-sessions';
+import { FeedScreen } from '@/features/feed';
 import { ProfileScreen } from '@/features/profile';
-import { demoSessionsRepository } from '@/features/pt-sessions/api/demo-sessions';
 import { AppText } from '@/shared/components/ui';
+
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ navigate: jest.fn(), back: jest.fn(), canGoBack: () => false }),
+}));
 
 function TestApp() {
   const { status } = useSession();
@@ -13,13 +16,13 @@ function TestApp() {
   if (status === 'guest') return <LoginScreen />;
   return (
     <>
-      <DashboardScreen />
+      <FeedScreen />
       <ProfileScreen />
     </>
   );
 }
 
-test('validates name, enters demo, updates progress, changes theme and logs out', async () => {
+test('validates name, enters the feed home, toggles like, changes theme and logs out', async () => {
   await render(
     <AppProviders>
       <TestApp />
@@ -29,51 +32,37 @@ test('validates name, enters demo, updates progress, changes theme and logs out'
   expect(await screen.findByText('Nhập ít nhất 2 ký tự.')).toBeTruthy();
   await fireEvent.changeText(screen.getByLabelText('Tên của bạn'), 'Minh Anh');
   await fireEvent.press(screen.getByRole('button', { name: 'Khám phá bản demo' }));
-  expect(await screen.findByText('Chào Minh Anh,')).toBeTruthy();
-  await fireEvent.press(
-    await screen.findByRole('button', { name: 'Đánh dấu đã tập: Sức mạnh thân trên' }),
-  );
-  expect(await screen.findByText('1/2')).toBeTruthy();
+
+  expect(await screen.findByText(/Buổi Push hôm nay/)).toBeTruthy();
+  expect(screen.getByText('Lan Anh')).toBeTruthy();
+  expect(screen.getByText('1,248')).toBeTruthy();
+  await fireEvent.press(screen.getAllByRole('button', { name: 'like' })[0]!);
+  expect(await screen.findByText('1,249')).toBeTruthy();
+  await fireEvent.press(screen.getAllByRole('button', { name: 'like' })[0]!);
+  expect(await screen.findByText('1,248')).toBeTruthy();
+
   await fireEvent.press(screen.getByRole('button', { name: 'Chuyển sang giao diện tối' }));
   expect(await screen.findByText('Hiện tại: Tối')).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: 'Thoát bản demo' }));
   expect(await screen.findByLabelText('Tên của bạn')).toBeTruthy();
-  expect(screen.queryByText('Sức mạnh thân trên')).toBeNull();
-  await fireEvent.changeText(screen.getByLabelText('Tên của bạn'), 'Người mới');
-  await fireEvent.press(screen.getByRole('button', { name: 'Khám phá bản demo' }));
-  expect(
-    await screen.findByRole('button', { name: 'Đánh dấu đã tập: Sức mạnh thân trên' }),
-  ).toBeTruthy();
-  expect(screen.getByText('0/2')).toBeTruthy();
+  expect(screen.queryByText(/Buổi Push hôm nay/)).toBeNull();
 }, 30_000);
 
-test('shows an empty schedule', async () => {
-  const spy = jest.spyOn(demoSessionsRepository, 'list').mockResolvedValue([]);
+test('filter chips switch the active filter', async () => {
   await render(
     <AppProviders>
-      <DashboardScreen />
+      <FeedScreen />
     </AppProviders>,
+  );
+  const trending = await screen.findByRole('button', { name: 'Xu hướng' });
+  expect(
+    screen.getByRole('button', { name: 'Dành cho bạn' }).props.accessibilityState.selected,
+  ).toBe(true);
+  await fireEvent.press(trending);
+  expect(screen.getByRole('button', { name: 'Xu hướng' }).props.accessibilityState.selected).toBe(
+    true,
   );
   expect(
-    await screen.findByText('Chưa có buổi tập. Lịch tập mới sẽ xuất hiện tại đây.'),
-  ).toBeTruthy();
-  spy.mockRestore();
-});
-
-test('shows an error and retries successfully', async () => {
-  const spy = jest
-    .spyOn(demoSessionsRepository, 'list')
-    .mockRejectedValue(new Error('Mạng demo bị gián đoạn'));
-  await render(
-    <AppProviders>
-      <DashboardScreen />
-    </AppProviders>,
-  );
-  expect(await screen.findByText('Mạng demo bị gián đoạn', {}, { timeout: 4000 })).toBeTruthy();
-  spy.mockResolvedValue([]);
-  await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
-  await waitFor(() =>
-    expect(screen.getByText('Chưa có buổi tập. Lịch tập mới sẽ xuất hiện tại đây.')).toBeTruthy(),
-  );
-  spy.mockRestore();
+    screen.getByRole('button', { name: 'Dành cho bạn' }).props.accessibilityState.selected,
+  ).toBe(false);
 });
