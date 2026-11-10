@@ -1,0 +1,31 @@
+meta {
+  name: Sắp xếp cột không được phép (400)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{mobileApi}}/users?sort=mat_khau_hash
+  body: none
+  auth: bearer
+}
+
+params:query {
+  sort: mat_khau_hash
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  Cột ngoài danh sách cho phép trả 400 VALIDATION_FAILED.
+}

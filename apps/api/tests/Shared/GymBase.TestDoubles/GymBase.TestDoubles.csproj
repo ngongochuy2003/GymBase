@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- DL giả lưu trong bộ nhớ, để test BL và lớp HTTP không cần MySQL. Chỉ project test được tham chiếu. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Base\GymBase.Base\GymBase.Base.csproj" />
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.Contract\GymBase.DLAuth.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

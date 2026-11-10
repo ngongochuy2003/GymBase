@@ -1,0 +1,36 @@
+meta {
+  name: Thêm thiếu dữ liệu (400)
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{mobileApi}}/users
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "tai_khoan": "x",
+    "email": "khong-phai-email",
+    "vai_tro": "Trainee"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq VALIDATION_FAILED
+}
+
+docs {
+  Thiếu ho_ten, tai_khoan quá ngắn, email sai định dạng.
+}

@@ -1,0 +1,16 @@
+# Quy ước C# riêng của backend; quy ước chung (UTF-8, LF, thụt lề) ở .editorconfig gốc repo.
+
+[*.cs]
+# Namespace theo thư mục: GymBase.DLAuth.Contract/Entities → GymBase.DLAuth.Contract.Entities.
+dotnet_style_namespace_match_folder = true
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# Entity, DTO và tham số phân trang đặt tên snake_case trùng tên bảng/cột (quy ước Q2,
+# ví dụ class nguoi_dung, property tai_khoan, page_size), cố ý không theo PascalCase.
+dotnet_diagnostic.IDE1006.severity = none
+
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = true:suggestion
+csharp_using_directive_placement = outside_namespace:suggestion
+dotnet_sort_system_directives_first = true

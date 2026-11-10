@@ -1,0 +1,31 @@
+meta {
+  name: Đổi mật khẩu sai mật khẩu hiện tại (400)
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{mobileApi}}/auth/change-password
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "mat_khau_cu": "Mk-sai-mat-khau-1",
+    "mat_khau_moi": "Mk-moi-khong-dung-1"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq VALIDATION_FAILED
+}

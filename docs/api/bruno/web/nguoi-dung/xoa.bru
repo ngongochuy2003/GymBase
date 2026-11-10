@@ -1,0 +1,27 @@
+meta {
+  name: Xóa
+  type: http
+  seq: 15
+}
+
+delete {
+  url: {{webApi}}/users/{{createdUserId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Xóa mềm. Gọi lại lần nữa sẽ nhận 404.
+}

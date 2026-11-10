@@ -1,0 +1,33 @@
+meta {
+  name: Đặt lại mật khẩu
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{webApi}}/users/{{createdUserId}}/reset-password
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "mat_khau_moi": "Mk-dat-lai-moi-3"
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Chạy "Thêm" trước. Chỉ có ở kênh web. Mọi phiên của người dùng đó bị thu hồi.
+}

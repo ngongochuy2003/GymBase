@@ -1,0 +1,27 @@
+meta {
+  name: Đăng xuất
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{mobileApi}}/auth/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testAccessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Thu hồi phiên của tài khoản thử.
+}

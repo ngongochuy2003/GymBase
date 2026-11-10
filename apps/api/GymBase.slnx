@@ -1,0 +1,50 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/GymBase.API/GymBase.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Base/">
+    <Project Path="src/Base/GymBase.Base.Hosting/GymBase.Base.Hosting.csproj" />
+    <Project Path="src/Base/GymBase.Base/GymBase.Base.csproj" />
+  </Folder>
+  <Folder Name="/src/Contracts/">
+    <Project Path="src/Contracts/GymBase.ModuleContracts/GymBase.ModuleContracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Data/">
+    <Project Path="src/Data/GymBase.Entities/GymBase.Entities.csproj" />
+    <Project Path="src/Data/GymBase.Persistence/GymBase.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/src/Auth/">
+    <Project Path="src/Auth/GymBase.BLAuth/GymBase.BLAuth.csproj" />
+    <Project Path="src/Auth/GymBase.DLAuth.Contract/GymBase.DLAuth.Contract.csproj" />
+    <Project Path="src/Auth/GymBase.DLAuth.MySql/GymBase.DLAuth.MySql.csproj" />
+  </Folder>
+  <Folder Name="/src/DI/">
+    <Project Path="src/DI/GymBase.BLDI/GymBase.BLDI.csproj" />
+    <Project Path="src/DI/GymBase.DLDI.Contract/GymBase.DLDI.Contract.csproj" />
+    <Project Path="src/DI/GymBase.DLDI.MySql/GymBase.DLDI.MySql.csproj" />
+  </Folder>
+  <Folder Name="/src/BIZ/">
+    <Project Path="src/BIZ/GymBase.BLBiz/GymBase.BLBiz.csproj" />
+    <Project Path="src/BIZ/GymBase.DLBiz.Contract/GymBase.DLBiz.Contract.csproj" />
+    <Project Path="src/BIZ/GymBase.DLBiz.MySql/GymBase.DLBiz.MySql.csproj" />
+  </Folder>
+  <Folder Name="/tests/Shared/">
+    <Project Path="tests/Shared/GymBase.TestDoubles/GymBase.TestDoubles.csproj" />
+  </Folder>
+  <Folder Name="/tests/Unit/">
+    <Project Path="tests/Unit/GymBase.UnitTests/GymBase.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Integration/">
+    <Project Path="tests/Integration/GymBase.IntegrationTests/GymBase.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Architecture/">
+    <Project Path="tests/Architecture/GymBase.ArchitectureTests/GymBase.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

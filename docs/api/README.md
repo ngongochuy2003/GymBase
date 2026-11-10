@@ -1,12 +1,22 @@
 # API contracts
 
-Chưa có endpoint hoặc OpenAPI ở REPO-01. API-01 sẽ tạo host và `/health`;
-API-02 bổ sung conventions, validation, ProblemDetails, logging và OpenAPI.
+Tài liệu backend:
 
-Nhóm cần chốt authentication/refresh, authorization, pagination, thời gian/múi giờ,
-HTTP status, error codes và trace ID trước khi tích hợp Mobile.
+| File | Nội dung |
+| --- | --- |
+| [cau-truc-thu-muc.md](cau-truc-thu-muc.md) | Chuẩn kiến trúc: một host `GymBase.API`, nhóm Auth / DI / BIZ, trách nhiệm từng project, ma trận tham chiếu, quy tắc review |
+| [cach-chay-api.md](cach-chay-api.md) | Chạy API cho web và mobile, điện thoại thật, lỗi thường gặp |
+| [crud-dung-chung.md](crud-dung-chung.md) | Lớp nền CRUD: các lớp, nơi đặt entity và DTO, hành vi HTTP |
+| [huong-dan-them-crud.md](huong-dan-them-crud.md) | Hướng dẫn từng bước thêm CRUD cho một bảng mới, dành cho người mới |
+| [quy-uoc-response.md](quy-uoc-response.md) | Dạng response khi thành công và khi lỗi, phân trang, bộ mã lỗi |
+| [sort-va-filter.md](sort-va-filter.md) | Cú pháp `sort` và `filter`, lỗi trả về, cách bật cho một bảng mới |
+| [logging.md](logging.md) | Log kỹ thuật (Serilog) và audit log (bảng `system_log`): cách xem, cấu hình, truy vấn, giới hạn |
+| [xac-thuc.md](xac-thuc.md) | Thiết kế xác thực và phân quyền: JWT, refresh token, mật khẩu, đăng nhập Google (chưa triển khai) |
+| [viec-con-lai-base.md](viec-con-lai-base.md) | Phần base còn phải làm theo mức ưu tiên, quyết định đã chốt |
+| [bruno/](bruno) | Collection [Bruno](https://www.usebruno.com/) để gọi thử API |
+
 Không trả stack trace cho production hoặc log mật khẩu/token.
 
-OpenAPI từ backend là nguồn chuẩn cho contract client. Khi cần dùng chung,
+OpenAPI từ backend (`/openapi/v1.json`) là nguồn chuẩn cho contract client. Khi cần dùng chung,
 sinh `packages/api-client` hoặc `packages/contracts`; không sửa tay generated DTOs
-và không chia sẻ trực tiếp EF entities. Chưa tạo endpoint/DTO giả ở bước này.
+và không chia sẻ trực tiếp EF entities.

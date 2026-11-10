@@ -1,0 +1,31 @@
+meta {
+  name: Tìm kiếm
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{webApi}}/users?search=pt
+  body: none
+  auth: bearer
+}
+
+params:query {
+  search: pt
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Tìm theo tên đăng nhập, họ tên, email, số điện thoại.
+}
