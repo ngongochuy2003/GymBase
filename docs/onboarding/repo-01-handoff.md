@@ -28,7 +28,7 @@ Tài liệu Word, `Tài liệu dự án/` và `Document.txt` được giữ nguy
 ## Quyết định và giới hạn
 
 Ưu tiên bản monorepo khi tài liệu mobile cũ khác đường dẫn; backend .NET 9 theo
-yêu cầu chủ repo. Solution sau này đặt tại `apps/api/GymBase.slnx`.
+yêu cầu chủ repo (sau đó đã nâng lên .NET 10, xem `docs/architecture/decisions.md`). Solution sau này đặt tại `apps/api/GymBase.slnx`.
 Giữ nhánh hiện tại `nnhuy_init_base` vì HEAD khác `develop`; leader quyết định
 nhánh/PR khi push. Không có reviewer giả, CI giả hoặc lệnh app chưa hoạt động.
 

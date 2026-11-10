@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
+    <ProjectReference Include="..\..\Contracts\GymBase.ModuleContracts\GymBase.ModuleContracts.csproj" />
+    <ProjectReference Include="..\GymBase.DLAuth.Contract\GymBase.DLAuth.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

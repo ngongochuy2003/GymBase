@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Base\GymBase.Base.Hosting\GymBase.Base.Hosting.csproj" />
+  </ItemGroup>
+
+</Project>

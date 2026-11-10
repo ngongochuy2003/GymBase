@@ -1,0 +1,31 @@
+meta {
+  name: Sắp xếp
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{webApi}}/users?sort=-ngay_tao,ho_ten
+  body: none
+  auth: bearer
+}
+
+params:query {
+  sort: -ngay_tao,ho_ten
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Dấu - là giảm dần. Chỉ sắp theo các cột được phép.
+}

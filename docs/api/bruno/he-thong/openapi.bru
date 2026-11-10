@@ -1,0 +1,23 @@
+meta {
+  name: OpenAPI
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/openapi/v1.json
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Chỉ có ở môi trường Development.
+}

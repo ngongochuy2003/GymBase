@@ -1,0 +1,25 @@
+meta {
+  name: Làm mới bằng token sai (401)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{webApi}}/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "refresh_token": "token-khong-hop-le"
+  }
+}
+
+assert {
+  res.status: eq 401
+}

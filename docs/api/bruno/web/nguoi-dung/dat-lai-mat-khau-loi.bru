@@ -1,0 +1,30 @@
+meta {
+  name: Đặt lại mật khẩu quá ngắn (400)
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{webApi}}/users/{{createdUserId}}/reset-password
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "mat_khau_moi": "abc"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq VALIDATION_FAILED
+}
