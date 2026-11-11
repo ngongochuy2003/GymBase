@@ -199,8 +199,12 @@ HTTP của mã chung tương ứng**.
 
 | HTTP | `code` | Hằng số | Khi nào | Trạng thái |
 | --- | --- | --- | --- | --- |
-| 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `ten_dang_nhap` với người dùng còn hiệu lực (không phân biệt hoa thường). `errors` có `ten_dang_nhap` | Đang dùng |
+| 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `ten_dang_nhap` với người dùng khác (không phân biệt hoa thường). `errors` có `ten_dang_nhap` | Đang dùng |
 | 401 | `AUTH_INVALID_CREDENTIALS` | | Đăng nhập không thành công: sai tên đăng nhập, sai mật khẩu, hoặc tài khoản bị khóa (dùng chung một mã để không lộ trạng thái tài khoản, xem [xac-thuc.md](xac-thuc.md)) | Đang dùng |
+| 403 | `PT_NOT_VERIFIED` | `BizErrorCodes.PtNotVerified` | PT chưa được xác minh (hoặc tài khoản bị khóa) mà quản lý học viên | Đang dùng |
+| 403 | `CONNECTION_NOT_ACTIVE` | `BizErrorCodes.ConnectionNotActive` | Không có kết nối PT đang hoạt động với học viên | Đang dùng |
+| 403 | `SCOPE_NOT_ALLOWED` | `BizErrorCodes.ScopeNotAllowed` | Kết nối PT không phụ trách lĩnh vực này (`tap_luyen` hoặc `dinh_duong`) | Đang dùng |
+| 403 | `DATA_NOT_SHARED` | `BizErrorCodes.DataNotShared` | Dữ liệu của học viên chưa được chia sẻ cho người gọi | Đang dùng |
 
 Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code dùng mã đó.
 
