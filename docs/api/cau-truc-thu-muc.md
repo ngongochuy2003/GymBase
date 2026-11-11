@@ -74,6 +74,12 @@ thêm thư mục hay chức năng; phải có lý do về ranh giới.
 **Tên lớp theo chuẩn Service / Repository** (chốt 08/11): nghiệp vụ là `TaiKhoanService`, truy cập dữ liệu là
 `ITaiKhoanRepository` / `TaiKhoanRepository`, lớp nền là `BaseService`, `BaseRepository`. Tên lớp không mang tiền tố.
 
+**Ngôn ngữ trong tên** (chốt 11/11): danh từ và việc nghiệp vụ dùng tiếng Việt không dấu, từ kỹ thuật dùng tiếng Anh.
+Hỏi "chủ phòng gym hoặc PT có nói từ này không?": có thì tiếng Việt (`TaiKhoan`, `BuoiTap`, `DangNhap`,
+`XacNhanBuoiTap`), không thì tiếng Anh (`Service`, `Repository`, `Get`, `Find`, `Insert`, `Async`). Không dịch từ kỹ thuật
+sang tiếng Việt: code luôn lẫn API của .NET và thư viện (`Task`, `ControllerBase`), nên dịch một phần chỉ thêm một
+nhóm phải nhớ.
+
 **Tên theo danh từ nghiệp vụ** (chốt 11/11): tên lớp và file là danh từ nghiệp vụ tiếng Việt viết hoa từng chữ cộng hậu tố
 vai trò tiếng Anh, và cùng một danh từ lặp ở mọi tầng: `tai_khoan` (entity), `TaiKhoanConfiguration`, `TaiKhoanDtos`,
 `TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập là `XacThucService`.
@@ -85,10 +91,20 @@ thư mục sở hữu dữ liệu (quy tắc mật khẩu `PasswordRules` nằm 
 thì gộp lại hoặc đưa phần chung xuống thư mục nền.
 
 **Tiền tố tầng** (chốt 11/11): hàm public và protected của Service, và thư mục chức năng ngay dưới project BL, bắt đầu
-bằng `BL` (`BLRefreshAsync`, `BLXacThuc/`). Hàm của Repository và thư mục chức năng ngay dưới project DL bắt đầu bằng
+bằng `BL` (`BLLamMoiTokenAsync`, `BLXacThuc/`). Hàm của Repository và thư mục chức năng ngay dưới project DL bắt đầu bằng
 `DL` (`DLFindByTokenHashAsync`, `DLTaiKhoan/`). Hàm private giữ tên thường. Namespace theo thư mục
 (`GymBase.BLAuth.BLXacThuc`). `NamingConventionTests` giữ quy tắc này; project BL/DL mới phải được thêm vào
 `GymBase.ArchitectureTests.csproj` để test nạp được.
+
+**Tên hàm** (chốt 11/11): `BL` hoặc `DL` + tên + `Async` khi trả `Task`. Hàm BL đặt theo **việc nghiệp vụ bằng tiếng
+Việt** và khớp tên DTO của việc đó (`BLDangNhapAsync` nhận `DangNhapDto`, `BLXacNhanBuoiTapAsync`); hàm nền dùng chung cho
+mọi bảng (`BLGetByIdAsync`, `BLCreateAsync`) giữ tiếng Anh. Hàm DL đặt theo thao tác dữ liệu bằng động từ tiếng Anh:
+`DLGetByIdAsync`, `DLInsertAsync`, `DLFindBy…Async` (trả null nếu không có), `DLExistsBy…Async` (trả bool); tên bảng hoặc
+cột trong tên hàm giữ tiếng Việt (`DLFindByTenDangNhapAsync`).
+
+**Route mới** (chốt 11/11): đặt `[Route("buoi-tap")]` tường minh trên controller (chữ thường, gạch nối, danh từ tiếng
+Việt) và action là việc (`XacNhan` ứng với `{id}/xac-nhan`). Route tường minh thay hẳn route lấy theo tên controller của
+`BaseApiController` (có test: `ChannelRoutingTests`). URL đã công bố (`/users`, `/auth`) không đổi.
 
 **Phân việc:** BL chỉ chứa luật nghiệp vụ (điều kiện, chuyển trạng thái, tính toán, map DTO). DL chỉ truy vấn và ghi dữ
 liệu, không quyết định nghiệp vụ; điều kiện trong câu lệnh chỉ để ghi nguyên tử (ví dụ `DLRotateAsync` chống hai request
