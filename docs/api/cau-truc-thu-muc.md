@@ -65,15 +65,34 @@ Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (co
 `docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
 
 Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
-(`TaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
+(`BLTaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
 thêm thư mục hay chức năng; phải có lý do về ranh giới.
 
 **Quy ước đặt tên:** `BIZ` cho thư mục nhóm, `Biz` trong tên project (`GymBase.BLBiz`);
 `MySql` (không phải `Mysql` hay `MySQL`) trong tên project; `DI`, `Auth` giữ nguyên.
 
-**Tên lớp theo chuẩn Service / Repository** (chốt 08/11): nghiệp vụ là `UserService`, truy cập dữ liệu là
-`IUserRepository` / `UserRepository`, lớp nền là `BaseService`, `BaseRepository`. "BL" và "DL" chỉ còn là tên
-tầng và tên project (`GymBase.BLAuth`, `GymBase.DLAuth.MySql`).
+**Tên lớp theo chuẩn Service / Repository** (chốt 08/11): nghiệp vụ là `TaiKhoanService`, truy cập dữ liệu là
+`ITaiKhoanRepository` / `TaiKhoanRepository`, lớp nền là `BaseService`, `BaseRepository`. Tên lớp không mang tiền tố.
+
+**Tên theo danh từ nghiệp vụ** (chốt 11/11): tên lớp và file là danh từ nghiệp vụ tiếng Việt viết hoa từng chữ cộng hậu tố
+vai trò tiếng Anh, và cùng một danh từ lặp ở mọi tầng: `tai_khoan` (entity), `TaiKhoanConfiguration`, `TaiKhoanDtos`,
+`TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập là `XacThucService`.
+Mỗi Service và Repository nằm trong file cùng tên (test kiểm tra). Controller giữ tên theo URL (`UsersController` ứng
+với `/users`), vì URL là hợp đồng với mobile.
+
+**Phụ thuộc giữa các thư mục BL** đi một chiều: `BLXacThuc` dùng `BLTaiKhoan`, không ngược lại. Phần dùng chung đặt ở
+thư mục sở hữu dữ liệu (quy tắc mật khẩu `PasswordRules` nằm ở `BLTaiKhoan`). Hai thư mục cần nhau theo cả hai chiều
+thì gộp lại hoặc đưa phần chung xuống thư mục nền.
+
+**Tiền tố tầng** (chốt 11/11): hàm public và protected của Service, và thư mục chức năng ngay dưới project BL, bắt đầu
+bằng `BL` (`BLRefreshAsync`, `BLXacThuc/`). Hàm của Repository và thư mục chức năng ngay dưới project DL bắt đầu bằng
+`DL` (`DLFindByTokenHashAsync`, `DLTaiKhoan/`). Hàm private giữ tên thường. Namespace theo thư mục
+(`GymBase.BLAuth.BLXacThuc`). `NamingConventionTests` giữ quy tắc này; project BL/DL mới phải được thêm vào
+`GymBase.ArchitectureTests.csproj` để test nạp được.
+
+**Phân việc:** BL chỉ chứa luật nghiệp vụ (điều kiện, chuyển trạng thái, tính toán, map DTO). DL chỉ truy vấn và ghi dữ
+liệu, không quyết định nghiệp vụ; điều kiện trong câu lệnh chỉ để ghi nguyên tử (ví dụ `DLRotateAsync` chống hai request
+cùng lúc).
 
 ## 3. Trách nhiệm từng project
 
@@ -86,7 +105,7 @@ tầng và tên project (`GymBase.BLAuth`, `GymBase.DLAuth.MySql`).
 | `GymBase.BLAuth` | Người dùng, đăng nhập, refresh/logout, phân quyền, chính sách tài khoản | Truy vấn EF trực tiếp, controller |
 | `GymBase.Entities` | Entity và enum của cột, chia thư mục theo nhóm sở hữu bảng | Nghiệp vụ, EF Core |
 | `GymBase.Persistence` | `AppDbContext`, `BaseRepository`, cấu hình bảng, migrations, đăng ký EF Core | Nghiệp vụ, repository riêng của từng bảng |
-| `GymBase.DLAuth.Contract` | Interface DL (`IUserRepository`), danh sách cột sort/filter | Hiện thực MySQL |
+| `GymBase.DLAuth.Contract` | Interface DL (`ITaiKhoanRepository`), danh sách cột sort/filter | Hiện thực MySQL |
 | `GymBase.DLAuth.MySql` | Hiện thực DL của Auth, truy vấn | Quy tắc nghiệp vụ, gọi BLAuth |
 | `GymBase.BLDI` | CRUD và ràng buộc danh mục, phân loại, kiểm tra mã danh mục | Quy tắc trừ buổi tập |
 | `GymBase.DLDI.Contract` / `.MySql` | Interface DL của danh mục / hiện thực MySQL | Nghiệp vụ thanh toán, PT |
@@ -99,14 +118,14 @@ Một chức năng có vị trí song song trong BL và DL. Mẫu đang có (ng�
 
 ```text
 GymBase.BLAuth/
-├── TaiKhoan/
+├── BLTaiKhoan/
 │   ├── TaiKhoanDtos.cs        # DTO trả ra API và body thêm/sửa
-│   └── UserService.cs               # Nghiệp vụ, kế thừa BaseService
+│   └── TaiKhoanService.cs               # Nghiệp vụ, kế thừa BaseService
 └── AuthErrorCodes.cs           # Mã lỗi chi tiết của nhóm
 GymBase.DLAuth.Contract/
-└── IUserRepository.cs
+└── DLTaiKhoan/ITaiKhoanRepository.cs
 GymBase.DLAuth.MySql/
-└── UserRepository.cs                   # Hiện thực IUserRepository, kế thừa BaseRepository
+└── DLTaiKhoan/TaiKhoanRepository.cs        # Hiện thực ITaiKhoanRepository, kế thừa BaseRepository
 GymBase.Entities/Auth/
 └── tai_khoan.cs               # Tên class trùng tên bảng, property trùng tên cột
 GymBase.Persistence/Configurations/Auth/
@@ -200,7 +219,7 @@ Ví dụ luồng:
 
 ```text
 GET /api/v1/web/users/{id} → Controllers/UsersController     ┐
-GET /api/v1/mob/users/{id} → Mob/Controllers/UsersController ┴→ UserService.GetByIdAsync → IUserRepository → MySQL
+GET /api/v1/mob/users/{id} → Mob/Controllers/UsersController ┴→ TaiKhoanService.BLGetByIdAsync → ITaiKhoanRepository → MySQL
 ```
 
 ## 7. Ví dụ một luồng nghiệp vụ V1: PT hoàn thành buổi tập

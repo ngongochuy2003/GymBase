@@ -222,7 +222,7 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
   `Errors` (thành `errors`). BL chỉ biết `BusinessErrorKind`, không biết mã HTTP; tầng API đổi
   `Kind` sang mã HTTP (`AppExceptionHandler.ToStatusCode`).
 - Hàm khởi tạo nhận `code` để thay bằng mã chi tiết. Lỗi gắn với một trường thì truyền tên trường
-  để có `errors`, ví dụ trong `UserService.BeforeCreateAsync`:
+  để có `errors`, ví dụ trong `TaiKhoanService.BLBeforeCreateAsync`:
 
   ```csharp
   throw new ConflictException(
@@ -234,7 +234,7 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
 - Hằng số mã lỗi: mã chung ở `ErrorCodes` (`GymBase.Base`), mã chi tiết ở `<Nhóm>ErrorCodes` trong
   BL của nhóm (ví dụ `GymBase.BLAuth.AuthErrorCodes`).
 - `BaseService` tự ném `NotFoundException` khi xem, sửa, xóa bản ghi không có. Câu báo lỗi dùng
-  `EntityDisplayName` (ví dụ `UserService` đặt là "người dùng").
+  `EntityDisplayName` (ví dụ `TaiKhoanService` đặt là "người dùng").
 - `AppExceptionHandler` (`IExceptionHandler`, ở `GymBase.Base.Hosting/Errors`) đổi exception thành
   ProblemDetails. Controller **không** viết `try/catch`. Lỗi 4xx ghi log mức Information; lỗi
   khác ghi log mức Error kèm stack trace, rồi trả `detail` chung chung. Request bị client hủy

@@ -21,7 +21,7 @@ Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các ti�
 
 ## 2. Endpoint
 
-Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `AuthService`.
+Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucService`.
 
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |

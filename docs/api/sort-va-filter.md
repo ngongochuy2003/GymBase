@@ -150,7 +150,7 @@ bằng cùng danh sách, để test chạy đúng với cột thật.
 ## 7. Cách hoạt động
 
 ```text
-?sort=&filter=  →  PagingRequest  →  BaseService (Normalize)  →  BaseRepository.GetPagingAsync
+?sort=&filter=  →  PagingRequest  →  BaseService (Normalize)  →  BaseRepository.DLGetPagingAsync
                                                                      ├─ PagingQuery.ApplyFilter
                                                                      └─ PagingQuery.ApplySort
 ```
