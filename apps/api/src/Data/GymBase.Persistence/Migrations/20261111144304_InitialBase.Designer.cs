@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymBase.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261109152026_ChangeGuidToVarchar36")]
-    partial class ChangeGuidToVarchar36
+    [Migration("20261111144304_InitialBase")]
+    partial class InitialBase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,73 +25,43 @@ namespace GymBase.Persistence.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("GymBase.Entities.Auth.nguoi_dung", b =>
+            modelBuilder.Entity("GymBase.Entities.Auth.dang_nhap_ngoai", b =>
                 {
                     b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
-                    b.Property<bool>("dang_hoat_dong")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("email")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("ho_ten")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<bool>("is_deleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("mat_khau_hash")
+                    b.Property<string>("ma_ngoai")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime?>("ngay_chinh_sua")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<DateTime>("ngay_tao")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("nguoi_chinh_sua")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("nguoi_tao")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("so_dien_thoai")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("tai_khoan")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("tai_khoan_hieu_luc")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasComputedColumnSql("IF(`is_deleted` = 0, `tai_khoan`, NULL)", false);
-
-                    b.Property<string>("vai_tro")
+                    b.Property<string>("nha_cung_cap")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<string>("tai_khoan_id")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("tai_khoan_hieu_luc")
+                    b.HasIndex("nha_cung_cap", "ma_ngoai")
                         .IsUnique();
 
-                    b.ToTable("nguoi_dung", (string)null);
+                    b.HasIndex("tai_khoan_id", "nha_cung_cap")
+                        .IsUnique();
+
+                    b.ToTable("dang_nhap_ngoai", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_dang_nhap_ngoai_nha_cung_cap", "`nha_cung_cap` IN ('google')");
+                        });
                 });
 
             modelBuilder.Entity("GymBase.Entities.Auth.phien_dang_nhap", b =>
@@ -116,7 +86,7 @@ namespace GymBase.Persistence.Migrations
                     b.Property<DateTime?>("ngay_xoay_vong")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("nguoi_dung_id")
+                    b.Property<string>("tai_khoan_id")
                         .IsRequired()
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
@@ -138,7 +108,7 @@ namespace GymBase.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("nguoi_dung_id");
+                    b.HasIndex("tai_khoan_id");
 
                     b.HasIndex("token_hash")
                         .IsUnique();
@@ -146,6 +116,73 @@ namespace GymBase.Persistence.Migrations
                     b.HasIndex("token_hash_truoc");
 
                     b.ToTable("phien_dang_nhap", (string)null);
+                });
+
+            modelBuilder.Entity("GymBase.Entities.Auth.tai_khoan", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<bool>("dang_hoat_dong")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("email")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ho_ten")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("is_deleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("mat_khau_hash")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("ngay_chinh_sua")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ngay_tao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("nguoi_chinh_sua")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("nguoi_tao")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("so_dien_thoai")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("ten_dang_nhap")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ten_dang_nhap_hieu_luc")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasComputedColumnSql("IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", false);
+
+                    b.Property<string>("vai_tro")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ten_dang_nhap_hieu_luc")
+                        .IsUnique();
+
+                    b.ToTable("tai_khoan", (string)null);
                 });
 
             modelBuilder.Entity("GymBase.Entities.Logging.system_log", b =>
@@ -196,11 +233,20 @@ namespace GymBase.Persistence.Migrations
                     b.ToTable("system_log", (string)null);
                 });
 
+            modelBuilder.Entity("GymBase.Entities.Auth.dang_nhap_ngoai", b =>
+                {
+                    b.HasOne("GymBase.Entities.Auth.tai_khoan", null)
+                        .WithMany()
+                        .HasForeignKey("tai_khoan_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("GymBase.Entities.Auth.phien_dang_nhap", b =>
                 {
-                    b.HasOne("GymBase.Entities.Auth.nguoi_dung", null)
+                    b.HasOne("GymBase.Entities.Auth.tai_khoan", null)
                         .WithMany()
-                        .HasForeignKey("nguoi_dung_id")
+                        .HasForeignKey("tai_khoan_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
