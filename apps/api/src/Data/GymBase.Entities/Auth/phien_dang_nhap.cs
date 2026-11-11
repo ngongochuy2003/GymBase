@@ -8,7 +8,7 @@ namespace GymBase.Entities.Auth;
 /// </summary>
 public sealed class phien_dang_nhap : BaseEntity
 {
-    public Guid nguoi_dung_id { get; set; }
+    public Guid tai_khoan_id { get; set; }
 
     /// <summary>SHA-256 của refresh token hiện tại.</summary>
     public string token_hash { get; set; } = string.Empty;

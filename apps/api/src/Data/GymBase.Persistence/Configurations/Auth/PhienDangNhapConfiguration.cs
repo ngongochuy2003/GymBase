@@ -19,11 +19,11 @@ public sealed class PhienDangNhapConfiguration : IEntityTypeConfiguration<phien_
 
         builder.HasIndex(e => e.token_hash).IsUnique();
         builder.HasIndex(e => e.token_hash_truoc);
-        builder.HasIndex(e => e.nguoi_dung_id);
+        builder.HasIndex(e => e.tai_khoan_id);
 
-        builder.HasOne<nguoi_dung>()
+        builder.HasOne<tai_khoan>()
             .WithMany()
-            .HasForeignKey(e => e.nguoi_dung_id)
+            .HasForeignKey(e => e.tai_khoan_id)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

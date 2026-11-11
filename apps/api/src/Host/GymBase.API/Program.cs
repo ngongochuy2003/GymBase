@@ -2,7 +2,7 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using GymBase.BLAuth.XacThuc;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.MySql;

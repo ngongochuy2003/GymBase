@@ -4,17 +4,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GymBase.Persistence.Configurations.Auth;
 
-/// <summary>Bảng <c>nguoi_dung</c>. Độ dài cột khớp DataAnnotations trong DTO của BLAuth.</summary>
-public sealed class NguoiDungConfiguration : IEntityTypeConfiguration<nguoi_dung>
+/// <summary>Bảng <c>tai_khoan</c>. Độ dài cột khớp DataAnnotations trong DTO của BLAuth.</summary>
+public sealed class TaiKhoanConfiguration : IEntityTypeConfiguration<tai_khoan>
 {
-    /// <summary>Cột sinh tự động: bằng tai_khoan khi còn hiệu lực, NULL khi đã xóa mềm.</summary>
-    private const string ActiveUsernameColumn = "tai_khoan_hieu_luc";
+    /// <summary>Cột sinh tự động: bằng ten_dang_nhap khi còn hiệu lực, NULL khi đã xóa mềm.</summary>
+    private const string ActiveUsernameColumn = "ten_dang_nhap_hieu_luc";
 
-    public void Configure(EntityTypeBuilder<nguoi_dung> builder)
+    public void Configure(EntityTypeBuilder<tai_khoan> builder)
     {
-        builder.ToTable(nameof(nguoi_dung));
+        builder.ToTable(nameof(tai_khoan));
 
-        builder.Property(e => e.tai_khoan).HasMaxLength(50);
+        builder.Property(e => e.ten_dang_nhap).HasMaxLength(50);
         builder.Property(e => e.ho_ten).HasMaxLength(100);
         builder.Property(e => e.email).HasMaxLength(100);
         builder.Property(e => e.so_dien_thoai).HasMaxLength(20);
@@ -27,7 +27,7 @@ public sealed class NguoiDungConfiguration : IEntityTypeConfiguration<nguoi_dung
         // giữa các tài khoản còn hiệu lực mà vẫn cho dùng lại tên của tài khoản đã xóa mềm.
         builder.Property<string?>(ActiveUsernameColumn)
             .HasMaxLength(50)
-            .HasComputedColumnSql("IF(`is_deleted` = 0, `tai_khoan`, NULL)", stored: false);
+            .HasComputedColumnSql("IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", stored: false);
         builder.HasIndex(ActiveUsernameColumn).IsUnique();
     }
 }

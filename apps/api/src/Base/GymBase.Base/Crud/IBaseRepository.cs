@@ -5,7 +5,7 @@ namespace GymBase.Base.Crud;
 
 /// <summary>
 /// Thao tác dữ liệu dùng chung cho mọi bảng. DL của từng bảng kế thừa interface này
-/// (ví dụ <c>IUserRepository : IBaseRepository&lt;nguoi_dung&gt;</c>) rồi thêm truy vấn riêng nếu cần.
+/// (ví dụ <c>IUserRepository : IBaseRepository&lt;tai_khoan&gt;</c>) rồi thêm truy vấn riêng nếu cần.
 /// Bản ghi đã xóa mềm (<see cref="ISoftDelete"/>) không bao giờ được trả về.
 /// </summary>
 public interface IBaseRepository<TEntity> where TEntity : BaseEntity

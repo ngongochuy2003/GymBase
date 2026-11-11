@@ -23,7 +23,7 @@ public class AppDbContextModelTests
     {
         using var db = CreateContext();
 
-        var id = db.Model.FindEntityType(typeof(nguoi_dung))!.FindProperty(nameof(nguoi_dung.Id))!;
+        var id = db.Model.FindEntityType(typeof(tai_khoan))!.FindProperty(nameof(tai_khoan.Id))!;
 
         Assert.Equal("varchar(36)", id.GetColumnType());
     }
@@ -35,7 +35,7 @@ public class AppDbContextModelTests
 
         var script = db.Database.GenerateCreateScript();
 
-        Assert.Contains("`nguoi_dung_id` varchar(36)", script);
+        Assert.Contains("`tai_khoan_id` varchar(36)", script);
         Assert.DoesNotContain("binary(16)", script);
     }
 
@@ -45,7 +45,7 @@ public class AppDbContextModelTests
         using var db = CreateContext();
         var id = Guid.Parse("0193F0A0-0000-7000-8000-000000000001");
 
-        var sql = db.Set<nguoi_dung>().Where(u => u.Id == id).ToQueryString();
+        var sql = db.Set<tai_khoan>().Where(u => u.Id == id).ToQueryString();
 
         Assert.Contains("'0193f0a0-0000-7000-8000-000000000001'", sql);
     }
@@ -55,23 +55,23 @@ public class AppDbContextModelTests
     {
         using var db = CreateContext();
 
-        var sql = db.Set<nguoi_dung>().ToQueryString();
+        var sql = db.Set<tai_khoan>().ToQueryString();
 
-        Assert.Contains("NOT (`n`.`is_deleted`)", sql);
+        Assert.Contains("NOT (`t`.`is_deleted`)", sql);
     }
 
     [Fact]
     public void Sort_and_filter_translate_to_sql_with_parameters()
     {
         using var db = CreateContext();
-        var columns = NguoiDungQueryColumns.Allowed;
+        var columns = TaiKhoanQueryColumns.Allowed;
 
-        var filtered = PagingQuery.ApplyFilter(db.Set<nguoi_dung>(), "vai_tro:eq:Trainer,ngay_tao:gte:2026-11-01", columns);
+        var filtered = PagingQuery.ApplyFilter(db.Set<tai_khoan>(), "vai_tro:eq:User,ngay_tao:gte:2026-11-01", columns);
         var sql = PagingQuery.ApplySort(filtered, "-ho_ten", columns).ToQueryString();
 
-        Assert.Contains("ORDER BY `n`.`ho_ten` DESC, `n`.`Id` DESC", sql);
-        Assert.Contains("`n`.`vai_tro` = ", sql);
-        Assert.Contains("`n`.`ngay_tao` >= @", sql);
+        Assert.Contains("ORDER BY `t`.`ho_ten` DESC, `t`.`Id` DESC", sql);
+        Assert.Contains("`t`.`vai_tro` = ", sql);
+        Assert.Contains("`t`.`ngay_tao` >= @", sql);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class AppDbContextModelTests
     {
         using var db = CreateContext();
 
-        var sql = PagingQuery.ApplyFilter(db.Set<nguoi_dung>(), "vai_tro:eq:x' OR '1'='1", NguoiDungQueryColumns.Allowed).ToQueryString();
+        var sql = PagingQuery.ApplyFilter(db.Set<tai_khoan>(), "vai_tro:eq:x' OR '1'='1", TaiKhoanQueryColumns.Allowed).ToQueryString();
 
         Assert.DoesNotContain("'x' OR '1'='1'", sql);
     }
@@ -115,8 +115,8 @@ public class AppDbContextModelTests
 
         var script = db.Database.GenerateCreateScript();
 
-        Assert.Contains("`tai_khoan_hieu_luc` varchar(50)", script);
-        Assert.Contains("IF(`is_deleted` = 0, `tai_khoan`, NULL)", script);
+        Assert.Contains("`ten_dang_nhap_hieu_luc` varchar(50)", script);
+        Assert.Contains("IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", script);
         Assert.Contains("CREATE UNIQUE INDEX", script);
     }
 }

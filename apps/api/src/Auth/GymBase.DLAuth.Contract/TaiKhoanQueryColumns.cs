@@ -3,11 +3,11 @@ using GymBase.Entities.Auth;
 
 namespace GymBase.DLAuth.Contract;
 
-/// <summary>Các cột của <c>nguoi_dung</c> mà client được sort và filter. Không có mat_khau_hash, is_deleted.</summary>
-public static class NguoiDungQueryColumns
+/// <summary>Các cột của <c>tai_khoan</c> mà client được sort và filter. Không có mat_khau_hash, is_deleted.</summary>
+public static class TaiKhoanQueryColumns
 {
-    public static QueryColumns<nguoi_dung> Allowed { get; } = new QueryColumns<nguoi_dung>()
-        .Add(u => u.tai_khoan)
+    public static QueryColumns<tai_khoan> Allowed { get; } = new QueryColumns<tai_khoan>()
+        .Add(u => u.ten_dang_nhap)
         .Add(u => u.ho_ten)
         .Add(u => u.email)
         .Add(u => u.so_dien_thoai)

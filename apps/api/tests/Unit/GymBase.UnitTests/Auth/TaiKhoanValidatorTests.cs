@@ -1,16 +1,16 @@
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 
 namespace GymBase.UnitTests.Auth;
 
 /// <summary>Quy tắc dữ liệu nhập của người dùng và thông báo tiếng Việt.</summary>
-public class NguoiDungValidatorTests
+public class TaiKhoanValidatorTests
 {
-    private static readonly NguoiDungCreateValidator Validator = new();
+    private static readonly TaiKhoanCreateValidator Validator = new();
 
-    private static NguoiDungCreateDto Valid(
-        string taiKhoan = "hv.moi", string hoTen = "Học viên", string? email = "a@gymbase.local", string? phone = "0912 345 678", string vaiTro = "Trainee") => new()
+    private static TaiKhoanCreateDto Valid(
+        string tenDangNhap = "hv.moi", string hoTen = "Học viên", string? email = "a@gymbase.local", string? phone = "0912 345 678", string vaiTro = "User") => new()
     {
-        tai_khoan = taiKhoan,
+        ten_dang_nhap = tenDangNhap,
         mat_khau = AuthTestHelpers.ValidPassword,
         ho_ten = hoTen,
         email = email,
@@ -18,7 +18,7 @@ public class NguoiDungValidatorTests
         vai_tro = vaiTro,
     };
 
-    private static string[] ErrorFields(NguoiDungCreateDto dto) =>
+    private static string[] ErrorFields(TaiKhoanCreateDto dto) =>
         Validator.Validate(dto).Errors.Select(e => e.PropertyName).ToArray();
 
     [Fact]
@@ -32,10 +32,10 @@ public class NguoiDungValidatorTests
     [InlineData("   ")]
     [InlineData("ab")]
     [InlineData("  ab  ")] // đủ 3 ký tự chỉ nhờ khoảng trắng
-    public void Rejects_short_username(string value) => Assert.Equal(["tai_khoan"], ErrorFields(Valid(taiKhoan: value)));
+    public void Rejects_short_username(string value) => Assert.Equal(["ten_dang_nhap"], ErrorFields(Valid(tenDangNhap: value)));
 
     [Fact]
-    public void Rejects_too_long_username() => Assert.Equal(["tai_khoan"], ErrorFields(Valid(taiKhoan: new string('a', 51))));
+    public void Rejects_too_long_username() => Assert.Equal(["ten_dang_nhap"], ErrorFields(Valid(tenDangNhap: new string('a', 51))));
 
     [Theory]
     [InlineData("khong-co-a-cong")]
@@ -51,7 +51,7 @@ public class NguoiDungValidatorTests
     [Fact]
     public void Each_field_reports_only_its_first_error()
     {
-        var errors = Validator.Validate(Valid(taiKhoan: "")).Errors;
+        var errors = Validator.Validate(Valid(tenDangNhap: "")).Errors;
 
         Assert.Single(errors);
     }

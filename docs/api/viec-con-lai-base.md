@@ -17,8 +17,8 @@ phần nền `GymBase.Base` và `GymBase.Base.Hosting`, test chia Unit / Integra
 
 **Mẫu đầu tiên đi đủ các tầng:** API người dùng. Web (`/api/v1/web/users`, `Controllers/`) và
 mobile (`/api/v1/mob/users`, `Mob/Controllers/`) đều có đủ CRUD qua `BaseCrudController`. Cả hai cùng
-gọi `UserService : BaseService` → `IUserRepository : IBaseRepository<nguoi_dung>`. Entity `nguoi_dung` nằm ở
-`GymBase.Entities/Auth`, DTO nằm ở `GymBase.BLAuth/NguoiDung`. `UserRepository` kế thừa `BaseRepository` dùng EF Core; DL giả cho test
+gọi `UserService : BaseService` → `IUserRepository : IBaseRepository<tai_khoan>`. Entity `tai_khoan` nằm ở
+`GymBase.Entities/Auth`, DTO nằm ở `GymBase.BLAuth/TaiKhoan`. `UserRepository` kế thừa `BaseRepository` dùng EF Core; DL giả cho test
 nằm ở `tests/Shared/GymBase.TestDoubles`.
 
 **Truy cập DB dùng EF Core** (chốt 08/11, thay cho hướng SQL raw + Dapper trước đó).
@@ -32,7 +32,7 @@ EF Core chỉ nằm trong `GymBase.Persistence` và các project `DL*.MySql`; BL
 | # | Quyết định | Đề xuất | Trạng thái |
 | --- | --- | --- | --- |
 | Q1 | .NET 9 hay .NET 10 (.NET 9 hết hỗ trợ ngày 10/11/2026) | .NET 10 LTS | **Đã chốt 08/11**, đã nâng lên |
-| Q2 | Quy ước tên bảng/cột | **Tiếng Việt không dấu snake_case**, property C# trùng tên cột (`tai_khoan`, `ho_ten`, `ngay_tao`, `is_deleted`); DTO trả ra API dùng cùng tên. Riêng khóa chính vẫn là `Id`. Tên class entity trùng tên bảng. Ví dụ đầy đủ: entity `nguoi_dung` (bảng `nguoi_dung`) | **Đã chốt 08/11** |
+| Q2 | Quy ước tên bảng/cột | **Tiếng Việt không dấu snake_case**, property C# trùng tên cột (`ten_dang_nhap`, `ho_ten`, `ngay_tao`, `is_deleted`); DTO trả ra API dùng cùng tên. Riêng khóa chính vẫn là `Id`. Tên class entity trùng tên bảng. Ví dụ đầy đủ: entity `tai_khoan` (bảng `tai_khoan`) | **Đã chốt 08/11** |
 | Q3 | Truy cập DB và provider MySQL | **EF Core** (đã chốt). Provider: **`Microting.EntityFrameworkCore.MySql`**, bản fork của Pomelo có hỗ trợ EF Core 10. Pomelo (dự án tham khảo dùng) mới hỗ trợ tới EF Core 9 nên không dùng được với .NET 10 / EF Core 10. Bản fork vẫn chạy trên MySqlConnector và giữ API của Pomelo (`UseMySql(...)`), nên khi Pomelo ra bản cho EF Core 10 có thể chuyển lại mà ít phải sửa | **Đã chốt 08/11** (EF Core + Microting) |
 | Q4 | Công cụ migration | **EF Core migrations** (đi cùng Q3). Áp dụng bằng script idempotent (`dotnet ef migrations script --idempotent`) hoặc migration bundle, chạy ở bước riêng | **Đã chốt 08/11** |
 | Q9 | Số `DbContext` và chỗ đặt migrations | **Một `DbContext` duy nhất, đặt một chỗ** cho cả DB (một DB, nhiều module), không tách theo module. Lớp `AppDbContext`, cấu hình bảng và migrations đặt ở `GymBase.Persistence`, entity đặt ở `GymBase.Entities` (đổi 08/11, gom một chỗ như dự án tham khảo); mọi `DL*.MySql` tham chiếu `Persistence`; `dotnet ef` dùng startup project `GymBase.API` | **Đã chốt 08/11** |
@@ -66,7 +66,7 @@ EF Core chỉ nằm trong `GymBase.Persistence` và các project `DL*.MySql`; BL
 | # | Phần base | Bên tham khảo có gì | GymBase | Xong |
 | --- | --- | --- | --- | --- |
 | 12 | **Auth** | Duende IdentityServer, JWT, middleware kiểm tra token, TOTP | JWT + refresh token: nghiệp vụ trong `BLAuth`, endpoint ở `GymBase.API` (cả `Controllers/` và `Mob/Controllers/`), cấu hình xác thực ở `GymBase.Base.Hosting`, phân quyền theo role/policy. Không dùng Duende vì cần license. **Đã làm ở backend**, thiết kế và giới hạn: [xac-thuc.md](xac-thuc.md). **Còn lại:** nối app mobile vào endpoint thật | ☑ |
-| 13 | **Migration và seed** | EF migrations, các lớp `*DbContextInitial` seed dữ liệu lúc khởi động | EF Core migrations theo Q4, đặt theo Q9. Dữ liệu danh mục cố định dùng `HasData` trong migration; dữ liệu mẫu cho dev đặt ở `database/seeds`, chạy có chủ đích. **Không** gọi `Database.Migrate()` khi khởi động production. **Đã có** migration `InitialCreate` và `database/seeds/dev_nguoi_dung.sql`, đã áp dụng trên MySQL local | ☑ |
+| 13 | **Migration và seed** | EF migrations, các lớp `*DbContextInitial` seed dữ liệu lúc khởi động | EF Core migrations theo Q4, đặt theo Q9. Dữ liệu danh mục cố định dùng `HasData` trong migration; dữ liệu mẫu cho dev đặt ở `database/seeds`, chạy có chủ đích. **Không** gọi `Database.Migrate()` khi khởi động production. **Đã có** migration `InitialCreate` và `database/seeds/dev_tai_khoan.sql`, đã áp dụng trên MySQL local | ☑ |
 | 14 | **Docker** | Compose gồm mysql, redis, vault, gateway, api, web; mỗi API có Dockerfile riêng | `infrastructure/docker`: MySQL trước (image `mysql:8.4` theo Q5), Redis sau. Một Dockerfile multi-stage ở `apps/api`, chỉ publish `GymBase.API`; thêm `.dockerignore` | ☐ |
 | 15 | **Logging** | NLog, bảng `system_log` (ai gọi lệnh gì, mất bao lâu) ghi qua `LoggingBehaviour` | **Đã làm:** Serilog (`AddAppLogging`, cấu hình ở mục `Serilog` của appsettings) ghi console và `logs/gymbase-.log` theo ngày, giữ 30 file. `AuditLogFilter` trong `GymBase.Base.Hosting` ghi `POST`, `PUT`, `PATCH`, `DELETE` vào bảng `system_log`, không lưu body và query string. Bản ghi quá `AuditLog:RetentionDays` (mặc định 90) được xóa mỗi ngày. **Hạn chế:** request bị chặn ở xác thực, phân quyền (401, 403) không có audit; cột `ip` là IP của proxy cho đến khi bật ForwardedHeaders (mục 14) | ☑ |
 | 16 | **Health check DB** | (không có) | Thêm kiểm tra `DbContext` vào `/health` (`AddDbContextCheck`). **Đã làm** | ☑ |
