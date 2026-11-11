@@ -1,14 +1,14 @@
 using GymBase.Base.Entities;
 using GymBase.Base.Paging;
-using GymBase.DLAuth.Contract;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
 
 namespace GymBase.TestDoubles;
 
 /// <summary>DL người dùng giả cho test, nạp sẵn 6 bản ghi mẫu (một bản ghi đã xóa mềm).</summary>
-public sealed class InMemoryUserRepository : InMemoryBaseRepository<tai_khoan>, IUserRepository
+public sealed class InMemoryTaiKhoanRepository : InMemoryBaseRepository<tai_khoan>, ITaiKhoanRepository
 {
-    public InMemoryUserRepository(InMemoryStore<tai_khoan> store) : base(store)
+    public InMemoryTaiKhoanRepository(InMemoryStore<tai_khoan> store) : base(store)
     {
         store.SeedOnce(CreateMockUsers);
     }
@@ -18,11 +18,11 @@ public sealed class InMemoryUserRepository : InMemoryBaseRepository<tai_khoan>, 
 
     protected override QueryColumns<tai_khoan> AllowedColumns => TaiKhoanQueryColumns.Allowed;
 
-    public Task<bool> ExistsByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
+    public Task<bool> DLExistsByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
         Task.FromResult(Store.All().Any(user =>
             !user.is_deleted && string.Equals(user.ten_dang_nhap, tenDangNhap, StringComparison.OrdinalIgnoreCase)));
 
-    public Task<tai_khoan?> FindByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
+    public Task<tai_khoan?> DLFindByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
         Task.FromResult(Store.All().FirstOrDefault(user =>
             !user.is_deleted && string.Equals(user.ten_dang_nhap, tenDangNhap, StringComparison.OrdinalIgnoreCase)));
 

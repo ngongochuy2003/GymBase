@@ -4,8 +4,9 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Logging;
 using GymBase.BLAuth;
-using GymBase.BLAuth.TaiKhoan;
-using GymBase.DLAuth.Contract;
+using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.DLAuth.Contract.DLPhienDangNhap;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -35,7 +36,7 @@ namespace GymBase.IntegrationTests
             builder.WebHost.UseTestServer();
             builder.Configuration[$"{AppApiExtensions.CorsOriginsSection}:0"] = AllowedOrigin;
             builder.Configuration["Jwt:SigningKey"] = SigningKey;
-            builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly)
+            builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly)
                 .AddApplicationPart(typeof(TestApp).Assembly)
                 .AddApplicationPart(typeof(GymBase.API.Controllers.AuthController).Assembly);
             builder.Services.AddAuthBusiness();
@@ -43,7 +44,7 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
             builder.Services.AddSingleton<RecordingAuditLogWriter>();
             builder.Services.AddSingleton<IAuditLogWriter>(services => services.GetRequiredService<RecordingAuditLogWriter>());
-            builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
+            builder.Services.AddScoped<ITaiKhoanRepository, InMemoryTaiKhoanRepository>();
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
 
             var app = builder.Build();
@@ -68,7 +69,7 @@ namespace GymBase.IntegrationTests.Controllers
 {
     /// <summary>CRUD người dùng cho web, không cần đăng nhập: /api/v1/web/testusers.</summary>
     [AllowAnonymous]
-    public sealed class TestUsersController(UserService service)
+    public sealed class TestUsersController(TaiKhoanService service)
         : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(service);
 
     /// <summary>Action ném lỗi có chủ đích: /api/v1/web/errortest/...</summary>
@@ -87,6 +88,6 @@ namespace GymBase.IntegrationTests.Mob.Controllers
 {
     /// <summary>Cùng tên với controller web nhưng ở Mob/Controllers: /api/v1/mob/testusers.</summary>
     [AllowAnonymous]
-    public sealed class TestUsersController(UserService service)
+    public sealed class TestUsersController(TaiKhoanService service)
         : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(service);
 }

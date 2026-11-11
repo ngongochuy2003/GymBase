@@ -1,4 +1,4 @@
-using GymBase.BLAuth.TaiKhoan;
+using GymBase.BLAuth.BLTaiKhoan;
 
 namespace GymBase.UnitTests.Auth;
 

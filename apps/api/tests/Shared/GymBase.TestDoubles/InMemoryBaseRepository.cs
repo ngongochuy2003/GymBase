@@ -22,7 +22,7 @@ public abstract class InMemoryBaseRepository<TEntity>(InMemoryStore<TEntity> sto
     /// <summary>Các cột được sort và filter. Khác MySQL: so sánh chuỗi ở đây phân biệt hoa thường.</summary>
     protected virtual QueryColumns<TEntity> AllowedColumns { get; } = new();
 
-    public Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
+    public Task<PagingResult<TEntity>> DLGetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
         var query = Store.All().Where(IsVisible);
 
@@ -49,24 +49,24 @@ public abstract class InMemoryBaseRepository<TEntity>(InMemoryStore<TEntity> sto
         return Task.FromResult(new PagingResult<TEntity>(page, request.page, request.page_size, filtered.Count));
     }
 
-    public Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public Task<TEntity?> DLGetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var entity = Store.Find(id);
         return Task.FromResult(entity is not null && IsVisible(entity) ? entity : null);
     }
 
-    public Task InsertAsync(TEntity entity, CancellationToken cancellationToken) =>
+    public Task DLInsertAsync(TEntity entity, CancellationToken cancellationToken) =>
         Store.TryAdd(entity)
             ? Task.CompletedTask
             : throw new InvalidOperationException($"Đã tồn tại {typeof(TEntity).Name} với Id {entity.Id}.");
 
-    public Task<bool> UpdateAsync(TEntity entity, CancellationToken cancellationToken)
+    public Task<bool> DLUpdateAsync(TEntity entity, CancellationToken cancellationToken)
     {
         var current = Store.Find(entity.Id);
         return Task.FromResult(current is not null && IsVisible(current) && Store.TryReplace(entity));
     }
 
-    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken) =>
+    public Task<bool> DLDeleteAsync(Guid id, CancellationToken cancellationToken) =>
         Task.FromResult(Store.TryRemove(id));
 
     private static bool IsVisible(TEntity entity) => entity is not ISoftDelete { is_deleted: true };

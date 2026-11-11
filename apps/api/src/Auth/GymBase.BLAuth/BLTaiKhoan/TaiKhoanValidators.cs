@@ -1,9 +1,8 @@
 using FluentValidation;
 using GymBase.Base.Auth;
 using GymBase.Base.Validation;
-using GymBase.BLAuth.XacThuc;
 
-namespace GymBase.BLAuth.TaiKhoan;
+namespace GymBase.BLAuth.BLTaiKhoan;
 
 /// <summary>Kiểm tra body khi thêm người dùng. Độ dài khớp cột trong bảng tai_khoan.</summary>
 public sealed class TaiKhoanCreateValidator : AppValidator<TaiKhoanCreateDto>

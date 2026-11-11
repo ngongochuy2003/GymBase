@@ -1,6 +1,6 @@
 using GymBase.Base.Logging;
 using GymBase.Base.Paging;
-using GymBase.DLAuth.Contract;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
 using GymBase.Persistence;
 using GymBase.Persistence.Logging;

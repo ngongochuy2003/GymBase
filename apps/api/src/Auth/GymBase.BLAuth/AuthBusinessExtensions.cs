@@ -1,5 +1,5 @@
-using GymBase.BLAuth.TaiKhoan;
-using GymBase.BLAuth.XacThuc;
+using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.BLAuth.BLXacThuc;
 using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,8 +17,8 @@ public static class AuthBusinessExtensions
         services.Configure<PasswordHasherOptions>(options => options.IterationCount = PasswordHashIterations);
         services.AddSingleton<IPasswordHasher<tai_khoan>, PasswordHasher<tai_khoan>>();
         services.AddSingleton<LoginThrottle>();
-        services.AddScoped<UserService>();
-        services.AddScoped<AuthService>();
+        services.AddScoped<TaiKhoanService>();
+        services.AddScoped<XacThucService>();
         return services;
     }
 }

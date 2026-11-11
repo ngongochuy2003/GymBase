@@ -1,6 +1,6 @@
-using GymBase.BLAuth.TaiKhoan;
+using GymBase.BLAuth.BLTaiKhoan;
 
-namespace GymBase.BLAuth.XacThuc;
+namespace GymBase.BLAuth.BLXacThuc;
 
 /// <summary>Body đăng nhập.</summary>
 public sealed class DangNhapDto

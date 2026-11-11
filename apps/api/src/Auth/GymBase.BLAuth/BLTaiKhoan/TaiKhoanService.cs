@@ -2,19 +2,19 @@ using GymBase.Base.Auth;
 using GymBase.Base.Crud;
 using GymBase.Base.Exceptions;
 using FluentValidation;
-using GymBase.DLAuth.Contract;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 
-namespace GymBase.BLAuth.TaiKhoan;
+namespace GymBase.BLAuth.BLTaiKhoan;
 
 /// <summary>
 /// Nghiệp vụ người dùng, dùng chung cho controller web (Controllers/) và mobile (Mob/Controllers/).
 /// CRUD lấy từ <see cref="BaseService{TEntity,TDto,TCreateDto,TUpdateDto}"/>; ở đây map entity ↔ DTO
 /// và chặn trùng tên đăng nhập.
 /// </summary>
-public sealed class UserService(
-    IUserRepository userRepository,
+public sealed class TaiKhoanService(
+    ITaiKhoanRepository userRepository,
     TimeProvider timeProvider,
     ICurrentUser currentUser,
     IValidator<TaiKhoanCreateDto> createValidator,
@@ -29,10 +29,10 @@ public sealed class UserService(
     /// <see cref="AuthErrorCodes.UserUsernameTaken"/>: đã có người dùng còn hiệu lực trùng ten_dang_nhap
     /// (không phân biệt hoa thường). Tên đăng nhập của người dùng đã xóa được dùng lại.
     /// </exception>
-    protected override async Task BeforeCreateAsync(TaiKhoanCreateDto dto, CancellationToken cancellationToken)
+    protected override async Task BLBeforeCreateAsync(TaiKhoanCreateDto dto, CancellationToken cancellationToken)
     {
         var tenDangNhap = dto.ten_dang_nhap.Trim();
-        if (await userRepository.ExistsByTenDangNhapAsync(tenDangNhap, cancellationToken))
+        if (await userRepository.DLExistsByTenDangNhapAsync(tenDangNhap, cancellationToken))
         {
             throw new ConflictException(
                 nameof(TaiKhoanCreateDto.ten_dang_nhap),
@@ -41,7 +41,7 @@ public sealed class UserService(
         }
     }
 
-    protected override TaiKhoanDto ToDto(tai_khoan entity) => new(
+    protected override TaiKhoanDto BLToDto(tai_khoan entity) => new(
         entity.Id,
         entity.ten_dang_nhap,
         entity.ho_ten,
@@ -52,7 +52,7 @@ public sealed class UserService(
         entity.ngay_tao,
         entity.ngay_chinh_sua);
 
-    protected override tai_khoan CreateEntity(TaiKhoanCreateDto dto)
+    protected override tai_khoan BLCreateEntity(TaiKhoanCreateDto dto)
     {
         var user = new tai_khoan
         {
@@ -66,7 +66,7 @@ public sealed class UserService(
         return user;
     }
 
-    protected override void ApplyUpdate(tai_khoan entity, TaiKhoanUpdateDto dto)
+    protected override void BLApplyUpdate(tai_khoan entity, TaiKhoanUpdateDto dto)
     {
         entity.ho_ten = dto.ho_ten.Trim();
         entity.email = dto.email?.Trim();

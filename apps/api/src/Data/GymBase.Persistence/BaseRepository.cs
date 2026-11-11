@@ -29,7 +29,7 @@ public abstract class BaseRepository<TEntity>(AppDbContext db) : IBaseRepository
     /// <summary>Các cột client được sort và filter. Mặc định rỗng: gửi sort hoặc filter sẽ nhận 400.</summary>
     protected virtual QueryColumns<TEntity> AllowedColumns { get; } = new();
 
-    public async Task<PagingResult<TEntity>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
+    public async Task<PagingResult<TEntity>> DLGetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
         IQueryable<TEntity> query = Set;
 
@@ -53,18 +53,18 @@ public abstract class BaseRepository<TEntity>(AppDbContext db) : IBaseRepository
         return new PagingResult<TEntity>(rows, request.page, request.page_size, total);
     }
 
-    public Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+    public Task<TEntity?> DLGetByIdAsync(Guid id, CancellationToken cancellationToken) =>
         Set.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     /// <exception cref="ConflictException">Trùng khóa chính hoặc một unique index.</exception>
-    public async Task InsertAsync(TEntity entity, CancellationToken cancellationToken)
+    public async Task DLInsertAsync(TEntity entity, CancellationToken cancellationToken)
     {
         Set.Add(entity);
         await SaveAsync(entity, cancellationToken);
     }
 
     /// <exception cref="ConflictException">Giá trị mới trùng một unique index.</exception>
-    public async Task<bool> UpdateAsync(TEntity entity, CancellationToken cancellationToken)
+    public async Task<bool> DLUpdateAsync(TEntity entity, CancellationToken cancellationToken)
     {
         if (!await Set.AnyAsync(e => e.Id == entity.Id, cancellationToken))
         {
@@ -83,7 +83,7 @@ public abstract class BaseRepository<TEntity>(AppDbContext db) : IBaseRepository
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken) =>
+    public async Task<bool> DLDeleteAsync(Guid id, CancellationToken cancellationToken) =>
         await Set.IgnoreQueryFilters().Where(e => e.Id == id).ExecuteDeleteAsync(cancellationToken) > 0;
 
     private async Task SaveAsync(TEntity entity, CancellationToken cancellationToken)

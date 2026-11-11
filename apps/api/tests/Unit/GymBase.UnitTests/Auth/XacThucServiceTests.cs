@@ -2,7 +2,7 @@ using GymBase.Base.Auth;
 using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.BLAuth;
-using GymBase.BLAuth.XacThuc;
+using GymBase.BLAuth.BLXacThuc;
 using GymBase.Entities.Auth;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Identity;
@@ -20,7 +20,7 @@ internal static class AuthTestHelpers
 }
 
 /// <summary>Luồng đăng nhập, xoay vòng refresh token, khóa khi sai nhiều, đổi mật khẩu.</summary>
-public class AuthServiceTests
+public class XacThucServiceTests
 {
     private const string UserName = "hv.dangnhap";
     private const string Password = AuthTestHelpers.ValidPassword;
@@ -50,18 +50,18 @@ public class AuthServiceTests
     private readonly LoginThrottle _throttle;
     private readonly tai_khoan _user;
 
-    public AuthServiceTests()
+    public XacThucServiceTests()
     {
         _throttle = new LoginThrottle(_clock);
-        _ = new InMemoryUserRepository(_userStore); // nạp dữ liệu mẫu
+        _ = new InMemoryTaiKhoanRepository(_userStore); // nạp dữ liệu mẫu
         _user = new tai_khoan { ten_dang_nhap = UserName, ho_ten = "Học viên", vai_tro = AppRoles.User };
         _user.mat_khau_hash = AuthTestHelpers.FastHasher.HashPassword(_user, Password);
         _user.MarkCreated("seed", _clock.Now.UtcDateTime);
         _userStore.TryAdd(_user);
     }
 
-    private AuthService Service(FakeCurrentUser? currentUser = null) => new(
-        new InMemoryUserRepository(_userStore),
+    private XacThucService Service(FakeCurrentUser? currentUser = null) => new(
+        new InMemoryTaiKhoanRepository(_userStore),
         new InMemoryPhienDangNhapRepository(_sessionStore),
         AuthTestHelpers.FastHasher,
         _issuer,
@@ -74,10 +74,10 @@ public class AuthServiceTests
         new DatLaiMatKhauValidator());
 
     private Task<KetQuaDangNhapDto> Login(string userName = UserName, string password = Password) =>
-        Service().LoginAsync(new DangNhapDto { ten_dang_nhap = userName, mat_khau = password }, CancellationToken.None);
+        Service().BLLoginAsync(new DangNhapDto { ten_dang_nhap = userName, mat_khau = password }, CancellationToken.None);
 
     private Task<KetQuaDangNhapDto> Refresh(string token) =>
-        Service().RefreshAsync(new LamMoiTokenDto { refresh_token = token }, CancellationToken.None);
+        Service().BLRefreshAsync(new LamMoiTokenDto { refresh_token = token }, CancellationToken.None);
 
     private async Task AssertLoginRejected(string userName = UserName, string password = Password)
     {
@@ -292,7 +292,7 @@ public class AuthServiceTests
         var login = await Login();
         var sessionId = _issuer.Last!.SessionId;
 
-        await Service(new FakeCurrentUser(UserName, _user.Id, sessionId)).LogoutAsync(CancellationToken.None);
+        await Service(new FakeCurrentUser(UserName, _user.Id, sessionId)).BLLogoutAsync(CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => Refresh(login.refresh_token));
     }
@@ -304,7 +304,7 @@ public class AuthServiceTests
         var current = await Login();
         var service = Service(new FakeCurrentUser(UserName, _user.Id, _issuer.Last!.SessionId));
 
-        await service.ChangePasswordAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
+        await service.BLChangePasswordAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => Refresh(other.refresh_token));
         await Refresh(current.refresh_token);
@@ -317,7 +317,7 @@ public class AuthServiceTests
     {
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
-        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.ChangePasswordAsync(
+        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLChangePasswordAsync(
             new DoiMatKhauDto { mat_khau_cu = "khong-dung-roi", mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None));
 
         Assert.True(error.Errors!.ContainsKey("mat_khau_cu"));
@@ -332,7 +332,7 @@ public class AuthServiceTests
     {
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
-        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.ChangePasswordAsync(
+        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLChangePasswordAsync(
             new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = newPassword }, CancellationToken.None));
 
         Assert.True(error.Errors!.ContainsKey("mat_khau_moi"));
@@ -343,7 +343,7 @@ public class AuthServiceTests
     {
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
-        await service.ChangePasswordAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "kH7#mQ2z" }, CancellationToken.None);
+        await service.BLChangePasswordAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "kH7#mQ2z" }, CancellationToken.None);
 
         await Login(password: "kH7#mQ2z");
     }
@@ -353,7 +353,7 @@ public class AuthServiceTests
     {
         var login = await Login();
 
-        await Service().ResetPasswordAsync(_user.Id, new DatLaiMatKhauDto { mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
+        await Service().BLResetPasswordAsync(_user.Id, new DatLaiMatKhauDto { mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => Refresh(login.refresh_token));
     }
@@ -361,7 +361,7 @@ public class AuthServiceTests
     [Fact]
     public async Task Create_admin_creates_a_new_admin_that_can_log_in()
     {
-        await Service().CreateOrResetAdminAsync("quan.tri", "Mat-khau-moi-2", CancellationToken.None);
+        await Service().BLCreateOrResetAdminAsync("quan.tri", "Mat-khau-moi-2", CancellationToken.None);
 
         var result = await Login("quan.tri", "Mat-khau-moi-2");
 
@@ -372,12 +372,12 @@ public class AuthServiceTests
     public async Task Hash_with_fewer_iterations_is_upgraded_on_login()
     {
         var stronger = new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
-        var service = new AuthService(
-            new InMemoryUserRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle,
+        var service = new XacThucService(
+            new InMemoryTaiKhoanRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle,
             new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator());
         var before = _userStore.Find(_user.Id)!.mat_khau_hash;
 
-        await service.LoginAsync(new DangNhapDto { ten_dang_nhap = UserName, mat_khau = Password }, CancellationToken.None);
+        await service.BLLoginAsync(new DangNhapDto { ten_dang_nhap = UserName, mat_khau = Password }, CancellationToken.None);
 
         Assert.NotEqual(before, _userStore.Find(_user.Id)!.mat_khau_hash);
     }

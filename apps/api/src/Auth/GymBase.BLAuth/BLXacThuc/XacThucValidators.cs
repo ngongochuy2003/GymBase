@@ -1,7 +1,8 @@
+using GymBase.BLAuth.BLTaiKhoan;
 using FluentValidation;
 using GymBase.Base.Validation;
 
-namespace GymBase.BLAuth.XacThuc;
+namespace GymBase.BLAuth.BLXacThuc;
 
 public sealed class DangNhapValidator : AppValidator<DangNhapDto>
 {

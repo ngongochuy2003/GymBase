@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace GymBase.BLAuth.XacThuc;
+namespace GymBase.BLAuth.BLTaiKhoan;
 
 /// <summary>Chính sách mật khẩu, xem docs/api/xac-thuc.md mục 5.</summary>
 public static class PasswordRules

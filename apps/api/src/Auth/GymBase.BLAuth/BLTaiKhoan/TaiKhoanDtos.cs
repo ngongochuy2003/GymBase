@@ -1,6 +1,6 @@
 using GymBase.Base.Entities;
 
-namespace GymBase.BLAuth.TaiKhoan;
+namespace GymBase.BLAuth.BLTaiKhoan;
 
 /// <summary>Thông tin người dùng trả ra API. Không chứa mật khẩu hay cờ xóa.</summary>
 public sealed record TaiKhoanDto(

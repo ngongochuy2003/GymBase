@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 
-namespace GymBase.BLAuth.XacThuc;
+namespace GymBase.BLAuth.BLXacThuc;
 
 /// <summary>
 /// Khóa ngắn và tăng dần theo tên đăng nhập khi sai nhiều lần, tính cả tên không tồn tại để không lộ tài khoản.

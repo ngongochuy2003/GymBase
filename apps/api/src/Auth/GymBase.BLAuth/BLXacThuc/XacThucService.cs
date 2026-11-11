@@ -5,19 +5,20 @@ using GymBase.Base.Auth;
 using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Validation;
-using GymBase.BLAuth.TaiKhoan;
-using GymBase.DLAuth.Contract;
+using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.DLAuth.Contract.DLPhienDangNhap;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 
-namespace GymBase.BLAuth.XacThuc;
+namespace GymBase.BLAuth.BLXacThuc;
 
 /// <summary>
 /// Đăng nhập, xoay vòng refresh token, đăng xuất, đổi mật khẩu. Thiết kế: docs/api/xac-thuc.md.
 /// Mọi trường hợp đăng nhập không thành công đều trả cùng một lỗi để không lộ trạng thái tài khoản.
 /// </summary>
-public sealed class AuthService(
-    IUserRepository users,
+public sealed class XacThucService(
+    ITaiKhoanRepository users,
     IPhienDangNhapRepository sessions,
     IPasswordHasher<tai_khoan> passwordHasher,
     ITokenIssuer tokenIssuer,
@@ -42,13 +43,13 @@ public sealed class AuthService(
     private DateTime UtcNow => timeProvider.GetUtcNow().UtcDateTime;
 
     /// <exception cref="UnauthorizedException"><see cref="AuthErrorCodes.InvalidCredentials"/>: đăng nhập không thành công.</exception>
-    public async Task<KetQuaDangNhapDto> LoginAsync(DangNhapDto dto, CancellationToken cancellationToken)
+    public async Task<KetQuaDangNhapDto> BLLoginAsync(DangNhapDto dto, CancellationToken cancellationToken)
     {
         await loginValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
         var userName = dto.ten_dang_nhap.Trim();
         var isLocked = throttle.IsLocked(userName);
-        var user = await users.FindByTenDangNhapAsync(userName, cancellationToken);
+        var user = await users.DLFindByTenDangNhapAsync(userName, cancellationToken);
 
         // Luôn băm, kể cả khi không có tài khoản hoặc đang khóa, để thời gian phản hồi tương đương.
         var verification = VerifyPassword(user, dto.mat_khau);
@@ -68,7 +69,7 @@ public sealed class AuthService(
         if (verification == PasswordVerificationResult.SuccessRehashNeeded)
         {
             user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
-            await users.UpdateAsync(user, cancellationToken);
+            await users.DLUpdateAsync(user, cancellationToken);
         }
 
         var now = UtcNow;
@@ -82,19 +83,19 @@ public sealed class AuthService(
             ten_thiet_bi = string.IsNullOrWhiteSpace(dto.ten_thiet_bi) ? null : dto.ten_thiet_bi.Trim(),
             ngay_tao = now,
         };
-        await sessions.InsertAsync(session, cancellationToken);
+        await sessions.DLInsertAsync(session, cancellationToken);
 
         return BuildResult(user, session.Id, refreshToken);
     }
 
     /// <summary>Đổi refresh token lấy cặp token mới. Token cũ bị dùng lại sau khoảng ân hạn thì thu hồi cả phiên.</summary>
     /// <exception cref="UnauthorizedException">Token không hợp lệ, hết hạn, hoặc tài khoản không còn hoạt động.</exception>
-    public async Task<KetQuaDangNhapDto> RefreshAsync(LamMoiTokenDto dto, CancellationToken cancellationToken)
+    public async Task<KetQuaDangNhapDto> BLRefreshAsync(LamMoiTokenDto dto, CancellationToken cancellationToken)
     {
         await refreshValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
         var presentedHash = Hash(dto.refresh_token);
-        var session = await sessions.FindByTokenHashAsync(presentedHash, cancellationToken) ?? throw new UnauthorizedException();
+        var session = await sessions.DLFindByTokenHashAsync(presentedHash, cancellationToken) ?? throw new UnauthorizedException();
         var now = UtcNow;
 
         if (session.ngay_thu_hoi is not null || now >= session.ngay_het_han || now >= session.ngay_het_han_toi_da)
@@ -105,21 +106,21 @@ public sealed class AuthService(
         var isPreviousToken = session.token_hash != presentedHash;
         if (isPreviousToken && now - session.ngay_xoay_vong > RotationGrace)
         {
-            await sessions.RevokeAsync(session.Id, now, cancellationToken);
+            await sessions.DLRevokeAsync(session.Id, now, cancellationToken);
             throw new UnauthorizedException();
         }
 
-        var user = await users.GetByIdAsync(session.tai_khoan_id, cancellationToken);
+        var user = await users.DLGetByIdAsync(session.tai_khoan_id, cancellationToken);
         if (user is not { dang_hoat_dong: true })
         {
-            await sessions.RevokeAsync(session.Id, now, cancellationToken);
+            await sessions.DLRevokeAsync(session.Id, now, cancellationToken);
             throw new UnauthorizedException();
         }
 
         var refreshToken = NewRefreshToken();
 
         // Khi gửi lại trong khoảng ân hạn, giữ nguyên mốc xoay vòng để không kéo dài khoảng ân hạn mãi.
-        var rotated = await sessions.RotateAsync(
+        var rotated = await sessions.DLRotateAsync(
             session.Id,
             session.token_hash,
             Hash(refreshToken),
@@ -137,21 +138,21 @@ public sealed class AuthService(
     }
 
     /// <summary>Thu hồi phiên hiện tại.</summary>
-    public async Task LogoutAsync(CancellationToken cancellationToken)
+    public async Task BLLogoutAsync(CancellationToken cancellationToken)
     {
         if (currentUser.SessionId is { } sessionId)
         {
-            await sessions.RevokeAsync(sessionId, UtcNow, cancellationToken);
+            await sessions.DLRevokeAsync(sessionId, UtcNow, cancellationToken);
         }
     }
 
     /// <exception cref="UnauthorizedException">Token không còn gắn với người dùng hợp lệ.</exception>
-    public async Task<TaiKhoanDto> GetCurrentUserAsync(CancellationToken cancellationToken) =>
+    public async Task<TaiKhoanDto> BLGetCurrentUserAsync(CancellationToken cancellationToken) =>
         ToDto(await GetCurrentUserEntityAsync(cancellationToken));
 
     /// <summary>Đổi mật khẩu của chính mình và thu hồi các phiên khác.</summary>
     /// <exception cref="ValidationFailedException">Mật khẩu hiện tại sai hoặc mật khẩu mới không hợp lệ.</exception>
-    public async Task ChangePasswordAsync(DoiMatKhauDto dto, CancellationToken cancellationToken)
+    public async Task BLChangePasswordAsync(DoiMatKhauDto dto, CancellationToken cancellationToken)
     {
         await changePasswordValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
@@ -162,42 +163,42 @@ public sealed class AuthService(
         }
 
         await SetPasswordAsync(user, dto.mat_khau_moi, nameof(DoiMatKhauDto.mat_khau_moi), cancellationToken);
-        await sessions.RevokeAllOfUserAsync(user.Id, currentUser.SessionId, UtcNow, cancellationToken);
+        await sessions.DLRevokeAllOfUserAsync(user.Id, currentUser.SessionId, UtcNow, cancellationToken);
     }
 
     /// <summary>Admin đặt lại mật khẩu cho người dùng và thu hồi mọi phiên của người đó.</summary>
     /// <exception cref="NotFoundException">Không có người dùng.</exception>
-    public async Task ResetPasswordAsync(Guid userId, DatLaiMatKhauDto dto, CancellationToken cancellationToken)
+    public async Task BLResetPasswordAsync(Guid userId, DatLaiMatKhauDto dto, CancellationToken cancellationToken)
     {
         await resetPasswordValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
-        var user = await users.GetByIdAsync(userId, cancellationToken)
+        var user = await users.DLGetByIdAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Không tìm thấy người dùng hoặc người dùng đã bị xóa.");
 
         await SetPasswordAsync(user, dto.mat_khau_moi, nameof(DatLaiMatKhauDto.mat_khau_moi), cancellationToken);
-        await sessions.RevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
+        await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
     /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu tên đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
-    public async Task CreateOrResetAdminAsync(string userName, string password, CancellationToken cancellationToken)
+    public async Task BLCreateOrResetAdminAsync(string userName, string password, CancellationToken cancellationToken)
     {
         await resetPasswordValidator.ValidateOrThrowAsync(new DatLaiMatKhauDto { mat_khau_moi = password }, cancellationToken);
 
         var name = userName.Trim();
-        var user = await users.FindByTenDangNhapAsync(name, cancellationToken);
+        var user = await users.DLFindByTenDangNhapAsync(name, cancellationToken);
         if (user is null)
         {
             user = new tai_khoan { ten_dang_nhap = name, ho_ten = name, vai_tro = AppRoles.Admin };
             EnsureNotUserName(password, name, nameof(DatLaiMatKhauDto.mat_khau_moi));
             user.mat_khau_hash = passwordHasher.HashPassword(user, password);
             user.MarkCreated("create-admin", UtcNow);
-            await users.InsertAsync(user, cancellationToken);
+            await users.DLInsertAsync(user, cancellationToken);
             return;
         }
 
         user.vai_tro = AppRoles.Admin;
         await SetPasswordAsync(user, password, nameof(DatLaiMatKhauDto.mat_khau_moi), cancellationToken);
-        await sessions.RevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
+        await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
     private async Task SetPasswordAsync(tai_khoan user, string password, string field, CancellationToken cancellationToken)
@@ -207,7 +208,7 @@ public sealed class AuthService(
         user.mat_khau_hash = passwordHasher.HashPassword(user, password);
         user.MarkUpdated(currentUser.UserName, UtcNow);
 
-        if (!await users.UpdateAsync(user, cancellationToken))
+        if (!await users.DLUpdateAsync(user, cancellationToken))
         {
             throw new NotFoundException("Không tìm thấy người dùng hoặc người dùng đã bị xóa.");
         }
@@ -215,7 +216,7 @@ public sealed class AuthService(
 
     private async Task<tai_khoan> GetCurrentUserEntityAsync(CancellationToken cancellationToken)
     {
-        var user = currentUser.UserId is { } id ? await users.GetByIdAsync(id, cancellationToken) : null;
+        var user = currentUser.UserId is { } id ? await users.DLGetByIdAsync(id, cancellationToken) : null;
         return user ?? throw new UnauthorizedException();
     }
 
