@@ -26,8 +26,8 @@ public sealed class TaiKhoanService(
     protected override string EntityDisplayName => "người dùng";
 
     /// <exception cref="ConflictException">
-    /// <see cref="AuthErrorCodes.UserUsernameTaken"/>: đã có người dùng còn hiệu lực trùng ten_dang_nhap
-    /// (không phân biệt hoa thường). Tên đăng nhập của người dùng đã xóa được dùng lại.
+    /// <see cref="AuthErrorCodes.UserUsernameTaken"/>: đã có người dùng trùng ten_dang_nhap
+    /// (không phân biệt hoa thường).
     /// </exception>
     protected override async Task BLBeforeCreateAsync(TaiKhoanCreateDto dto, CancellationToken cancellationToken)
     {

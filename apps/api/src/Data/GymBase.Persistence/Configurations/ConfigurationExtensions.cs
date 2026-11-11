@@ -65,7 +65,7 @@ internal static class ConfigurationExtensions
         where TEnum : struct, Enum =>
         AddEnumCheck(table, MemberName(column.Body), typeof(TEnum));
 
-    /// <summary>Khóa ngoại <c>RESTRICT</c>: tài khoản chỉ xóa mềm, không có gì được tự xóa theo.</summary>
+    /// <summary>Khóa ngoại <c>RESTRICT</c>: xóa bản ghi cha không kéo theo xóa con; bản ghi cha đang được tham chiếu thì không xóa được.</summary>
     public static void HasRestrictForeignKey<TEntity>(this EntityTypeBuilder<TEntity> builder, Type principal, Expression<Func<TEntity, object?>> foreignKey)
         where TEntity : class =>
         builder.HasOne(principal).WithMany().HasForeignKey(MemberName(foreignKey.Body)).OnDelete(DeleteBehavior.Restrict);

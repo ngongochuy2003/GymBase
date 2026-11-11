@@ -50,7 +50,7 @@ public abstract class BaseCrudController<TDto, TCreateDto, TUpdateDto>(ICrudServ
         Guid id, [FromBody] TUpdateDto dto, CancellationToken cancellationToken) =>
         Ok(await Service.BLUpdateAsync(id, dto, cancellationToken));
 
-    /// <summary>Xóa (xóa mềm nếu entity có is_deleted); 204 nếu thành công, 404 nếu không có.</summary>
+    /// <summary>Xóa hẳn; 204 nếu thành công, 404 nếu không có, 409 nếu đang được dùng ở nơi khác.</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]

@@ -83,8 +83,22 @@ public abstract class BaseRepository<TEntity>(AppDbContext db) : IBaseRepository
         }
     }
 
-    public async Task<bool> DLDeleteAsync(Guid id, CancellationToken cancellationToken) =>
-        await Set.IgnoreQueryFilters().Where(e => e.Id == id).ExecuteDeleteAsync(cancellationToken) > 0;
+    /// <exception cref="ConflictException"><see cref="ErrorCodes.InUse"/>: bản ghi đang được bảng khác tham chiếu.</exception>
+    public async Task<bool> DLDeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await Set.Where(e => e.Id == id).ExecuteDeleteAsync(cancellationToken) > 0;
+        }
+        catch (Exception ex) when (IsRowReferenced(ex))
+        {
+            throw new ConflictException("Không xóa được vì dữ liệu đang được dùng ở nơi khác.", ErrorCodes.InUse);
+        }
+    }
+
+    private static bool IsRowReferenced(Exception ex) =>
+        (ex as MySqlException ?? ex.InnerException as MySqlException)
+            is { ErrorCode: MySqlErrorCode.RowIsReferenced or MySqlErrorCode.RowIsReferenced2 };
 
     private async Task SaveAsync(TEntity entity, CancellationToken cancellationToken)
     {

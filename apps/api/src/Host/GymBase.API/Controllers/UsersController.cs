@@ -9,7 +9,7 @@ namespace GymBase.API.Controllers;
 
 /// <summary>
 /// API quản lý người dùng cho web (trang quản trị): /api/v1/web/users, chỉ Admin. Đủ CRUD từ
-/// <see cref="BaseCrudController{TDto,TCreateDto,TUpdateDto}"/>: GET danh sách, GET {id}, POST, PUT {id}, DELETE {id} (xóa mềm).
+/// <see cref="BaseCrudController{TDto,TCreateDto,TUpdateDto}"/>: GET danh sách, GET {id}, POST, PUT {id}, DELETE {id} (xóa hẳn).
 /// </summary>
 [Authorize(Roles = AppRoles.Admin)]
 public sealed class UsersController(TaiKhoanService userService, XacThucService authService)

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymBase.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261111144325_AddBizTables")]
+    [Migration("20261111184506_AddBizTables")]
     partial class AddBizTables
     {
         /// <inheritdoc />
@@ -143,9 +143,6 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<bool>("is_deleted")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("mat_khau_hash")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
@@ -172,12 +169,6 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("ten_dang_nhap_hieu_luc")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasComputedColumnSql("IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", false);
-
                     b.Property<string>("vai_tro")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -185,7 +176,7 @@ namespace GymBase.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ten_dang_nhap_hieu_luc")
+                    b.HasIndex("ten_dang_nhap")
                         .IsUnique();
 
                     b.ToTable("tai_khoan", (string)null);

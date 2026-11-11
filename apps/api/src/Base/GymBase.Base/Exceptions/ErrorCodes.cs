@@ -16,11 +16,14 @@ public static class ErrorCodes
     /// <summary>403: đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa.</summary>
     public const string Forbidden = "FORBIDDEN";
 
-    /// <summary>404: không có bản ghi (bản ghi đã xóa mềm cũng tính là không có).</summary>
+    /// <summary>404: không có bản ghi.</summary>
     public const string NotFound = "NOT_FOUND";
 
     /// <summary>409: trùng giá trị phải duy nhất.</summary>
     public const string Duplicate = "DUPLICATE";
+
+    /// <summary>409: không xóa được vì bản ghi đang được bảng khác tham chiếu.</summary>
+    public const string InUse = "IN_USE";
 
     /// <summary>409: bản ghi đã bị người khác sửa trước, client cần tải lại.</summary>
     public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";

@@ -2,7 +2,7 @@ using GymBase.Base.Entities;
 
 namespace GymBase.BLAuth.BLTaiKhoan;
 
-/// <summary>Thông tin người dùng trả ra API. Không chứa mật khẩu hay cờ xóa.</summary>
+/// <summary>Thông tin người dùng trả ra API. Không chứa mật khẩu.</summary>
 public sealed record TaiKhoanDto(
     Guid Id,
     string? ten_dang_nhap,

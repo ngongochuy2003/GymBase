@@ -51,16 +51,6 @@ public class AppDbContextModelTests
     }
 
     [Fact]
-    public void Soft_deleted_rows_are_filtered_out()
-    {
-        using var db = CreateContext();
-
-        var sql = db.Set<tai_khoan>().ToQueryString();
-
-        Assert.Contains("NOT (`t`.`is_deleted`)", sql);
-    }
-
-    [Fact]
     public void Sort_and_filter_translate_to_sql_with_parameters()
     {
         using var db = CreateContext();
@@ -109,14 +99,13 @@ public class AppDbContextModelTests
     }
 
     [Fact]
-    public void Username_is_unique_only_among_active_users()
+    public void Username_is_unique()
     {
         using var db = CreateContext();
 
         var script = db.Database.GenerateCreateScript();
 
-        Assert.Contains("`ten_dang_nhap_hieu_luc` varchar(50)", script);
-        Assert.Contains("IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", script);
-        Assert.Contains("CREATE UNIQUE INDEX", script);
+        Assert.Contains("CREATE UNIQUE INDEX `IX_tai_khoan_ten_dang_nhap` ON `tai_khoan` (`ten_dang_nhap`)", script);
+        Assert.DoesNotContain("is_deleted", script);
     }
 }

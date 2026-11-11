@@ -59,9 +59,6 @@ namespace GymBase.Persistence.Migrations
                     dang_hoat_dong = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     mat_khau_hash = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    ten_dang_nhap_hieu_luc = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true, computedColumnSql: "IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", stored: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ngay_tao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     nguoi_tao = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -173,9 +170,9 @@ namespace GymBase.Persistence.Migrations
                 column: "thoi_diem");
 
             migrationBuilder.CreateIndex(
-                name: "IX_tai_khoan_ten_dang_nhap_hieu_luc",
+                name: "IX_tai_khoan_ten_dang_nhap",
                 table: "tai_khoan",
-                column: "ten_dang_nhap_hieu_luc",
+                column: "ten_dang_nhap",
                 unique: true);
         }
 

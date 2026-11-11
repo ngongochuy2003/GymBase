@@ -8,7 +8,7 @@ using FluentValidation;
 namespace GymBase.Base.Crud;
 
 /// <summary>
-/// CRUD dùng chung: chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (giờ UTC) và xóa mềm.
+/// CRUD dùng chung: chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (giờ UTC).
 /// BL của từng bảng chỉ cần viết 3 hàm map. Muốn thêm kiểm tra nghiệp vụ thì override
 /// <see cref="BLCreateAsync"/>, <see cref="BLUpdateAsync"/> hoặc <see cref="BLDeleteAsync"/> và ném
 /// exception trong <see cref="Exceptions"/> (trùng → <see cref="ConflictException"/>, vi phạm quy tắc →
@@ -92,24 +92,13 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
         return BLToDto(entity);
     }
 
-    /// <summary>Entity có <see cref="ISoftDelete"/> thì xóa mềm, còn lại xóa hẳn.</summary>
+    /// <summary>
+    /// Xóa hẳn bản ghi; không có thì 404. Bản ghi đang được bảng khác tham chiếu thì DL ném
+    /// <see cref="ConflictException"/> (<see cref="ErrorCodes.InUse"/>).
+    /// </summary>
     public virtual async Task BLDeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entity = await BLGetEntityOrThrowAsync(id, cancellationToken);
-
-        bool deleted;
-        if (entity is ISoftDelete softDelete)
-        {
-            softDelete.MarkDeleted();
-            MarkUpdated(entity);
-            deleted = await Repository.DLUpdateAsync(entity, cancellationToken);
-        }
-        else
-        {
-            deleted = await Repository.DLDeleteAsync(id, cancellationToken);
-        }
-
-        if (!deleted)
+        if (!await Repository.DLDeleteAsync(id, cancellationToken))
         {
             throw BLNotFound();
         }
@@ -118,7 +107,7 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
     /// <summary>Tên đối tượng trong câu báo lỗi, ví dụ "người dùng" → "Không tìm thấy người dùng…".</summary>
     protected virtual string EntityDisplayName => "dữ liệu";
 
-    /// <summary>Đọc bản ghi còn hiệu lực; không có hoặc đã xóa thì ném <see cref="NotFoundException"/>.</summary>
+    /// <summary>Đọc bản ghi; không có thì ném <see cref="NotFoundException"/>.</summary>
     protected async Task<TEntity> BLGetEntityOrThrowAsync(Guid id, CancellationToken cancellationToken) =>
         await Repository.DLGetByIdAsync(id, cancellationToken) ?? throw BLNotFound();
 

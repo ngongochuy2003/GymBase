@@ -15,7 +15,6 @@ namespace GymBase.UnitTests.Auth;
 public class TaiKhoanServiceTests
 {
     private static readonly Guid AdminId = Guid.Parse("0193f0a0-0000-7000-8000-000000000001");
-    private static readonly Guid DeletedId = Guid.Parse("0193f0a0-0000-7000-8000-000000000006");
     private static readonly DateTime Now = new(2026, 11, 20, 8, 30, 0, DateTimeKind.Utc);
 
     private readonly InMemoryStore<tai_khoan> _store = new();
@@ -87,12 +86,11 @@ public class TaiKhoanServiceTests
     };
 
     [Fact]
-    public async Task Paging_hides_deleted_users_and_sorts_newest_first()
+    public async Task Paging_sorts_newest_first()
     {
         var result = await _service.BLGetPagingAsync(new PagingRequest(), CancellationToken.None);
 
         Assert.Equal(5, result.meta.total);
-        Assert.DoesNotContain(result.data, u => u.Id == DeletedId);
         Assert.Equal("hv.phuong", result.data[0].ten_dang_nhap);
         Assert.Equal("admin", result.data[^1].ten_dang_nhap);
     }
@@ -138,10 +136,9 @@ public class TaiKhoanServiceTests
     }
 
     [Fact]
-    public async Task GetById_throws_not_found_for_missing_or_deleted_user()
+    public async Task GetById_throws_not_found_for_missing_user()
     {
         var missing = await Assert.ThrowsAsync<NotFoundException>(() => _service.BLGetByIdAsync(Guid.NewGuid(), CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => _service.BLGetByIdAsync(DeletedId, CancellationToken.None));
 
         Assert.Equal(ErrorCodes.NotFound, missing.Code);
         Assert.Equal("Không tìm thấy người dùng hoặc người dùng đã bị xóa.", missing.Message);
@@ -178,14 +175,6 @@ public class TaiKhoanServiceTests
     }
 
     [Fact]
-    public async Task Create_allows_username_of_deleted_user()
-    {
-        var created = await _service.BLCreateAsync(NewUserWith("hv.daxoa"), CancellationToken.None);
-
-        Assert.Equal("hv.daxoa", created.ten_dang_nhap);
-    }
-
-    [Fact]
     public async Task Update_changes_allowed_fields_and_sets_modified_time()
     {
         var update = new TaiKhoanUpdateDto { ho_ten = "Admin mới", vai_tro = "Admin", dang_hoat_dong = false };
@@ -200,16 +189,15 @@ public class TaiKhoanServiceTests
     }
 
     [Fact]
-    public async Task Update_throws_not_found_for_missing_or_deleted_user()
+    public async Task Update_throws_not_found_for_missing_user()
     {
         var update = new TaiKhoanUpdateDto { ho_ten = "X", vai_tro = "User" };
 
         await Assert.ThrowsAsync<NotFoundException>(() => _service.BLUpdateAsync(Guid.NewGuid(), update, CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => _service.BLUpdateAsync(DeletedId, update, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Delete_soft_deletes_user_once()
+    public async Task Delete_removes_user_once()
     {
         await _service.BLDeleteAsync(AdminId, CancellationToken.None);
 
