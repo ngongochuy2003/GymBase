@@ -14,7 +14,7 @@
 | Refresh token | Xoay vòng mỗi lần dùng, hết hạn sau 30 ngày không dùng, tối đa 90 ngày | RFC 9700 yêu cầu với client như app mobile |
 | Băm mật khẩu | `PasswordHasher` của ASP.NET, 600.000 vòng | Có sẵn, tự nâng cấp hash cũ. Mặc định chỉ 100.000 vòng nên phải đặt lại |
 | Mật khẩu | Tối thiểu **8 ký tự** | Chốt 08/11, xem mục 5 |
-| Tạo tài khoản | `Admin` tạo và đặt mật khẩu ban đầu, không tự đăng ký | Phạm vi V1 |
+| Tạo tài khoản | Người dùng tự đăng ký bằng Google (mục 8). `Admin` vẫn tạo được tài khoản mật khẩu cho người khác | Chốt 11/11: Google nằm trong V1 |
 | Phân quyền | Theo `vai_tro`: `Admin`, `Trainer`, `Trainee` | Quy tắc theo dữ liệu (đúng PT, đúng học viên) kiểm tra trong service |
 
 Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các tiêu chuẩn không quy định con số cụ thể.
@@ -41,7 +41,7 @@ Response của `login` và `refresh`:
   "access_token": "eyJ…",
   "expires_in": 900,
   "refresh_token": "…",
-  "user": { "id": "…", "tai_khoan": "pt.minh", "ho_ten": "Nguyễn Văn Minh", "vai_tro": "Trainer" }
+  "user": { "id": "…", "ten_dang_nhap": "pt.minh", "ho_ten": "Nguyễn Văn Minh", "vai_tro": "Trainer" }
 }
 ```
 
@@ -74,10 +74,10 @@ JWT chỉ được **ký, không mã hóa**: ai có token đều đọc được
 | Claim | Ý nghĩa | Dùng để |
 | --- | --- | --- |
 | `iss`, `aud` | Nơi phát hành, nơi được dùng | Từ chối token không phải của hệ thống này |
-| `sub` | `Id` của người dùng trong bảng `nguoi_dung` | `ICurrentUser.UserId`. Giữ nguyên dù đăng nhập bằng cách nào |
+| `sub` | `Id` của người dùng trong bảng `tai_khoan` | `ICurrentUser.UserId`. Giữ nguyên dù đăng nhập bằng cách nào |
 | `sid` | `Id` của phiên trong `phien_dang_nhap` | Biết token thuộc phiên nào, để sau này thu hồi tức thì |
 | `jti` | Mã riêng của token | Truy vết trong log |
-| `preferred_username` | `tai_khoan` | `ICurrentUser.UserName`, ghi `nguoi_tao`, `nguoi_chinh_sua` |
+| `preferred_username` | `ten_dang_nhap` | `ICurrentUser.UserName`, ghi `nguoi_tao`, `nguoi_chinh_sua` |
 | `role` | `vai_tro` | `[Authorize(Roles = "...")]` |
 | `iat`, `nbf`, `exp` | Thời điểm cấp, bắt đầu có hiệu lực, hết hạn | Kiểm tra thời hạn |
 
@@ -97,7 +97,7 @@ Refresh token là chuỗi ngẫu nhiên, không phải JWT. Bảng `phien_dang_n
 | Cột | Ý nghĩa |
 | --- | --- |
 | `Id` | Mã phiên, là `sid` trong JWT |
-| `nguoi_dung_id` | Chủ phiên |
+| `tai_khoan_id` | Chủ phiên |
 | `token_hash` | SHA-256 của refresh token hiện tại, **không lưu bản gốc** |
 | `token_hash_truoc`, `ngay_xoay_vong` | Token vừa thay thế và lúc đổi, để nhận biết dùng lại |
 | `ngay_het_han` | 30 ngày kể từ lần dùng gần nhất |
@@ -157,16 +157,22 @@ xem lại mức này cho tài khoản `Admin`.
 - Tiền tố `/mob` không phải ranh giới bảo mật.
 - Lỗi 401, 403 trả ProblemDetails như các lỗi khác.
 
-## 8. Đăng nhập bằng Google (sau V1)
+## 8. Đăng nhập và đăng ký bằng Google (V1)
 
-Chưa làm, nhưng thiết kế trên đã chừa chỗ. App lấy ID token từ Google rồi gửi cho API. API xác minh rồi cấp
+**Chốt 11/11:** Google nằm trong V1, người lạ tự đăng ký được. **Backend chưa làm**, các mục khác trong tài liệu này
+(đã triển khai) chưa tính tới Google. App lấy ID token từ Google rồi gửi cho API. API xác minh rồi cấp
 **JWT và refresh token của GymBase**, nên phần còn lại của hệ thống không phân biệt cách đăng nhập.
 
 ```text
 App ──► Google: đăng nhập, nhận ID token
 App ──► POST /auth/google { id_token } (HTTPS)
-API: xác minh ID token → tìm tài khoản đã liên kết → cấp token GymBase như /login
+API: xác minh ID token → tìm dang_nhap_ngoai theo (google, sub)
+     ├─ có    → cấp token GymBase như /login
+     └─ chưa  → tạo tai_khoan mới + dang_nhap_ngoai, rồi cấp token
 ```
+
+Luồng đầy đủ kèm bước chọn nhóm (học viên, PT, cả hai) nằm ở
+[database/diagrams/01-tai-khoan-ho-so.md](../../database/diagrams/01-tai-khoan-ho-so.md).
 
 **API phải kiểm tra** ID token: chữ ký bằng khóa công khai của Google, `aud` là một trong các client ID của app,
 `iss` là `accounts.google.com` hoặc `https://accounts.google.com`, `exp` chưa qua. Dùng thư viện, không tự viết.
@@ -175,17 +181,25 @@ API: xác minh ID token → tìm tài khoản đã liên kết → cấp token G
 
 | Cột | Ý nghĩa |
 | --- | --- |
-| `nguoi_dung_id` | Tài khoản GymBase |
+| `tai_khoan_id` | Tài khoản GymBase |
 | `nha_cung_cap` | `google`; sau này có thể thêm `apple` |
 | `ma_ngoai` | `sub` của Google; unique cùng `nha_cung_cap` |
+| `ngay_tao` | Lúc liên kết |
 
-**Liên kết tài khoản:** vì `Admin` tạo tài khoản và không có tự đăng ký, Google chỉ đăng nhập được vào tài khoản đã
-liên kết. Người dùng đăng nhập bằng mật khẩu rồi chọn "Liên kết Google" trong hồ sơ. **Không tự liên kết theo email
-trùng**: Google cho biết `email_verified` có thể chỉ phản ánh lần xác minh lúc tạo tài khoản, còn quyền sở hữu email đó
-có thể đã đổi.
+Hai unique: `(nha_cung_cap, ma_ngoai)` và `(tai_khoan_id, nha_cung_cap)`.
 
-**Cần sửa khi làm:** `mat_khau_hash` đổi thành cho phép null nếu muốn có tài khoản chỉ dùng Google; thêm client ID cho
-từng nền tảng; app chạy trên iOS thường phải có thêm Sign in with Apple theo quy định của App Store (kiểm tra lại khi làm).
+**Tài khoản mới từ Google:** `vai_tro = User`, `mat_khau_hash` và `ten_dang_nhap` để NULL, `ho_ten` và `email` lấy từ Google
+(email chỉ để hiển thị). Sau lần đăng nhập đầu, tài khoản chưa có hồ sơ và app đưa người dùng tới bước chọn nhóm.
+
+**Liên kết với tài khoản mật khẩu có sẵn:** người dùng đăng nhập bằng mật khẩu rồi chọn "Liên kết Google" trong hồ sơ.
+**Không tự liên kết theo email trùng**: Google cho biết `email_verified` có thể chỉ phản ánh lần xác minh lúc tạo tài khoản,
+còn quyền sở hữu email đó có thể đã đổi. Người đăng nhập Google mà email trùng với một tài khoản mật khẩu vẫn nhận tài khoản
+mới riêng.
+
+**Cần làm:** `mat_khau_hash` và `ten_dang_nhap` đã cho phép NULL trong entity; thêm client ID cho từng nền tảng; app chạy
+trên iOS thường phải có thêm Sign in with Apple theo quy định của App Store (kiểm tra lại khi làm). Các mục 1, 2, 7 còn
+nói về `Trainer`/`Trainee` và `[Authorize(Roles = ...)]`, trong khi thiết kế mới chỉ có `Admin`/`User`: cần cập nhật khi
+làm phân quyền.
 
 ## 9. Chưa làm trong V1
 
@@ -207,7 +221,7 @@ từng nền tảng; app chạy trên iOS thường phải có thêm Sign in wit
 | Refresh token dùng lại nhiều lần | Xoay vòng, phát hiện dùng lại |
 | Đọc claim từ token chưa xác minh | Chỉ đọc request đã xác thực |
 
-Giữ lại từ dự án đó: response đăng nhập có kèm thông tin người dùng, `[Authorize(Roles = ...)]`, claim `tai_khoan`.
+Giữ lại từ dự án đó: response đăng nhập có kèm thông tin người dùng, `[Authorize(Roles = ...)]`, claim `ten_dang_nhap`.
 
 ## Nguồn
 

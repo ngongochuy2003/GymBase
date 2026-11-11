@@ -21,7 +21,7 @@ public sealed class PagingRequest
     /// <summary>Sắp xếp, ví dụ <c>-ngay_tao,ho_ten</c>; trống thì mới tạo trước. Xem <see cref="PagingQuery"/>.</summary>
     public string? sort { get; set; }
 
-    /// <summary>Lọc, ví dụ <c>vai_tro:eq:Trainer,ngay_tao:gte:2026-11-01</c>. Xem <see cref="PagingQuery"/>.</summary>
+    /// <summary>Lọc, ví dụ <c>vai_tro:eq:User,ngay_tao:gte:2026-11-01</c>. Xem <see cref="PagingQuery"/>.</summary>
     public string? filter { get; set; }
 
     /// <summary>Số bản ghi bỏ qua trước trang này.</summary>

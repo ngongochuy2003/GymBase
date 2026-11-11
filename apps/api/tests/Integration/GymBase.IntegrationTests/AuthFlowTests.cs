@@ -31,14 +31,14 @@ public sealed class AuthFlowTests : IAsyncLifetime
 
     private async Task CreateUser(string userName)
     {
-        var body = new { tai_khoan = userName, mat_khau = Password, ho_ten = "Thử", vai_tro = AppRoles.Trainee };
+        var body = new { ten_dang_nhap = userName, mat_khau = Password, ho_ten = "Thử", vai_tro = AppRoles.User };
         Assert.Equal(HttpStatusCode.Created, (await _client.PostAsJsonAsync("/api/v1/web/testusers", body)).StatusCode);
     }
 
     private async Task<JsonElement> LoginAs(string userName)
     {
         await CreateUser(userName);
-        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { tai_khoan = userName, mat_khau = Password });
+        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = userName, mat_khau = Password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadFromJsonAsync<JsonElement>();
     }
@@ -70,12 +70,10 @@ public sealed class AuthFlowTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/health")).StatusCode);
     }
 
-    [Theory]
-    [InlineData(AppRoles.Trainee)]
-    [InlineData(AppRoles.Trainer)]
-    public async Task Non_admin_gets_403_on_user_management(string role)
+    [Fact]
+    public async Task Non_admin_gets_403_on_user_management()
     {
-        using var client = TestApp.ClientWithRole(_app, role);
+        using var client = TestApp.ClientWithRole(_app, AppRoles.User);
 
         await AssertProblem(await client.GetAsync(Users), HttpStatusCode.Forbidden, "FORBIDDEN");
         await AssertProblem(await client.GetAsync("/api/v1/mob/users"), HttpStatusCode.Forbidden, "FORBIDDEN");
@@ -97,7 +95,7 @@ public sealed class AuthFlowTests : IAsyncLifetime
 
         var me = await (await GetWithToken($"{Auth}/me", token)).Content.ReadFromJsonAsync<JsonElement>();
 
-        Assert.Equal("hv.token", me.GetProperty("tai_khoan").GetString());
+        Assert.Equal("hv.token", me.GetProperty("ten_dang_nhap").GetString());
         Assert.Equal(900, login.GetProperty("expires_in").GetInt32());
 
         var parts = token.Split('.');
@@ -121,8 +119,8 @@ public sealed class AuthFlowTests : IAsyncLifetime
     {
         await CreateUser("hv.saimk");
 
-        var wrong = await _client.PostAsJsonAsync($"{Auth}/login", new { tai_khoan = "hv.saimk", mat_khau = "sai-mat-khau" });
-        var unknown = await _client.PostAsJsonAsync($"{Auth}/login", new { tai_khoan = "khong.co", mat_khau = "sai-mat-khau" });
+        var wrong = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = "hv.saimk", mat_khau = "sai-mat-khau" });
+        var unknown = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = "khong.co", mat_khau = "sai-mat-khau" });
 
         await AssertProblem(wrong, HttpStatusCode.Unauthorized, "AUTH_INVALID_CREDENTIALS");
         await AssertProblem(unknown, HttpStatusCode.Unauthorized, "AUTH_INVALID_CREDENTIALS");
@@ -179,7 +177,7 @@ public sealed class AuthFlowTests : IAsyncLifetime
     {
         var token = (await LoginAs("hv.suarole")).GetProperty("access_token").GetString()!;
         var parts = token.Split('.');
-        var payload = Encoding.UTF8.GetString(Convert.FromBase64String(Pad(parts[1]))).Replace(AppRoles.Trainee, AppRoles.Admin);
+        var payload = Encoding.UTF8.GetString(Convert.FromBase64String(Pad(parts[1]))).Replace(AppRoles.User, AppRoles.Admin);
         var edited = $"{parts[0]}.{Convert.ToBase64String(Encoding.UTF8.GetBytes(payload)).TrimEnd('=').Replace('+', '-').Replace('/', '_')}.{parts[2]}";
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await GetWithToken(Users, edited)).StatusCode);
@@ -201,7 +199,7 @@ public sealed class AuthFlowTests : IAsyncLifetime
         HttpResponseMessage last = null!;
         for (var i = 0; i < 21; i++)
         {
-            last = await _client.PostAsJsonAsync($"{Auth}/login", new { tai_khoan = $"khong.co.{i}", mat_khau = "sai-mat-khau" });
+            last = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = $"khong.co.{i}", mat_khau = "sai-mat-khau" });
         }
 
         Assert.Equal(HttpStatusCode.TooManyRequests, last.StatusCode);

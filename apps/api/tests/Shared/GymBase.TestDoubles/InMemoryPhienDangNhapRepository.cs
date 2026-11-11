@@ -41,7 +41,7 @@ public sealed class InMemoryPhienDangNhapRepository(InMemoryStore<phien_dang_nha
 
     public Task RevokeAllOfUserAsync(Guid userId, Guid? exceptSessionId, DateTime revokedAt, CancellationToken cancellationToken)
     {
-        foreach (var session in Store.All().Where(s => s.nguoi_dung_id == userId && s.ngay_thu_hoi is null && s.Id != exceptSessionId))
+        foreach (var session in Store.All().Where(s => s.tai_khoan_id == userId && s.ngay_thu_hoi is null && s.Id != exceptSessionId))
         {
             session.ngay_thu_hoi = revokedAt;
             Store.TryReplace(session);

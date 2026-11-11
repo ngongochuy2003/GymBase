@@ -1,6 +1,6 @@
 using GymBase.Base.Auth;
 using GymBase.Base.Hosting;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using GymBase.BLAuth.XacThuc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace GymBase.API.Controllers;
 /// </summary>
 [Authorize(Roles = AppRoles.Admin)]
 public sealed class UsersController(UserService userService, AuthService authService)
-    : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userService)
+    : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(userService)
 {
     /// <summary>Đặt lại mật khẩu cho người dùng; mọi phiên của người đó bị thu hồi.</summary>
     [HttpPost("{id:guid}/reset-password")]

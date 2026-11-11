@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-/** Lỗi theo từng trường, khóa là tên trường JSON (ví dụ `tai_khoan`). */
+/** Lỗi theo từng trường, khóa là tên trường JSON (ví dụ `ten_dang_nhap`). */
 export type FieldErrors = Record<string, string[]>;
 
 /**

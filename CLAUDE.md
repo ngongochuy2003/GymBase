@@ -6,7 +6,7 @@ Code tạm (mock, bỏ qua một kiểm tra, chờ phần base khác) luôn kèm
 viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/settings.json`) gom các TODO theo chủ đề.
 
 ```csharp
-// TODO(DB): đổi lớp cha sang BaseRepository<nguoi_dung>; dữ liệu mẫu chuyển sang script seed. Mục 3, 13.
+// TODO(DB): đổi lớp cha sang BaseRepository<tai_khoan>; dữ liệu mẫu chuyển sang script seed. Mục 3, 13.
 // TODO(ERROR): lỗi nghiệp vụ ném exception và trả ProblemDetails qua global exception handler,
 //   không try/catch trong từng action. Mục 7.
 ```

@@ -5,4 +5,4 @@ và không chạy trên production.
 
 | File | Nội dung |
 | --- | --- |
-| `dev_nguoi_dung.sql` | 6 người dùng mẫu, chạy lại nhiều lần được |
+| `dev_tai_khoan.sql` | 6 người dùng mẫu, chạy lại nhiều lần được |

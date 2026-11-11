@@ -11,7 +11,7 @@ OpenAPI do .NET 10 sinh ra là phiên bản 3.1.
 ## Cập nhật — Entity gốc (08/11/2026)
 
 Tên bảng/cột dùng tiếng Việt không dấu snake_case; property C# của entity và DTO trùng
-tên cột (ví dụ `tai_khoan`, `ho_ten`, `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`,
+tên cột (ví dụ `ten_dang_nhap`, `ho_ten`, `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`,
 `nguoi_chinh_sua`). Riêng khóa chính giữ tên `Id`.
 Khóa chính là UUIDv7 (`Guid.CreateVersion7()`). Mọi mốc thời gian lưu ở UTC.
 Xóa mềm bằng cờ `is_deleted` (property trùng tên cột).

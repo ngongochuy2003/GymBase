@@ -7,16 +7,20 @@ cần bảng lịch nhắc riêng.
 erDiagram
     tai_khoan ||--o{ thiet_bi : "dùng"
     tai_khoan ||--o{ thong_bao : "nhận"
+    thiet_bi |o--o{ phien_dang_nhap : "đăng nhập từ"
 
     thiet_bi {
         guid Id PK
         guid tai_khoan_id FK
         string ma_thiet_bi "định danh cài đặt do app cấp"
         string nen_tang "android, ios"
-        text push_token "FCM token mới nhất"
+        string push_token UK "varchar(512), NULL được, FCM token mới nhất"
         bool dang_hoat_dong
         datetime ngay_hoat_dong_cuoi
-        datetime ngay_cap_nhat
+        datetime ngay_tao
+        string nguoi_tao
+        datetime ngay_chinh_sua "lần đổi push token gần nhất"
+        string nguoi_chinh_sua
     }
     thong_bao {
         guid Id PK
@@ -32,6 +36,10 @@ erDiagram
         datetime ngay_da_doc
         string ma_chong_trung "UNIQUE cùng tai_khoan_id"
         datetime ngay_tao
+    }
+    phien_dang_nhap {
+        guid Id PK
+        guid thiet_bi_id FK "NULL"
     }
     tai_khoan {
         guid Id PK
@@ -73,4 +81,10 @@ flowchart LR
 - `UNIQUE(tai_khoan_id, ma_chong_trung)` giúp worker và retry không tạo thông báo trùng.
 - Index đề xuất: `thong_bao(trang_thai_gui, thoi_diem_du_kien)`, `thong_bao(tai_khoan_id, ngay_tao DESC)`,
   `thiet_bi(tai_khoan_id, dang_hoat_dong)`.
-- `thiet_bi` chưa liên kết với `phien_dang_nhap`. Khi cần vô hiệu push theo phiên đăng nhập, phải quyết định cách nối hai bảng.
+- `phien_dang_nhap.thiet_bi_id` (đề xuất) nối phiên với thiết bị. Đăng xuất hoặc thu hồi phiên thì tắt `dang_hoat_dong` của
+  thiết bị đó. Xem [01-tai-khoan-ho-so.md](01-tai-khoan-ho-so.md).
+- `push_token` **đổi từ text sang `varchar(512)` kèm `UNIQUE`** (đề xuất so với tài liệu thiết kế). MySQL không đặt unique
+  được trên text, và nếu không unique thì khi A đăng xuất, B đăng nhập cùng máy, cùng một token nằm ở hai tài khoản,
+  thông báo của A có thể hiện trên máy B. Unique cho phép nhiều NULL.
+- Khi app đăng ký token đã có ở dòng `thiet_bi` của tài khoản khác, service phải xóa token khỏi dòng cũ (đặt NULL và
+  `dang_hoat_dong = false`) trước khi gán cho dòng mới, trong cùng transaction.

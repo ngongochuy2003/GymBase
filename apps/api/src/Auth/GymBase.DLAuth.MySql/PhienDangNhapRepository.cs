@@ -29,6 +29,6 @@ public sealed class PhienDangNhapRepository(AppDbContext db) : BaseRepository<ph
             .ExecuteUpdateAsync(update => update.SetProperty(s => s.ngay_thu_hoi, revokedAt), cancellationToken);
 
     public Task RevokeAllOfUserAsync(Guid userId, Guid? exceptSessionId, DateTime revokedAt, CancellationToken cancellationToken) =>
-        Set.Where(s => s.nguoi_dung_id == userId && s.ngay_thu_hoi == null && s.Id != exceptSessionId)
+        Set.Where(s => s.tai_khoan_id == userId && s.ngay_thu_hoi == null && s.Id != exceptSessionId)
             .ExecuteUpdateAsync(update => update.SetProperty(s => s.ngay_thu_hoi, revokedAt), cancellationToken);
 }

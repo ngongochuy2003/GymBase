@@ -6,7 +6,7 @@ using GymBase.Base.Hosting.Errors;
 using GymBase.Base.Exceptions;
 using GymBase.TestDoubles;
 using GymBase.BLAuth;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using GymBase.DLAuth.Contract;
 using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Builder;
@@ -59,28 +59,28 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
     {
         var response = await _client.PostAsJsonAsync(Users, new
         {
-            tai_khoan = "pt.minh",
+            ten_dang_nhap = "pt.minh",
             mat_khau = "Mk-thu-nghiem-1",
             ho_ten = "Trùng tên",
-            vai_tro = "Trainer",
+            vai_tro = "User",
         });
 
         var problem = await ReadProblemAsync(response, HttpStatusCode.Conflict);
         Assert.Equal(AuthErrorCodes.UserUsernameTaken, problem.GetProperty("code").GetString());
         Assert.Equal("Tên đăng nhập 'pt.minh' đã tồn tại.", problem.GetProperty("detail").GetString());
-        Assert.Equal(1, problem.GetProperty("errors").GetProperty("tai_khoan").GetArrayLength());
+        Assert.Equal(1, problem.GetProperty("errors").GetProperty("ten_dang_nhap").GetArrayLength());
     }
 
     [Fact]
     public async Task Invalid_body_from_framework_gets_same_shape()
     {
-        var response = await _client.PostAsJsonAsync(Users, new { ho_ten = "Thiếu tài khoản", vai_tro = "Trainee" });
+        var response = await _client.PostAsJsonAsync(Users, new { ho_ten = "Thiếu tài khoản", vai_tro = "User" });
 
         var problem = await ReadProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.Equal(ErrorCodes.ValidationFailed, problem.GetProperty("code").GetString());
         Assert.Equal("Dữ liệu không hợp lệ", problem.GetProperty("title").GetString());
         Assert.Equal(ValidationFailedException.DefaultDetail, problem.GetProperty("detail").GetString());
-        Assert.True(problem.GetProperty("errors").TryGetProperty("tai_khoan", out _));
+        Assert.True(problem.GetProperty("errors").TryGetProperty("ten_dang_nhap", out _));
         Assert.False(string.IsNullOrEmpty(problem.GetProperty("trace_id").GetString()));
         Assert.False(problem.TryGetProperty("traceId", out _));
     }
@@ -111,7 +111,7 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
     [Fact]
     public async Task Unknown_route_returns_problem_details()
     {
-        using var client = TestApp.ClientWithRole(_app, "Trainee");
+        using var client = TestApp.ClientWithRole(_app, "User");
 
         var response = await client.GetAsync("/api/v1/web/khong-co");
 
@@ -126,7 +126,7 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var user = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("admin", user.GetProperty("tai_khoan").GetString());
+        Assert.Equal("admin", user.GetProperty("ten_dang_nhap").GetString());
     }
 
     [Theory]

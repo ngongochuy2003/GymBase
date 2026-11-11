@@ -65,7 +65,7 @@ Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (co
 `docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
 
 Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
-(`NguoiDung/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
+(`TaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
 thêm thư mục hay chức năng; phải có lý do về ranh giới.
 
 **Quy ước đặt tên:** `BIZ` cho thư mục nhóm, `Biz` trong tên project (`GymBase.BLBiz`);
@@ -99,8 +99,8 @@ Một chức năng có vị trí song song trong BL và DL. Mẫu đang có (ng�
 
 ```text
 GymBase.BLAuth/
-├── NguoiDung/
-│   ├── NguoiDungDtos.cs        # DTO trả ra API và body thêm/sửa
+├── TaiKhoan/
+│   ├── TaiKhoanDtos.cs        # DTO trả ra API và body thêm/sửa
 │   └── UserService.cs               # Nghiệp vụ, kế thừa BaseService
 └── AuthErrorCodes.cs           # Mã lỗi chi tiết của nhóm
 GymBase.DLAuth.Contract/
@@ -108,9 +108,9 @@ GymBase.DLAuth.Contract/
 GymBase.DLAuth.MySql/
 └── UserRepository.cs                   # Hiện thực IUserRepository, kế thừa BaseRepository
 GymBase.Entities/Auth/
-└── nguoi_dung.cs               # Tên class trùng tên bảng, property trùng tên cột
+└── tai_khoan.cs               # Tên class trùng tên bảng, property trùng tên cột
 GymBase.Persistence/Configurations/Auth/
-└── NguoiDungConfiguration.cs   # Cấu hình bảng nguoi_dung
+└── TaiKhoanConfiguration.cs   # Cấu hình bảng tai_khoan
 ```
 
 Chức năng lớn hơn trong BIZ thì chia thêm thư mục con, ví dụ:

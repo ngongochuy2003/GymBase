@@ -1,6 +1,6 @@
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Auth;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using GymBase.BLAuth.XacThuc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +35,7 @@ public abstract class AuthControllerBase(AuthService authService) : BaseApiContr
 
     /// <summary>Thông tin của người đang đăng nhập.</summary>
     [HttpGet("me")]
-    public async Task<ActionResult<NguoiDungDto>> Me(CancellationToken cancellationToken) =>
+    public async Task<ActionResult<TaiKhoanDto>> Me(CancellationToken cancellationToken) =>
         Ok(await authService.GetCurrentUserAsync(cancellationToken));
 
     /// <summary>Đổi mật khẩu của chính mình; các phiên khác bị thu hồi.</summary>

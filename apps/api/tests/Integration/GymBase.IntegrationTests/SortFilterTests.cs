@@ -27,26 +27,26 @@ public sealed class SortFilterTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return json.RootElement.GetProperty("data").EnumerateArray()
-            .Select(u => u.GetProperty("tai_khoan").GetString()!)
+            .Select(u => u.GetProperty("ten_dang_nhap").GetString()!)
             .ToArray();
     }
 
     [Fact]
     public async Task Sort_changes_order()
     {
-        Assert.Equal(["admin", "hv.huy", "hv.phuong", "pt.lan", "pt.minh"], await UserNames("sort=tai_khoan"));
+        Assert.Equal(["admin", "hv.huy", "hv.phuong", "pt.lan", "pt.minh"], await UserNames("sort=ten_dang_nhap"));
     }
 
     [Fact]
     public async Task Filter_combines_with_sort()
     {
-        Assert.Equal(["pt.minh", "pt.lan"], await UserNames("filter=vai_tro:eq:Trainer&sort=-tai_khoan"));
+        Assert.Equal(["pt.minh", "pt.lan", "hv.phuong", "hv.huy"], await UserNames("filter=vai_tro:eq:User&sort=-ten_dang_nhap"));
     }
 
     [Fact]
     public async Task Soft_deleted_user_stays_hidden_when_filtering()
     {
-        Assert.Equal(["hv.huy"], await UserNames("filter=vai_tro:eq:Trainee,dang_hoat_dong:eq:true"));
+        Assert.Equal(["hv.huy", "pt.lan", "pt.minh"], await UserNames("filter=vai_tro:eq:User,dang_hoat_dong:eq:true"));
     }
 
     [Theory]

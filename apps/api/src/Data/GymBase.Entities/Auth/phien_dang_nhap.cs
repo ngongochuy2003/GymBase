@@ -8,7 +8,7 @@ namespace GymBase.Entities.Auth;
 /// </summary>
 public sealed class phien_dang_nhap : BaseEntity
 {
-    public Guid nguoi_dung_id { get; set; }
+    public Guid tai_khoan_id { get; set; }
 
     /// <summary>SHA-256 của refresh token hiện tại.</summary>
     public string token_hash { get; set; } = string.Empty;
@@ -29,6 +29,9 @@ public sealed class phien_dang_nhap : BaseEntity
     public DateTime? ngay_thu_hoi { get; set; }
 
     public string? ten_thiet_bi { get; set; }
+
+    /// <summary>Thiết bị của phiên, để tắt push đúng thiết bị khi đăng xuất. Null với phiên không phải từ điện thoại.</summary>
+    public Guid? thiet_bi_id { get; set; }
 
     public DateTime ngay_tao { get; set; }
 }

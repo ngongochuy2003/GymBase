@@ -78,7 +78,7 @@ public sealed class AppApiTests : IAsyncLifetime
     [Fact]
     public async Task Location_header_is_lowercase()
     {
-        var body = new { tai_khoan = "hv.lowercase", mat_khau = "Mk-thu-nghiem-1", ho_ten = "Thử", vai_tro = "Trainee" };
+        var body = new { ten_dang_nhap = "hv.lowercase", mat_khau = "Mk-thu-nghiem-1", ho_ten = "Thử", vai_tro = "User" };
 
         var response = await _client.PostAsJsonAsync(Users, body);
 

@@ -5,7 +5,7 @@ using GymBase.Base.Auth;
 using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Validation;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using GymBase.DLAuth.Contract;
 using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -19,7 +19,7 @@ namespace GymBase.BLAuth.XacThuc;
 public sealed class AuthService(
     IUserRepository users,
     IPhienDangNhapRepository sessions,
-    IPasswordHasher<nguoi_dung> passwordHasher,
+    IPasswordHasher<tai_khoan> passwordHasher,
     ITokenIssuer tokenIssuer,
     LoginThrottle throttle,
     ICurrentUser currentUser,
@@ -35,7 +35,7 @@ public sealed class AuthService(
     /// <summary>Trong khoảng này, token vừa thay thế gửi lại được coi là do mất mạng, không phải bị đánh cắp.</summary>
     private static readonly TimeSpan RotationGrace = TimeSpan.FromSeconds(30);
 
-    private static readonly nguoi_dung PlaceholderUser = new();
+    private static readonly tai_khoan PlaceholderUser = new();
 
     private static string? s_dummyHash;
 
@@ -46,9 +46,9 @@ public sealed class AuthService(
     {
         await loginValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
-        var userName = dto.tai_khoan.Trim();
+        var userName = dto.ten_dang_nhap.Trim();
         var isLocked = throttle.IsLocked(userName);
-        var user = await users.FindByTaiKhoanAsync(userName, cancellationToken);
+        var user = await users.FindByTenDangNhapAsync(userName, cancellationToken);
 
         // Luôn băm, kể cả khi không có tài khoản hoặc đang khóa, để thời gian phản hồi tương đương.
         var verification = VerifyPassword(user, dto.mat_khau);
@@ -75,7 +75,7 @@ public sealed class AuthService(
         var refreshToken = NewRefreshToken();
         var session = new phien_dang_nhap
         {
-            nguoi_dung_id = user.Id,
+            tai_khoan_id = user.Id,
             token_hash = Hash(refreshToken),
             ngay_het_han = now + RefreshInactivity,
             ngay_het_han_toi_da = now + RefreshMaxLifetime,
@@ -109,7 +109,7 @@ public sealed class AuthService(
             throw new UnauthorizedException();
         }
 
-        var user = await users.GetByIdAsync(session.nguoi_dung_id, cancellationToken);
+        var user = await users.GetByIdAsync(session.tai_khoan_id, cancellationToken);
         if (user is not { dang_hoat_dong: true })
         {
             await sessions.RevokeAsync(session.Id, now, cancellationToken);
@@ -146,7 +146,7 @@ public sealed class AuthService(
     }
 
     /// <exception cref="UnauthorizedException">Token không còn gắn với người dùng hợp lệ.</exception>
-    public async Task<NguoiDungDto> GetCurrentUserAsync(CancellationToken cancellationToken) =>
+    public async Task<TaiKhoanDto> GetCurrentUserAsync(CancellationToken cancellationToken) =>
         ToDto(await GetCurrentUserEntityAsync(cancellationToken));
 
     /// <summary>Đổi mật khẩu của chính mình và thu hồi các phiên khác.</summary>
@@ -184,10 +184,10 @@ public sealed class AuthService(
         await resetPasswordValidator.ValidateOrThrowAsync(new DatLaiMatKhauDto { mat_khau_moi = password }, cancellationToken);
 
         var name = userName.Trim();
-        var user = await users.FindByTaiKhoanAsync(name, cancellationToken);
+        var user = await users.FindByTenDangNhapAsync(name, cancellationToken);
         if (user is null)
         {
-            user = new nguoi_dung { tai_khoan = name, ho_ten = name, vai_tro = AppRoles.Admin };
+            user = new tai_khoan { ten_dang_nhap = name, ho_ten = name, vai_tro = AppRoles.Admin };
             EnsureNotUserName(password, name, nameof(DatLaiMatKhauDto.mat_khau_moi));
             user.mat_khau_hash = passwordHasher.HashPassword(user, password);
             user.MarkCreated("create-admin", UtcNow);
@@ -200,9 +200,9 @@ public sealed class AuthService(
         await sessions.RevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
-    private async Task SetPasswordAsync(nguoi_dung user, string password, string field, CancellationToken cancellationToken)
+    private async Task SetPasswordAsync(tai_khoan user, string password, string field, CancellationToken cancellationToken)
     {
-        EnsureNotUserName(password, user.tai_khoan, field);
+        EnsureNotUserName(password, user.ten_dang_nhap ?? string.Empty, field);
 
         user.mat_khau_hash = passwordHasher.HashPassword(user, password);
         user.MarkUpdated(currentUser.UserName, UtcNow);
@@ -213,13 +213,13 @@ public sealed class AuthService(
         }
     }
 
-    private async Task<nguoi_dung> GetCurrentUserEntityAsync(CancellationToken cancellationToken)
+    private async Task<tai_khoan> GetCurrentUserEntityAsync(CancellationToken cancellationToken)
     {
         var user = currentUser.UserId is { } id ? await users.GetByIdAsync(id, cancellationToken) : null;
         return user ?? throw new UnauthorizedException();
     }
 
-    private PasswordVerificationResult VerifyPassword(nguoi_dung? user, string password)
+    private PasswordVerificationResult VerifyPassword(tai_khoan? user, string password)
     {
         s_dummyHash ??= passwordHasher.HashPassword(PlaceholderUser, Guid.NewGuid().ToString());
 
@@ -228,7 +228,7 @@ public sealed class AuthService(
         try
         {
             var result = passwordHasher.VerifyHashedPassword(
-                user ?? PlaceholderUser, hasHash ? user!.mat_khau_hash : s_dummyHash, password);
+                user ?? PlaceholderUser, hasHash ? user!.mat_khau_hash! : s_dummyHash, password);
             return hasHash ? result : PasswordVerificationResult.Failed;
         }
         catch (FormatException)
@@ -238,9 +238,9 @@ public sealed class AuthService(
         }
     }
 
-    private KetQuaDangNhapDto BuildResult(nguoi_dung user, Guid sessionId, string refreshToken)
+    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken)
     {
-        var token = tokenIssuer.CreateAccessToken(new AccessTokenRequest(user.Id, user.tai_khoan, user.vai_tro, sessionId));
+        var token = tokenIssuer.CreateAccessToken(new AccessTokenRequest(user.Id, user.ten_dang_nhap ?? user.email ?? user.Id.ToString(), user.vai_tro, sessionId));
         return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user));
     }
 
@@ -255,8 +255,8 @@ public sealed class AuthService(
     private static UnauthorizedException InvalidCredentials() =>
         new("Tên đăng nhập hoặc mật khẩu không đúng.", AuthErrorCodes.InvalidCredentials);
 
-    private static NguoiDungDto ToDto(nguoi_dung user) => new(
-        user.Id, user.tai_khoan, user.ho_ten, user.email, user.so_dien_thoai,
+    private static TaiKhoanDto ToDto(tai_khoan user) => new(
+        user.Id, user.ten_dang_nhap, user.ho_ten, user.email, user.so_dien_thoai,
         user.vai_tro, user.dang_hoat_dong, user.ngay_tao, user.ngay_chinh_sua);
 
     private static string NewRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
