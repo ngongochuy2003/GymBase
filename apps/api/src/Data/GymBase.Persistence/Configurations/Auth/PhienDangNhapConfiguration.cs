@@ -1,4 +1,5 @@
 using GymBase.Entities.Auth;
+using GymBase.Entities.Biz;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,10 +21,17 @@ public sealed class PhienDangNhapConfiguration : IEntityTypeConfiguration<phien_
         builder.HasIndex(e => e.token_hash).IsUnique();
         builder.HasIndex(e => e.token_hash_truoc);
         builder.HasIndex(e => e.tai_khoan_id);
+        builder.HasIndex(e => e.thiet_bi_id);
 
         builder.HasOne<tai_khoan>()
             .WithMany()
             .HasForeignKey(e => e.tai_khoan_id)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Xóa thiết bị thì phiên vẫn còn, chỉ mất liên kết.
+        builder.HasOne<thiet_bi>()
+            .WithMany()
+            .HasForeignKey(e => e.thiet_bi_id)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
