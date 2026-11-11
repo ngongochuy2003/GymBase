@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/02-tep-tin.md. Mục 3.
 /// <summary>
 /// Metadata của file trên Amazon S3. Database không chứa binary.
 /// </summary>

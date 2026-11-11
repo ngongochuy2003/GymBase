@@ -2,7 +2,6 @@ using GymBase.Base.Entities;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/06-huan-luyen.md. Mục 3.
 /// <summary>
 /// Cân nặng, chiều cao và chỉ số cơ thể. Không chia sẻ mặc định cho mọi PT, chỉ chia sẻ khi gắn ket_noi_pt_id.
 /// </summary>

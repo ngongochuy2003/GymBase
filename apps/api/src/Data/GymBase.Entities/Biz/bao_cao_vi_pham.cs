@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/09-an-toan.md. Mục 3.
 /// <summary>
 /// Người dùng báo cáo bài đăng, bình luận, tài khoản hoặc tin nhắn.
 /// </summary>

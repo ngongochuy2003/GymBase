@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/05-nhan-tin.md. Mục 3.
 /// <summary>
 /// Tin nhắn văn bản hoặc kèm file (qua tep_tin).
 /// </summary>

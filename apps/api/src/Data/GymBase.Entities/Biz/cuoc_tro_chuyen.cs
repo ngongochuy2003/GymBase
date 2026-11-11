@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/05-nhan-tin.md. Mục 3.
 /// <summary>
 /// Hội thoại. V1 chỉ có chat 1-1, giữ chỗ cho chat nhóm. Cột ngay_cap_nhat là thời điểm hoạt động gần nhất,
 /// không phải lần sửa bản ghi.
