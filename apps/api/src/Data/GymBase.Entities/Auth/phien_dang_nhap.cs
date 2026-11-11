@@ -30,5 +30,8 @@ public sealed class phien_dang_nhap : BaseEntity
 
     public string? ten_thiet_bi { get; set; }
 
+    /// <summary>Thiết bị của phiên, để tắt push đúng thiết bị khi đăng xuất. Null với phiên không phải từ điện thoại.</summary>
+    public Guid? thiet_bi_id { get; set; }
+
     public DateTime ngay_tao { get; set; }
 }
