@@ -166,8 +166,9 @@ của framework. Client không nên hiện `errors` của các lỗi này cho ng
 | 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ten_dang_nhap`, email sai định dạng |
 | 401 | `UNAUTHORIZED` | Chưa xác thực | Chưa đăng nhập, token sai hoặc hết hạn, sai tên đăng nhập hoặc mật khẩu | Gọi API không kèm token |
 | 403 | `FORBIDDEN` | Không có quyền | Đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa | Học viên gọi API quản trị |
-| 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id. Bản ghi đã xóa mềm cũng tính là không có | `GET /users/{id}` với id không tồn tại |
+| 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id | `GET /users/{id}` với id không tồn tại |
 | 409 | `DUPLICATE` | Dữ liệu bị xung đột | Trùng giá trị phải duy nhất | Trùng mã gói tập |
+| 409 | `IN_USE` | Dữ liệu bị xung đột | Không xóa được vì bản ghi đang được bảng khác tham chiếu | Xóa người dùng đã có dữ liệu |
 | 409 | `CONCURRENCY_CONFLICT` | Dữ liệu bị xung đột | Bản ghi đã bị người khác sửa trước, client cần tải lại | Hai người cùng sửa một hội viên |
 | 422 | `BUSINESS_RULE` | Không thực hiện được | Dữ liệu đúng định dạng nhưng vi phạm quy tắc nghiệp vụ | Gia hạn gói tập đã hủy |
 | 500 | `INTERNAL_ERROR` | Lỗi hệ thống | Lỗi không lường trước, kể cả lỗi DB. `detail` luôn là câu chung chung | Mất kết nối MySQL |

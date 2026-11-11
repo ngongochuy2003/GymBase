@@ -81,7 +81,7 @@ JWT chỉ được **ký, không mã hóa**: ai có token đều đọc được
 | `role` | `vai_tro` | `[Authorize(Roles = "...")]` |
 | `iat`, `nbf`, `exp` | Thời điểm cấp, bắt đầu có hiệu lực, hết hạn | Kiểm tra thời hạn |
 
-**Không đưa vào token:** mật khẩu hay hash, email, số điện thoại, họ tên, `is_deleted`, hay dữ liệu nghiệp vụ.
+**Không đưa vào token:** mật khẩu hay hash, email, số điện thoại, họ tên, hay dữ liệu nghiệp vụ.
 Màn hình cần thông tin người dùng thì đọc từ `user` lúc đăng nhập hoặc gọi `GET /me`.
 
 **Khi kiểm tra token phải:** chỉ chấp nhận đúng HS256; kiểm tra chữ ký, `iss`, `aud`, `exp`, `typ`; tắt

@@ -32,7 +32,7 @@ erDiagram
         text noi_dung "bắt buộc với binh_luan"
         guid tuong_tac_cha_id FK "bình luận cha"
         datetime ngay_tao
-        datetime ngay_xoa "xóa mềm"
+        datetime ngay_xoa "NULL, lúc bình luận bị xóa hoặc thích bị bỏ; service lọc"
     }
     theo_doi {
         guid nguoi_theo_doi_id PK, FK
@@ -48,7 +48,7 @@ erDiagram
 
 - Ảnh và video của bài viết gắn qua `tep_tin` (`loai_doi_tuong = bai_viet`), không có bảng riêng.
 - `tuong_tac_bai_viet`: mỗi người chỉ thích một bài một lần. MySQL không có partial unique, nên dùng cột sinh tự động
-  `IF(loai_tuong_tac = 'thich' AND ngay_xoa IS NULL, CONCAT(bai_viet_id, '|', tai_khoan_id), NULL)` kèm unique index.
+  `IF(loai_tuong_tac = 'thich' AND ngay_xoa IS NULL, CONCAT(bai_viet_id, '|', tai_khoan_id), NULL)` kèm unique index. Bỏ thích là đặt `ngay_xoa`.
 - `tuong_tac_cha_id` chỉ được trỏ tới bình luận cùng bài viết, không trỏ tới lượt thích. Service kiểm tra.
 - `theo_doi` có khóa chính kép và không được tự theo dõi (`CHECK nguoi_theo_doi_id <> nguoi_duoc_theo_doi_id`).
 - Index đề xuất: `bai_viet(trang_thai, ngay_dang DESC)`, `bai_viet(tac_gia_id, ngay_dang DESC)`,

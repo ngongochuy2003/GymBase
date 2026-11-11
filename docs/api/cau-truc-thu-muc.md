@@ -115,7 +115,7 @@ cùng lúc).
 | Project | Được chứa | Không được chứa |
 | --- | --- | --- |
 | `GymBase.API` | `Controllers/` cho web, `Mob/Controllers/` cho mobile; request/response HTTP, policy, đăng ký dịch vụ, OpenAPI | Quy tắc nghiệp vụ, SQL, DbContext; BL/DL riêng cho mobile |
-| `GymBase.Base` | Entity gốc (`BaseEntity`, `BaseAuditableEntity`, `ISoftDelete`), phân trang, CRUD dùng chung (`IBaseRepository`, `BaseService`, `ICrudService`), exception nghiệp vụ và mã lỗi | Logic PT, gói tập; tham chiếu tới Auth, DI, BIZ |
+| `GymBase.Base` | Entity gốc (`BaseEntity`, `BaseAuditableEntity`), phân trang, CRUD dùng chung (`IBaseRepository`, `BaseService`, `ICrudService`), exception nghiệp vụ và mã lỗi | Logic PT, gói tập; tham chiếu tới Auth, DI, BIZ |
 | `GymBase.Base.Hosting` | `BaseApiController`, `BaseCrudController`, route theo kênh, xử lý lỗi ProblemDetails, extension đăng ký dịch vụ nền | Quy tắc nghiệp vụ riêng |
 | `GymBase.ModuleContracts` | Interface công khai và DTO tối thiểu cho giao tiếp giữa các nhóm | DbContext, repository nội bộ, controller |
 | `GymBase.BLAuth` | Người dùng, đăng nhập, refresh/logout, phân quyền, chính sách tài khoản | Truy vấn EF trực tiếp, controller |
@@ -313,7 +313,7 @@ Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [huong-dan-t
 
 | Bước | Project | File | Nội dung |
 | --- | --- | --- | --- |
-| 1 | `GymBase.Entities` | `DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, property trùng tên cột |
+| 1 | `GymBase.Entities` | `DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity`, property trùng tên cột |
 | 2 | `GymBase.DLDI.Contract` | `IGoiTapRepository.cs` | `interface IGoiTapRepository : IBaseRepository<goi_tap>` |
 | 3 | `GymBase.DLDI.MySql`, `GymBase.Persistence` | `GoiTapRepository.cs`, `Configurations/DI/GoiTapConfiguration.cs` | `class GoiTapRepository : BaseRepository<goi_tap>, IGoiTapRepository`; cấu hình bảng; tạo migration mới |
 | 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapValidators.cs`, `GoiTap/GoiTapService.cs` | DTO và validator; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |

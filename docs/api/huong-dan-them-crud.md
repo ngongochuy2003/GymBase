@@ -48,7 +48,6 @@ Bạn cũng cần xác định bảng thuộc **nhóm** nào, vì nhóm quyết 
 | **Service** | Nơi đặt nghiệp vụ, nằm giữa controller và repository | `GoiTapService` |
 | **Controller** | Lớp nhận yêu cầu HTTP, gọi service rồi trả kết quả | `GoiTapController` |
 | **Đăng ký dịch vụ** | Khai báo trong `Program.cs` để ứng dụng biết cần tạo lớp nào | Bước 7 |
-| **Xóa mềm** | Không xóa dòng khỏi bảng mà đặt `is_deleted = true`, API sẽ không thấy dòng đó nữa | `ISoftDelete` |
 
 Một yêu cầu đi qua các lớp theo thứ tự này:
 
@@ -94,12 +93,11 @@ using GymBase.Base.Entities;
 namespace GymBase.Entities.DI;
 
 /// <summary>Gói tập mà phòng gym bán cho học viên.</summary>
-public sealed class goi_tap : BaseAuditableEntity, ISoftDelete
+public sealed class goi_tap : BaseAuditableEntity
 {
     public string ma_goi { get; set; } = string.Empty;
     public string ten_goi { get; set; } = string.Empty;
     public decimal gia { get; set; }
-    public bool is_deleted { get; set; }
 }
 ```
 
@@ -109,8 +107,7 @@ Những điểm cần chú ý:
   của dự án, không phải lỗi đặt tên.
 - `BaseAuditableEntity` cho bạn sẵn các cột `Id`, `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua` và
   `nguoi_chinh_sua`. Không khai báo lại các cột này.
-- `ISoftDelete` bật xóa mềm và yêu cầu có property `is_deleted`. Bỏ `ISoftDelete` thì `DELETE` sẽ xóa
-  hẳn dòng khỏi bảng.
+- `DELETE` xóa hẳn dòng khỏi bảng. Dòng đang được bảng khác tham chiếu thì API trả 409 `IN_USE`.
 
 ### Bước 2: Cấu hình bảng và tạo migration
 
@@ -223,7 +220,7 @@ public sealed class GoiTapUpdateDto
 }
 ```
 
-Việc tách DTO giúp người gọi API không thể tự gửi `Id`, `ngay_tao` hay `is_deleted`. Muốn một cột
+Việc tách DTO giúp người gọi API không thể tự gửi `Id` hay `ngay_tao`. Muốn một cột
 không sửa được, chỉ cần không đưa nó vào `GoiTapUpdateDto`.
 
 ### Bước 5: Tạo validator và service
@@ -303,7 +300,7 @@ public sealed class GoiTapService(
 | `BLApplyUpdate` | Khi sửa | Chỉ chép những cột được phép sửa |
 | `EntityDisplayName` | Khi không tìm thấy | Tên trong câu báo lỗi, ví dụ "Không tìm thấy gói tập…" |
 
-`BaseService` tự lo phần còn lại: chạy validator, điền ngày và người tạo hoặc sửa, xóa mềm, báo 404.
+`BaseService` tự lo phần còn lại: chạy validator, điền ngày và người tạo hoặc sửa, báo 404.
 
 ### Bước 6: Tạo controller
 
@@ -492,8 +489,7 @@ Thêm hàm kiểm tra vào `IGoiTapRepository` (tên bắt đầu bằng `DL`, v
 rồi override `BLBeforeCreateAsync` trong service và ném `ConflictException` khi trùng. Mẫu đầy đủ là
 `DLExistsByTenDangNhapAsync` trong `TaiKhoanRepository` và `BLBeforeCreateAsync` trong `TaiKhoanService`.
 
-Nên thêm cả unique index ở database để chặn hai yêu cầu gửi cùng lúc. Bảng có xóa mềm thì index phải bỏ
-qua dòng đã xóa, nếu không mã của gói đã xóa sẽ không dùng lại được. Mẫu là cột `ten_dang_nhap_hieu_luc`
+Nên thêm cả unique index ở database để chặn hai yêu cầu gửi cùng lúc. Mẫu là `HasIndex(e => e.ten_dang_nhap).IsUnique()`
 trong `TaiKhoanConfiguration`.
 
 ### Kiểm tra nghiệp vụ khi sửa hoặc xóa
