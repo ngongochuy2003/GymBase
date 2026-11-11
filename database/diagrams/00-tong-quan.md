@@ -57,6 +57,7 @@ flowchart LR
     end
 
     ho_so_nguoi_dung --> tep_tin
+    Base --> Notify
     Coaching --> Connect
     Packages --> Connect
     Packages --> Coaching
@@ -70,12 +71,13 @@ flowchart LR
 
 Đường nét đứt là liên kết đa hình (không có khóa ngoại thật), xem [10-lien-ket-da-hinh.md](10-lien-ket-da-hinh.md).
 `Coaching` và `Packages` tham chiếu lẫn nhau: `nhat_ky_hoat_dong` trỏ tới `buoi_tap`, còn `buoi_tap` trỏ tới
-`muc_ke_hoach`.
+`muc_ke_hoach`. `Base --> Notify` là `phien_dang_nhap.thiet_bi_id` trỏ tới `thiet_bi`, nên `thiet_bi` phải tạo trước khi
+thêm cột này.
 
 ## 2. Quan hệ giữa các bảng
 
-Chỉ vẽ khóa ngoại thật. Cột chi tiết nằm ở các sơ đồ con. `tai_khoan` là bảng tài khoản của Base, hiện
-đang tên `nguoi_dung` trong code.
+Chỉ vẽ khóa ngoại thật. Cột chi tiết nằm ở các sơ đồ con. `tai_khoan` là bảng tài khoản của Base. Entity đã đổi
+tên từ `nguoi_dung`, nhưng migration hiện có chưa đổi theo.
 
 ```mermaid
 erDiagram
@@ -84,6 +86,8 @@ erDiagram
     tai_khoan ||--o| ho_so_nguoi_dung : "có hồ sơ"
     tai_khoan ||--o{ tep_tin : "tải lên"
     tep_tin |o--o{ ho_so_nguoi_dung : "ảnh đại diện"
+    tai_khoan |o--o{ ho_so_nguoi_dung : "xác minh PT"
+    thiet_bi |o--o{ phien_dang_nhap : "đăng nhập từ"
     tai_khoan ||--o{ bai_viet : "tác giả"
     bai_viet ||--o{ tuong_tac_bai_viet : "có"
     tai_khoan ||--o{ tuong_tac_bai_viet : "thực hiện"
@@ -118,6 +122,7 @@ erDiagram
     tai_khoan ||--o{ buoi_tap : "học viên"
     tai_khoan |o--o{ buoi_tap : "pt phụ trách"
     tai_khoan |o--o{ buoi_tap : "người xác nhận"
+    tai_khoan |o--o{ buoi_tap : "xử lý khiếu nại"
     goi_pt_hoc_vien ||--o{ bien_dong_so_buoi : "biến động"
     buoi_tap |o--o{ bien_dong_so_buoi : "phát sinh"
     tai_khoan ||--o{ bien_dong_so_buoi : "người tạo"

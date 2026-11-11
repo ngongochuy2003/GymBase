@@ -13,6 +13,7 @@ erDiagram
     tai_khoan ||--o{ buoi_tap : "học viên"
     tai_khoan |o--o{ buoi_tap : "pt phụ trách"
     tai_khoan |o--o{ buoi_tap : "người xác nhận"
+    tai_khoan |o--o{ buoi_tap : "xử lý khiếu nại"
     goi_pt_hoc_vien ||--o{ bien_dong_so_buoi : "biến động"
     buoi_tap |o--o{ bien_dong_so_buoi : "phát sinh"
     tai_khoan ||--o{ bien_dong_so_buoi : "người tạo"
@@ -28,6 +29,9 @@ erDiagram
         string trang_thai "cho_kich_hoat, dang_su_dung, tam_dung, hoan_tat, huy"
         guid nguoi_tao_id FK
         datetime ngay_tao
+        string nguoi_tao
+        datetime ngay_chinh_sua "đổi trạng thái gói gần nhất"
+        string nguoi_chinh_sua
     }
     buoi_tap {
         guid Id PK
@@ -45,7 +49,13 @@ erDiagram
         datetime ngay_xac_nhan
         text noi_dung_khieu_nai
         string trang_thai_khieu_nai "cho_xu_ly, chap_nhan, tu_choi"
-        datetime ngay_cap_nhat
+        datetime ngay_khieu_nai "NULL, lúc học viên gửi khiếu nại"
+        guid nguoi_xu_ly_khieu_nai_id FK "NULL, ai quyết định chấp nhận hoặc bác"
+        datetime ngay_xu_ly_khieu_nai "NULL"
+        datetime ngay_tao
+        string nguoi_tao
+        datetime ngay_chinh_sua
+        string nguoi_chinh_sua
     }
     bien_dong_so_buoi {
         guid Id PK
@@ -84,6 +94,7 @@ stateDiagram-v2
 
 Tài liệu mô tả kết quả xử lý khiếu nại ở `trang_thai_khieu_nai` (`chap_nhan`, `tu_choi`) nhưng không nói
 `trang_thai` của buổi sau đó là gì. Hai mũi tên cuối ở trên là gợi ý, **cần chốt** trước khi viết nghiệp vụ.
+Cũng cần chốt ai được quyết định khiếu nại (chính PT bị khiếu nại, hay Admin). Nếu là PT thì PT tự chấm cho chính mình.
 
 ## Xác nhận buổi và trừ gói
 
@@ -110,6 +121,16 @@ Ví dụ số dư: mua 12 buổi (+12), PT xác nhận 3 buổi (−1 × 3) thì
 - `buoi_tap` loại `tu_tap` không bao giờ bị trừ gói.
 - Sổ cái không được `UPDATE` hay `DELETE`, điều chỉnh bằng giao dịch bù. Trên MySQL chặn bằng trigger.
 - Chặn hai lần trừ cho một buổi: cột sinh tự động `IF(loai_bien_dong = 'tru_buoi', buoi_tap_id, NULL)` kèm unique index.
+- `CHECK` dấu của `so_buoi_thay_doi` theo `loai_bien_dong` (đề xuất): `cap_buoi` và `hoan_buoi` > 0, `tru_buoi` < 0, `dieu_chinh` khác 0.
+  Nên chặn cả hai lần hoàn cho một buổi bằng cách tương tự cột chặn trừ trùng.
+- Trigger chặn `UPDATE`/`DELETE` sổ cái viết tay trong migration. Nếu bật binary log và tài khoản MySQL không có quyền
+  SUPER thì tạo trigger có thể bị từ chối (`log_bin_trust_function_creators`), cần thử trên môi trường thật.
 - Chỉ một khiếu nại đang xử lý cho mỗi buổi (khiếu nại nằm ngay trong `buoi_tap`). Muốn nhiều vòng khiếu nại thì sau này tách bảng `phieu_khieu_nai`.
+- `goi_pt_hoc_vien` và `buoi_tap` kế thừa `BaseAuditableEntity`, nên có sẵn mốc đổi trạng thái gần nhất (`ngay_chinh_sua`).
+  `bien_dong_so_buoi` là sổ cái bất biến, chỉ kế thừa `BaseEntity` và giữ `ngay_tao` riêng.
+- `ngay_khieu_nai`, `nguoi_xu_ly_khieu_nai_id` và `ngay_xu_ly_khieu_nai` là **đề xuất thêm so với
+  tài liệu thiết kế**. Lịch sử đầy đủ vẫn nằm ở `lich_su_chinh_sua`, các cột này để truy vấn nhanh trạng thái hiện tại.
+- Dữ liệu lặp: `buoi_tap.hoc_vien_id`, `pt_id` và `goi_pt_hoc_vien_id` phải khớp với `ket_noi_pt` của buổi, database không ép
+  được, service kiểm tra khi tạo và sửa.
 - Index đề xuất: `goi_pt_hoc_vien(ket_noi_pt_id, trang_thai)`, `buoi_tap(hoc_vien_id, bat_dau_du_kien DESC)`,
   `buoi_tap(pt_id, trang_thai)`, `buoi_tap(goi_pt_hoc_vien_id, trang_thai)`.
