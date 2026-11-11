@@ -2,7 +2,7 @@
 
 Phần nền CRUD nằm trong `GymBase.Base` và `GymBase.Base.Hosting`. Mỗi bảng mới chỉ cần khai báo
 entity, DTO và vài hàm map là có đủ API thêm/sửa/xóa/xem. Mẫu đầy đủ đang chạy: **người dùng**
-(bảng `nguoi_dung`, nhóm Auth).
+(bảng `tai_khoan`, nhóm Auth).
 
 ## 1. Các lớp nền
 
@@ -33,25 +33,25 @@ HTTP ──► BaseCrudController<TDto, TCreateDto, TUpdateDto>     GymBase.Base
 
 ```text
 src/Data/GymBase.Entities/
-└── Auth/nguoi_dung.cs                class nguoi_dung (bảng nguoi_dung)
+└── Auth/tai_khoan.cs                class tai_khoan (bảng tai_khoan)
                                       namespace GymBase.Entities.Auth
 src/Auth/GymBase.BLAuth/
-└── NguoiDung/                        namespace GymBase.BLAuth.NguoiDung
+└── TaiKhoan/                        namespace GymBase.BLAuth.TaiKhoan
     ├── UserService.cs
-    └── NguoiDungDtos.cs              NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto
+    └── TaiKhoanDtos.cs              TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto
 ```
 
 | Loại | Đặt ở | Quy ước |
 | --- | --- | --- |
-| **Entity** (cấu trúc bảng) | `GymBase.Entities/<Nhóm>/<tên_bảng>.cs` theo **nhóm sở hữu bảng** | Tên class **trùng tên bảng** (`nguoi_dung`), property trùng tên cột, riêng `Id` giữ nguyên |
-| **DTO** (dữ liệu vào/ra API) | BL của nhóm: `GymBase.BL<Nhóm>/<TênPascal>/<TênPascal>Dtos.cs` | Tên PascalCase: `NguoiDungDto`, `NguoiDungCreateDto`, `NguoiDungUpdateDto`. Property cùng tên cột |
+| **Entity** (cấu trúc bảng) | `GymBase.Entities/<Nhóm>/<tên_bảng>.cs` theo **nhóm sở hữu bảng** | Tên class **trùng tên bảng** (`tai_khoan`), property trùng tên cột, riêng `Id` giữ nguyên |
+| **DTO** (dữ liệu vào/ra API) | BL của nhóm: `GymBase.BL<Nhóm>/<TênPascal>/<TênPascal>Dtos.cs` | Tên PascalCase: `TaiKhoanDto`, `TaiKhoanCreateDto`, `TaiKhoanUpdateDto`. Property cùng tên cột |
 
 - Namespace theo thư mục (`GymBase.Entities.Auth`). `.editorconfig` của `apps/api` tắt
   gợi ý "tên phải PascalCase" vì entity và DTO cố ý đặt tên snake_case.
 - **DTO để trong BL, không để ở DL**: DTO đổi theo nghiệp vụ/màn hình còn entity đổi theo DB;
   BL là nơi map nên DTO ở cạnh BL; API đã tham chiếu BL nên dùng được DTO; DL không nhìn thấy DTO.
 - DTO HTTP riêng cho mobile (gọn hơn web) đặt cạnh controller trong `Mob/Controllers/`, hoặc trong
-  BL nếu nhiều nơi cùng dùng, ví dụ `NguoiDungMobileDto`.
+  BL nếu nhiều nơi cùng dùng, ví dụ `TaiKhoanMobileDto`.
 - Nhóm khác cần dữ liệu của bảng này thì đi qua interface trong `GymBase.ModuleContracts`, không
   tham chiếu thẳng BL/DL của nhóm sở hữu. Hạ tầng chung (`PagingRequest`, `PagingResult`, `IHasId`)
   ở `GymBase.Base`.
@@ -65,7 +65,7 @@ controller trong `Mob/Controllers/`. Bảng dưới ghi phần sau tiền tố.
 | --- | --- | --- |
 | `GET /users?page=1&page_size=20&search=abc` | 200, `PagingResult<TDto>`: `data` (mảng `TDto`) và `meta` (`page`, `page_size`, `total`, `total_page`, `ranger` gồm `from`, `to`) | |
 | `GET /users/{id}` | 200, `TDto` | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
-| `POST /users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 `VALIDATION_FAILED` nếu body không qua validator; 409 `USER_USERNAME_TAKEN` nếu trùng `tai_khoan` |
+| `POST /users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 `VALIDATION_FAILED` nếu body không qua validator; 409 `USER_USERNAME_TAKEN` nếu trùng `ten_dang_nhap` |
 | `PUT /users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 `NOT_FOUND` nếu không có hoặc đã xóa |
 | `DELETE /users/{id}` | 204 | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
 
@@ -77,7 +77,7 @@ Ví dụ danh sách (`?page=2&page_size=20`, có 57 bản ghi):
 
 ```json
 {
-  "data": [ { "id": "…", "tai_khoan": "an.nv", "ho_ten": "Nguyễn Văn An" } ],
+  "data": [ { "id": "…", "ten_dang_nhap": "an.nv", "ho_ten": "Nguyễn Văn An" } ],
   "meta": { "page": 2, "page_size": 20, "total": 57, "total_page": 3, "ranger": { "from": 21, "to": 40 } }
 }
 ```

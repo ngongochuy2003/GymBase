@@ -22,7 +22,7 @@ Khi một phần đề xuất được chốt hoặc làm xong, sửa bảng tr�
 2. **Khi thành công, trả thẳng dữ liệu, không bọc envelope.** Không có `{ success, data, message }`.
    Riêng danh sách có dạng `{ data, meta }` vì cần trả kèm thông tin phân trang.
 3. **Khi lỗi, luôn trả ProblemDetails** (RFC 9457), kèm `code` cho biết lý do cụ thể.
-4. **Tên trường JSON là snake_case**, trùng tên cột (quy ước Q2): `tai_khoan`, `page_size`,
+4. **Tên trường JSON là snake_case**, trùng tên cột (quy ước Q2): `ten_dang_nhap`, `page_size`,
    `trace_id`. Riêng khóa chính là `id`.
 5. **Không lộ chi tiết nội bộ.** Stack trace, câu SQL, tên class chỉ ghi vào log, không bao giờ
    nằm trong response.
@@ -45,7 +45,7 @@ Ví dụ lấy 1 bản ghi:
 ```json
 {
   "id": "0193f0a0-0000-7000-8000-000000000001",
-  "tai_khoan": "admin",
+  "ten_dang_nhap": "admin",
   "ho_ten": "Quản trị viên",
   "vai_tro": "Admin",
   "dang_hoat_dong": true,
@@ -90,7 +90,7 @@ Response:
 ```json
 {
   "data": [
-    { "id": "…", "tai_khoan": "an.nv", "ho_ten": "Nguyễn Văn An" }
+    { "id": "…", "ten_dang_nhap": "an.nv", "ho_ten": "Nguyễn Văn An" }
   ],
   "meta": {
     "page": 2,
@@ -129,7 +129,7 @@ Mọi lỗi trả header `Content-Type: application/problem+json` và body (resp
   "code": "USER_USERNAME_TAKEN",
   "trace_id": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
   "errors": {
-    "tai_khoan": ["Tên đăng nhập 'an.nv' đã tồn tại."]
+    "ten_dang_nhap": ["Tên đăng nhập 'an.nv' đã tồn tại."]
   }
 }
 ```
@@ -152,7 +152,7 @@ Lỗi do framework tự trả cũng theo đúng dạng trên: 400 khi JSON hỏn
 khi sai đường dẫn, 405 khi sai method… `ProblemDetailsCustomizer` điền `title`, `detail`, `code`,
 `trace_id` cho mọi ProblemDetails, kể cả những lỗi này.
 
-**Hạn chế hiện tại:** lỗi JSON hỏng hoặc sai kiểu có khóa dạng `$.tai_khoan` và thông báo tiếng Anh
+**Hạn chế hiện tại:** lỗi JSON hỏng hoặc sai kiểu có khóa dạng `$.ten_dang_nhap` và thông báo tiếng Anh
 của framework. Client không nên hiện `errors` của các lỗi này cho người dùng.
 
 ---
@@ -163,7 +163,7 @@ của framework. Client không nên hiện `errors` của các lỗi này cho ng
 
 | HTTP | `code` | `title` | Khi nào dùng | Ví dụ |
 | --- | --- | --- | --- | --- |
-| 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `tai_khoan`, email sai định dạng |
+| 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ten_dang_nhap`, email sai định dạng |
 | 401 | `UNAUTHORIZED` | Chưa xác thực | Chưa đăng nhập, token sai hoặc hết hạn, sai tên đăng nhập hoặc mật khẩu | Gọi API không kèm token |
 | 403 | `FORBIDDEN` | Không có quyền | Đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa | Học viên gọi API quản trị |
 | 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id. Bản ghi đã xóa mềm cũng tính là không có | `GET /users/{id}` với id không tồn tại |
@@ -198,7 +198,7 @@ HTTP của mã chung tương ứng**.
 
 | HTTP | `code` | Hằng số | Khi nào | Trạng thái |
 | --- | --- | --- | --- | --- |
-| 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `tai_khoan` với người dùng còn hiệu lực (không phân biệt hoa thường). `errors` có `tai_khoan` | Đang dùng |
+| 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `ten_dang_nhap` với người dùng còn hiệu lực (không phân biệt hoa thường). `errors` có `ten_dang_nhap` | Đang dùng |
 | 401 | `AUTH_INVALID_CREDENTIALS` | | Đăng nhập không thành công: sai tên đăng nhập, sai mật khẩu, hoặc tài khoản bị khóa (dùng chung một mã để không lộ trạng thái tài khoản, xem [xac-thuc.md](xac-thuc.md)) | Đang dùng |
 
 Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code dùng mã đó.
@@ -226,8 +226,8 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
 
   ```csharp
   throw new ConflictException(
-      nameof(NguoiDungCreateDto.tai_khoan),
-      $"Tên đăng nhập '{taiKhoan}' đã tồn tại.",
+      nameof(TaiKhoanCreateDto.ten_dang_nhap),
+      $"Tên đăng nhập '{tenDangNhap}' đã tồn tại.",
       AuthErrorCodes.UserUsernameTaken);
   ```
 

@@ -1,11 +1,11 @@
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 
 namespace GymBase.BLAuth.XacThuc;
 
 /// <summary>Body đăng nhập.</summary>
 public sealed class DangNhapDto
 {
-    public string tai_khoan { get; init; } = string.Empty;
+    public string ten_dang_nhap { get; init; } = string.Empty;
 
     public string mat_khau { get; init; } = string.Empty;
 
@@ -34,4 +34,4 @@ public sealed class DatLaiMatKhauDto
 }
 
 /// <summary>Kết quả đăng nhập hoặc làm mới token.</summary>
-public sealed record KetQuaDangNhapDto(string access_token, int expires_in, string refresh_token, NguoiDungDto user);
+public sealed record KetQuaDangNhapDto(string access_token, int expires_in, string refresh_token, TaiKhoanDto user);

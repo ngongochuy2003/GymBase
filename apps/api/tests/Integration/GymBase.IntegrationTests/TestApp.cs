@@ -4,7 +4,7 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Logging;
 using GymBase.BLAuth;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using GymBase.DLAuth.Contract;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
@@ -69,7 +69,7 @@ namespace GymBase.IntegrationTests.Controllers
     /// <summary>CRUD người dùng cho web, không cần đăng nhập: /api/v1/web/testusers.</summary>
     [AllowAnonymous]
     public sealed class TestUsersController(UserService service)
-        : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(service);
+        : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(service);
 
     /// <summary>Action ném lỗi có chủ đích: /api/v1/web/errortest/...</summary>
     [AllowAnonymous]
@@ -88,5 +88,5 @@ namespace GymBase.IntegrationTests.Mob.Controllers
     /// <summary>Cùng tên với controller web nhưng ở Mob/Controllers: /api/v1/mob/testusers.</summary>
     [AllowAnonymous]
     public sealed class TestUsersController(UserService service)
-        : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(service);
+        : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(service);
 }

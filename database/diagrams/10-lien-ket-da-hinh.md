@@ -19,7 +19,10 @@ flowchart LR
 
     lich_su_chinh_sua -.-> nhat_ky_hoat_dong
     lich_su_chinh_sua -.-> ke_hoach
+    lich_su_chinh_sua -.-> muc_ke_hoach
     lich_su_chinh_sua -.-> buoi_tap
+    lich_su_chinh_sua -.-> goi_pt_hoc_vien
+    lich_su_chinh_sua -.-> bao_cao_vi_pham
 
     thong_bao -.-> muc_ke_hoach
     thong_bao -.-> tin_nhan
@@ -32,8 +35,8 @@ flowchart LR
 
 | Bảng nguồn | Các giá trị `loai_doi_tuong` theo tài liệu |
 | --- | --- |
-| `tep_tin` | `bai_viet`, `tin_nhan`, `nhat_ky_hoat_dong`, `ho_so_nguoi_dung` |
-| `lich_su_chinh_sua` | `nhat_ky_hoat_dong`, `ke_hoach`, `buoi_tap` (danh sách có dấu "…", còn mở) |
+| `tep_tin` | `bai_viet`, `tin_nhan`, `nhat_ky_hoat_dong`, `ho_so_nguoi_dung` (kèm cột `muc_dich` đề xuất để phân biệt loại file) |
+| `lich_su_chinh_sua` | Tài liệu: `nhat_ky_hoat_dong`, `ke_hoach`, `buoi_tap` (danh sách có dấu "…", còn mở). Đề xuất thêm: `muc_ke_hoach`, `goi_pt_hoc_vien`, `bao_cao_vi_pham` |
 | `thong_bao` | `muc_ke_hoach`, `tin_nhan` (còn mở, ví dụ trong tài liệu) |
 | `bao_cao_vi_pham` | `bai_viet`, `tuong_tac_bai_viet`, `tai_khoan`, `tin_nhan` |
 

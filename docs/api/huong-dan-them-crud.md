@@ -30,7 +30,7 @@ Bạn cũng cần xác định bảng thuộc **nhóm** nào, vì nhóm quyết 
 
 | Nhóm | Chứa gì | Ví dụ |
 | --- | --- | --- |
-| `Auth` | Tài khoản, đăng nhập | `nguoi_dung` |
+| `Auth` | Tài khoản, đăng nhập | `tai_khoan` |
 | `DI` | Danh mục | `goi_tap` |
 | `BIZ` | Nghiệp vụ chính | |
 
@@ -490,11 +490,11 @@ người khác dùng lại. Thư mục cần có `folder.bru` để đặt tên 
 
 Thêm hàm kiểm tra vào `IGoiTapRepository`, viết hàm đó trong `GoiTapRepository` bằng `Set.AnyAsync(...)`,
 rồi override `BeforeCreateAsync` trong service và ném `ConflictException` khi trùng. Mẫu đầy đủ là
-`ExistsByTaiKhoanAsync` trong `UserRepository` và `BeforeCreateAsync` trong `UserService`.
+`ExistsByTenDangNhapAsync` trong `UserRepository` và `BeforeCreateAsync` trong `UserService`.
 
 Nên thêm cả unique index ở database để chặn hai yêu cầu gửi cùng lúc. Bảng có xóa mềm thì index phải bỏ
-qua dòng đã xóa, nếu không mã của gói đã xóa sẽ không dùng lại được. Mẫu là cột `tai_khoan_hieu_luc`
-trong `NguoiDungConfiguration`.
+qua dòng đã xóa, nếu không mã của gói đã xóa sẽ không dùng lại được. Mẫu là cột `ten_dang_nhap_hieu_luc`
+trong `TaiKhoanConfiguration`.
 
 ### Kiểm tra nghiệp vụ khi sửa hoặc xóa
 
@@ -504,7 +504,7 @@ và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md). Không viết SQL tro
 
 ### Sắp xếp và lọc
 
-Override `AllowedColumns` trong repository, theo mẫu `NguoiDungQueryColumns`. Chưa làm bước này mà gửi
+Override `AllowedColumns` trong repository, theo mẫu `TaiKhoanQueryColumns`. Chưa làm bước này mà gửi
 `sort` hoặc `filter` thì API trả 400. Chi tiết: [sort-va-filter.md](sort-va-filter.md).
 
 ### Thêm API riêng hoặc đổi quyền từng API
@@ -514,7 +514,7 @@ override, ví dụ để đặt quyền riêng cho `GET`. Mẫu thêm action: `R
 
 ### Thêm dữ liệu mẫu
 
-Đặt script SQL trong `database/seeds`. Mẫu là `dev_nguoi_dung.sql`.
+Đặt script SQL trong `database/seeds`. Mẫu là `dev_tai_khoan.sql`.
 
 ## 7. Lỗi thường gặp
 

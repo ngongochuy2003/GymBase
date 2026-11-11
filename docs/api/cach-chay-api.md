@@ -27,7 +27,11 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    dotnet ef database update --project src/Data/GymBase.Persistence --startup-project src/Host/GymBase.API
    ```
 
-3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_nguoi_dung.sql` trên database `gymbase`. Các tài khoản mẫu không
+   Database dev tạo từ các migration cũ (`InitialCreate`, `AddPhienDangNhap`, `AddSystemLog`, `ChangeGuidToVarchar36`)
+   không cập nhật tiếp được, vì các migration đó đã được thay bằng `InitialBase` và `AddBizTables`. Xóa database đó
+   (`dotnet ef database drop`) rồi tạo lại.
+
+3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_tai_khoan.sql` trên database `gymbase`. Các tài khoản mẫu không
    đăng nhập được vì không có mật khẩu thật.
 
 4. Tạo khóa ký JWT (chuỗi ngẫu nhiên, mỗi môi trường một khóa, không dùng chung):

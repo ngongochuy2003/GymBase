@@ -105,7 +105,7 @@ người dùng. Client nên hiển thị dưới dạng văn bản, vì câu l�
 
 | Bảng | Cột sort và filter | Khai báo ở |
 | --- | --- | --- |
-| `nguoi_dung` | `tai_khoan`, `ho_ten`, `email`, `so_dien_thoai`, `vai_tro`, `dang_hoat_dong`, `ngay_tao`, `ngay_chinh_sua` | `NguoiDungQueryColumns` |
+| `tai_khoan` | `ten_dang_nhap`, `ho_ten`, `email`, `so_dien_thoai`, `vai_tro`, `dang_hoat_dong`, `ngay_tao`, `ngay_chinh_sua` | `TaiKhoanQueryColumns` |
 
 Thêm bảng mới thì thêm một dòng vào bảng này.
 

@@ -15,8 +15,8 @@ internal static class AuthTestHelpers
     public const string ValidPassword = "Mk-thu-nghiem-1";
 
     /// <summary>Ít vòng để test chạy nhanh; bản chạy thật dùng 600.000 vòng.</summary>
-    public static IPasswordHasher<nguoi_dung> FastHasher { get; } =
-        new PasswordHasher<nguoi_dung>(Options.Create(new PasswordHasherOptions { IterationCount = 1_000 }));
+    public static IPasswordHasher<tai_khoan> FastHasher { get; } =
+        new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 1_000 }));
 }
 
 /// <summary>Luồng đăng nhập, xoay vòng refresh token, khóa khi sai nhiều, đổi mật khẩu.</summary>
@@ -45,16 +45,16 @@ public class AuthServiceTests
 
     private readonly MovableClock _clock = new();
     private readonly FakeIssuer _issuer = new();
-    private readonly InMemoryStore<nguoi_dung> _userStore = new();
+    private readonly InMemoryStore<tai_khoan> _userStore = new();
     private readonly InMemoryStore<phien_dang_nhap> _sessionStore = new();
     private readonly LoginThrottle _throttle;
-    private readonly nguoi_dung _user;
+    private readonly tai_khoan _user;
 
     public AuthServiceTests()
     {
         _throttle = new LoginThrottle(_clock);
         _ = new InMemoryUserRepository(_userStore); // nạp dữ liệu mẫu
-        _user = new nguoi_dung { tai_khoan = UserName, ho_ten = "Học viên", vai_tro = AppRoles.Trainee };
+        _user = new tai_khoan { ten_dang_nhap = UserName, ho_ten = "Học viên", vai_tro = AppRoles.User };
         _user.mat_khau_hash = AuthTestHelpers.FastHasher.HashPassword(_user, Password);
         _user.MarkCreated("seed", _clock.Now.UtcDateTime);
         _userStore.TryAdd(_user);
@@ -74,7 +74,7 @@ public class AuthServiceTests
         new DatLaiMatKhauValidator());
 
     private Task<KetQuaDangNhapDto> Login(string userName = UserName, string password = Password) =>
-        Service().LoginAsync(new DangNhapDto { tai_khoan = userName, mat_khau = password }, CancellationToken.None);
+        Service().LoginAsync(new DangNhapDto { ten_dang_nhap = userName, mat_khau = password }, CancellationToken.None);
 
     private Task<KetQuaDangNhapDto> Refresh(string token) =>
         Service().RefreshAsync(new LamMoiTokenDto { refresh_token = token }, CancellationToken.None);
@@ -94,9 +94,9 @@ public class AuthServiceTests
         var result = await Login();
 
         Assert.Equal("access-token", result.access_token);
-        Assert.Equal(UserName, result.user.tai_khoan);
+        Assert.Equal(UserName, result.user.ten_dang_nhap);
         Assert.Equal(_user.Id, _issuer.Last!.UserId);
-        Assert.Equal(AppRoles.Trainee, _issuer.Last.Role);
+        Assert.Equal(AppRoles.User, _issuer.Last.Role);
         var session = Assert.Single(_sessionStore.All());
         Assert.Equal(session.Id, _issuer.Last.SessionId);
         Assert.NotEqual(result.refresh_token, session.token_hash);
@@ -108,7 +108,7 @@ public class AuthServiceTests
     {
         var result = await Login("  HV.DANGNHAP ");
 
-        Assert.Equal(UserName, result.user.tai_khoan);
+        Assert.Equal(UserName, result.user.ten_dang_nhap);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class AuthServiceTests
         await AssertLoginRejected();
 
         Advance(TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(1));
-        Assert.Equal(UserName, (await Login()).user.tai_khoan);
+        Assert.Equal(UserName, (await Login()).user.ten_dang_nhap);
     }
 
     [Fact]
@@ -371,13 +371,13 @@ public class AuthServiceTests
     [Fact]
     public async Task Hash_with_fewer_iterations_is_upgraded_on_login()
     {
-        var stronger = new PasswordHasher<nguoi_dung>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
+        var stronger = new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
         var service = new AuthService(
             new InMemoryUserRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle,
             new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator());
         var before = _userStore.Find(_user.Id)!.mat_khau_hash;
 
-        await service.LoginAsync(new DangNhapDto { tai_khoan = UserName, mat_khau = Password }, CancellationToken.None);
+        await service.LoginAsync(new DangNhapDto { ten_dang_nhap = UserName, mat_khau = Password }, CancellationToken.None);
 
         Assert.NotEqual(before, _userStore.Find(_user.Id)!.mat_khau_hash);
     }

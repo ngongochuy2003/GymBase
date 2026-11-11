@@ -1,6 +1,6 @@
 using GymBase.Base.Auth;
 using GymBase.Base.Hosting;
-using GymBase.BLAuth.NguoiDung;
+using GymBase.BLAuth.TaiKhoan;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GymBase.API.Mob.Controllers;
@@ -11,4 +11,4 @@ namespace GymBase.API.Mob.Controllers;
 /// </summary>
 [Authorize(Roles = AppRoles.Admin)]
 public sealed class UsersController(UserService userService)
-    : BaseCrudController<NguoiDungDto, NguoiDungCreateDto, NguoiDungUpdateDto>(userService);
+    : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(userService);

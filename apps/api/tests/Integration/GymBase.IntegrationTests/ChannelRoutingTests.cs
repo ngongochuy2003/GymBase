@@ -42,9 +42,9 @@ public sealed class ChannelRoutingTests : IAsyncLifetime
     [Theory]
     [InlineData("/api/v1/web/testusers", "hv.web")]
     [InlineData("/api/v1/mob/testusers", "hv.mob")]
-    public async Task Created_location_points_to_same_channel(string path, string taiKhoan)
+    public async Task Created_location_points_to_same_channel(string path, string tenDangNhap)
     {
-        var response = await _client.PostAsJsonAsync(path, new { tai_khoan = taiKhoan, mat_khau = "Mk-thu-nghiem-1", ho_ten = "Kênh", vai_tro = "Trainee" });
+        var response = await _client.PostAsJsonAsync(path, new { ten_dang_nhap = tenDangNhap, mat_khau = "Mk-thu-nghiem-1", ho_ten = "Kênh", vai_tro = "User" });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.StartsWith(path, response.Headers.Location!.AbsolutePath, StringComparison.OrdinalIgnoreCase);
@@ -55,7 +55,7 @@ public sealed class ChannelRoutingTests : IAsyncLifetime
     [InlineData("/api/mobile/v1/testusers")]
     public async Task Old_routes_are_gone(string path)
     {
-        using var client = TestApp.ClientWithRole(_app, "Trainee");
+        using var client = TestApp.ClientWithRole(_app, "User");
 
         var response = await client.GetAsync(path);
 

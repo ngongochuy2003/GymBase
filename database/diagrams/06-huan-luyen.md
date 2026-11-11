@@ -29,7 +29,9 @@ erDiagram
         string trang_thai "nhap, dang_ap_dung, tam_dung, ket_thuc"
         guid nguoi_tao_id FK
         datetime ngay_tao
-        datetime ngay_cap_nhat
+        string nguoi_tao
+        datetime ngay_chinh_sua
+        string nguoi_chinh_sua
     }
     muc_ke_hoach {
         guid Id PK
@@ -43,7 +45,10 @@ erDiagram
         bool co_nhac
         int nhac_truoc_phut
         string trang_thai "dang_ap_dung, tam_dung, ngung"
-        datetime ngay_cap_nhat
+        datetime ngay_tao
+        string nguoi_tao
+        datetime ngay_chinh_sua
+        string nguoi_chinh_sua
     }
     nhat_ky_hoat_dong {
         guid Id PK
@@ -51,6 +56,7 @@ erDiagram
         guid muc_ke_hoach_id FK
         guid buoi_tap_id FK
         guid hoc_vien_id FK
+        int phien_ban_ke_hoach "NULL, ke_hoach.phien_ban lúc nộp; NULL nếu hoạt động phát sinh"
         string loai_hoat_dong "an_uong, tap_luyen"
         date ngay_hoat_dong
         datetime thoi_gian_thuc_hien
@@ -61,13 +67,15 @@ erDiagram
         text nhan_xet
         datetime ngay_danh_gia
         datetime ngay_tao
-        datetime ngay_cap_nhat
+        string nguoi_tao
+        datetime ngay_chinh_sua
+        string nguoi_chinh_sua
     }
     lich_su_chinh_sua {
         guid Id PK
-        string loai_doi_tuong "nhat_ky_hoat_dong, ke_hoach, buoi_tap"
+        string loai_doi_tuong "nhat_ky_hoat_dong, ke_hoach, muc_ke_hoach, buoi_tap, goi_pt_hoc_vien, bao_cao_vi_pham"
         guid doi_tuong_id "đa hình, không có FK"
-        string hanh_dong "tao, cap_nhat, danh_gia, xac_nhan, xu_ly_khieu_nai"
+        string hanh_dong "tao, cap_nhat, danh_gia, xac_nhan, xu_ly_khieu_nai, xu_ly_bao_cao, huy, ket_thuc"
         guid nguoi_thuc_hien_id FK
         json du_lieu_truoc
         json du_lieu_sau
@@ -132,6 +140,17 @@ sequenceDiagram
 
 - Ảnh bữa ăn gắn qua `tep_tin` (`loai_doi_tuong = nhat_ky_hoat_dong`), không có bảng `anh_bua_an`.
 - `ke_hoach.phien_ban` tăng khi sửa nội dung đã áp dụng. Nhật ký lưu snapshot nên kế hoạch đổi không làm thay đổi nhật ký cũ.
+- `nhat_ky_hoat_dong.phien_ban_ke_hoach` là **đề xuất thêm so với tài liệu thiết kế**. `muc_ke_hoach` được sửa tại chỗ, còn
+  `chi_tiet` của nhật ký chỉ lưu phần thực tế, nên không có cách biết nhật ký cũ làm theo phiên bản kế hoạch nào. Cách
+  khác: không thêm cột, mà quy định JSON `chi_tiet` có thêm khối kế hoạch lúc nộp. Cần chọn một cách.
+- `lich_su_chinh_sua`: tài liệu để danh sách `loai_doi_tuong` và `hanh_dong` mở ("..."). Đề xuất danh sách đầy đủ ở sơ đồ,
+  thêm `muc_ke_hoach` (sửa lịch làm tăng `phien_ban`), `goi_pt_hoc_vien` (đổi trạng thái gói) và `bao_cao_vi_pham` (tài liệu
+  yêu cầu ghi lịch sử quyết định của quản trị). Khai báo ở một chỗ và dùng chung cho enum, `CHECK` và validator.
+- `ke_hoach`, `muc_ke_hoach`, `nhat_ky_hoat_dong` kế thừa `BaseAuditableEntity`: bốn cột audit thay cho `ngay_cap_nhat` của tài
+  liệu thiết kế, xem [README.md](README.md#quy-ước-chung-khi-làm-migration). `nguoi_tao` là chuỗi tên đăng nhập, còn
+  `ke_hoach.nguoi_tao_id` vẫn giữ làm khóa ngoại nghiệp vụ.
+- `lich_su_chinh_sua` và `chi_so_co_the` là bản ghi chỉ thêm, không sửa, nên chỉ kế thừa `BaseEntity` và giữ cột thời gian riêng.
+- Có thể thêm sau: khóa chống gửi trùng cho `nhat_ky_hoat_dong` khi mạng di động gửi lại (như `tin_nhan.ma_tin_nhan_client`).
 - `loai_muc` của mục phải khớp `loai_ke_hoach` của kế hoạch cha. Service kiểm tra, JSON `chi_tiet` kiểm tra theo schema của từng loại.
 - `chi_so_co_the` không chia sẻ mặc định cho mọi PT của học viên, chỉ chia sẻ khi gắn `ket_noi_pt_id`.
 - Index đề xuất: `ke_hoach(ket_noi_pt_id, loai_ke_hoach, trang_thai)`, `muc_ke_hoach(ke_hoach_id, trang_thai)`,

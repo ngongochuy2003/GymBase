@@ -7,7 +7,7 @@ namespace GymBase.BLAuth;
 /// </summary>
 public static class AuthErrorCodes
 {
-    /// <summary>409: thêm người dùng trùng tai_khoan với một người dùng còn hiệu lực.</summary>
+    /// <summary>409: thêm người dùng trùng ten_dang_nhap với một người dùng còn hiệu lực.</summary>
     public const string UserUsernameTaken = "USER_USERNAME_TAKEN";
 
     /// <summary>401: đăng nhập không thành công, không nói rõ lý do để tránh lộ trạng thái tài khoản.</summary>

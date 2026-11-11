@@ -37,7 +37,7 @@ test('reads code, detail, field errors and trace id from ProblemDetails', () => 
       detail: "Tên đăng nhập 'an.nv' đã tồn tại.",
       code: 'USER_USERNAME_TAKEN',
       trace_id: '00-abc-01',
-      errors: { tai_khoan: ["Tên đăng nhập 'an.nv' đã tồn tại."], bad: [1] },
+      errors: { ten_dang_nhap: ["Tên đăng nhập 'an.nv' đã tồn tại."], bad: [1] },
     }),
   );
   expect(mapped).toMatchObject({
@@ -46,7 +46,7 @@ test('reads code, detail, field errors and trace id from ProblemDetails', () => 
     message: "Tên đăng nhập 'an.nv' đã tồn tại.",
     traceId: '00-abc-01',
   });
-  expect(mapped.fieldErrors).toEqual({ tai_khoan: ["Tên đăng nhập 'an.nv' đã tồn tại."] });
+  expect(mapped.fieldErrors).toEqual({ ten_dang_nhap: ["Tên đăng nhập 'an.nv' đã tồn tại."] });
 });
 
 test('never shows server detail for 5xx but keeps code and trace id', () => {

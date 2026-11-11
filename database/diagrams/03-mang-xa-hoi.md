@@ -20,7 +20,9 @@ erDiagram
         string trang_thai "nhap, da_dang, an, go_bo"
         datetime ngay_dang
         datetime ngay_tao
-        datetime ngay_cap_nhat
+        string nguoi_tao
+        datetime ngay_chinh_sua
+        string nguoi_chinh_sua
     }
     tuong_tac_bai_viet {
         guid Id PK
