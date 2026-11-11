@@ -1,0 +1,36 @@
+meta {
+  name: Sửa
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{webApi}}/users/{{createdUserId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "ho_ten": "Học viên đã sửa",
+    "email": "moi@gymbase.local",
+    "vai_tro": "User",
+    "dang_hoat_dong": false
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Chạy "Thêm" trước. Không đổi được ten_dang_nhap.
+}

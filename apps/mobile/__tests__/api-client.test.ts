@@ -17,6 +17,54 @@ test.each([401, 403, 409, 422, 500])('maps HTTP %s without leaking server detail
   expect(mapped.message).not.toContain('private');
 });
 
+function httpError(status: number, data: unknown) {
+  const error = new AxiosError('server error');
+  error.response = {
+    status,
+    statusText: 'Error',
+    headers: {},
+    data,
+    config: { headers: new AxiosHeaders() },
+  };
+  return error;
+}
+
+test('reads code, detail, field errors and trace id from ProblemDetails', () => {
+  const mapped = toApiError(
+    httpError(409, {
+      status: 409,
+      title: 'Dữ liệu bị xung đột',
+      detail: "Tên đăng nhập 'an.nv' đã tồn tại.",
+      code: 'USER_USERNAME_TAKEN',
+      trace_id: '00-abc-01',
+      errors: { ten_dang_nhap: ["Tên đăng nhập 'an.nv' đã tồn tại."], bad: [1] },
+    }),
+  );
+  expect(mapped).toMatchObject({
+    status: 409,
+    code: 'USER_USERNAME_TAKEN',
+    message: "Tên đăng nhập 'an.nv' đã tồn tại.",
+    traceId: '00-abc-01',
+  });
+  expect(mapped.fieldErrors).toEqual({ ten_dang_nhap: ["Tên đăng nhập 'an.nv' đã tồn tại."] });
+});
+
+test('never shows server detail for 5xx but keeps code and trace id', () => {
+  const mapped = toApiError(
+    httpError(500, { detail: 'Connection string secret', code: 'INTERNAL_ERROR', trace_id: 't-1' }),
+  );
+  expect(mapped.message).not.toContain('secret');
+  expect(mapped.code).toBe('INTERNAL_ERROR');
+  expect(mapped.traceId).toBe('t-1');
+  expect(mapped.fieldErrors).toEqual({});
+});
+
+test('falls back to status based code and message without ProblemDetails', () => {
+  const mapped = toApiError(httpError(404, 'Not Found'));
+  expect(mapped.code).toBe('HTTP_404');
+  expect(mapped.message).toBe('Không tìm thấy dữ liệu.');
+});
+
 test('maps timeout and offline failures', () => {
   expect(toApiError(new AxiosError('timeout', 'ECONNABORTED')).code).toBe('TIMEOUT');
   expect(toApiError(new AxiosError('offline', 'ERR_NETWORK')).code).toBe('NETWORK');

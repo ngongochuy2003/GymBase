@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
+    <ProjectReference Include="..\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />
+    <ProjectReference Include="..\..\Data\GymBase.Persistence\GymBase.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

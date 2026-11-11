@@ -1,0 +1,23 @@
+meta {
+  name: Dọn dẹp: xóa tài khoản thử
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{webApi}}/users/{{testUserId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 204
+}

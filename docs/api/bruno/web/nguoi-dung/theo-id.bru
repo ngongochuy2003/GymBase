@@ -1,0 +1,23 @@
+meta {
+  name: Theo id (admin)
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{webApi}}/users/{{adminId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}

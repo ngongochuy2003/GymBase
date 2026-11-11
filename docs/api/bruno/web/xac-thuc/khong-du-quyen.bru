@@ -1,0 +1,27 @@
+meta {
+  name: Gọi API chỉ dành cho Admin (403)
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{webApi}}/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testAccessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 403
+}
+
+docs {
+  Tài khoản thử có vai trò User.
+}

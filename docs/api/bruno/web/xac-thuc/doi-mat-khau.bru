@@ -1,0 +1,34 @@
+meta {
+  name: Đổi mật khẩu
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{webApi}}/auth/change-password
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testAccessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "mat_khau_cu": "Mk-thu-nghiem-1",
+    "mat_khau_moi": "Mk-da-doi-moi-2"
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Thu hồi các phiên khác, phiên hiện tại vẫn dùng được.
+}

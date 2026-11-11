@@ -1,0 +1,31 @@
+meta {
+  name: Đăng nhập sai (401)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{webApi}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "ten_dang_nhap": "khong.ton.tai",
+    "mat_khau": "Mk-sai-mat-khau-1"
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.code: eq AUTH_INVALID_CREDENTIALS
+}
+
+docs {
+  Dùng tên không tồn tại để không làm khóa tạm tài khoản Admin.
+}

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
+    <ProjectReference Include="..\..\Data\GymBase.Entities\GymBase.Entities.csproj" />
+  </ItemGroup>
+
+</Project>

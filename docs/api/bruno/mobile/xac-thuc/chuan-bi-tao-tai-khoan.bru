@@ -1,0 +1,44 @@
+meta {
+  name: Chuẩn bị: tạo tài khoản thử
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{mobileApi}}/users
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "ten_dang_nhap": "{{testUserName}}",
+    "mat_khau": "Mk-thu-nghiem-1",
+    "ho_ten": "Tài khoản thử",
+    "vai_tro": "User"
+  }
+}
+
+script:pre-request {
+  bru.setVar("testUserName", "hv.thu." + Date.now());
+}
+
+assert {
+  res.status: eq 201
+}
+
+script:post-response {
+  bru.setVar("testUserId", res.body.id);
+}
+
+docs {
+  Các bước đổi mật khẩu và đăng xuất chạy trên tài khoản này, để không ảnh hưởng tài khoản Admin.
+}

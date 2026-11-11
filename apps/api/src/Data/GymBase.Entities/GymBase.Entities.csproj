@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Cấu trúc bảng và enum của cột, chia thư mục theo nhóm sở hữu bảng. Không chứa nghiệp vụ, không dùng EF Core. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,222 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}/apps/api"
+  },
+  "tasks": [
+    {
+      "label": "API: build",
+      "detail": "Build toàn bộ solution apps/api/GymBase.slnx",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "GymBase.slnx"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "API: test",
+      "detail": "Chạy toàn bộ test: Unit, Integration, Architecture",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "GymBase.slnx"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "API: chạy",
+      "detail": "GymBase.API: web ở http://localhost:5020/api/v1/web/, mobile ở http://localhost:5020/api/v1/mob/",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "API: build",
+        "_run API"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "API: chạy cho điện thoại thật (LAN)",
+      "detail": "GymBase.API nghe trên mọi địa chỉ mạng: http://<IP-máy-tính>:5020/api/v1/mob/",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "API: build",
+        "_run API (LAN)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mobile: chạy Expo",
+      "detail": "pnpm mobile — Metro ở http://localhost:8081. Trong terminal nhấn a (Android), w (web), r (reload)",
+      "type": "shell",
+      "command": "pnpm mobile",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "gymbase-expo",
+        "pattern": {
+          "regexp": "^__never_matches__$"
+        },
+        "background": {
+          "activeBegin": true,
+          "beginsPattern": "Starting project at",
+          "endsPattern": "Waiting on http|Logs for your project will appear below"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev",
+        "focus": true
+      }
+    },
+    {
+      "label": "Mobile: chạy Expo (xóa cache)",
+      "detail": "Như trên nhưng xóa cache Metro, dùng khi app hiển thị code cũ hoặc lỗi bundle lạ",
+      "type": "shell",
+      "command": "pnpm --filter @gymbase/mobile start -c",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "gymbase-expo",
+        "pattern": {
+          "regexp": "^__never_matches__$"
+        },
+        "background": {
+          "activeBegin": true,
+          "beginsPattern": "Starting project at",
+          "endsPattern": "Waiting on http|Logs for your project will appear below"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev",
+        "focus": true
+      }
+    },
+    {
+      "label": "Mobile: kiểm tra (lint + typecheck + test)",
+      "detail": "pnpm mobile:check",
+      "type": "shell",
+      "command": "pnpm mobile:check",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Dev: API + Expo",
+      "detail": "Build API rồi chạy song song GymBase.API (5020) và Expo (8081)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "API: build",
+        "_run API + Expo"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "_run API + Expo",
+      "hide": true,
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "_run API",
+        "Mobile: chạy Expo"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "_run API",
+      "hide": true,
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--no-build",
+        "--project",
+        "src/Host/GymBase.API",
+        "--launch-profile",
+        "http"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "gymbase-api",
+        "pattern": {
+          "regexp": "^__never_matches__$"
+        },
+        "background": {
+          "activeBegin": true,
+          "beginsPattern": "Using launch settings|Building",
+          "endsPattern": "Now listening on|Application started"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      }
+    },
+    {
+      "label": "_run API (LAN)",
+      "hide": true,
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--no-build",
+        "--project",
+        "src/Host/GymBase.API",
+        "--launch-profile",
+        "http",
+        "--urls",
+        "http://0.0.0.0:5020"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "gymbase-api",
+        "pattern": {
+          "regexp": "^__never_matches__$"
+        },
+        "background": {
+          "activeBegin": true,
+          "beginsPattern": "Using launch settings|Building",
+          "endsPattern": "Now listening on|Application started"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      }
+    }
+  ]
+}
