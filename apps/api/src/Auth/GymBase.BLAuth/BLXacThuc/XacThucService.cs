@@ -43,7 +43,7 @@ public sealed class XacThucService(
     private DateTime UtcNow => timeProvider.GetUtcNow().UtcDateTime;
 
     /// <exception cref="UnauthorizedException"><see cref="AuthErrorCodes.InvalidCredentials"/>: đăng nhập không thành công.</exception>
-    public async Task<KetQuaDangNhapDto> BLLoginAsync(DangNhapDto dto, CancellationToken cancellationToken)
+    public async Task<KetQuaDangNhapDto> BLDangNhapAsync(DangNhapDto dto, CancellationToken cancellationToken)
     {
         await loginValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
@@ -90,7 +90,7 @@ public sealed class XacThucService(
 
     /// <summary>Đổi refresh token lấy cặp token mới. Token cũ bị dùng lại sau khoảng ân hạn thì thu hồi cả phiên.</summary>
     /// <exception cref="UnauthorizedException">Token không hợp lệ, hết hạn, hoặc tài khoản không còn hoạt động.</exception>
-    public async Task<KetQuaDangNhapDto> BLRefreshAsync(LamMoiTokenDto dto, CancellationToken cancellationToken)
+    public async Task<KetQuaDangNhapDto> BLLamMoiTokenAsync(LamMoiTokenDto dto, CancellationToken cancellationToken)
     {
         await refreshValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
@@ -138,7 +138,7 @@ public sealed class XacThucService(
     }
 
     /// <summary>Thu hồi phiên hiện tại.</summary>
-    public async Task BLLogoutAsync(CancellationToken cancellationToken)
+    public async Task BLDangXuatAsync(CancellationToken cancellationToken)
     {
         if (currentUser.SessionId is { } sessionId)
         {
@@ -147,12 +147,12 @@ public sealed class XacThucService(
     }
 
     /// <exception cref="UnauthorizedException">Token không còn gắn với người dùng hợp lệ.</exception>
-    public async Task<TaiKhoanDto> BLGetCurrentUserAsync(CancellationToken cancellationToken) =>
+    public async Task<TaiKhoanDto> BLLayTaiKhoanHienTaiAsync(CancellationToken cancellationToken) =>
         ToDto(await GetCurrentUserEntityAsync(cancellationToken));
 
     /// <summary>Đổi mật khẩu của chính mình và thu hồi các phiên khác.</summary>
     /// <exception cref="ValidationFailedException">Mật khẩu hiện tại sai hoặc mật khẩu mới không hợp lệ.</exception>
-    public async Task BLChangePasswordAsync(DoiMatKhauDto dto, CancellationToken cancellationToken)
+    public async Task BLDoiMatKhauAsync(DoiMatKhauDto dto, CancellationToken cancellationToken)
     {
         await changePasswordValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
@@ -168,7 +168,7 @@ public sealed class XacThucService(
 
     /// <summary>Admin đặt lại mật khẩu cho người dùng và thu hồi mọi phiên của người đó.</summary>
     /// <exception cref="NotFoundException">Không có người dùng.</exception>
-    public async Task BLResetPasswordAsync(Guid userId, DatLaiMatKhauDto dto, CancellationToken cancellationToken)
+    public async Task BLDatLaiMatKhauAsync(Guid userId, DatLaiMatKhauDto dto, CancellationToken cancellationToken)
     {
         await resetPasswordValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
@@ -180,7 +180,7 @@ public sealed class XacThucService(
     }
 
     /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu tên đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
-    public async Task BLCreateOrResetAdminAsync(string userName, string password, CancellationToken cancellationToken)
+    public async Task BLTaoHoacDatLaiAdminAsync(string userName, string password, CancellationToken cancellationToken)
     {
         await resetPasswordValidator.ValidateOrThrowAsync(new DatLaiMatKhauDto { mat_khau_moi = password }, cancellationToken);
 

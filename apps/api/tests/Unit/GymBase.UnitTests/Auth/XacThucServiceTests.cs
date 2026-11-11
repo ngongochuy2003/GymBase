@@ -74,10 +74,10 @@ public class XacThucServiceTests
         new DatLaiMatKhauValidator());
 
     private Task<KetQuaDangNhapDto> Login(string userName = UserName, string password = Password) =>
-        Service().BLLoginAsync(new DangNhapDto { ten_dang_nhap = userName, mat_khau = password }, CancellationToken.None);
+        Service().BLDangNhapAsync(new DangNhapDto { ten_dang_nhap = userName, mat_khau = password }, CancellationToken.None);
 
     private Task<KetQuaDangNhapDto> Refresh(string token) =>
-        Service().BLRefreshAsync(new LamMoiTokenDto { refresh_token = token }, CancellationToken.None);
+        Service().BLLamMoiTokenAsync(new LamMoiTokenDto { refresh_token = token }, CancellationToken.None);
 
     private async Task AssertLoginRejected(string userName = UserName, string password = Password)
     {
@@ -292,7 +292,7 @@ public class XacThucServiceTests
         var login = await Login();
         var sessionId = _issuer.Last!.SessionId;
 
-        await Service(new FakeCurrentUser(UserName, _user.Id, sessionId)).BLLogoutAsync(CancellationToken.None);
+        await Service(new FakeCurrentUser(UserName, _user.Id, sessionId)).BLDangXuatAsync(CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => Refresh(login.refresh_token));
     }
@@ -304,7 +304,7 @@ public class XacThucServiceTests
         var current = await Login();
         var service = Service(new FakeCurrentUser(UserName, _user.Id, _issuer.Last!.SessionId));
 
-        await service.BLChangePasswordAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
+        await service.BLDoiMatKhauAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => Refresh(other.refresh_token));
         await Refresh(current.refresh_token);
@@ -317,7 +317,7 @@ public class XacThucServiceTests
     {
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
-        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLChangePasswordAsync(
+        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLDoiMatKhauAsync(
             new DoiMatKhauDto { mat_khau_cu = "khong-dung-roi", mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None));
 
         Assert.True(error.Errors!.ContainsKey("mat_khau_cu"));
@@ -332,7 +332,7 @@ public class XacThucServiceTests
     {
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
-        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLChangePasswordAsync(
+        var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLDoiMatKhauAsync(
             new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = newPassword }, CancellationToken.None));
 
         Assert.True(error.Errors!.ContainsKey("mat_khau_moi"));
@@ -343,7 +343,7 @@ public class XacThucServiceTests
     {
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
-        await service.BLChangePasswordAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "kH7#mQ2z" }, CancellationToken.None);
+        await service.BLDoiMatKhauAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = "kH7#mQ2z" }, CancellationToken.None);
 
         await Login(password: "kH7#mQ2z");
     }
@@ -353,7 +353,7 @@ public class XacThucServiceTests
     {
         var login = await Login();
 
-        await Service().BLResetPasswordAsync(_user.Id, new DatLaiMatKhauDto { mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
+        await Service().BLDatLaiMatKhauAsync(_user.Id, new DatLaiMatKhauDto { mat_khau_moi = "Mat-khau-moi-2" }, CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => Refresh(login.refresh_token));
     }
@@ -361,7 +361,7 @@ public class XacThucServiceTests
     [Fact]
     public async Task Create_admin_creates_a_new_admin_that_can_log_in()
     {
-        await Service().BLCreateOrResetAdminAsync("quan.tri", "Mat-khau-moi-2", CancellationToken.None);
+        await Service().BLTaoHoacDatLaiAdminAsync("quan.tri", "Mat-khau-moi-2", CancellationToken.None);
 
         var result = await Login("quan.tri", "Mat-khau-moi-2");
 
@@ -377,7 +377,7 @@ public class XacThucServiceTests
             new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator());
         var before = _userStore.Find(_user.Id)!.mat_khau_hash;
 
-        await service.BLLoginAsync(new DangNhapDto { ten_dang_nhap = UserName, mat_khau = Password }, CancellationToken.None);
+        await service.BLDangNhapAsync(new DangNhapDto { ten_dang_nhap = UserName, mat_khau = Password }, CancellationToken.None);
 
         Assert.NotEqual(before, _userStore.Find(_user.Id)!.mat_khau_hash);
     }

@@ -16,34 +16,34 @@ public abstract class AuthControllerBase(XacThucService authService) : BaseApiCo
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<ActionResult<KetQuaDangNhapDto>> Login(DangNhapDto dto, CancellationToken cancellationToken) =>
-        Ok(await authService.BLLoginAsync(dto, cancellationToken));
+        Ok(await authService.BLDangNhapAsync(dto, cancellationToken));
 
     /// <summary>Đổi refresh token lấy cặp token mới; refresh token cũ không dùng lại được.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<ActionResult<KetQuaDangNhapDto>> Refresh(LamMoiTokenDto dto, CancellationToken cancellationToken) =>
-        Ok(await authService.BLRefreshAsync(dto, cancellationToken));
+        Ok(await authService.BLLamMoiTokenAsync(dto, cancellationToken));
 
     /// <summary>Đăng xuất khỏi phiên hiện tại.</summary>
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        await authService.BLLogoutAsync(cancellationToken);
+        await authService.BLDangXuatAsync(cancellationToken);
         return NoContent();
     }
 
     /// <summary>Thông tin của người đang đăng nhập.</summary>
     [HttpGet("me")]
     public async Task<ActionResult<TaiKhoanDto>> Me(CancellationToken cancellationToken) =>
-        Ok(await authService.BLGetCurrentUserAsync(cancellationToken));
+        Ok(await authService.BLLayTaiKhoanHienTaiAsync(cancellationToken));
 
     /// <summary>Đổi mật khẩu của chính mình; các phiên khác bị thu hồi.</summary>
     [HttpPost("change-password")]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<IActionResult> ChangePassword(DoiMatKhauDto dto, CancellationToken cancellationToken)
     {
-        await authService.BLChangePasswordAsync(dto, cancellationToken);
+        await authService.BLDoiMatKhauAsync(dto, cancellationToken);
         return NoContent();
     }
 }

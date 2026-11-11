@@ -50,6 +50,24 @@ public sealed class ChannelRoutingTests : IAsyncLifetime
         Assert.StartsWith(path, response.Headers.Location!.AbsolutePath, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Controller đặt <c>[Route("buoi-tap")]</c> chỉ phục vụ URL tường minh có gạch nối; route lấy theo tên controller
+    /// (<c>/testbuoitap</c>) của lớp gốc không còn. Hướng dẫn: docs/api/huong-dan-them-api-nghiep-vu.md.
+    /// </summary>
+    [Fact]
+    public async Task Explicit_route_replaces_route_from_controller_name()
+    {
+        var id = Guid.CreateVersion7();
+
+        using var client = TestApp.ClientWithRole(_app, "User");
+
+        var explicitRoute = await client.PostAsync($"/api/v1/web/buoi-tap/{id}/xac-nhan", null);
+        var controllerNameRoute = await client.PostAsync($"/api/v1/web/testbuoitap/{id}/xac-nhan", null);
+
+        Assert.Equal(HttpStatusCode.OK, explicitRoute.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, controllerNameRoute.StatusCode);
+    }
+
     [Theory]
     [InlineData("/api/web/v1/testusers")]
     [InlineData("/api/mobile/v1/testusers")]

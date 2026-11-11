@@ -82,6 +82,18 @@ namespace GymBase.IntegrationTests.Controllers
         [HttpGet("boom")]
         public IActionResult Boom() => throw new InvalidOperationException("Chuỗi kết nối bí mật");
     }
+
+    /// <summary>Route tường minh có gạch nối, thay cho route lấy theo tên controller: /api/v1/web/buoi-tap/{id}/xac-nhan.</summary>
+    [AllowAnonymous]
+    [Route("buoi-tap")]
+    public abstract class TestBuoiTapControllerBase : BaseApiController
+    {
+        [HttpPost("{id:guid}/xac-nhan")]
+        public IActionResult XacNhan(Guid id) => Ok(new { id });
+    }
+
+    /// <summary>Lớp con rỗng như <c>AuthController</c>: route lấy từ lớp gốc trung gian, không phải từ tên controller.</summary>
+    public sealed class TestBuoiTapController : TestBuoiTapControllerBase;
 }
 
 namespace GymBase.IntegrationTests.Mob.Controllers

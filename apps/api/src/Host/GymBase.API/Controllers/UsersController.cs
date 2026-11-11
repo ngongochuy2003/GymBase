@@ -19,7 +19,7 @@ public sealed class UsersController(TaiKhoanService userService, XacThucService 
     [HttpPost("{id:guid}/reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id, DatLaiMatKhauDto dto, CancellationToken cancellationToken)
     {
-        await authService.BLResetPasswordAsync(id, dto, cancellationToken);
+        await authService.BLDatLaiMatKhauAsync(id, dto, cancellationToken);
         return NoContent();
     }
 }

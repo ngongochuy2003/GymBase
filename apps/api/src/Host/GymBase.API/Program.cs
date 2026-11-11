@@ -44,7 +44,7 @@ if (args is ["create-admin", var adminUserName])
     await using var scope = app.Services.CreateAsyncScope();
     try
     {
-        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLCreateOrResetAdminAsync(adminUserName, password, CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminUserName, password, CancellationToken.None);
     }
     catch (ValidationFailedException ex)
     {
