@@ -4,10 +4,15 @@ using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLAuth.BLXacThuc;
+using GymBase.BLBiz;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.DLAuth.MySql.DLPhienDangNhap;
 using GymBase.DLAuth.MySql.DLTaiKhoan;
+using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
+using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.DLBiz.MySql.DLHoSoNguoiDung;
+using GymBase.DLBiz.MySql.DLKetNoiPt;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +32,11 @@ builder.Services.AddAppPersistence(builder.Configuration);
 builder.Services.AddAuthBusiness();
 builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
 builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
+
+// Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
+builder.Services.AddBizBusiness();
+builder.Services.AddScoped<IHoSoNguoiDungRepository, HoSoNguoiDungRepository>();
+builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
 
 var app = builder.Build();
 

@@ -1,3 +1,4 @@
+using GymBase.Base.Auth;
 using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLAuth.BLXacThuc;
 using GymBase.Entities.Auth;
@@ -19,6 +20,7 @@ public static class AuthBusinessExtensions
         services.AddSingleton<LoginThrottle>();
         services.AddScoped<TaiKhoanService>();
         services.AddScoped<XacThucService>();
+        services.AddScoped<ITaiKhoanTrangThaiProvider, TaiKhoanTrangThaiService>();
         return services;
     }
 }

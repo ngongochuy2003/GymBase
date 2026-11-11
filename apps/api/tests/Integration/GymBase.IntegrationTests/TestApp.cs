@@ -5,8 +5,13 @@ using GymBase.Base.Hosting;
 using GymBase.Base.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.BLBiz;
+using GymBase.BLBiz.BLTruyCap;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
+using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
+using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.Entities.Biz.Enums;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -46,11 +51,25 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<IAuditLogWriter>(services => services.GetRequiredService<RecordingAuditLogWriter>());
             builder.Services.AddScoped<ITaiKhoanRepository, InMemoryTaiKhoanRepository>();
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
+            builder.Services.AddBizBusiness();
+            builder.Services.AddSingleton<InMemoryHoSoNguoiDungStore>();
+            builder.Services.AddScoped<IHoSoNguoiDungRepository, InMemoryHoSoNguoiDungRepository>();
+            builder.Services.AddScoped<IKetNoiPtRepository, InMemoryKetNoiPtRepository>();
 
             var app = builder.Build();
             app.UseAppApi();
             await app.StartAsync();
             return app;
+        }
+
+        /// <summary>Client mang access token thật của đúng tài khoản <paramref name="userId"/>, để thử quyền theo dữ liệu trong DB.</summary>
+        public static HttpClient ClientFor(WebApplication app, Guid userId, string role)
+        {
+            var token = app.Services.GetRequiredService<ITokenIssuer>()
+                .CreateAccessToken(new AccessTokenRequest(userId, "test.user", role, Guid.CreateVersion7()));
+            var client = app.GetTestClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+            return client;
         }
 
         /// <summary>Client mang access token thật do app cấp, với vai trò cho trước.</summary>
@@ -90,6 +109,37 @@ namespace GymBase.IntegrationTests.Controllers
     {
         [HttpPost("{id:guid}/xac-nhan")]
         public IActionResult XacNhan(Guid id) => Ok(new { id });
+    }
+
+    /// <summary>Mỗi endpoint dùng một policy phân quyền, và một endpoint kiểm tra quyền trên dữ liệu học viên: /api/v1/web/phan-quyen/...</summary>
+    [Route("phan-quyen")]
+    public sealed class PhanQuyenTestController : BaseApiController
+    {
+        [HttpGet("admin")]
+        [Authorize(Policy = AppPolicies.RequireAdmin)]
+        public IActionResult Admin() => Ok();
+
+        [HttpGet("ho-so")]
+        [Authorize(Policy = AppPolicies.RequireProfile)]
+        public IActionResult HoSo() => Ok();
+
+        [HttpGet("pt")]
+        [Authorize(Policy = AppPolicies.RequirePtProfile)]
+        public IActionResult Pt() => Ok();
+
+        [HttpGet("pt-xac-minh")]
+        [Authorize(Policy = AppPolicies.RequireVerifiedPt)]
+        public IActionResult PtXacMinh() => Ok();
+
+        /// <summary>Policy cho biết "là PT đã xác minh"; hàm BL mới biết "đúng học viên của PT này".</summary>
+        [HttpGet("hoc-vien/{hocVienId:guid}/dinh-duong")]
+        [Authorize(Policy = AppPolicies.RequireVerifiedPt)]
+        public async Task<IActionResult> DinhDuong(
+            Guid hocVienId, [FromServices] TruyCapService truyCap, [FromServices] ICurrentUser currentUser, CancellationToken cancellationToken)
+        {
+            await truyCap.BLKiemTraQuanLyHocVienAsync(currentUser.UserId!.Value, hocVienId, PhamViPhuTrach.dinh_duong, cancellationToken);
+            return Ok();
+        }
     }
 
     /// <summary>Lớp con rỗng như <c>AuthController</c>: route lấy từ lớp gốc trung gian, không phải từ tên controller.</summary>

@@ -37,5 +37,6 @@ Kiểm tra: `dotnet test GymBase.slnx` tại `apps/api`; test kiến trúc giữ
 | Đổi schema, thêm cột | [database/diagrams/README.md](../../database/diagrams/README.md) |
 | Trả response hoặc lỗi, thêm mã lỗi | [quy-uoc-response.md](../../docs/api/quy-uoc-response.md) |
 | Thêm sort hoặc filter | [sort-va-filter.md](../../docs/api/sort-va-filter.md) |
-| Đụng xác thực, token, phân quyền | [xac-thuc.md](../../docs/api/xac-thuc.md) |
+| Đụng đăng nhập, token | [xac-thuc.md](../../docs/api/xac-thuc.md) |
+| Giới hạn ai được làm gì: policy, quyền trên dữ liệu học viên | [phan-quyen.md](../../docs/api/phan-quyen.md) |
 | Chạy API hoặc dựng MySQL local | [cach-chay-api.md](../../docs/api/cach-chay-api.md) |

@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
     <ProjectReference Include="..\..\Contracts\GymBase.ModuleContracts\GymBase.ModuleContracts.csproj" />
     <ProjectReference Include="..\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />

@@ -1,3 +1,5 @@
+using GymBase.Base.Auth;
+using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Auth;
 using GymBase.BLAuth.BLTaiKhoan;
@@ -9,7 +11,8 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace GymBase.API.Controllers;
 
 /// <summary>Các endpoint đăng nhập, dùng chung cho web và mobile; kênh do lớp con quyết định theo namespace.</summary>
-public abstract class AuthControllerBase(XacThucService authService) : BaseApiController
+public abstract class AuthControllerBase(XacThucService authService, IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
+    : BaseApiController
 {
     /// <summary>Đăng nhập; 401 nếu không thành công, không nói rõ lý do.</summary>
     [HttpPost("login")]
@@ -38,6 +41,14 @@ public abstract class AuthControllerBase(XacThucService authService) : BaseApiCo
     public async Task<ActionResult<TaiKhoanDto>> Me(CancellationToken cancellationToken) =>
         Ok(await authService.BLLayTaiKhoanHienTaiAsync(cancellationToken));
 
+    /// <summary>
+    /// Quyền theo hồ sơ của người đang đăng nhập (nhóm, trạng thái xác minh PT, năng lực), tính từ database mỗi lần gọi.
+    /// Client dùng để hiện hoặc ẩn chức năng; backend vẫn kiểm tra lại ở từng request.
+    /// </summary>
+    [HttpGet("quyen-han")]
+    public async Task<ActionResult<QuyenHanDto>> QuyenHan(CancellationToken cancellationToken) =>
+        Ok(await quyenHanProvider.BLLayQuyenHanAsync(currentUser.UserId ?? throw new UnauthorizedException(), cancellationToken));
+
     /// <summary>Đổi mật khẩu của chính mình; các phiên khác bị thu hồi.</summary>
     [HttpPost("change-password")]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
@@ -49,4 +60,5 @@ public abstract class AuthControllerBase(XacThucService authService) : BaseApiCo
 }
 
 /// <summary>Đăng nhập cho web: /api/v1/web/auth.</summary>
-public sealed class AuthController(XacThucService authService) : AuthControllerBase(authService);
+public sealed class AuthController(XacThucService authService, IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
+    : AuthControllerBase(authService, quyenHanProvider, currentUser);
