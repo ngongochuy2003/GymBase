@@ -4,10 +4,14 @@ using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.TaiKhoan;
 using GymBase.BLAuth.XacThuc;
+using GymBase.BLBiz;
+using GymBase.BLBiz.BaiViet;
 using GymBase.BLFile;
 using GymBase.BLFile.Files;
 using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.MySql;
+using GymBase.DLBiz.Contract;
+using GymBase.DLBiz.MySql;
 using GymBase.DLFile.Contract;
 using GymBase.DLFile.MySql;
 using GymBase.Persistence;
@@ -17,7 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Host duy nhất cho cả web và mobile. Controller trong Controllers/ có tiền tố /api/v1/web,
 // controller trong Mob/Controllers/ có tiền tố /api/v1/mob.
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
-builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly);
+builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly, typeof(BaiVietService).Assembly);
 
 // Log kỹ thuật ra console và file, cấu hình ở mục "Serilog" của appsettings.
 builder.Services.AddAppLogging(builder.Configuration);
@@ -29,6 +33,11 @@ builder.Services.AddAppPersistence(builder.Configuration);
 builder.Services.AddAuthBusiness();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
+
+// BIZ: mạng xã hội (bài viết, tương tác thích/bình luận)
+builder.Services.AddBizBusiness();
+builder.Services.AddScoped<IBaiVietRepository, BaiVietRepository>();
+builder.Services.AddScoped<ITuongTacBaiVietRepository, TuongTacBaiVietRepository>();
 
 // File: lưu trữ tệp tin (Local/S3) và push notification
 builder.Services.AddFileBusiness(builder.Configuration);

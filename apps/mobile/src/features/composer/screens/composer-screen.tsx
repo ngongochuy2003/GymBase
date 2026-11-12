@@ -8,6 +8,8 @@ import { useToast } from '@/shared/ui-kit';
 import { ComposerCard } from '../components/composer-card';
 import { TopicSelector } from '../components/topic-selector';
 import { VisibilitySelector } from '../components/visibility-selector';
+import { useComposerState } from '../hooks/use-composer-state';
+import { useCreatePostMutation } from '../hooks/use-create-post';
 import {
   composerTabs,
   initialMedia,
@@ -16,7 +18,6 @@ import {
   topics,
   visibilityOptions,
 } from '../mock/composer-config';
-import { useComposerState } from '../hooks/use-composer-state';
 
 registerSection('composer', ComposerCard);
 registerSection('topicSelector', TopicSelector);
@@ -29,6 +30,7 @@ export function ComposerScreen() {
   const router = useRouter();
   const onTabPress = useTabNavigation();
   const { toast, show } = useToast();
+  const createPostMutation = useCreatePostMutation();
   const state = useComposerState({
     initialMedia,
     initialTopicIds: INITIAL_TOPICS,
@@ -64,11 +66,13 @@ export function ComposerScreen() {
         onBack: () => (router.canGoBack() ? router.back() : router.navigate('/home')),
         action: {
           label: 'Đăng',
-          disabled: !state.canSubmit,
+          disabled: !state.canSubmit || createPostMutation.isPending,
           onPress: () => {
             console.log('[composer] payload', state.payload);
             show('Đã đăng (mock)');
+            const submittedPayload = state.payload;
             state.reset();
+            createPostMutation.mutate({ payload: submittedPayload, authorName });
           },
         },
       },
@@ -115,7 +119,7 @@ export function ComposerScreen() {
       bottomTabs: composerTabs,
       activeTabId: undefined,
     };
-  }, [state, show, router, authorName, visibility]);
+  }, [state, show, router, authorName, visibility, createPostMutation]);
 
   return <ScreenRenderer config={config} onTabPress={onTabPress} overlay={toast} />;
 }

@@ -5,7 +5,10 @@ using GymBase.Base.Hosting;
 using GymBase.Base.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.TaiKhoan;
+using GymBase.BLBiz;
+using GymBase.BLBiz.BaiViet;
 using GymBase.DLAuth.Contract;
+using GymBase.DLBiz.Contract;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -35,16 +38,19 @@ namespace GymBase.IntegrationTests
             builder.WebHost.UseTestServer();
             builder.Configuration[$"{AppApiExtensions.CorsOriginsSection}:0"] = AllowedOrigin;
             builder.Configuration["Jwt:SigningKey"] = SigningKey;
-            builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly)
+            builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly, typeof(BaiVietService).Assembly)
                 .AddApplicationPart(typeof(TestApp).Assembly)
                 .AddApplicationPart(typeof(GymBase.API.Controllers.AuthController).Assembly);
             builder.Services.AddAuthBusiness();
+            builder.Services.AddBizBusiness();
             builder.Services.Configure<PasswordHasherOptions>(options => options.IterationCount = 1_000);
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
             builder.Services.AddSingleton<RecordingAuditLogWriter>();
             builder.Services.AddSingleton<IAuditLogWriter>(services => services.GetRequiredService<RecordingAuditLogWriter>());
             builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
+            builder.Services.AddScoped<IBaiVietRepository, InMemoryBaiVietRepository>();
+            builder.Services.AddScoped<ITuongTacBaiVietRepository, InMemoryTuongTacBaiVietRepository>();
 
             var app = builder.Build();
             app.UseAppApi();

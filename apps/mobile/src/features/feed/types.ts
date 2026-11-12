@@ -4,6 +4,7 @@ export interface FeedPostData {
   timeLabel: string;
   content: string;
   imageUri?: string;
+  topicId?: string;
   /** Số đếm theo id action (like, comment...). */
   counts?: Record<string, number>;
   /** Trạng thái bật ban đầu theo id action (đã thích, đã lưu...). */
