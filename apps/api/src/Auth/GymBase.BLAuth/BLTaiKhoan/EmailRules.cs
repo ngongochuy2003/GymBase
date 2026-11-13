@@ -12,6 +12,14 @@ public static class EmailRules
 
     public static string Normalize(string email) => email.Trim().ToLowerInvariant();
 
+    /// <summary>Phần trước dấu <c>@</c> của email đã bỏ khoảng trắng; cả chuỗi nếu không có <c>@</c>.</summary>
+    public static string LocalPart(string email)
+    {
+        var trimmed = email.Trim();
+        var at = trimmed.IndexOf('@');
+        return at > 0 ? trimmed[..at] : trimmed;
+    }
+
     public static bool IsValid(string email) => Format.IsValid(email.Trim());
 
     /// <summary>Bắt buộc, đúng định dạng (sau khi bỏ khoảng trắng hai đầu), tối đa <see cref="MaxLength"/> ký tự.</summary>

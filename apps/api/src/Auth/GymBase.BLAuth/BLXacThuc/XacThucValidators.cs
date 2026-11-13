@@ -16,6 +16,22 @@ public sealed class DangNhapValidator : AppValidator<DangNhapDto>
     }
 }
 
+public sealed class DangKyValidator : AppValidator<DangKyDto>
+{
+    public DangKyValidator()
+    {
+        RuleFor(x => x.ho_ten).NotEmpty().MaximumLength(100).WithName("Họ tên");
+        RuleFor(x => x.email).ValidEmail();
+        RuleFor(x => x.so_dien_thoai).ValidMobile();
+        RuleFor(x => x.mat_khau).ValidNewPassword()
+            .Must((dto, password) => !PasswordRules.ContainsUserName(password, EmailRules.LocalPart(dto.email ?? string.Empty)))
+            .WithMessage("Mật khẩu không được chứa email.");
+        RuleFor(x => x.dong_y_dieu_khoan).Equal(true)
+            .WithMessage("Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật.");
+        RuleFor(x => x.ten_thiet_bi).MaximumLength(100).WithName("Tên thiết bị");
+    }
+}
+
 public sealed class LamMoiTokenValidator : AppValidator<LamMoiTokenDto>
 {
     public LamMoiTokenValidator()

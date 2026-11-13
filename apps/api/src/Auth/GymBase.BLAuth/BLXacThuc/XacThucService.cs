@@ -28,7 +28,8 @@ public sealed class XacThucService(
     IValidator<DangNhapDto> loginValidator,
     IValidator<LamMoiTokenDto> refreshValidator,
     IValidator<DoiMatKhauDto> changePasswordValidator,
-    IValidator<DatLaiMatKhauDto> resetPasswordValidator)
+    IValidator<DatLaiMatKhauDto> resetPasswordValidator,
+    IValidator<DangKyDto> registerValidator)
 {
     private static readonly TimeSpan RefreshInactivity = TimeSpan.FromDays(30);
     private static readonly TimeSpan RefreshMaxLifetime = TimeSpan.FromDays(90);
@@ -72,6 +73,45 @@ public sealed class XacThucService(
             await users.DLUpdateAsync(user, cancellationToken);
         }
 
+        return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: false, cancellationToken);
+    }
+
+    // TODO(VERIFY): chưa xác minh email và số điện thoại, nên email mới chỉ là định danh đăng nhập chứ chưa chứng minh
+    //   quyền sở hữu; làm cùng quên mật khẩu qua email.
+    /// <summary>
+    /// Người mới tự đăng ký bằng mật khẩu, có phiên ngay (cùng dạng kết quả với đăng nhập, <c>tai_khoan_moi = true</c>).
+    /// Chưa xác minh email và số điện thoại.
+    /// </summary>
+    /// <exception cref="ValidationFailedException">Dữ liệu không hợp lệ hoặc chưa đồng ý điều khoản.</exception>
+    /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc tài khoản khác.</exception>
+    public async Task<KetQuaDangNhapDto> BLDangKyAsync(DangKyDto dto, CancellationToken cancellationToken)
+    {
+        await registerValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
+        var email = EmailRules.Normalize(dto.email);
+        if (await users.DLExistsByEmailAsync(email, null, cancellationToken))
+        {
+            throw new ConflictException(nameof(DangKyDto.email), $"Email '{email}' đã được dùng.", AuthErrorCodes.UserEmailTaken);
+        }
+
+        var now = UtcNow;
+        var user = new tai_khoan
+        {
+            email = email,
+            ho_ten = dto.ho_ten.Trim(),
+            so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai),
+            vai_tro = AppRoles.User,
+            ngay_dong_y_dieu_khoan = now,
+        };
+        user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
+        user.MarkCreated(email, now);
+        await users.DLInsertAsync(user, cancellationToken);
+
+        return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+    }
+
+    private async Task<KetQuaDangNhapDto> StartSessionAsync(tai_khoan user, string? deviceName, bool isNewAccount, CancellationToken cancellationToken)
+    {
         var now = UtcNow;
         var refreshToken = NewRefreshToken();
         var session = new phien_dang_nhap
@@ -80,12 +120,12 @@ public sealed class XacThucService(
             token_hash = Hash(refreshToken),
             ngay_het_han = now + RefreshInactivity,
             ngay_het_han_toi_da = now + RefreshMaxLifetime,
-            ten_thiet_bi = string.IsNullOrWhiteSpace(dto.ten_thiet_bi) ? null : dto.ten_thiet_bi.Trim(),
+            ten_thiet_bi = string.IsNullOrWhiteSpace(deviceName) ? null : deviceName.Trim(),
             ngay_tao = now,
         };
         await sessions.DLInsertAsync(session, cancellationToken);
 
-        return BuildResult(user, session.Id, refreshToken);
+        return BuildResult(user, session.Id, refreshToken, isNewAccount);
     }
 
     /// <summary>Đổi refresh token lấy cặp token mới. Token cũ bị dùng lại sau khoảng ân hạn thì thu hồi cả phiên.</summary>
@@ -134,7 +174,7 @@ public sealed class XacThucService(
             throw new UnauthorizedException();
         }
 
-        return BuildResult(user, session.Id, refreshToken);
+        return BuildResult(user, session.Id, refreshToken, isNewAccount: false);
     }
 
     /// <summary>Thu hồi phiên hiện tại.</summary>
@@ -245,10 +285,10 @@ public sealed class XacThucService(
         }
     }
 
-    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken)
+    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken, bool isNewAccount)
     {
         var token = tokenIssuer.CreateAccessToken(new AccessTokenRequest(user.Id, user.ten_dang_nhap ?? user.email ?? user.Id.ToString(), user.vai_tro, sessionId));
-        return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user));
+        return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user), isNewAccount);
     }
 
     private static void EnsureNotUserName(string password, string userName, string field)

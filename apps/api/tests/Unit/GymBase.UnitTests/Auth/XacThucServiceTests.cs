@@ -72,7 +72,8 @@ public class XacThucServiceTests
         new DangNhapValidator(),
         new LamMoiTokenValidator(),
         new DoiMatKhauValidator(),
-        new DatLaiMatKhauValidator());
+        new DatLaiMatKhauValidator(),
+            new DangKyValidator());
 
     private Task<KetQuaDangNhapDto> Login(string email = Email, string password = Password) =>
         Service().BLDangNhapAsync(new DangNhapDto { email = email, mat_khau = password }, CancellationToken.None);
@@ -387,7 +388,8 @@ public class XacThucServiceTests
         var stronger = new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
         var service = new XacThucService(
             new InMemoryTaiKhoanRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle,
-            new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator());
+            new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator(),
+        new DangKyValidator());
         var before = _userStore.Find(_user.Id)!.mat_khau_hash;
 
         await service.BLDangNhapAsync(new DangNhapDto { email = Email, mat_khau = Password }, CancellationToken.None);
