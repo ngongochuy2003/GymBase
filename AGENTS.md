@@ -14,4 +14,5 @@ Code tạm (mock, bỏ qua một kiểm tra) luôn kèm `// TODO(CHỦ_ĐỀ): .
 | Viết code tạm, mock, hoặc làm xong một chủ đề TODO | [docs/architecture/quy-uoc-todo.md](docs/architecture/quy-uoc-todo.md) |
 | Cần biết một quy ước đã chốt chưa (Q1 đến Q9) | [docs/api/viec-con-lai-base.md](docs/api/viec-con-lai-base.md) |
 | Làm mobile | [docs/onboarding/mobile-base.md](docs/onboarding/mobile-base.md) |
+| Chạy app mobile với backend, đăng nhập thử | [docs/onboarding/chay-mobile.md](docs/onboarding/chay-mobile.md) |
 | Tìm lý do một quyết định kiến trúc | [docs/architecture/decisions.md](docs/architecture/decisions.md) |

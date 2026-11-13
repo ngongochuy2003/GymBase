@@ -80,8 +80,7 @@ Nhấn `Ctrl+Shift+P`, chọn **Tasks: Run Task**, rồi chọn task:
 | `Mobile: chạy Expo (xóa cache)` | Như trên kèm `-c`, dùng khi app hiển thị code cũ hoặc lỗi bundle lạ |
 | `Mobile: kiểm tra (lint + typecheck + test)` | `pnpm mobile:check` |
 
-App mobile mặc định chạy chế độ demo (không gọi API). Muốn app gọi API thì cấu hình
-`apps/mobile/.env` theo mục 4. Muốn dừng API thì bấm vào terminal của task rồi nhấn Ctrl+C,
+App mobile cần `apps/mobile/.env` trỏ tới API (xem mục 5 và [chay-mobile.md](../onboarding/chay-mobile.md)). Muốn dừng API thì bấm vào terminal của task rồi nhấn Ctrl+C,
 hoặc chạy **Tasks: Terminate Task**.
 
 ## 3. Chạy bằng dòng lệnh
@@ -110,18 +109,20 @@ Id người dùng mẫu (sau khi nạp seed): `0193f0a0-0000-7000-8000-000000000
 
 ## 5. Cho app mobile gọi được API
 
-Cấu hình `apps/mobile/.env` (xem `.env.example`). Base URL **gồm cả tiền tố `/api/v1/mob`**:
+Cấu hình `apps/mobile/.env` (xem `.env.example`). `EXPO_PUBLIC_API_URL` là địa chỉ **host của API, không kèm** tiền tố
+`/api/v1/mob` (app tự thêm). Đăng nhập luôn gọi API thật; `EXPO_PUBLIC_DATA_MODE=demo` chỉ chọn dữ liệu mẫu cho lịch tập.
+Hướng dẫn từng bước từ đầu: [chay-mobile.md](../onboarding/chay-mobile.md).
 
 ```text
-EXPO_PUBLIC_DATA_MODE=api
+EXPO_PUBLIC_DATA_MODE=demo
 EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 ```
 
 | App chạy trên | `EXPO_PUBLIC_API_URL` | Cách chạy API |
 | --- | --- | --- |
-| Trình duyệt (Expo web), iOS Simulator | `http://localhost:5020/api/v1/mob` | Như mục 1–3 |
-| Android Emulator | `http://10.0.2.2:5020/api/v1/mob` | Như mục 1–3 |
-| Điện thoại thật | `http://<IP-máy-tính>:5020/api/v1/mob` | Phải lắng nghe trên mọi địa chỉ mạng, xem bên dưới |
+| Trình duyệt (Expo web), iOS Simulator | `http://localhost:5020` | Như mục 1–3 |
+| Android Emulator | `http://10.0.2.2:5020` | Như mục 1–3 |
+| Điện thoại thật | `http://<IP-máy-tính>:5020` | Phải lắng nghe trên mọi địa chỉ mạng, xem bên dưới |
 
 `10.0.2.2` là địa chỉ mà Android Emulator dùng để trỏ về máy tính chạy nó.
 
