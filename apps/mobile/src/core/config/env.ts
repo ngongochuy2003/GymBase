@@ -1,16 +1,13 @@
 import { z } from 'zod';
 
 const schema = z.object({
+  // Chỉ quyết định nguồn dữ liệu lịch tập; đăng nhập luôn gọi API thật.
   dataMode: z.enum(['demo', 'api']).default('demo'),
-  apiUrl: z.union([z.literal(''), z.url()]).default(''),
+  apiUrl: z.url({ error: 'EXPO_PUBLIC_API_URL là bắt buộc và phải là một URL hợp lệ.' }),
 });
 
 export function parseEnv(input: { dataMode?: string; apiUrl?: string }) {
-  const result = schema.parse(input);
-  if (result.dataMode === 'api' && !result.apiUrl) {
-    throw new Error('EXPO_PUBLIC_API_URL is required in API mode.');
-  }
-  return result;
+  return schema.parse(input);
 }
 
 export const env = parseEnv({

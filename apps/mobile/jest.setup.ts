@@ -1,5 +1,8 @@
 import mockSafeAreaContext from 'react-native-safe-area-context/jest/mock';
 
+// Đặt trước khi test import `@/core/config/env` (setupFilesAfterEnv chạy trước file test).
+process.env.EXPO_PUBLIC_API_URL = 'http://localhost:5020';
+
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
   setItemAsync: jest.fn(async () => undefined),

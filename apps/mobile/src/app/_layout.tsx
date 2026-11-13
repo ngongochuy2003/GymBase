@@ -25,7 +25,7 @@ function Navigation() {
         <Stack.Protected guard={status === 'guest'}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={status === 'demo'}>
+        <Stack.Protected guard={status === 'authenticated'}>
           <Stack.Screen name="(protected)" />
         </Stack.Protected>
       </Stack>

@@ -1,6 +1,6 @@
 # Feature boundaries
 
-`auth` là màn hình vào demo; `pt-sessions` có màn hình lịch tập, typed repository,
+`auth` là màn chào mừng và đăng nhập; `pt-sessions` có màn hình lịch tập, typed repository,
 query keys, hook và UI; `profile` chứa tùy chỉnh giao diện/thoát phiên.
 
 Các module V1 tiếp theo: `trainers`, `trainees`, `workouts`, `session-packages`.
