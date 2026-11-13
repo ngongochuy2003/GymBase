@@ -4,13 +4,10 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Logging;
 using GymBase.BLAuth;
-using GymBase.BLAuth.TaiKhoan;
-using GymBase.BLBiz;
-using GymBase.BLBiz.BaiViet;
-using GymBase.DLAuth.Contract;
-using GymBase.DLBiz.Contract;
 using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLBiz;
+using GymBase.BLBiz.BaiViet;
+using GymBase.DLBiz.Contract;
 using GymBase.BLBiz.BLTruyCap;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
@@ -26,6 +23,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace GymBase.IntegrationTests
 {
@@ -43,11 +41,11 @@ namespace GymBase.IntegrationTests
         public static async Task<WebApplication> StartAsync()
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Production });
+            builder.Logging.ClearProviders();
             builder.WebHost.UseTestServer();
             builder.Configuration[$"{AppApiExtensions.CorsOriginsSection}:0"] = AllowedOrigin;
             builder.Configuration["Jwt:SigningKey"] = SigningKey;
-            builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly, typeof(BaiVietService).Assembly)
-            builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly)
+            builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(BaiVietService).Assembly)
                 .AddApplicationPart(typeof(TestApp).Assembly)
                 .AddApplicationPart(typeof(GymBase.API.Controllers.AuthController).Assembly);
             builder.Services.AddAuthBusiness();

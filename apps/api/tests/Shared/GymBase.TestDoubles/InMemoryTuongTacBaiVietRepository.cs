@@ -8,7 +8,7 @@ namespace GymBase.TestDoubles;
 public sealed class InMemoryTuongTacBaiVietRepository(InMemoryStore<tuong_tac_bai_viet> store)
     : InMemoryBaseRepository<tuong_tac_bai_viet>(store), ITuongTacBaiVietRepository
 {
-    public Task<IReadOnlyDictionary<Guid, PostInteractionSummary>> GetSummariesByPostIdsAsync(
+    public Task<IReadOnlyDictionary<Guid, PostInteractionSummary>> DLGetSummariesByPostIdsAsync(
         IReadOnlyCollection<Guid> postIds,
         Guid? currentUserId,
         CancellationToken cancellationToken)
@@ -31,7 +31,7 @@ public sealed class InMemoryTuongTacBaiVietRepository(InMemoryStore<tuong_tac_ba
         return Task.FromResult<IReadOnlyDictionary<Guid, PostInteractionSummary>>(dict);
     }
 
-    public Task<tuong_tac_bai_viet?> FindLikeByUserAsync(
+    public Task<tuong_tac_bai_viet?> DLFindLikeByUserAsync(
         Guid baiVietId,
         Guid taiKhoanId,
         CancellationToken cancellationToken) =>
@@ -40,7 +40,7 @@ public sealed class InMemoryTuongTacBaiVietRepository(InMemoryStore<tuong_tac_ba
                  && t.tai_khoan_id == taiKhoanId
                  && t.loai_tuong_tac == LoaiTuongTac.thich));
 
-    public Task<IReadOnlyList<tuong_tac_bai_viet>> GetCommentsByPostIdAsync(
+    public Task<IReadOnlyList<tuong_tac_bai_viet>> DLGetCommentsByPostIdAsync(
         Guid baiVietId,
         CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<tuong_tac_bai_viet>>(

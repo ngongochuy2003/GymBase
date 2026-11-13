@@ -2,9 +2,9 @@ import * as SecureStore from 'expo-secure-store';
 import { tokenStorage } from '@/core/storage/token-storage';
 import { parseEnv } from '@/core/config/env';
 
-test('allows backend-free demo but requires valid URL for API mode', () => {
-  expect(parseEnv({}).dataMode).toBe('demo');
-  expect(() => parseEnv({ dataMode: 'api' })).toThrow('EXPO_PUBLIC_API_URL');
+test('requires a backend URL for the API application', () => {
+  expect(() => parseEnv({})).toThrow();
+  expect(parseEnv({ apiUrl: 'http://localhost:5020' }).apiUrl).toBe('http://localhost:5020');
   expect(() => parseEnv({ apiUrl: 'not-a-url' })).toThrow();
 });
 

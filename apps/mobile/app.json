@@ -15,6 +15,13 @@
           "color": "#FF231F7C",
           "defaultChannel": "gymbase_urgent_messages"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phép GymBase truy cập thư viện ảnh để chọn ảnh và video đăng bài.",
+          "cameraPermission": "Cho phép GymBase truy cập máy ảnh để chụp ảnh và quay video đăng bài."
+        }
       ]
     ],
     "android": {

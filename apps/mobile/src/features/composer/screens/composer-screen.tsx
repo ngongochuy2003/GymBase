@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
+import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/core/auth/session';
-import { currentUser } from '@/shared/mock/current-user';
 import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
 import { useToast } from '@/shared/ui-kit';
@@ -12,12 +12,10 @@ import { useComposerState } from '../hooks/use-composer-state';
 import { useCreatePostMutation } from '../hooks/use-create-post';
 import {
   composerTabs,
-  initialMedia,
-  mockMediaPool,
   toolbarDefinitions,
   topics,
   visibilityOptions,
-} from '../mock/composer-config';
+} from '../config/composer-config';
 
 registerSection('composer', ComposerCard);
 registerSection('topicSelector', TopicSelector);
@@ -32,13 +30,17 @@ export function ComposerScreen() {
   const { toast, show } = useToast();
   const createPostMutation = useCreatePostMutation();
   const state = useComposerState({
-    initialMedia,
     initialTopicIds: INITIAL_TOPICS,
     initialVisibilityId: visibilityOptions[0]?.id ?? '',
-    mediaPool: mockMediaPool,
+    onPermissionDenied: (message) => {
+      show(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Cần quyền truy cập', message);
+      }
+    },
   });
 
-  const authorName = user?.name ?? currentUser.name;
+  const authorName = user?.ho_ten ?? '';
   const visibility =
     visibilityOptions.find((o) => o.id === state.visibilityId) ?? visibilityOptions[0];
 
@@ -58,21 +60,31 @@ export function ComposerScreen() {
       id: 'composer',
       header: {
         rightActions: DEFAULT_HEADER_ACTIONS,
-        avatarUri: currentUser.avatarUri,
         onAvatarPress: () => router.navigate('/profile'),
       },
       subHeader: {
         title: 'Đăng bài',
         onBack: () => (router.canGoBack() ? router.back() : router.navigate('/home')),
         action: {
-          label: 'Đăng',
+          label: createPostMutation.isPending ? 'Đang đăng...' : 'Đăng',
           disabled: !state.canSubmit || createPostMutation.isPending,
           onPress: () => {
-            console.log('[composer] payload', state.payload);
-            show('Đã đăng (mock)');
+            show('Đang đăng bài...');
             const submittedPayload = state.payload;
-            state.reset();
-            createPostMutation.mutate({ payload: submittedPayload, authorName });
+            createPostMutation.mutate(
+              { payload: submittedPayload },
+              {
+                onSuccess: () => {
+                  show('Đăng bài thành công!');
+                  state.reset();
+                  if (router.canGoBack()) router.back();
+                  else router.navigate('/home');
+                },
+                onError: () => {
+                  show('Đăng bài thất bại. Vui lòng thử lại.');
+                },
+              },
+            );
           },
         },
       },
@@ -81,7 +93,7 @@ export function ComposerScreen() {
           id: 'composer',
           type: 'composer',
           props: {
-            author: { name: authorName, avatarUri: currentUser.avatarUri },
+            author: { name: authorName },
             visibility: { label: visibility?.label ?? '', icon: visibility?.icon ?? 'globe' },
             onVisibilityPress: cycleVisibility,
             text: state.text,

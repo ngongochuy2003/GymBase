@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GymBase.BLFile.Files;
+namespace GymBase.BLFile.BLFiles;
 
 public sealed record FileUploadResultDto(
     [property: JsonPropertyName("file_id")] Guid FileId,

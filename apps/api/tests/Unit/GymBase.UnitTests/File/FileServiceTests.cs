@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
-using GymBase.BLFile.Files;
-using GymBase.BLFile.Processing;
-using GymBase.BLFile.Storage;
+using GymBase.BLFile.BLFiles;
+using GymBase.BLFile.BLProcessing;
+using GymBase.BLFile.BLStorage;
 using GymBase.Entities.File;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Http;
@@ -47,14 +47,14 @@ public class FileServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task UploadAsync_ValidImage_ShouldSaveAndReturnReadyMetadata()
+    public async Task BLUploadAsync_ValidImage_ShouldSaveAndReturnReadyMetadata()
     {
         var jpegBytes = CreateSampleJpeg(100, 100);
         var formFile = CreateFormFile(jpegBytes, "avatar.jpg", "image/jpeg");
         var userId = Guid.NewGuid();
         var user = CreateUser(userId);
 
-        var result = await _service.UploadAsync(user, formFile, "avatar");
+        var result = await _service.BLUploadAsync(user, formFile, "avatar");
 
         Assert.NotNull(result);
         Assert.Equal("avatar.jpg", result.OriginalName);
@@ -63,31 +63,31 @@ public class FileServiceTests : IDisposable
         Assert.Equal("LOCAL", result.Provider);
         Assert.False(string.IsNullOrWhiteSpace(result.Blurhash));
 
-        var dbEntity = await _repository.GetByIdAsync(result.FileId, CancellationToken.None);
+        var dbEntity = await _repository.DLGetByIdAsync(result.FileId, CancellationToken.None);
         Assert.NotNull(dbEntity);
         Assert.Equal("READY", dbEntity.trang_thai);
     }
 
     [Fact]
-    public async Task UploadAsync_FakeImage_ShouldThrowInvalidDataException()
+    public async Task BLUploadAsync_FakeImage_ShouldThrowInvalidDataException()
     {
         var fakeBytes = "This is fake text file pretending to be jpg"u8.ToArray();
         var formFile = CreateFormFile(fakeBytes, "fake.jpg", "image/jpeg");
         var user = CreateUser(Guid.NewGuid());
 
         await Assert.ThrowsAsync<InvalidDataException>(() =>
-            _service.UploadAsync(user, formFile, "avatar"));
+            _service.BLUploadAsync(user, formFile, "avatar"));
     }
 
     [Fact]
-    public async Task UploadAsync_InvalidPurpose_ShouldThrowArgumentException()
+    public async Task BLUploadAsync_InvalidPurpose_ShouldThrowArgumentException()
     {
         var jpegBytes = CreateSampleJpeg(50, 50);
         var formFile = CreateFormFile(jpegBytes, "img.jpg", "image/jpeg");
         var user = CreateUser(Guid.NewGuid());
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _service.UploadAsync(user, formFile, "invalid_purpose"));
+            _service.BLUploadAsync(user, formFile, "invalid_purpose"));
     }
 
     public void Dispose()

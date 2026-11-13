@@ -1,17 +1,14 @@
 import type { AxiosInstance } from 'axios';
-import { createApiClient } from '@/core/api/client';
+import { createMobHttpClient, DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
 import { env } from '@/core/config/env';
-import { tokenStorage } from '@/core/storage/token-storage';
+import { uploadMultipartFile } from '@/shared/file/file-uploader';
 import type { ComposerPayload } from '../types';
-
-const DEFAULT_LOCAL_API_URL = 'http://localhost:5020';
 
 export interface BaiVietCreateRequestDto {
   noi_dung: string | null;
   che_do_hien_thi: string;
   chu_de?: string;
   hinh_anh_urls: string[];
-  ten_tac_gia?: string;
 }
 
 export interface BaiVietCreatedResponseDto {
@@ -32,7 +29,6 @@ export interface BaiVietCreatedResponseDto {
 
 export function toBaiVietCreateDto(
   payload: ComposerPayload,
-  authorName?: string,
 ): BaiVietCreateRequestDto {
   const visibility =
     payload.visibilityId === 'followers' || payload.visibilityId === 'nguoi_theo_doi'
@@ -46,54 +42,38 @@ export function toBaiVietCreateDto(
     che_do_hien_thi: visibility,
     chu_de: payload.topicIds[0] ?? 'workout',
     hinh_anh_urls: payload.mediaUris,
-    ten_tac_gia: authorName?.trim() || undefined,
   };
 }
 
-function resolveMobApiBaseUrl(overrideUrl?: string): string {
-  const raw = (overrideUrl || env.apiUrl || DEFAULT_LOCAL_API_URL).trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1/mob') ? raw : `${raw}/api/v1/mob`;
-}
-
-function createComposerHttpClient(overrideUrl?: string): AxiosInstance {
-  return createApiClient(resolveMobApiBaseUrl(overrideUrl), {
-    getAccessToken: async () => (await tokenStorage.read())?.accessToken ?? null,
-    refresh: async () => null,
-    onUnauthorized: async () => undefined,
-  });
-}
-
 export interface ComposerRepository {
-  createPost(payload: ComposerPayload, authorName?: string): Promise<BaiVietCreatedResponseDto>;
+  createPost(payload: ComposerPayload): Promise<BaiVietCreatedResponseDto>;
 }
 
 export function createComposerRepository(
-  client: AxiosInstance = createComposerHttpClient(),
+  client: AxiosInstance = createMobHttpClient(),
 ): ComposerRepository {
   return {
-    async createPost(
-      payload: ComposerPayload,
-      authorName?: string,
-    ): Promise<BaiVietCreatedResponseDto> {
-      const body = toBaiVietCreateDto(payload, authorName);
+    async createPost(payload: ComposerPayload): Promise<BaiVietCreatedResponseDto> {
+      const body = toBaiVietCreateDto(payload);
 
-      if (process.env.NODE_ENV === 'test' && !env.apiUrl) {
-        return {
-          id: 'mock-created-post-id',
-          tac_gia_id: '0193f0a0-0000-7000-8000-000000000002',
-          noi_dung: body.noi_dung,
-          loai_bai_viet: body.hinh_anh_urls.length > 0 ? 'hon_hop' : 'van_ban',
-          che_do_hien_thi: body.che_do_hien_thi,
-          trang_thai: 'da_dang',
-          chu_de: body.chu_de ?? 'workout',
-          hinh_anh_urls: body.hinh_anh_urls,
-          so_luot_thich: 0,
-          so_binh_luan: 0,
-          da_thich: false,
-          ngay_dang: new Date().toISOString(),
-          ngay_tao: new Date().toISOString(),
-        };
+
+      // Tự động upload các ảnh từ thiết bị (blob: hoặc file://) lên backend
+      const apiHostBase = (env.apiUrl || DEFAULT_LOCAL_API_URL)
+        .replace(/\/api\/v1\/mob\/?$/, '')
+        .replace(/\/+$/, '');
+
+      const processedMediaUrls: string[] = [];
+      for (const uri of body.hinh_anh_urls) {
+        if (uri.startsWith('http://') || uri.startsWith('https://')) {
+          processedMediaUrls.push(uri);
+        } else {
+          const uploadResult = await uploadMultipartFile(uri, 'post', { apiBaseUrl: apiHostBase });
+          const resultUrl = uploadResult?.content_url;
+          if (!resultUrl) throw new Error('API không trả về URL sau khi tải tệp lên.');
+          processedMediaUrls.push(resultUrl);
+        }
       }
+      body.hinh_anh_urls = processedMediaUrls;
 
       const response = await client.post<BaiVietCreatedResponseDto>('/baiviet', body);
       return response.data;

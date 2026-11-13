@@ -1,4 +1,4 @@
-﻿namespace GymBase.BLFile.Storage;
+﻿namespace GymBase.BLFile.BLStorage;
 
 public interface IStorageResolver
 {

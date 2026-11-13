@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GymBase.BLFile.Notifications;
+namespace GymBase.BLFile.BLNotifications;
 
 public sealed class FcmV1PushNotificationService : IPushNotificationService
 {
@@ -16,7 +16,7 @@ public sealed class FcmV1PushNotificationService : IPushNotificationService
         _logger = logger;
     }
 
-    public Task<PushNotificationResult> SendAsync(PushNotificationRequest request, CancellationToken ct = default)
+    public Task<PushNotificationResult> BLSendAsync(PushNotificationRequest request, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.DeviceToken))
         {
@@ -26,7 +26,7 @@ public sealed class FcmV1PushNotificationService : IPushNotificationService
                 ErrorMessage: "DeviceToken không được để trống."));
         }
 
-        var fcmPayload = BuildFcmHttpV1Payload(request);
+        var fcmPayload = BLBuildFcmHttpV1Payload(request);
 
         if (_options.SimulateMode)
         {
@@ -49,7 +49,7 @@ public sealed class FcmV1PushNotificationService : IPushNotificationService
             FcmPayload: fcmPayload));
     }
 
-    public object BuildFcmHttpV1Payload(PushNotificationRequest request)
+    public object BLBuildFcmHttpV1Payload(PushNotificationRequest request)
     {
         var channelId = string.IsNullOrWhiteSpace(request.ChannelId)
             ? _options.DefaultChannelId

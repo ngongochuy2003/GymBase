@@ -1,4 +1,4 @@
-﻿namespace GymBase.BLFile.Storage;
+﻿namespace GymBase.BLFile.BLStorage;
 
 public record StoredObjectInfo(long Length, string ContentType);
 

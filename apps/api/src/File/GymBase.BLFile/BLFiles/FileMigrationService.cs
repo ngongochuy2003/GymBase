@@ -1,8 +1,8 @@
-using GymBase.BLFile.Storage;
+using GymBase.BLFile.BLStorage;
 using GymBase.DLFile.Contract;
 using Microsoft.Extensions.Logging;
 
-namespace GymBase.BLFile.Files;
+namespace GymBase.BLFile.BLFiles;
 
 public sealed class FileMigrationService : IFileMigrationService
 {
@@ -20,12 +20,12 @@ public sealed class FileMigrationService : IFileMigrationService
         _logger = logger;
     }
 
-    public async Task<MigrationResultDto> MigrateLocalToS3Async(int batchSize = 50, CancellationToken ct = default)
+    public async Task<MigrationResultDto> BLMigrateLocalToS3Async(int batchSize = 50, CancellationToken ct = default)
     {
         var localProvider = _storageResolver.Resolve("LOCAL");
         var s3Provider = _storageResolver.Resolve("S3");
 
-        var pendingFiles = await _tepTinRepository.GetPendingMigrationAsync("LOCAL", batchSize, ct);
+        var pendingFiles = await _tepTinRepository.DLGetPendingMigrationAsync("LOCAL", batchSize, ct);
         var successCount = 0;
         var failureCount = 0;
         var errors = new List<string>();
@@ -47,7 +47,7 @@ public sealed class FileMigrationService : IFileMigrationService
 
                 tepTin.nha_cung_cap = "S3";
                 tepTin.ngay_cap_nhat = DateTime.UtcNow;
-                await _tepTinRepository.UpdateAsync(tepTin, ct);
+                await _tepTinRepository.DLUpdateAsync(tepTin, ct);
 
                 successCount++;
                 _logger.LogInformation("Migrate file {FileId} sang S3 thành công.", tepTin.Id);

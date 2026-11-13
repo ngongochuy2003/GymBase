@@ -14,7 +14,7 @@ public sealed class TepTinRepository(AppDbContext db) : BaseRepository<tep_tin>(
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
-    public async Task<IReadOnlyList<tep_tin>> GetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
+    public async Task<IReadOnlyList<tep_tin>> DLGetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
     {
         return await Set
             .Where(t => t.nha_cung_cap == provider && t.trang_thai == "READY")

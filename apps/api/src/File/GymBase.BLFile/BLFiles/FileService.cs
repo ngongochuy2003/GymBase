@@ -1,13 +1,13 @@
 using System.Security.Claims;
-using GymBase.BLFile.Processing;
-using GymBase.BLFile.Storage;
+using GymBase.BLFile.BLProcessing;
+using GymBase.BLFile.BLStorage;
 using GymBase.DLFile.Contract;
 using GymBase.Entities.File;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GymBase.BLFile.Files;
+namespace GymBase.BLFile.BLFiles;
 
 public sealed class FileService : IFileService
 {
@@ -36,7 +36,7 @@ public sealed class FileService : IFileService
         _logger = logger;
     }
 
-    public async Task<FileUploadResultDto> UploadAsync(
+    public async Task<FileUploadResultDto> BLUploadAsync(
         ClaimsPrincipal user,
         IFormFile file,
         string purpose,
@@ -88,7 +88,7 @@ public sealed class FileService : IFileService
             ngay_tao = DateTime.UtcNow
         };
 
-        await _tepTinRepository.InsertAsync(entity, ct);
+        await _tepTinRepository.DLInsertAsync(entity, ct);
 
         try
         {
@@ -97,7 +97,7 @@ public sealed class FileService : IFileService
 
             entity.trang_thai = "READY";
             entity.ngay_cap_nhat = DateTime.UtcNow;
-            await _tepTinRepository.UpdateAsync(entity, ct);
+            await _tepTinRepository.DLUpdateAsync(entity, ct);
 
             _logger.LogInformation("Upload tệp tin thành công: Id={FileId}, Provider={Provider}, Key={Key}",
                 fileId, provider.ProviderName, storageKey);
@@ -119,7 +119,7 @@ public sealed class FileService : IFileService
 
             entity.trang_thai = "FAILED";
             entity.ngay_cap_nhat = DateTime.UtcNow;
-            try { await _tepTinRepository.UpdateAsync(entity, ct); } catch { }
+            try { await _tepTinRepository.DLUpdateAsync(entity, ct); } catch { }
 
             try { await provider.DeleteAsync(storageKey, ct); } catch { }
 
@@ -127,13 +127,13 @@ public sealed class FileService : IFileService
         }
     }
 
-    public async Task<FileContentStreamDto> OpenAuthorizedAsync(
+    public async Task<FileContentStreamDto> BLOpenAuthorizedAsync(
         ClaimsPrincipal user,
         Guid id,
         CancellationToken ct = default)
     {
-        var entity = await _tepTinRepository.GetByIdAsync(id, ct);
-        if (entity == null || entity.trang_thai != "READY" || entity.is_deleted)
+        var entity = await _tepTinRepository.DLGetByIdAsync(id, ct);
+        if (entity == null || entity.trang_thai != "READY")
         {
             throw new FileNotFoundException($"Tệp tin {id} không tồn tại hoặc chưa sẵn sàng.");
         }
@@ -153,13 +153,13 @@ public sealed class FileService : IFileService
         return new FileContentStreamDto(stream, entity.loai_mime, entity.ten_tep_goc);
     }
 
-    public async Task<TepTinMetadataDto?> GetMetadataAsync(
+    public async Task<TepTinMetadataDto?> BLGetMetadataAsync(
         ClaimsPrincipal user,
         Guid id,
         CancellationToken ct = default)
     {
-        var entity = await _tepTinRepository.GetByIdAsync(id, ct);
-        if (entity == null || entity.is_deleted)
+        var entity = await _tepTinRepository.DLGetByIdAsync(id, ct);
+        if (entity == null)
         {
             return null;
         }
@@ -177,13 +177,13 @@ public sealed class FileService : IFileService
         );
     }
 
-    public async Task DeleteAsync(
+    public async Task BLDeleteAsync(
         ClaimsPrincipal user,
         Guid id,
         CancellationToken ct = default)
     {
-        var entity = await _tepTinRepository.GetByIdAsync(id, ct);
-        if (entity == null || entity.is_deleted)
+        var entity = await _tepTinRepository.DLGetByIdAsync(id, ct);
+        if (entity == null)
         {
             return;
         }
@@ -197,7 +197,7 @@ public sealed class FileService : IFileService
         var provider = _storageResolver.Resolve(entity.nha_cung_cap);
         await provider.DeleteAsync(entity.khoa_luu_tru, ct);
 
-        await _tepTinRepository.DeleteAsync(id, ct);
+        await _tepTinRepository.DLDeleteAsync(id, ct);
         _logger.LogInformation("Đã xóa tệp tin {FileId} thành công.", id);
     }
 
@@ -216,3 +216,4 @@ public sealed class FileService : IFileService
             : throw new UnauthorizedAccessException("Người dùng chưa được xác thực.");
     }
 }
+

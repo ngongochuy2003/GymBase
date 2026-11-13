@@ -1,4 +1,4 @@
-﻿namespace GymBase.BLFile.Notifications;
+﻿namespace GymBase.BLFile.BLNotifications;
 
 public static class NotificationChannels
 {

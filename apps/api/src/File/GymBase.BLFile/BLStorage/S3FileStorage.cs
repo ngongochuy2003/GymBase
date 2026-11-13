@@ -3,7 +3,7 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GymBase.BLFile.Storage;
+namespace GymBase.BLFile.BLStorage;
 
 public sealed class S3FileStorage : IFileStorage
 {

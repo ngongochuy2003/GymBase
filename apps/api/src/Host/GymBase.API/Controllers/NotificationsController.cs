@@ -1,5 +1,5 @@
 using GymBase.Base.Hosting;
-using GymBase.BLFile.Notifications;
+using GymBase.BLFile.BLNotifications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +14,7 @@ public sealed class NotificationsController(IPushNotificationService notificatio
     [HttpPost("send")]
     public async Task<IActionResult> Send([FromBody] PushNotificationRequest request, CancellationToken ct)
     {
-        var result = await notificationService.SendAsync(request, ct);
+        var result = await notificationService.BLSendAsync(request, ct);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -22,7 +22,7 @@ public sealed class NotificationsController(IPushNotificationService notificatio
     [AllowAnonymous]
     public IActionResult PreviewPayload([FromBody] PushNotificationRequest request)
     {
-        var payload = notificationService.BuildFcmHttpV1Payload(request);
+        var payload = notificationService.BLBuildFcmHttpV1Payload(request);
         return Ok(payload);
     }
 }

@@ -1,5 +1,5 @@
 using GymBase.Base.Hosting;
-using GymBase.BLFile.Files;
+using GymBase.BLFile.BLFiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,14 +17,14 @@ public sealed class FilesController(IFileService fileService, IFileMigrationServ
     public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string? purpose, CancellationToken ct)
     {
         var actualPurpose = purpose ?? "post";
-        var result = await fileService.UploadAsync(User, file, actualPurpose, ct);
+        var result = await fileService.BLUploadAsync(User, file, actualPurpose, ct);
         return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetMetadata(Guid id, CancellationToken ct)
     {
-        var meta = await fileService.GetMetadataAsync(User, id, ct);
+        var meta = await fileService.BLGetMetadataAsync(User, id, ct);
         return meta != null ? Ok(meta) : NotFound();
     }
 
@@ -32,21 +32,21 @@ public sealed class FilesController(IFileService fileService, IFileMigrationServ
     [AllowAnonymous]
     public async Task<IActionResult> GetContent(Guid id, CancellationToken ct)
     {
-        var streamResult = await fileService.OpenAuthorizedAsync(User, id, ct);
+        var streamResult = await fileService.BLOpenAuthorizedAsync(User, id, ct);
         return File(streamResult.Stream, streamResult.ContentType, enableRangeProcessing: true);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await fileService.DeleteAsync(User, id, ct);
+        await fileService.BLDeleteAsync(User, id, ct);
         return NoContent();
     }
 
     [HttpPost("migrate-to-s3")]
     public async Task<IActionResult> MigrateToS3([FromQuery] int batchSize = 50, CancellationToken ct = default)
     {
-        var result = await migrationService.MigrateLocalToS3Async(batchSize, ct);
+        var result = await migrationService.BLMigrateLocalToS3Async(batchSize, ct);
         return Ok(result);
     }
 }

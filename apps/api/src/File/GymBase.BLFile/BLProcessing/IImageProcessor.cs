@@ -1,4 +1,4 @@
-﻿namespace GymBase.BLFile.Processing;
+﻿namespace GymBase.BLFile.BLProcessing;
 
 public sealed record ProcessedVariant(
     string VariantName,

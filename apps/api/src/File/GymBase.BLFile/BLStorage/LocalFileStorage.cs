@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 
-namespace GymBase.BLFile.Storage;
+namespace GymBase.BLFile.BLStorage;
 
 public sealed class LocalFileStorage : IFileStorage
 {

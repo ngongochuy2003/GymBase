@@ -18,7 +18,7 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
 
     protected override QueryColumns<bai_viet> AllowedColumns => BaiVietQueryColumns.Allowed;
 
-    public async Task<PagingResult<bai_viet>> GetFeedPagingAsync(
+    public async Task<PagingResult<bai_viet>> DLGetFeedPagingAsync(
         string? tab,
         Guid? currentUserId,
         PagingRequest request,
@@ -116,7 +116,7 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
         return new PagingResult<bai_viet>(rows, normalized.page, normalized.page_size, total);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<tep_tin>>> GetMediaByPostIdsAsync(
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<tep_tin>>> DLGetMediaByPostIdsAsync(
         IReadOnlyCollection<Guid> postIds,
         CancellationToken cancellationToken)
     {
@@ -141,7 +141,7 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
             .ToDictionary(g => g.Key, g => (IReadOnlyList<tep_tin>)g.ToList());
     }
 
-    public async Task AttachMediaUrlsAsync(
+    public async Task DLAttachMediaUrlsAsync(
         bai_viet post,
         IReadOnlyList<string> mediaUrls,
         string? chuDe,
@@ -218,7 +218,7 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
         }
     }
 
-    public async Task<IReadOnlyDictionary<Guid, ho_so_nguoi_dung>> GetProfilesByAccountIdsAsync(
+    public async Task<IReadOnlyDictionary<Guid, ho_so_nguoi_dung>> DLGetProfilesByAccountIdsAsync(
         IReadOnlyCollection<Guid> accountIds,
         CancellationToken cancellationToken)
     {
@@ -235,7 +235,7 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
         return profiles.ToDictionary(h => h.tai_khoan_id);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, string>> GetAvatarUrlsByFileIdsAsync(
+    public async Task<IReadOnlyDictionary<Guid, string>> DLGetAvatarUrlsByFileIdsAsync(
         IReadOnlyCollection<Guid> fileIds,
         CancellationToken cancellationToken)
     {

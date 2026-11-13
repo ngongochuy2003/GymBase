@@ -1,7 +1,6 @@
 import type { TopicItem } from '../components/topic-selector';
 import type { VisibilityOption } from '../components/visibility-selector';
 import type { ToolbarAction } from '../components/toolbar-actions';
-import type { MediaItem } from '../types';
 import { pickTabs } from '@/shared/navigation';
 
 export const topics: TopicItem[] = [
@@ -35,14 +34,3 @@ export const toolbarDefinitions: Omit<ToolbarAction, 'onPress'>[] = [
 
 export const composerTabs = pickTabs(['home', 'discover', 'compose', 'messages', 'profile']);
 
-export const initialMedia: MediaItem[] = [
-  { id: 'media-initial', uri: 'https://picsum.photos/seed/gymbase-push/600/450' },
-];
-
-/** Ảnh giả được thêm lần lượt khi bấm "Thêm ảnh/video". */
-export const mockMediaPool: string[] = [
-  'https://picsum.photos/seed/gymbase-a/600/450',
-  'https://picsum.photos/seed/gymbase-b/600/450',
-  'https://picsum.photos/seed/gymbase-c/600/450',
-  'https://picsum.photos/seed/gymbase-d/600/450',
-];

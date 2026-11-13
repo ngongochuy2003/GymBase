@@ -10,7 +10,7 @@ namespace GymBase.DLBiz.MySql;
 public sealed class TuongTacBaiVietRepository(AppDbContext db)
     : BaseRepository<tuong_tac_bai_viet>(db), ITuongTacBaiVietRepository
 {
-    public async Task<IReadOnlyDictionary<Guid, PostInteractionSummary>> GetSummariesByPostIdsAsync(
+    public async Task<IReadOnlyDictionary<Guid, PostInteractionSummary>> DLGetSummariesByPostIdsAsync(
         IReadOnlyCollection<Guid> postIds,
         Guid? currentUserId,
         CancellationToken cancellationToken)
@@ -60,7 +60,7 @@ public sealed class TuongTacBaiVietRepository(AppDbContext db)
         return result;
     }
 
-    public Task<tuong_tac_bai_viet?> FindLikeByUserAsync(
+    public Task<tuong_tac_bai_viet?> DLFindLikeByUserAsync(
         Guid baiVietId,
         Guid taiKhoanId,
         CancellationToken cancellationToken) =>
@@ -73,7 +73,7 @@ public sealed class TuongTacBaiVietRepository(AppDbContext db)
                      && t.loai_tuong_tac == LoaiTuongTac.thich,
                 cancellationToken);
 
-    public async Task<IReadOnlyList<tuong_tac_bai_viet>> GetCommentsByPostIdAsync(
+    public async Task<IReadOnlyList<tuong_tac_bai_viet>> DLGetCommentsByPostIdAsync(
         Guid baiVietId,
         CancellationToken cancellationToken) =>
         await Set.AsNoTracking()

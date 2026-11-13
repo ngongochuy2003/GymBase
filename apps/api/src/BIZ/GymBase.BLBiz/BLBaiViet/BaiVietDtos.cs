@@ -43,8 +43,6 @@ public sealed class BaiVietCreateDto
     /// <summary>Danh sách đường dẫn ảnh/video đính kèm (tối đa 10).</summary>
     public List<string>? hinh_anh_urls { get; init; }
 
-    /// <summary>Tên tác giả hiển thị (tùy chọn khi tạo từ phiên trải nghiệm).</summary>
-    public string? ten_tac_gia { get; init; }
 }
 
 /// <summary>Body khi cập nhật bài viết.</summary>
@@ -70,7 +68,6 @@ public sealed class BinhLuanCreateDto
 
     public Guid? tuong_tac_cha_id { get; init; }
 
-    public string? ten_nguoi_dung { get; init; }
 }
 
 /// <summary>Thông tin một bình luận trả ra API.</summary>

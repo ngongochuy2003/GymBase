@@ -8,9 +8,9 @@ namespace GymBase.API.Mob.Controllers;
 
 /// <summary>
 /// API bài viết mạng xã hội cho mobile: <c>/api/v1/mob/baiviet</c>.
-/// Cho phép truy cập từ cả phiên có JWT và phiên trải nghiệm trên ứng dụng di động.
+/// Yêu cầu người dùng đăng nhập; dữ liệu bài viết và tương tác được gắn với tài khoản trong JWT.
 /// </summary>
-[AllowAnonymous]
+[Authorize]
 public sealed class BaiVietController(BaiVietService baiVietService)
     : BaseCrudController<BaiVietDto, BaiVietCreateDto, BaiVietUpdateDto>(baiVietService)
 {
@@ -20,17 +20,17 @@ public sealed class BaiVietController(BaiVietService baiVietService)
         [FromQuery] string? tab,
         [FromQuery] PagingRequest request,
         CancellationToken cancellationToken) =>
-        Ok(await baiVietService.GetFeedAsync(tab, request, cancellationToken));
+        Ok(await baiVietService.BLGetFeedAsync(tab, request, cancellationToken));
 
     /// <summary>Bật/tắt lượt thích trên bài viết.</summary>
     [HttpPost("{id:guid}/thich")]
     public async Task<ActionResult<KetQuaThichBaiVietDto>> ToggleLike(Guid id, CancellationToken cancellationToken) =>
-        Ok(await baiVietService.ToggleLikeAsync(id, cancellationToken));
+        Ok(await baiVietService.BLToggleLikeAsync(id, cancellationToken));
 
     /// <summary>Lấy danh sách bình luận của bài viết.</summary>
     [HttpGet("{id:guid}/binh-luan")]
     public async Task<ActionResult<IReadOnlyList<BinhLuanDto>>> GetComments(Guid id, CancellationToken cancellationToken) =>
-        Ok(await baiVietService.GetCommentsAsync(id, cancellationToken));
+        Ok(await baiVietService.BLGetCommentsAsync(id, cancellationToken));
 
     /// <summary>Thêm bình luận mới vào bài viết.</summary>
     [HttpPost("{id:guid}/binh-luan")]
@@ -38,5 +38,5 @@ public sealed class BaiVietController(BaiVietService baiVietService)
         Guid id,
         [FromBody] BinhLuanCreateDto dto,
         CancellationToken cancellationToken) =>
-        Ok(await baiVietService.AddCommentAsync(id, dto, cancellationToken));
+        Ok(await baiVietService.BLAddCommentAsync(id, dto, cancellationToken));
 }

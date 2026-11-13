@@ -9,6 +9,7 @@ namespace GymBase.UnitTests.Biz;
 
 public sealed class BaiVietServiceTests
 {
+    private static readonly Guid TestUserId = Guid.Parse("0193f0a0-0000-7000-8000-000000000002");
     private readonly InMemoryStore<bai_viet> _postStore = new();
     private readonly InMemoryStore<tuong_tac_bai_viet> _interactionStore = new();
     private readonly InMemoryBaiVietRepository _postRepository;
@@ -24,7 +25,7 @@ public sealed class BaiVietServiceTests
         _postRepository,
         _interactionRepository,
         TimeProvider.System,
-        new FakeCurrentUser(userName, userId ?? BaiVietService.DefaultDemoAuthorId),
+        new FakeCurrentUser(userName, userId ?? TestUserId),
         new BaiVietCreateValidator(),
         new BaiVietUpdateValidator(),
         new BinhLuanCreateValidator());
@@ -34,7 +35,7 @@ public sealed class BaiVietServiceTests
     {
         _postRepository.SeedProfile(new ho_so_nguoi_dung
         {
-            tai_khoan_id = BaiVietService.DefaultDemoAuthorId,
+            tai_khoan_id = TestUserId,
             loai_nguoi_dung = LoaiNguoiDung.pt,
             ten_hien_thi = "Minh Khôi",
             trang_thai_xac_minh = TrangThaiXacMinh.da_xac_minh,
@@ -42,13 +43,13 @@ public sealed class BaiVietServiceTests
         });
 
         var service = CreateService();
-        var created = await service.CreateAsync(
+        var created = await service.BLCreateAsync(
             new BaiVietCreateDto
             {
                 noi_dung = "Buổi Push hôm nay.\nTập trung ngực – vai – tay sau, cảm giác rất ổn!",
                 che_do_hien_thi = "public",
                 chu_de = "workout",
-                hinh_anh_urls = ["https://picsum.photos/seed/gymbase-push/800/500"],
+                hinh_anh_urls = ["https://cdn.test/gymbase-push.jpg"],
             },
             CancellationToken.None);
 
@@ -57,7 +58,7 @@ public sealed class BaiVietServiceTests
         Assert.Equal("cong_khai", created.che_do_hien_thi);
         Assert.Equal("workout", created.chu_de);
         Assert.Single(created.hinh_anh_urls);
-        Assert.Equal("https://picsum.photos/seed/gymbase-push/800/500", created.hinh_anh_urls[0]);
+        Assert.Equal("https://cdn.test/gymbase-push.jpg", created.hinh_anh_urls[0]);
     }
 
     [Fact]
@@ -66,7 +67,7 @@ public sealed class BaiVietServiceTests
         var service = CreateService();
 
         await Assert.ThrowsAsync<ValidationFailedException>(() =>
-            service.CreateAsync(
+            service.BLCreateAsync(
                 new BaiVietCreateDto
                 {
                     noi_dung = "   ",
@@ -79,19 +80,19 @@ public sealed class BaiVietServiceTests
     public async Task ToggleLike_switches_like_state_and_updates_count()
     {
         var service = CreateService();
-        var post = await service.CreateAsync(
+        var post = await service.BLCreateAsync(
             new BaiVietCreateDto { noi_dung = "Hôm nay tập chân" },
             CancellationToken.None);
 
-        var firstToggle = await service.ToggleLikeAsync(post.Id, CancellationToken.None);
+        var firstToggle = await service.BLToggleLikeAsync(post.Id, CancellationToken.None);
         Assert.True(firstToggle.da_thich);
         Assert.Equal(1, firstToggle.so_luot_thich);
 
-        var secondToggle = await service.ToggleLikeAsync(post.Id, CancellationToken.None);
+        var secondToggle = await service.BLToggleLikeAsync(post.Id, CancellationToken.None);
         Assert.False(secondToggle.da_thich);
         Assert.Equal(0, secondToggle.so_luot_thich);
 
-        var thirdToggle = await service.ToggleLikeAsync(post.Id, CancellationToken.None);
+        var thirdToggle = await service.BLToggleLikeAsync(post.Id, CancellationToken.None);
         Assert.True(thirdToggle.da_thich);
         Assert.Equal(1, thirdToggle.so_luot_thich);
     }
@@ -101,27 +102,27 @@ public sealed class BaiVietServiceTests
     {
         var service = CreateService();
 
-        await service.CreateAsync(
+        await service.BLCreateAsync(
             new BaiVietCreateDto
             {
                 noi_dung = "Buổi Push hôm nay.",
                 chu_de = "workout",
-                hinh_anh_urls = ["https://picsum.photos/seed/gymbase-push/800/500"],
+                hinh_anh_urls = ["https://cdn.test/gymbase-push.jpg"],
             },
             CancellationToken.None);
 
-        await service.CreateAsync(
+        await service.BLCreateAsync(
             new BaiVietCreateDto
             {
                 noi_dung = "Meal prep đơn giản cho 1 ngày siết mỡ.",
                 chu_de = "meal-prep",
-                hinh_anh_urls = ["https://picsum.photos/seed/gymbase-mealprep/800/500"],
+                hinh_anh_urls = ["https://cdn.test/gymbase-mealprep.jpg"],
             },
             CancellationToken.None);
 
-        var allFeed = await service.GetFeedAsync("for-you", new PagingRequest(), CancellationToken.None);
-        var workoutFeed = await service.GetFeedAsync("workout", new PagingRequest(), CancellationToken.None);
-        var knowledgeFeed = await service.GetFeedAsync("knowledge", new PagingRequest(), CancellationToken.None);
+        var allFeed = await service.BLGetFeedAsync("for-you", new PagingRequest(), CancellationToken.None);
+        var workoutFeed = await service.BLGetFeedAsync("workout", new PagingRequest(), CancellationToken.None);
+        var knowledgeFeed = await service.BLGetFeedAsync("knowledge", new PagingRequest(), CancellationToken.None);
 
         Assert.Equal(2, allFeed.data.Count);
         Assert.Single(workoutFeed.data);
@@ -134,21 +135,21 @@ public sealed class BaiVietServiceTests
     public async Task AddComment_creates_comment_and_increments_post_comment_count()
     {
         var service = CreateService();
-        var post = await service.CreateAsync(
+        var post = await service.BLCreateAsync(
             new BaiVietCreateDto { noi_dung = "Bài viết thảo luận" },
             CancellationToken.None);
 
-        var comment = await service.AddCommentAsync(
+        var comment = await service.BLAddCommentAsync(
             post.Id,
             new BinhLuanCreateDto { noi_dung = "Quá tuyệt vời!" },
             CancellationToken.None);
 
         Assert.Equal("Quá tuyệt vời!", comment.noi_dung);
 
-        var comments = await service.GetCommentsAsync(post.Id, CancellationToken.None);
+        var comments = await service.BLGetCommentsAsync(post.Id, CancellationToken.None);
         Assert.Single(comments);
 
-        var updatedPost = await service.GetByIdAsync(post.Id, CancellationToken.None);
+        var updatedPost = await service.BLGetByIdAsync(post.Id, CancellationToken.None);
         Assert.Equal(1, updatedPost.so_binh_luan);
     }
 }

@@ -15,10 +15,10 @@ public sealed class InMemoryTepTinRepository : InMemoryBaseRepository<tep_tin>, 
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
-    public Task<IReadOnlyList<tep_tin>> GetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
+    public Task<IReadOnlyList<tep_tin>> DLGetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
     {
         var list = Store.All()
-            .Where(t => !t.is_deleted && t.nha_cung_cap == provider && t.trang_thai == "READY")
+            .Where(t => t.nha_cung_cap == provider && t.trang_thai == "READY")
             .OrderBy(t => t.ngay_tao)
             .Take(limit)
             .ToList();

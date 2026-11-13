@@ -1,19 +1,9 @@
 import { z } from 'zod';
 
-const schema = z.object({
-  dataMode: z.enum(['demo', 'api']).default('demo'),
-  apiUrl: z.union([z.literal(''), z.url()]).default(''),
-});
+const schema = z.object({ apiUrl: z.url() });
 
-export function parseEnv(input: { dataMode?: string; apiUrl?: string }) {
-  const result = schema.parse(input);
-  if (result.dataMode === 'api' && !result.apiUrl) {
-    throw new Error('EXPO_PUBLIC_API_URL is required in API mode.');
-  }
-  return result;
+export function parseEnv(input: { apiUrl?: string }) {
+  return schema.parse(input);
 }
 
-export const env = parseEnv({
-  dataMode: process.env.EXPO_PUBLIC_DATA_MODE,
-  apiUrl: process.env.EXPO_PUBLIC_API_URL,
-});
+export const env = parseEnv({ apiUrl: process.env.EXPO_PUBLIC_API_URL });

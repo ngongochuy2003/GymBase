@@ -1,7 +1,6 @@
 import type { AxiosInstance } from 'axios';
 import {
   createFeedRepository,
-  filterFeedPostsByTab,
   formatRelativeTimeVi,
   mapBaiVietDtoToFeedPost,
   type BaiVietDto,
@@ -25,14 +24,14 @@ describe('social-feed-api & composer-api', () => {
       tac_gia: {
         id: '0193f0a0-0000-7000-8000-000000000002',
         ten_hien_thi: 'Minh Khôi',
-        anh_dai_dien_url: 'https://picsum.photos/seed/gymbase-minh-khoi/160/160',
+        anh_dai_dien_url: 'https://cdn.test/avatar.jpg',
       },
       noi_dung: 'Buổi Push hôm nay.',
       loai_bai_viet: 'hon_hop',
       che_do_hien_thi: 'cong_khai',
       trang_thai: 'da_dang',
       chu_de: 'workout',
-      hinh_anh_urls: ['https://picsum.photos/seed/gymbase-push/800/500'],
+      hinh_anh_urls: ['https://cdn.test/push.jpg'],
       so_luot_thich: 12,
       so_binh_luan: 3,
       da_thich: true,
@@ -45,78 +44,45 @@ describe('social-feed-api & composer-api', () => {
     expect(post.id).toBe(dto.id);
     expect(post.author.name).toBe('Minh Khôi');
     expect(post.timeLabel).toBe('6 giờ trước');
-    expect(post.imageUri).toBe('https://picsum.photos/seed/gymbase-push/800/500');
+    expect(post.imageUri).toBe('https://cdn.test/push.jpg');
     expect(post.counts?.like).toBe(12);
     expect(post.counts?.comment).toBe(3);
     expect(post.initialActive?.like).toBe(true);
   });
 
-  test('filterFeedPostsByTab filters workout and knowledge tabs', () => {
-    const sample = [
-      {
-        id: '1',
-        author: { name: 'A', avatarUri: '' },
-        timeLabel: '1 giờ trước',
-        content: 'Buổi Push hôm nay',
-        topicId: 'workout',
-        counts: { like: 10, comment: 2 },
-      },
-      {
-        id: '2',
-        author: { name: 'B', avatarUri: '' },
-        timeLabel: '2 giờ trước',
-        content: 'Meal prep đơn giản cho 1 ngày siết mỡ',
-        topicId: 'meal-prep',
-        counts: { like: 50, comment: 5 },
-      },
-    ];
-
-    expect(filterFeedPostsByTab(sample, 'workout')).toHaveLength(1);
-    expect(filterFeedPostsByTab(sample, 'knowledge')).toHaveLength(1);
-    expect(filterFeedPostsByTab(sample, 'trending')[0]?.id).toBe('2');
-  });
 
   test('toBaiVietCreateDto maps composer payload to backend snake_case DTO', () => {
     const dto = toBaiVietCreateDto(
       {
         content: 'Hôm nay tập chân #tapluyen',
-        mediaUris: ['https://picsum.photos/seed/a/600/450'],
+        mediaUris: ['https://cdn.test/post.jpg'],
         topicIds: ['workout'],
         visibilityId: 'followers',
       },
-      'Minh Khôi',
     );
 
     expect(dto).toEqual({
       noi_dung: 'Hôm nay tập chân #tapluyen',
       che_do_hien_thi: 'nguoi_theo_doi',
       chu_de: 'workout',
-      hinh_anh_urls: ['https://picsum.photos/seed/a/600/450'],
-      ten_tac_gia: 'Minh Khôi',
+      hinh_anh_urls: ['https://cdn.test/post.jpg'],
     });
   });
 
-  test('repositories return fallback data cleanly in test mode', async () => {
+  test('repositories use only API responses and do not substitute demo data', async () => {
+    const createdDto = { id: 'post-real-1', noi_dung: 'Bài viết mới', che_do_hien_thi: 'cong_khai' };
     const mockClient = {
-      get: jest.fn(),
-      post: jest.fn(),
+      get: jest.fn().mockResolvedValue({ data: { data: [], meta: {} } }),
+      post: jest.fn().mockResolvedValue({ data: createdDto }),
     } as unknown as AxiosInstance;
 
     const feedRepo = createFeedRepository(mockClient);
-    const posts = await feedRepo.getFeedPosts('for-you');
-    expect(posts.length).toBeGreaterThanOrEqual(2);
+    expect(await feedRepo.getFeedPosts('for-you')).toEqual([]);
 
     const composerRepo = createComposerRepository(mockClient);
-    const created = await composerRepo.createPost(
-      {
-        content: 'Bài viết mới',
-        mediaUris: [],
-        topicIds: ['workout'],
-        visibilityId: 'public',
-      },
-      'Minh Khôi',
-    );
-    expect(created.noi_dung).toBe('Bài viết mới');
-    expect(created.che_do_hien_thi).toBe('cong_khai');
+    const created = await composerRepo.createPost({
+      content: 'Bài viết mới', mediaUris: [], topicIds: ['workout'], visibilityId: 'public',
+    });
+    expect(created).toEqual(createdDto);
   });
 });

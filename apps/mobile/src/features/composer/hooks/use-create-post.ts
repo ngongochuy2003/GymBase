@@ -4,15 +4,13 @@ import type { ComposerPayload } from '../types';
 
 export interface CreatePostInput {
   payload: ComposerPayload;
-  authorName?: string;
 }
 
 export function useCreatePostMutation(repository: ComposerRepository = composerRepository) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ payload, authorName }: CreatePostInput) =>
-      repository.createPost(payload, authorName),
+    mutationFn: ({ payload }: CreatePostInput) => repository.createPost(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['feed', 'posts'] });
     },

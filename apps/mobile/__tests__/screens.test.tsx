@@ -59,53 +59,15 @@ describe('ScreenRenderer', () => {
 });
 
 describe('ComposerScreen', () => {
-  test('media grid, single topic, visibility and mock submit', async () => {
-    const log = jest.spyOn(console, 'log').mockImplementation(() => undefined);
-    await render(
-      <AppProviders>
-        <ComposerScreen />
-      </AppProviders>,
-    );
-    // Một ảnh ban đầu; thêm tới 10 thì ô thêm biến mất.
-    expect(screen.getAllByLabelText('Xóa ảnh')).toHaveLength(1);
-    for (let i = 0; i < 9; i += 1) {
-      await fireEvent.press(screen.getByRole('button', { name: 'Thêm ảnh/video' }));
-    }
-    expect(screen.getAllByLabelText('Xóa ảnh')).toHaveLength(10);
-    expect(screen.queryByRole('button', { name: 'Thêm ảnh/video' })).toBeNull();
-    await fireEvent.press(screen.getAllByLabelText('Xóa ảnh')[0]!);
-    expect(screen.getByRole('button', { name: 'Thêm ảnh/video' })).toBeTruthy();
-
-    // Chủ đề chọn đơn.
-    expect(
-      screen.getByRole('button', { name: 'Tập luyện' }).props.accessibilityState.selected,
-    ).toBe(true);
+  test('starts without sample media and lets the user edit a real post', async () => {
+    await render(<AppProviders><ComposerScreen /></AppProviders>);
+    expect(screen.queryByLabelText('Xóa ảnh')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Tập luyện' }).props.accessibilityState.selected).toBe(true);
     await fireEvent.press(screen.getByRole('button', { name: 'Meal prep' }));
-    expect(
-      screen.getByRole('button', { name: 'Meal prep' }).props.accessibilityState.selected,
-    ).toBe(true);
-    expect(
-      screen.getByRole('button', { name: 'Tập luyện' }).props.accessibilityState.selected,
-    ).toBe(false);
-
-    // Quyền xem.
+    expect(screen.getByRole('button', { name: 'Meal prep' }).props.accessibilityState.selected).toBe(true);
     await fireEvent.press(screen.getByRole('radio', { name: 'Chỉ người theo dõi' }));
     expect(screen.getByLabelText('Quyền xem: Chỉ người theo dõi')).toBeTruthy();
-
-    // Hashtag + đăng.
     await fireEvent.changeText(screen.getByLabelText('Nội dung bài viết'), 'Hôm nay tập chân');
-    await fireEvent.press(screen.getByRole('button', { name: 'Thêm hashtag' }));
-    expect(screen.getByLabelText('Nội dung bài viết').props.value).toBe('Hôm nay tập chân #');
-    await fireEvent.press(screen.getByRole('button', { name: 'Đăng' }));
-    expect(await screen.findByText('Đã đăng (mock)')).toBeTruthy();
-    expect(log).toHaveBeenCalledWith(
-      '[composer] payload',
-      expect.objectContaining({
-        content: 'Hôm nay tập chân #',
-        topicIds: ['meal-prep'],
-        visibilityId: 'followers',
-      }),
-    );
-    log.mockRestore();
+    expect(screen.getByLabelText('Nội dung bài viết').props.value).toBe('Hôm nay tập chân');
   });
 });

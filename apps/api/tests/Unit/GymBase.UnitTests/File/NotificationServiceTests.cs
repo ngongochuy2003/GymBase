@@ -1,4 +1,4 @@
-﻿using GymBase.BLFile.Notifications;
+﻿using GymBase.BLFile.BLNotifications;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -23,7 +23,7 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public void BuildFcmHttpV1Payload_ShouldIncludeHighPriorityAndLockScreenVisibility()
+    public void BLBuildFcmHttpV1Payload_ShouldIncludeHighPriorityAndLockScreenVisibility()
     {
         var request = new PushNotificationRequest(
             DeviceToken: "token-test-12345",
@@ -34,7 +34,7 @@ public class NotificationServiceTests
             AvatarUrl: "https://gymbase.vn/avatar.jpg"
         );
 
-        var payload = _service.BuildFcmHttpV1Payload(request);
+        var payload = _service.BLBuildFcmHttpV1Payload(request);
         var json = System.Text.Json.JsonSerializer.Serialize(payload);
 
         Assert.Contains("\"priority\":\"HIGH\"", json);
@@ -46,7 +46,7 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendAsync_ValidRequest_SimulateMode_ShouldReturnSuccess()
+    public async Task BLSendAsync_ValidRequest_SimulateMode_ShouldReturnSuccess()
     {
         var request = new PushNotificationRequest(
             DeviceToken: "valid-device-token",
@@ -55,7 +55,7 @@ public class NotificationServiceTests
             ChannelId: NotificationChannels.Alarms
         );
 
-        var result = await _service.SendAsync(request);
+        var result = await _service.BLSendAsync(request);
 
         Assert.True(result.Success);
         Assert.StartsWith("simulated-fcm-", result.MessageId);
@@ -63,7 +63,7 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendAsync_EmptyToken_ShouldReturnFailure()
+    public async Task BLSendAsync_EmptyToken_ShouldReturnFailure()
     {
         var request = new PushNotificationRequest(
             DeviceToken: "",
@@ -71,7 +71,7 @@ public class NotificationServiceTests
             Body: "No token"
         );
 
-        var result = await _service.SendAsync(request);
+        var result = await _service.BLSendAsync(request);
 
         Assert.False(result.Success);
         Assert.Contains("không được để trống", result.ErrorMessage);

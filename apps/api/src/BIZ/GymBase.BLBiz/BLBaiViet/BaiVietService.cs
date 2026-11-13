@@ -38,11 +38,6 @@ public sealed class BaiVietService
         _createValidator = createValidator;
         _commentValidator = commentValidator;
     }
-    /// <summary>Tài khoản mặc định (PT Minh Khôi trong seed dev) dùng khi trải nghiệm không kèm JWT.</summary>
-    public static readonly Guid DefaultDemoAuthorId = Guid.Parse("0193f0a0-0000-7000-8000-000000000002");
-
-    private const string DefaultAvatarUrl = "https://picsum.photos/seed/gymbase-minh-khoi/160/160";
-
     private static readonly HashSet<string> SystemSeedUserNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "seed",
@@ -56,12 +51,12 @@ public sealed class BaiVietService
     protected override string EntityDisplayName => "bài viết";
 
     /// <summary>Lấy danh sách bài viết cho bảng tin (hỗ trợ lọc theo tab và làm giàu thông tin tác giả, ảnh, lượt thích/bình luận).</summary>
-    public async Task<PagingResult<BaiVietDto>> GetFeedAsync(
+    public async Task<PagingResult<BaiVietDto>> BLGetFeedAsync(
         string? tab,
         PagingRequest request,
         CancellationToken cancellationToken)
     {
-        var page = await _baiVietRepository.GetFeedPagingAsync(
+        var page = await _baiVietRepository.DLGetFeedPagingAsync(
             tab,
             CurrentUser.UserId,
             request.Normalize(),
@@ -71,35 +66,33 @@ public sealed class BaiVietService
         return new PagingResult<BaiVietDto>(dtos, page.meta.page, page.meta.page_size, page.meta.total);
     }
 
-    public override async Task<PagingResult<BaiVietDto>> GetPagingAsync(
+    public override async Task<PagingResult<BaiVietDto>> BLGetPagingAsync(
         PagingRequest request,
         CancellationToken cancellationToken)
     {
-        var page = await _baiVietRepository.GetPagingAsync(request.Normalize(), cancellationToken);
+        var page = await _baiVietRepository.DLGetPagingAsync(request.Normalize(), cancellationToken);
         var dtos = await EnrichPostsAsync(page.data, cancellationToken);
         return new PagingResult<BaiVietDto>(dtos, page.meta.page, page.meta.page_size, page.meta.total);
     }
 
-    public override async Task<BaiVietDto> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public override async Task<BaiVietDto> BLGetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entity = await GetEntityOrThrowAsync(id, cancellationToken);
+        var entity = await BLGetEntityOrThrowAsync(id, cancellationToken);
         var dtos = await EnrichPostsAsync([entity], cancellationToken);
         return dtos[0];
     }
 
-    public override async Task<BaiVietDto> CreateAsync(BaiVietCreateDto dto, CancellationToken cancellationToken)
+    public override async Task<BaiVietDto> BLCreateAsync(BaiVietCreateDto dto, CancellationToken cancellationToken)
     {
         await _createValidator.ValidateOrThrowAsync(dto, cancellationToken);
-        await BeforeCreateAsync(dto, cancellationToken);
+        await BLBeforeCreateAsync(dto, cancellationToken);
 
         var utcNow = TimeProvider.GetUtcNow().UtcDateTime;
-        var entity = CreateEntity(dto);
-        var creatorName = !string.IsNullOrWhiteSpace(dto.ten_tac_gia)
-            ? dto.ten_tac_gia.Trim()
-            : CurrentUser.UserName;
+        var entity = BLCreateEntity(dto);
+        var creatorName = CurrentUser.UserName;
         entity.MarkCreated(creatorName, utcNow);
 
-        await _baiVietRepository.InsertAsync(entity, cancellationToken);
+        await _baiVietRepository.DLInsertAsync(entity, cancellationToken);
 
         var mediaUrls = dto.hinh_anh_urls?
             .Where(u => !string.IsNullOrWhiteSpace(u))
@@ -108,7 +101,7 @@ public sealed class BaiVietService
 
         if (mediaUrls.Count > 0)
         {
-            await _baiVietRepository.AttachMediaUrlsAsync(
+            await _baiVietRepository.DLAttachMediaUrlsAsync(
                 entity,
                 mediaUrls,
                 dto.chu_de,
@@ -121,13 +114,13 @@ public sealed class BaiVietService
     }
 
     /// <summary>Bật hoặc tắt lượt thích của người dùng hiện tại trên một bài viết.</summary>
-    public async Task<KetQuaThichBaiVietDto> ToggleLikeAsync(Guid baiVietId, CancellationToken cancellationToken)
+    public async Task<KetQuaThichBaiVietDto> BLToggleLikeAsync(Guid baiVietId, CancellationToken cancellationToken)
     {
-        _ = await GetEntityOrThrowAsync(baiVietId, cancellationToken);
+        _ = await BLGetEntityOrThrowAsync(baiVietId, cancellationToken);
 
         var actorId = ResolveActorId();
         var utcNow = TimeProvider.GetUtcNow().UtcDateTime;
-        var existing = await _tuongTacRepository.FindLikeByUserAsync(baiVietId, actorId, cancellationToken);
+        var existing = await _tuongTacRepository.DLFindLikeByUserAsync(baiVietId, actorId, cancellationToken);
 
         bool liked;
         if (existing is null)
@@ -142,48 +135,48 @@ public sealed class BaiVietService
                 ngay_tao = utcNow,
                 ngay_xoa = null,
             };
-            await _tuongTacRepository.InsertAsync(interaction, cancellationToken);
+            await _tuongTacRepository.DLInsertAsync(interaction, cancellationToken);
             liked = true;
         }
         else if (existing.ngay_xoa is null)
         {
             existing.ngay_xoa = utcNow;
-            await _tuongTacRepository.UpdateAsync(existing, cancellationToken);
+            await _tuongTacRepository.DLUpdateAsync(existing, cancellationToken);
             liked = false;
         }
         else
         {
             existing.ngay_xoa = null;
             existing.ngay_tao = utcNow;
-            await _tuongTacRepository.UpdateAsync(existing, cancellationToken);
+            await _tuongTacRepository.DLUpdateAsync(existing, cancellationToken);
             liked = true;
         }
 
-        var summaries = await _tuongTacRepository.GetSummariesByPostIdsAsync([baiVietId], actorId, cancellationToken);
+        var summaries = await _tuongTacRepository.DLGetSummariesByPostIdsAsync([baiVietId], actorId, cancellationToken);
         var totalLikes = summaries.TryGetValue(baiVietId, out var summary) ? summary.so_luot_thich : (liked ? 1 : 0);
 
         return new KetQuaThichBaiVietDto(baiVietId, liked, totalLikes);
     }
 
     /// <summary>Lấy danh sách bình luận còn hiệu lực của một bài viết.</summary>
-    public async Task<IReadOnlyList<BinhLuanDto>> GetCommentsAsync(Guid baiVietId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<BinhLuanDto>> BLGetCommentsAsync(Guid baiVietId, CancellationToken cancellationToken)
     {
-        _ = await GetEntityOrThrowAsync(baiVietId, cancellationToken);
+        _ = await BLGetEntityOrThrowAsync(baiVietId, cancellationToken);
 
-        var comments = await _tuongTacRepository.GetCommentsByPostIdAsync(baiVietId, cancellationToken);
+        var comments = await _tuongTacRepository.DLGetCommentsByPostIdAsync(baiVietId, cancellationToken);
         if (comments.Count == 0)
         {
             return [];
         }
 
         var accountIds = comments.Select(c => c.tai_khoan_id).Distinct().ToList();
-        var profiles = await _baiVietRepository.GetProfilesByAccountIdsAsync(accountIds, cancellationToken);
+        var profiles = await _baiVietRepository.DLGetProfilesByAccountIdsAsync(accountIds, cancellationToken);
         var avatarFileIds = profiles.Values
             .Where(p => p.anh_dai_dien_tep_tin_id.HasValue)
             .Select(p => p.anh_dai_dien_tep_tin_id!.Value)
             .Distinct()
             .ToList();
-        var avatarUrls = await _baiVietRepository.GetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
+        var avatarUrls = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
 
         return comments.Select(c =>
         {
@@ -201,17 +194,17 @@ public sealed class BaiVietService
     }
 
     /// <summary>Thêm bình luận mới vào bài viết.</summary>
-    public async Task<BinhLuanDto> AddCommentAsync(
+    public async Task<BinhLuanDto> BLAddCommentAsync(
         Guid baiVietId,
         BinhLuanCreateDto dto,
         CancellationToken cancellationToken)
     {
         await _commentValidator.ValidateOrThrowAsync(dto, cancellationToken);
-        _ = await GetEntityOrThrowAsync(baiVietId, cancellationToken);
+        _ = await BLGetEntityOrThrowAsync(baiVietId, cancellationToken);
 
         if (dto.tuong_tac_cha_id is { } parentId)
         {
-            var parent = await _tuongTacRepository.GetByIdAsync(parentId, cancellationToken);
+            var parent = await _tuongTacRepository.DLGetByIdAsync(parentId, cancellationToken);
             if (parent is null
                 || parent.ngay_xoa is not null
                 || parent.bai_viet_id != baiVietId
@@ -236,15 +229,15 @@ public sealed class BaiVietService
             ngay_xoa = null,
         };
 
-        await _tuongTacRepository.InsertAsync(entity, cancellationToken);
+        await _tuongTacRepository.DLInsertAsync(entity, cancellationToken);
 
-        var profiles = await _baiVietRepository.GetProfilesByAccountIdsAsync([actorId], cancellationToken);
+        var profiles = await _baiVietRepository.DLGetProfilesByAccountIdsAsync([actorId], cancellationToken);
         var avatarFileIds = profiles.Values
             .Where(p => p.anh_dai_dien_tep_tin_id.HasValue)
             .Select(p => p.anh_dai_dien_tep_tin_id!.Value)
             .ToList();
-        var avatarUrls = await _baiVietRepository.GetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
-        var author = ResolveAuthorInfo(actorId, dto.ten_nguoi_dung, profiles, avatarUrls);
+        var avatarUrls = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
+        var author = ResolveAuthorInfo(actorId, null, profiles, avatarUrls);
 
         return new BinhLuanDto(
             entity.Id,
@@ -257,10 +250,10 @@ public sealed class BaiVietService
             entity.ngay_tao);
     }
 
-    protected override BaiVietDto ToDto(bai_viet entity) => new(
+    protected override BaiVietDto BLToDto(bai_viet entity) => new(
         entity.Id,
         entity.tac_gia_id,
-        new TacGiaBaiVietDto(entity.tac_gia_id, entity.nguoi_tao ?? "Minh Khôi", DefaultAvatarUrl),
+        new TacGiaBaiVietDto(entity.tac_gia_id, entity.nguoi_tao ?? "Người dùng GymBase", null),
         entity.noi_dung,
         entity.loai_bai_viet.ToString(),
         entity.che_do_hien_thi.ToString(),
@@ -274,7 +267,7 @@ public sealed class BaiVietService
         entity.ngay_tao,
         entity.ngay_chinh_sua);
 
-    protected override bai_viet CreateEntity(BaiVietCreateDto dto)
+    protected override bai_viet BLCreateEntity(BaiVietCreateDto dto)
     {
         var utcNow = TimeProvider.GetUtcNow().UtcDateTime;
         var hasText = !string.IsNullOrWhiteSpace(dto.noi_dung);
@@ -295,7 +288,7 @@ public sealed class BaiVietService
         };
     }
 
-    protected override void ApplyUpdate(bai_viet entity, BaiVietUpdateDto dto)
+    protected override void BLApplyUpdate(bai_viet entity, BaiVietUpdateDto dto)
     {
         entity.noi_dung = string.IsNullOrWhiteSpace(dto.noi_dung) ? null : dto.noi_dung.Trim();
         entity.che_do_hien_thi = ParseVisibility(dto.che_do_hien_thi);
@@ -305,7 +298,7 @@ public sealed class BaiVietService
         }
     }
 
-    private Guid ResolveActorId() => CurrentUser.UserId ?? DefaultDemoAuthorId;
+    private Guid ResolveActorId() => CurrentUser.UserId ?? throw new UnauthorizedException();
 
     private async Task<IReadOnlyList<BaiVietDto>> EnrichPostsAsync(
         IReadOnlyList<bai_viet> posts,
@@ -319,18 +312,18 @@ public sealed class BaiVietService
 
         var postIds = posts.Select(p => p.Id).Distinct().ToList();
         var authorIds = posts.Select(p => p.tac_gia_id).Distinct().ToList();
-        var viewerId = CurrentUser.UserId ?? DefaultDemoAuthorId;
+        var viewerId = CurrentUser.UserId ?? throw new UnauthorizedException();
 
-        var mediaByPost = await _baiVietRepository.GetMediaByPostIdsAsync(postIds, cancellationToken);
-        var summariesByPost = await _tuongTacRepository.GetSummariesByPostIdsAsync(postIds, viewerId, cancellationToken);
-        var profilesByAccount = await _baiVietRepository.GetProfilesByAccountIdsAsync(authorIds, cancellationToken);
+        var mediaByPost = await _baiVietRepository.DLGetMediaByPostIdsAsync(postIds, cancellationToken);
+        var summariesByPost = await _tuongTacRepository.DLGetSummariesByPostIdsAsync(postIds, viewerId, cancellationToken);
+        var profilesByAccount = await _baiVietRepository.DLGetProfilesByAccountIdsAsync(authorIds, cancellationToken);
 
         var avatarFileIds = profilesByAccount.Values
             .Where(p => p.anh_dai_dien_tep_tin_id.HasValue)
             .Select(p => p.anh_dai_dien_tep_tin_id!.Value)
             .Distinct()
             .ToList();
-        var avatarUrlsByFile = await _baiVietRepository.GetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
+        var avatarUrlsByFile = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
 
         var result = new List<BaiVietDto>(posts.Count);
         foreach (var post in posts)
@@ -381,14 +374,14 @@ public sealed class BaiVietService
             var avatarUrl = profile.anh_dai_dien_tep_tin_id is { } fileId
                             && avatarUrls.TryGetValue(fileId, out var url)
                 ? url
-                : DefaultAvatarUrl;
+                : null;
 
             var displayName = hasCustomName ? customCreatorName!.Trim() : profile.ten_hien_thi;
             return new TacGiaBaiVietDto(accountId, displayName, avatarUrl);
         }
 
-        var fallbackName = hasCustomName ? customCreatorName!.Trim() : "Minh Khôi";
-        return new TacGiaBaiVietDto(accountId, fallbackName, DefaultAvatarUrl);
+        var fallbackName = hasCustomName ? customCreatorName!.Trim() : "Người dùng GymBase";
+        return new TacGiaBaiVietDto(accountId, fallbackName, null);
     }
 
     private static string ExtractCleanUrl(tep_tin file)

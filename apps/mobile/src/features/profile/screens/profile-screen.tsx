@@ -19,8 +19,8 @@ export function ProfileScreen() {
         <Screen>
           <AppText title>Không gian của bạn</AppText>
           <Card>
-            <AppText title>{user?.name}</AppText>
-            <AppText muted>Người trải nghiệm · Phiên demo</AppText>
+            <AppText title>{user?.ho_ten}</AppText>
+            <AppText muted>Tài khoản GymBase</AppText>
           </Card>
           <Card>
             <AppText title>Giao diện</AppText>
@@ -32,11 +32,9 @@ export function ProfileScreen() {
             />
           </Card>
           <AppText muted>
-            Đây là hồ sơ demo. Tính năng tài khoản, PT và dữ liệu thật sẽ được kết nối với backend ở
-            giai đoạn tiếp theo.
           </AppText>
           <Button
-            label="Thoát bản demo"
+            label="Đăng xuất"
             loading={busy}
             onPress={() => {
               setBusy(true);

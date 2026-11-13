@@ -6,7 +6,7 @@ namespace GymBase.Entities.File;
 /// Tệp tin lưu trữ (Local Storage / Amazon S3).
 /// Tên class trùng tên bảng <c>tep_tin</c>, property trùng tên cột.
 /// </summary>
-public sealed class tep_tin : BaseEntity, ISoftDelete
+public sealed class tep_tin : BaseEntity
 {
     /// <summary>Người tải lên tệp tin.</summary>
     public Guid nguoi_tai_len_id { get; set; }

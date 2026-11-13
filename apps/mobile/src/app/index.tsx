@@ -3,5 +3,5 @@ import { useSession } from '@/core/auth/session';
 
 export default function EntryRoute() {
   const { status } = useSession();
-  return <Redirect href={status === 'demo' ? '/home' : '/login'} />;
+  return <Redirect href={status === 'authenticated' ? '/home' : '/login'} />;
 }

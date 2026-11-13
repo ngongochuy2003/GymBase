@@ -1,4 +1,4 @@
-﻿using GymBase.BLFile.Storage;
+﻿using GymBase.BLFile.BLStorage;
 using Microsoft.Extensions.Options;
 using Xunit;
 

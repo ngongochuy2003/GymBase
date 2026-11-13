@@ -1,4 +1,4 @@
-﻿namespace GymBase.BLFile.Notifications;
+﻿namespace GymBase.BLFile.BLNotifications;
 
 public sealed class NotificationOptions
 {

@@ -1,6 +1,6 @@
 export interface FeedPostData {
   id: string;
-  author: { name: string; avatarUri: string };
+  author: { name: string; avatarUri?: string };
   timeLabel: string;
   content: string;
   imageUri?: string;
@@ -23,3 +23,4 @@ export interface PostActionTemplate {
   /** Căn phải hàng action. */
   align?: 'start' | 'end';
 }
+

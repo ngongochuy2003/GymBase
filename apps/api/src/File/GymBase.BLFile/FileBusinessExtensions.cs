@@ -1,10 +1,10 @@
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
-using GymBase.BLFile.Files;
-using GymBase.BLFile.Notifications;
-using GymBase.BLFile.Processing;
-using GymBase.BLFile.Storage;
+using GymBase.BLFile.BLFiles;
+using GymBase.BLFile.BLNotifications;
+using GymBase.BLFile.BLProcessing;
+using GymBase.BLFile.BLStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

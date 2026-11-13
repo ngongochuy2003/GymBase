@@ -80,8 +80,9 @@ Nhấn `Ctrl+Shift+P`, chọn **Tasks: Run Task**, rồi chọn task:
 | `Mobile: chạy Expo (xóa cache)` | Như trên kèm `-c`, dùng khi app hiển thị code cũ hoặc lỗi bundle lạ |
 | `Mobile: kiểm tra (lint + typecheck + test)` | `pnpm mobile:check` |
 
-App mobile mặc định chạy chế độ demo (không gọi API). Muốn app gọi API thì cấu hình
-`apps/mobile/.env` theo mục 4. Muốn dừng API thì bấm vào terminal của task rồi nhấn Ctrl+C,
+App mobile cần backend để đăng nhập và tải dữ liệu. Cấu hình `EXPO_PUBLIC_API_URL` trong
+`apps/mobile/.env` theo `apps/mobile/.env.example`; trên web cần thêm origin Expo vào
+`Cors:AllowedOrigins` (Development hiện cho phép cổng 8082). Muốn dừng API thì bấm vào terminal của task rồi nhấn Ctrl+C,
 hoặc chạy **Tasks: Terminate Task**.
 
 ## 3. Chạy bằng dòng lệnh

@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using SkiaSharp;
 
-namespace GymBase.BLFile.Processing;
+namespace GymBase.BLFile.BLProcessing;
 
 public sealed class SkiaImageProcessor : IImageProcessor
 {
@@ -75,9 +75,18 @@ public sealed class SkiaImageProcessor : IImageProcessor
                 $"Kích thước ảnh ({width}x{height}) vượt quá giới hạn an toàn {MaxDimensionLimit}px / 36MP (chống Decompression Bomb).");
         }
 
-        using var rawBitmap = SKBitmap.Decode(codec);
-        if (rawBitmap == null)
-            throw new InvalidDataException("Không thể giải mã dữ liệu điểm ảnh.");
+        var imageInfo = new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        var rawBitmap = new SKBitmap(imageInfo);
+        var codecResult = codec.GetPixels(imageInfo, rawBitmap.GetPixels());
+        if (codecResult != SKCodecResult.Success && codecResult != SKCodecResult.IncompleteInput)
+        {
+            rawBitmap.Dispose();
+            rawBitmap = SKBitmap.Decode(codec) ?? SKBitmap.Decode(skData);
+            if (rawBitmap == null)
+                throw new InvalidDataException("Không thể giải mã dữ liệu điểm ảnh.");
+        }
+
+        using var _ = rawBitmap;
 
         using var orientedBitmap = ApplyExifOrientation(rawBitmap, codec.EncodedOrigin);
         var origW = orientedBitmap.Width;

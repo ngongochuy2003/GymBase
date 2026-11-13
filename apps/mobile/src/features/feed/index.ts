@@ -1,12 +1,10 @@
 export { FeedScreen } from './screens/feed-screen';
 export { PostCard, type PostCardAction, type PostCardProps } from './components/post-card';
 export { PostList, type PostListProps } from './components/post-list';
-export { feedPosts } from './mock/feed-posts';
-export { feedFilters, postActionTemplates } from './mock/feed-config';
+export { feedFilters, postActionTemplates } from './config/feed-config';
 export {
   createFeedRepository,
   feedRepository,
-  filterFeedPostsByTab,
   formatRelativeTimeVi,
   mapBaiVietDtoToFeedPost,
   type BaiVietDto,

@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace GymBase.BLFile.Processing;
+namespace GymBase.BLFile.BLProcessing;
 
 public static class BlurhashEncoder
 {

@@ -4,9 +4,7 @@ Nền tảng kết nối phòng gym, PT và học viên; hỗ trợ trao đổi,
 và theo dõi tiến trình. V1 ưu tiên PT/học viên; phòng gym, web và các tích hợp
 thương mại mở rộng theo roadmap.
 
-**Trạng thái: Mobile base đã chạy được bằng Expo.** Có demo lịch tập, phiên demo,
-theme sáng/tối, API/storage adapters và tests. Backend .NET, MySQL và Next.js chưa
-triển khai. Xem [hướng dẫn Mobile](apps/mobile/README.md).
+**Trạng thái:** Backend ASP.NET Core 10 và MySQL đã có các luồng xác thực, feed bài viết, tương tác và upload tệp. Mobile Expo đã kết nối đăng nhập, bảng tin, lượt thích và đăng bài vào API. Chưa có frontend Next.js; đăng ký công khai và các tab lộ trình/tin nhắn chưa triển khai. Xem [hướng dẫn Mobile](apps/mobile/README.md) và [hướng dẫn API](docs/api/cach-chay-api.md).
 
 ## Cấu trúc hiện có
 
@@ -31,7 +29,7 @@ GymBase/
 │   └── onboarding/
 ├── scripts/                   # Kiểm tra khung repo không cần dependencies
 ├── .github/
-│   ├── workflows/             # Mobile CI; backend CI bổ sung khi có API
+│   ├── workflows/             # CI mobile và backend
 │   └── CODEOWNERS             # Mẫu comment, chưa gán reviewer
 ├── .editorconfig
 ├── .gitattributes
@@ -55,15 +53,17 @@ Chạy từ root bằng Node.js (script không cần cài dependencies):
 node scripts/check-repo.mjs
 ```
 
-Chạy demo Mobile từ root (Node 24.13.0, pnpm 10.34.9):
+Chạy Mobile từ root (Node 24.13.0, pnpm 10.34.9; cần API và MySQL local):
 
 ```sh
 npx --yes pnpm@10.34.9 install --frozen-lockfile
 npx --yes pnpm@10.34.9 mobile
 ```
 
-Mở Expo Go tương thích SDK 58 và quét QR; hoặc dùng `mobile:android` khi emulator
-đã chạy. `mobile:web` mở bản preview React Native Web, không phải ứng dụng Next.js.
+Trước tiên cấu hình và chạy API/MySQL theo [hướng dẫn API](docs/api/cach-chay-api.md),
+rồi cấu hình `apps/mobile/.env` theo `apps/mobile/.env.example`. Mở Expo Go tương thích
+SDK 58 và quét QR; hoặc dùng `mobile:android` khi emulator đã chạy. `mobile:web` mở
+React Native Web, không phải ứng dụng Next.js.
 Chạy `npx --yes pnpm@10.34.9 mobile:check` để lint, typecheck và test.
 PowerShell có thể dùng `npx.cmd` nếu policy chặn `npx.ps1`.
 Workspace hiện có `@gymbase/mobile`; NuGet vẫn quản lý dependencies .NET riêng.
@@ -81,6 +81,6 @@ Workspace hiện có `@gymbase/mobile`; NuGet vẫn quản lý dependencies .NET
 
 Không commit `.env`, tokens, mật khẩu, signing keys hoặc dữ liệu người dùng.
 Mobile sử dụng `apps/mobile/.env.example`; `.env.example` ở root dành cho hạ tầng
-tương lai. Demo chạy ngay mà không cần `.env` hoặc backend.
+tương lai.
 
 <!-- Ghi chú ban đầu của repository: nnHuy comment -->
