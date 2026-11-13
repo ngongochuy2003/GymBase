@@ -1,3 +1,4 @@
+import { TurboModuleRegistry } from 'react-native';
 import { env } from '../config/env';
 
 type Reason =
@@ -11,6 +12,9 @@ export class GoogleSignInUnavailableError extends Error {
   }
 }
 
+/** Tên module native đăng ký bởi thư viện (xuất hiện trong lỗi "'RNGoogleSignin' could not be found"). */
+const NATIVE_MODULE_NAME = 'RNGoogleSignin';
+
 type Library = typeof import('@react-native-google-signin/google-signin');
 
 /**
@@ -18,6 +22,11 @@ type Library = typeof import('@react-native-google-signin/google-signin');
  * nạp lười để chỉ nút Google báo "cần bản dev build".
  */
 function loadLibrary(): Library {
+  // Kiểm tra module native có trong bản build trước khi nạp thư viện: thiếu thì thư viện tự ném Invariant Violation
+  // (hộp lỗi đỏ của React Native) ngay khi nạp, kể cả khi đã bọc try/catch.
+  if (TurboModuleRegistry.get(NATIVE_MODULE_NAME) == null) {
+    throw new GoogleSignInUnavailableError('NATIVE_MODULE_MISSING');
+  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('@react-native-google-signin/google-signin') as Library;

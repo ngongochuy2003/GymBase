@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- test nạp lại module sau khi đổi mock */
+import { TurboModuleRegistry } from 'react-native';
 import { GoogleSignInUnavailableError, googleSignIn } from '@/core/auth/google-sign-in';
 import { env } from '@/core/config/env';
 
@@ -27,6 +28,8 @@ jest.mock('@react-native-google-signin/google-signin', () => mockLibrary);
 const WEB_CLIENT_ID = 'web-client.apps.googleusercontent.com';
 
 beforeEach(() => {
+  // Bản build có module native: TurboModuleRegistry.get trả module; test cuối giả lập Expo Go (thiếu module).
+  jest.spyOn(TurboModuleRegistry, 'get').mockReturnValue({} as never);
   env.googleWebClientId = WEB_CLIENT_ID;
   mockLibrary.GoogleSignin.hasPlayServices.mockResolvedValue(true);
 });
@@ -95,7 +98,19 @@ test('signing out clears the Google account and never throws', async () => {
   await expect(googleSignIn.signOut()).resolves.toBeUndefined();
 });
 
-test('when the native module is missing, as in Expo Go, it reports that instead of crashing', async () => {
+test('in Expo Go, where the native module is not registered, it reports that without loading the library', async () => {
+  jest.spyOn(TurboModuleRegistry, 'get').mockReturnValue(null);
+
+  await expect(googleSignIn.getIdToken()).rejects.toMatchObject({
+    reason: 'NATIVE_MODULE_MISSING',
+  });
+  await expect(googleSignIn.signOut()).resolves.toBeUndefined();
+
+  expect(mockLibrary.GoogleSignin.configure).not.toHaveBeenCalled();
+  expect(TurboModuleRegistry.get).toHaveBeenCalledWith('RNGoogleSignin');
+});
+
+test('when loading the library itself throws, it reports the native module as missing', async () => {
   jest.resetModules();
   jest.doMock('@react-native-google-signin/google-signin', () => {
     throw new Error('RNGoogleSignin could not be found');
