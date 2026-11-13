@@ -47,9 +47,9 @@ public sealed class XacThucService(
     {
         await loginValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
-        var userName = dto.ten_dang_nhap.Trim();
-        var isLocked = throttle.IsLocked(userName);
-        var user = await users.DLFindByTenDangNhapAsync(userName, cancellationToken);
+        var email = EmailRules.Normalize(dto.email);
+        var isLocked = throttle.IsLocked(email);
+        var user = await users.DLFindByEmailAsync(email, cancellationToken);
 
         // Luôn băm, kể cả khi không có tài khoản hoặc đang khóa, để thời gian phản hồi tương đương.
         var verification = VerifyPassword(user, dto.mat_khau);
@@ -58,13 +58,13 @@ public sealed class XacThucService(
         {
             if (!isLocked)
             {
-                throttle.RecordFailure(userName);
+                throttle.RecordFailure(email);
             }
 
             throw InvalidCredentials();
         }
 
-        throttle.Reset(userName);
+        throttle.Reset(email);
 
         if (verification == PasswordVerificationResult.SuccessRehashNeeded)
         {
@@ -179,17 +179,23 @@ public sealed class XacThucService(
         await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
-    /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu tên đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
-    public async Task BLTaoHoacDatLaiAdminAsync(string userName, string password, CancellationToken cancellationToken)
+    /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu email đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
+    /// <exception cref="ValidationFailedException">Email hoặc mật khẩu không hợp lệ.</exception>
+    public async Task BLTaoHoacDatLaiAdminAsync(string email, string password, CancellationToken cancellationToken)
     {
+        if (!EmailRules.IsValid(email))
+        {
+            throw new ValidationFailedException(nameof(DangNhapDto.email), "Email không hợp lệ.");
+        }
+
         await resetPasswordValidator.ValidateOrThrowAsync(new DatLaiMatKhauDto { mat_khau_moi = password }, cancellationToken);
 
-        var name = userName.Trim();
-        var user = await users.DLFindByTenDangNhapAsync(name, cancellationToken);
+        var normalized = EmailRules.Normalize(email);
+        var user = await users.DLFindByEmailAsync(normalized, cancellationToken);
         if (user is null)
         {
-            user = new tai_khoan { ten_dang_nhap = name, ho_ten = name, vai_tro = AppRoles.Admin };
-            EnsureNotUserName(password, name, nameof(DatLaiMatKhauDto.mat_khau_moi));
+            user = new tai_khoan { email = normalized, ho_ten = normalized[..normalized.IndexOf('@')], vai_tro = AppRoles.Admin };
+            EnsureNotUserName(password, user.ho_ten, nameof(DatLaiMatKhauDto.mat_khau_moi));
             user.mat_khau_hash = passwordHasher.HashPassword(user, password);
             user.MarkCreated("create-admin", UtcNow);
             await users.DLInsertAsync(user, cancellationToken);
@@ -254,7 +260,7 @@ public sealed class XacThucService(
     }
 
     private static UnauthorizedException InvalidCredentials() =>
-        new("Tên đăng nhập hoặc mật khẩu không đúng.", AuthErrorCodes.InvalidCredentials);
+        new("Email hoặc mật khẩu không đúng.", AuthErrorCodes.InvalidCredentials);
 
     private static TaiKhoanDto ToDto(tai_khoan user) => new(
         user.Id, user.ten_dang_nhap, user.ho_ten, user.email, user.so_dien_thoai,

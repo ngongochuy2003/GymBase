@@ -29,16 +29,18 @@ public sealed class AuthFlowTests : IAsyncLifetime
 
     public async Task DisposeAsync() => await _app.DisposeAsync();
 
-    private async Task CreateUser(string userName)
+    private static string EmailOf(string userName) => $"{userName}@gymbase.test";
+
+    private async Task CreateUser(string userName, string? email = null)
     {
-        var body = new { ten_dang_nhap = userName, mat_khau = Password, ho_ten = "Thử", vai_tro = AppRoles.User };
+        var body = new { ten_dang_nhap = userName, email = email ?? EmailOf(userName), mat_khau = Password, ho_ten = "Thử", vai_tro = AppRoles.User };
         Assert.Equal(HttpStatusCode.Created, (await _client.PostAsJsonAsync("/api/v1/web/testusers", body)).StatusCode);
     }
 
     private async Task<JsonElement> LoginAs(string userName)
     {
         await CreateUser(userName);
-        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = userName, mat_khau = Password });
+        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { email = EmailOf(userName), mat_khau = Password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadFromJsonAsync<JsonElement>();
     }
@@ -119,11 +121,70 @@ public sealed class AuthFlowTests : IAsyncLifetime
     {
         await CreateUser("hv.saimk");
 
-        var wrong = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = "hv.saimk", mat_khau = "sai-mat-khau" });
-        var unknown = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = "khong.co", mat_khau = "sai-mat-khau" });
+        var wrong = await _client.PostAsJsonAsync($"{Auth}/login", new { email = EmailOf("hv.saimk"), mat_khau = "sai-mat-khau" });
+        var unknown = await _client.PostAsJsonAsync($"{Auth}/login", new { email = "khong.co@gymbase.test", mat_khau = "sai-mat-khau" });
 
         await AssertProblem(wrong, HttpStatusCode.Unauthorized, "AUTH_INVALID_CREDENTIALS");
         await AssertProblem(unknown, HttpStatusCode.Unauthorized, "AUTH_INVALID_CREDENTIALS");
+    }
+
+    [Fact]
+    public async Task Login_ignores_case_and_surrounding_spaces_of_email()
+    {
+        await CreateUser("hv.hoathuong", "Hv.HoaThuong@GymBase.Test");
+
+        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { email = "  HV.hoathuong@gymbase.TEST ", mat_khau = Password });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_with_user_name_instead_of_email_is_a_validation_error()
+    {
+        await CreateUser("hv.tendn");
+
+        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = "hv.tendn", mat_khau = Password });
+
+        await AssertProblem(response, HttpStatusCode.BadRequest, "VALIDATION_FAILED");
+    }
+
+    [Fact]
+    public async Task Login_with_user_name_in_the_email_field_is_rejected()
+    {
+        await CreateUser("hv.khongemail");
+
+        var response = await _client.PostAsJsonAsync($"{Auth}/login", new { email = "hv.khongemail", mat_khau = Password });
+
+        await AssertProblem(response, HttpStatusCode.BadRequest, "VALIDATION_FAILED");
+    }
+
+    [Fact]
+    public async Task Creating_a_user_requires_an_email()
+    {
+        var body = new { ten_dang_nhap = "hv.thieuemail", mat_khau = Password, ho_ten = "Thử", vai_tro = AppRoles.User };
+
+        await AssertProblem(await _client.PostAsJsonAsync("/api/v1/web/testusers", body), HttpStatusCode.BadRequest, "VALIDATION_FAILED");
+    }
+
+    [Fact]
+    public async Task Creating_a_user_with_a_taken_email_is_rejected_whatever_the_case()
+    {
+        await CreateUser("hv.email1", "Trung@GymBase.Test");
+        var body = new { ten_dang_nhap = "hv.email2", email = " trung@gymbase.test", mat_khau = Password, ho_ten = "Thử", vai_tro = AppRoles.User };
+
+        await AssertProblem(await _client.PostAsJsonAsync("/api/v1/web/testusers", body), HttpStatusCode.Conflict, "USER_EMAIL_TAKEN");
+    }
+
+    [Fact]
+    public async Task Updating_a_user_to_a_taken_email_is_rejected()
+    {
+        await CreateUser("hv.sua1", "sua1@gymbase.test");
+        await CreateUser("hv.sua2", "sua2@gymbase.test");
+        var login = await _client.PostAsJsonAsync($"{Auth}/login", new { email = "sua2@gymbase.test", mat_khau = Password });
+        var id = (await login.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("user").GetProperty("id").GetString();
+        var body = new { ho_ten = "Thử", email = "SUA1@gymbase.test", vai_tro = AppRoles.User, dang_hoat_dong = true };
+
+        await AssertProblem(await _client.PutAsJsonAsync($"/api/v1/web/testusers/{id}", body), HttpStatusCode.Conflict, "USER_EMAIL_TAKEN");
     }
 
     [Fact]
@@ -199,7 +260,7 @@ public sealed class AuthFlowTests : IAsyncLifetime
         HttpResponseMessage last = null!;
         for (var i = 0; i < 21; i++)
         {
-            last = await _client.PostAsJsonAsync($"{Auth}/login", new { ten_dang_nhap = $"khong.co.{i}", mat_khau = "sai-mat-khau" });
+            last = await _client.PostAsJsonAsync($"{Auth}/login", new { email = $"khong.co.{i}@gymbase.test", mat_khau = "sai-mat-khau" });
         }
 
         Assert.Equal(HttpStatusCode.TooManyRequests, last.StatusCode);

@@ -16,7 +16,7 @@ public sealed class TaiKhoanCreateValidator : AppValidator<TaiKhoanCreateDto>
             .Must((dto, password) => !PasswordRules.ContainsUserName(password, dto.ten_dang_nhap))
             .WithMessage("Mật khẩu không được chứa tên đăng nhập.");
         RuleFor(x => x.ho_ten).NotEmpty().MaximumLength(100).WithName("Họ tên");
-        RuleFor(x => x.email).EmailAddress().MaximumLength(100).WithName("Email");
+        RuleFor(x => x.email).ValidEmail();
         RuleFor(x => x.so_dien_thoai).PhoneNumber().WithName("Số điện thoại");
         RuleFor(x => x.vai_tro).NotEmpty().Must(AppRoles.All.Contains).WithMessage(InvalidRole).WithName("Vai trò");
     }
@@ -30,7 +30,7 @@ public sealed class TaiKhoanUpdateValidator : AppValidator<TaiKhoanUpdateDto>
     public TaiKhoanUpdateValidator()
     {
         RuleFor(x => x.ho_ten).NotEmpty().MaximumLength(100).WithName("Họ tên");
-        RuleFor(x => x.email).EmailAddress().MaximumLength(100).WithName("Email");
+        RuleFor(x => x.email).ValidEmail();
         RuleFor(x => x.so_dien_thoai).PhoneNumber().WithName("Số điện thoại");
         RuleFor(x => x.vai_tro).NotEmpty().Must(AppRoles.All.Contains)
             .WithMessage(TaiKhoanCreateValidator.InvalidRole).WithName("Vai trò");

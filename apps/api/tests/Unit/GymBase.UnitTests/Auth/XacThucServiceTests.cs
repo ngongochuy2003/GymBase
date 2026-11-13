@@ -23,6 +23,7 @@ internal static class AuthTestHelpers
 public class XacThucServiceTests
 {
     private const string UserName = "hv.dangnhap";
+    private const string Email = "hv.dangnhap@gymbase.local";
     private const string Password = AuthTestHelpers.ValidPassword;
 
     private sealed class MovableClock : TimeProvider
@@ -54,7 +55,7 @@ public class XacThucServiceTests
     {
         _throttle = new LoginThrottle(_clock);
         _ = new InMemoryTaiKhoanRepository(_userStore); // nạp dữ liệu mẫu
-        _user = new tai_khoan { ten_dang_nhap = UserName, ho_ten = "Học viên", vai_tro = AppRoles.User };
+        _user = new tai_khoan { ten_dang_nhap = UserName, email = Email, ho_ten = "Học viên", vai_tro = AppRoles.User };
         _user.mat_khau_hash = AuthTestHelpers.FastHasher.HashPassword(_user, Password);
         _user.MarkCreated("seed", _clock.Now.UtcDateTime);
         _userStore.TryAdd(_user);
@@ -73,17 +74,17 @@ public class XacThucServiceTests
         new DoiMatKhauValidator(),
         new DatLaiMatKhauValidator());
 
-    private Task<KetQuaDangNhapDto> Login(string userName = UserName, string password = Password) =>
-        Service().BLDangNhapAsync(new DangNhapDto { ten_dang_nhap = userName, mat_khau = password }, CancellationToken.None);
+    private Task<KetQuaDangNhapDto> Login(string email = Email, string password = Password) =>
+        Service().BLDangNhapAsync(new DangNhapDto { email = email, mat_khau = password }, CancellationToken.None);
 
     private Task<KetQuaDangNhapDto> Refresh(string token) =>
         Service().BLLamMoiTokenAsync(new LamMoiTokenDto { refresh_token = token }, CancellationToken.None);
 
-    private async Task AssertLoginRejected(string userName = UserName, string password = Password)
+    private async Task AssertLoginRejected(string email = Email, string password = Password)
     {
-        var error = await Assert.ThrowsAsync<UnauthorizedException>(() => Login(userName, password));
+        var error = await Assert.ThrowsAsync<UnauthorizedException>(() => Login(email, password));
         Assert.Equal(AuthErrorCodes.InvalidCredentials, error.Code);
-        Assert.Equal("Tên đăng nhập hoặc mật khẩu không đúng.", error.Message);
+        Assert.Equal("Email hoặc mật khẩu không đúng.", error.Message);
     }
 
     private void Advance(TimeSpan span) => _clock.Now += span;
@@ -104,9 +105,9 @@ public class XacThucServiceTests
     }
 
     [Fact]
-    public async Task Login_ignores_username_case_and_spaces()
+    public async Task Login_ignores_email_case_and_spaces()
     {
-        var result = await Login("  HV.DANGNHAP ");
+        var result = await Login("  HV.DangNhap@GymBase.Local ");
 
         Assert.Equal(UserName, result.user.ten_dang_nhap);
     }
@@ -115,7 +116,7 @@ public class XacThucServiceTests
     public async Task Wrong_password_and_unknown_user_give_the_same_error()
     {
         await AssertLoginRejected(password: "sai-mat-khau-nay");
-        await AssertLoginRejected(userName: "khong.ton.tai");
+        await AssertLoginRejected(email: "khong.ton.tai@gymbase.local");
     }
 
     [Fact]
@@ -130,7 +131,7 @@ public class XacThucServiceTests
     [Fact]
     public async Task User_with_malformed_or_empty_hash_cannot_log_in()
     {
-        await AssertLoginRejected("admin", "mock-not-a-real-hash");
+        await AssertLoginRejected("admin@gymbase.local", "mock-not-a-real-hash");
 
         _user.mat_khau_hash = string.Empty;
         _userStore.TryReplace(_user);
@@ -152,14 +153,26 @@ public class XacThucServiceTests
     }
 
     [Fact]
-    public async Task Unknown_username_is_throttled_the_same_way()
+    public async Task Unknown_email_is_throttled_the_same_way()
     {
         for (var i = 0; i < 5; i++)
         {
-            await AssertLoginRejected(userName: "khong.ton.tai", password: "sai-mat-khau-nay");
+            await AssertLoginRejected(email: "khong.ton.tai@gymbase.local", password: "sai-mat-khau-nay");
         }
 
-        Assert.True(_throttle.IsLocked("khong.ton.tai"));
+        Assert.True(_throttle.IsLocked("khong.ton.tai@gymbase.local"));
+    }
+
+    [Fact]
+    public async Task Failures_with_differently_cased_or_spaced_email_share_one_lock()
+    {
+        string[] spellings = [Email, Email.ToUpperInvariant(), $" {Email} ", "Hv.DangNhap@gymbase.local", Email];
+        foreach (var spelling in spellings)
+        {
+            await AssertLoginRejected(email: spelling, password: "sai-mat-khau-nay");
+        }
+
+        await AssertLoginRejected();
     }
 
     [Fact]
@@ -167,14 +180,14 @@ public class XacThucServiceTests
     {
         for (var attempt = 0; attempt < 10; attempt++)
         {
-            _throttle.RecordFailure(UserName);
+            _throttle.RecordFailure(Email);
         }
 
         Advance(TimeSpan.FromMinutes(14));
-        Assert.True(_throttle.IsLocked(UserName));
+        Assert.True(_throttle.IsLocked(Email));
 
         Advance(TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(1));
-        Assert.False(_throttle.IsLocked(UserName));
+        Assert.False(_throttle.IsLocked(Email));
         await Task.CompletedTask;
     }
 
@@ -189,7 +202,7 @@ public class XacThucServiceTests
         await Login();
         await AssertLoginRejected(password: "sai-mat-khau-nay");
 
-        Assert.False(_throttle.IsLocked(UserName));
+        Assert.False(_throttle.IsLocked(Email));
     }
 
     [Fact]
@@ -361,9 +374,9 @@ public class XacThucServiceTests
     [Fact]
     public async Task Create_admin_creates_a_new_admin_that_can_log_in()
     {
-        await Service().BLTaoHoacDatLaiAdminAsync("quan.tri", "Mat-khau-moi-2", CancellationToken.None);
+        await Service().BLTaoHoacDatLaiAdminAsync("Quan.Tri@GymBase.Local", "Mat-khau-moi-2", CancellationToken.None);
 
-        var result = await Login("quan.tri", "Mat-khau-moi-2");
+        var result = await Login("quan.tri@gymbase.local", "Mat-khau-moi-2");
 
         Assert.Equal(AppRoles.Admin, result.user.vai_tro);
     }
@@ -377,7 +390,7 @@ public class XacThucServiceTests
             new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator());
         var before = _userStore.Find(_user.Id)!.mat_khau_hash;
 
-        await service.BLDangNhapAsync(new DangNhapDto { ten_dang_nhap = UserName, mat_khau = Password }, CancellationToken.None);
+        await service.BLDangNhapAsync(new DangNhapDto { email = Email, mat_khau = Password }, CancellationToken.None);
 
         Assert.NotEqual(before, _userStore.Find(_user.Id)!.mat_khau_hash);
     }

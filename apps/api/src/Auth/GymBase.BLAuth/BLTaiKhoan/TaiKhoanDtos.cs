@@ -24,7 +24,8 @@ public sealed class TaiKhoanCreateDto
 
     public string ho_ten { get; init; } = string.Empty;
 
-    public string? email { get; init; }
+    /// <summary>Email đăng nhập, bắt buộc và duy nhất (ADR-0001).</summary>
+    public string email { get; init; } = string.Empty;
 
     public string? so_dien_thoai { get; init; }
 
@@ -36,7 +37,8 @@ public sealed class TaiKhoanUpdateDto
 {
     public string ho_ten { get; init; } = string.Empty;
 
-    public string? email { get; init; }
+    /// <summary>Email đăng nhập, bắt buộc và duy nhất (ADR-0001).</summary>
+    public string email { get; init; } = string.Empty;
 
     public string? so_dien_thoai { get; init; }
 

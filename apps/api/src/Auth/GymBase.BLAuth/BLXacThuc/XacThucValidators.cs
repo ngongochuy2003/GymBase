@@ -8,7 +8,7 @@ public sealed class DangNhapValidator : AppValidator<DangNhapDto>
 {
     public DangNhapValidator()
     {
-        RuleFor(x => x.ten_dang_nhap).NotEmpty().MaximumLength(50).WithName("Tên đăng nhập");
+        RuleFor(x => x.email).ValidEmail();
 
         // Giới hạn độ dài để chuỗi quá dài không làm tốn tài nguyên băm.
         RuleFor(x => x.mat_khau).NotEmpty().MaximumLength(PasswordRules.MaxLength).WithName("Mật khẩu");

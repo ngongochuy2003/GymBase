@@ -5,6 +5,8 @@ using GymBase.Entities.Auth;
 using GymBase.Persistence;
 using GymBase.Persistence.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GymBase.UnitTests.Auth;
 
@@ -107,5 +109,28 @@ public class AppDbContextModelTests
 
         Assert.Contains("CREATE UNIQUE INDEX `IX_tai_khoan_ten_dang_nhap` ON `tai_khoan` (`ten_dang_nhap`)", script);
         Assert.DoesNotContain("is_deleted", script);
+    }
+
+    [Fact]
+    public void Email_migration_normalises_and_backfills_before_creating_the_unique_index()
+    {
+        using var db = CreateContext();
+
+        var script = db.GetService<IMigrator>().GenerateScript(fromMigration: "20261111184506_AddBizTables", toMigration: "20261113141103_EmailLaDinhDanhDangNhap");
+
+        var lower = script.IndexOf("SET `email` = LOWER(TRIM(`email`))", StringComparison.Ordinal);
+        var backfill = script.IndexOf("SET `email` = LOWER(CONCAT(TRIM(`ten_dang_nhap`), '@gymbase.local'))", StringComparison.Ordinal);
+        var index = script.IndexOf("CREATE UNIQUE INDEX `IX_tai_khoan_email`", StringComparison.Ordinal);
+        Assert.True(lower >= 0 && lower < backfill && backfill < index, script);
+    }
+
+    [Fact]
+    public void Email_is_unique()
+    {
+        using var db = CreateContext();
+
+        var script = db.Database.GenerateCreateScript();
+
+        Assert.Contains("CREATE UNIQUE INDEX `IX_tai_khoan_email` ON `tai_khoan` (`email`)", script);
     }
 }

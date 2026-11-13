@@ -173,6 +173,9 @@ namespace GymBase.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("email")
+                        .IsUnique();
+
                     b.HasIndex("ten_dang_nhap")
                         .IsUnique();
 

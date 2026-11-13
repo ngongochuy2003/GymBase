@@ -44,7 +44,7 @@ public sealed class ChannelRoutingTests : IAsyncLifetime
     [InlineData("/api/v1/mob/testusers", "hv.mob")]
     public async Task Created_location_points_to_same_channel(string path, string tenDangNhap)
     {
-        var response = await _client.PostAsJsonAsync(path, new { ten_dang_nhap = tenDangNhap, mat_khau = "Mk-thu-nghiem-1", ho_ten = "Kênh", vai_tro = "User" });
+        var response = await _client.PostAsJsonAsync(path, new { ten_dang_nhap = tenDangNhap, email = $"{tenDangNhap}@gymbase.test", mat_khau = "Mk-thu-nghiem-1", ho_ten = "Kênh", vai_tro = "User" });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.StartsWith(path, response.Headers.Location!.AbsolutePath, StringComparison.OrdinalIgnoreCase);

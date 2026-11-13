@@ -5,7 +5,8 @@ namespace GymBase.BLAuth.BLXacThuc;
 /// <summary>Body đăng nhập.</summary>
 public sealed class DangNhapDto
 {
-    public string ten_dang_nhap { get; init; } = string.Empty;
+    /// <summary>Email của tài khoản (ADR-0001), không phân biệt hoa thường.</summary>
+    public string email { get; init; } = string.Empty;
 
     public string mat_khau { get; init; } = string.Empty;
 

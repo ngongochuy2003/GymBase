@@ -22,6 +22,14 @@ public sealed class InMemoryTaiKhoanRepository : InMemoryBaseRepository<tai_khoa
         Task.FromResult(Store.All().Any(user =>
             string.Equals(user.ten_dang_nhap, tenDangNhap, StringComparison.OrdinalIgnoreCase)));
 
+    public Task<bool> DLExistsByEmailAsync(string email, Guid? exceptId, CancellationToken cancellationToken) =>
+        Task.FromResult(Store.All().Any(user =>
+            user.Id != exceptId && string.Equals(user.email, email, StringComparison.OrdinalIgnoreCase)));
+
+    public Task<tai_khoan?> DLFindByEmailAsync(string email, CancellationToken cancellationToken) =>
+        Task.FromResult(Store.All().FirstOrDefault(user =>
+            string.Equals(user.email, email, StringComparison.OrdinalIgnoreCase)));
+
     public Task<tai_khoan?> DLFindByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
         Task.FromResult(Store.All().FirstOrDefault(user =>
             string.Equals(user.ten_dang_nhap, tenDangNhap, StringComparison.OrdinalIgnoreCase)));
@@ -32,7 +40,7 @@ public sealed class InMemoryTaiKhoanRepository : InMemoryBaseRepository<tai_khoa
         CreateMock("0193f0a0-0000-7000-8000-000000000002", "pt.minh", "Nguyễn Văn Minh", "minh@gymbase.local", "0900000002", "User", true, 2),
         CreateMock("0193f0a0-0000-7000-8000-000000000003", "pt.lan", "Trần Thị Lan", "lan@gymbase.local", "0900000003", "User", true, 3),
         CreateMock("0193f0a0-0000-7000-8000-000000000004", "hv.huy", "Ngô Ngọc Huy", "huy@gymbase.local", "0900000004", "User", true, 4),
-        CreateMock("0193f0a0-0000-7000-8000-000000000005", "hv.phuong", "Lê Thu Phương", null, "0900000005", "User", false, 5),
+        CreateMock("0193f0a0-0000-7000-8000-000000000005", "hv.phuong", "Lê Thu Phương", "phuong@gymbase.local", "0900000005", "User", false, 5),
     ];
 
     private static tai_khoan CreateMock(
