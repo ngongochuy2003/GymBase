@@ -7,7 +7,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { authApi, authRuntime } from '../api/auth-api';
+import { authApi, authRuntime, type RegisterInput } from '../api/auth-api';
 import type { AuthResult, AuthUser } from './types';
 
 type Session = {
@@ -15,6 +15,11 @@ type Session = {
   user: AuthUser | null;
   /** Đăng nhập bằng email và mật khẩu; ném `ApiError` khi không thành công. */
   signIn(email: string, password: string): Promise<AuthResult>;
+  /** Đăng ký bằng mật khẩu, có phiên ngay; ném `ApiError` khi không thành công. */
+  register(input: RegisterInput): Promise<AuthResult>;
+  /** True ngay sau khi tài khoản vừa được tạo, cho tới khi người dùng chọn thiết lập hồ sơ hoặc bỏ qua. */
+  pendingWelcome: boolean;
+  completeWelcome(): void;
   signOut(): Promise<void>;
 };
 const SessionContext = createContext<Session | null>(null);
@@ -22,6 +27,7 @@ const SessionContext = createContext<Session | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
+  const [pendingWelcome, setPendingWelcome] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -61,12 +67,31 @@ export function SessionProvider({ children }: PropsWithChildren) {
     return result;
   }, []);
 
+  const register = useCallback(async (input: RegisterInput) => {
+    const result = await authApi.register({
+      ...input,
+      ho_ten: input.ho_ten.trim(),
+      email: input.email.trim().toLowerCase(),
+      so_dien_thoai: input.so_dien_thoai.trim(),
+    });
+    await authRuntime.save({
+      accessToken: result.access_token,
+      refreshToken: result.refresh_token,
+    });
+    setPendingWelcome(result.tai_khoan_moi);
+    setUser(result.user);
+    return result;
+  }, []);
+
+  const completeWelcome = useCallback(() => setPendingWelcome(false), []);
+
   const signOut = useCallback(async () => {
     try {
       // Thu hồi phiên trên server khi còn token; mất mạng thì vẫn đăng xuất cục bộ.
       await authApi.logout().catch(() => undefined);
     } finally {
       setUser(null);
+      setPendingWelcome(false);
       await authRuntime.clear();
     }
   }, []);
@@ -76,9 +101,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
       status: !ready ? 'loading' : user ? 'authenticated' : 'guest',
       user,
       signIn,
+      register,
+      pendingWelcome,
+      completeWelcome,
       signOut,
     }),
-    [ready, user, signIn, signOut],
+    [ready, user, signIn, register, pendingWelcome, completeWelcome, signOut],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

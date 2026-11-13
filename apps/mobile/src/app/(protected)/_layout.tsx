@@ -29,6 +29,7 @@ export default function ProtectedLayout() {
         }}
       />
       <Tabs.Screen name="profile-setup" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="register-success" options={{ tabBarButton: () => null }} />
     </Tabs>
   );
 }

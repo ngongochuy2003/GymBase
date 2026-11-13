@@ -87,7 +87,7 @@ test('guest deep link goes to the welcome screen, not the protected page or not-
   expect(screen.queryByText('Không tìm thấy màn hình')).toBeNull();
 });
 
-test('welcome offers sign in, register and Google, the last two not wired yet', async () => {
+test('welcome offers sign in, register and Google, the last one not wired yet', async () => {
   await renderRouter(routes, { initialUrl: '/' });
   expect(await screen.findByRole('button', { name: 'Đăng ký tài khoản' })).toBeTruthy();
 

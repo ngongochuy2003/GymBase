@@ -5,7 +5,6 @@ import { AppText, Button, Screen } from '@/shared/components/ui';
 
 export function WelcomeScreen() {
   const [notice, setNotice] = useState<string | null>(null);
-  // TODO(REGISTER): nối "Đăng ký tài khoản" tới màn đăng ký khi làm ticket mobile đăng ký (#19).
   // TODO(GOOGLE): nối "Đăng nhập với Google" khi làm đăng nhập Google trên mobile (#20).
   const comingSoon = () => setNotice('Tính năng này sắp có.');
   return (
@@ -26,7 +25,7 @@ export function WelcomeScreen() {
         </Text>
       </View>
       <View className="gap-3">
-        <Button label="Đăng ký tài khoản" onPress={comingSoon} />
+        <Button label="Đăng ký tài khoản" onPress={() => router.push('/register')} />
         <Button label="Đăng nhập" secondary onPress={() => router.push('/login')} />
         <AppText muted>Hoặc tiếp tục với</AppText>
         <Button label="Đăng nhập với Google" secondary onPress={comingSoon} />
