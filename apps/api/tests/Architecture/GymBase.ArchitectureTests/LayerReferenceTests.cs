@@ -135,7 +135,7 @@ public partial class LayerReferenceTests
             .Select(r => Path.GetFileNameWithoutExtension(((string?)r.Attribute("Include") ?? string.Empty).Replace('\\', '/')))
             .ToList();
 
-    private static Dictionary<string, string> SourceProjectFiles() =>
+    internal static Dictionary<string, string> SourceProjectFiles() =>
         Directory.EnumerateFiles(Path.Combine(FindApiRoot(), "src"), "*.csproj", SearchOption.AllDirectories)
             .Where(f => !f.Split(Path.DirectorySeparatorChar).Any(part => part is "bin" or "obj"))
             .ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);

@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/07-goi-pt-buoi-tap.md. Mục 3.
 /// <summary>
 /// Gói buổi PT đã thỏa thuận giữa một PT và học viên. Số buổi còn lại không lưu, tính bằng
 /// SUM(bien_dong_so_buoi.so_buoi_thay_doi).

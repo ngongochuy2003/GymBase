@@ -4,15 +4,9 @@ namespace GymBase.UnitTests.Base;
 
 public class EntityTests
 {
-    private sealed class Package : BaseAuditableEntity, ISoftDelete
-    {
-        public bool is_deleted { get; set; }
-    }
+    private sealed class Package : BaseAuditableEntity;
 
-    private sealed class CheckIn : BaseEntity, ISoftDelete
-    {
-        public bool is_deleted { get; set; }
-    }
+    private sealed class CheckIn : BaseEntity;
 
     private static readonly DateTime T1 = new(2026, 11, 8, 1, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime T2 = new(2026, 11, 8, 2, 0, 0, DateTimeKind.Utc);
@@ -73,20 +67,5 @@ public class EntityTests
 
         Assert.Throws<ArgumentException>(() => entity.MarkCreated("admin", notUtc));
         Assert.Throws<ArgumentException>(() => entity.MarkUpdated("admin", notUtc));
-    }
-
-    [Fact]
-    public void Soft_delete_sets_flag_and_can_restore()
-    {
-        var entity = new CheckIn();
-        Assert.False(entity.is_deleted);
-
-        entity.MarkDeleted();
-
-        Assert.True(entity.is_deleted);
-
-        entity.Restore();
-
-        Assert.False(entity.is_deleted);
     }
 }

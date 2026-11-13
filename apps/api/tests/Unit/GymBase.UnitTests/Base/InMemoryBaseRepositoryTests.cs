@@ -21,23 +21,23 @@ public class InMemoryBaseRepositoryTests
     {
         var repository = new TagRepository(_store);
         var tag = new Tag { ten = "a" };
-        await repository.InsertAsync(tag, CancellationToken.None);
+        await repository.DLInsertAsync(tag, CancellationToken.None);
 
-        var loaded = (await repository.GetByIdAsync(tag.Id, CancellationToken.None))!;
+        var loaded = (await repository.DLGetByIdAsync(tag.Id, CancellationToken.None))!;
         loaded.ten = "b";
-        Assert.Equal("a", (await repository.GetByIdAsync(tag.Id, CancellationToken.None))!.ten);
+        Assert.Equal("a", (await repository.DLGetByIdAsync(tag.Id, CancellationToken.None))!.ten);
 
-        Assert.True(await repository.UpdateAsync(loaded, CancellationToken.None));
-        Assert.Equal("b", (await repository.GetByIdAsync(tag.Id, CancellationToken.None))!.ten);
+        Assert.True(await repository.DLUpdateAsync(loaded, CancellationToken.None));
+        Assert.Equal("b", (await repository.DLGetByIdAsync(tag.Id, CancellationToken.None))!.ten);
     }
 
     [Fact]
     public async Task Search_is_ignored_when_entity_has_no_search_values()
     {
         var repository = new TagRepository(_store);
-        await repository.InsertAsync(new Tag { ten = "a" }, CancellationToken.None);
+        await repository.DLInsertAsync(new Tag { ten = "a" }, CancellationToken.None);
 
-        var page = await repository.GetPagingAsync(new PagingRequest { search = "zzz" }.Normalize(), CancellationToken.None);
+        var page = await repository.DLGetPagingAsync(new PagingRequest { search = "zzz" }.Normalize(), CancellationToken.None);
 
         Assert.Equal(1, page.meta.total);
     }
@@ -47,12 +47,12 @@ public class InMemoryBaseRepositoryTests
     {
         var repository = new TagRepository(_store);
         var tag = new Tag();
-        await repository.InsertAsync(tag, CancellationToken.None);
+        await repository.DLInsertAsync(tag, CancellationToken.None);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.InsertAsync(tag, CancellationToken.None));
-        Assert.True(await repository.DeleteAsync(tag.Id, CancellationToken.None));
-        Assert.Null(await repository.GetByIdAsync(tag.Id, CancellationToken.None));
-        Assert.False(await repository.UpdateAsync(tag, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.DLInsertAsync(tag, CancellationToken.None));
+        Assert.True(await repository.DLDeleteAsync(tag.Id, CancellationToken.None));
+        Assert.Null(await repository.DLGetByIdAsync(tag.Id, CancellationToken.None));
+        Assert.False(await repository.DLUpdateAsync(tag, CancellationToken.None));
     }
 
     [Fact]

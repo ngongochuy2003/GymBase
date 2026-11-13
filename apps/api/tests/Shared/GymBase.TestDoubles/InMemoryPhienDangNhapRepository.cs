@@ -1,4 +1,4 @@
-using GymBase.DLAuth.Contract;
+using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.Entities.Auth;
 
 namespace GymBase.TestDoubles;
@@ -7,10 +7,10 @@ namespace GymBase.TestDoubles;
 public sealed class InMemoryPhienDangNhapRepository(InMemoryStore<phien_dang_nhap> store)
     : InMemoryBaseRepository<phien_dang_nhap>(store), IPhienDangNhapRepository
 {
-    public Task<phien_dang_nhap?> FindByTokenHashAsync(string tokenHash, CancellationToken cancellationToken) =>
+    public Task<phien_dang_nhap?> DLFindByTokenHashAsync(string tokenHash, CancellationToken cancellationToken) =>
         Task.FromResult(Store.All().FirstOrDefault(s => s.token_hash == tokenHash || s.token_hash_truoc == tokenHash));
 
-    public Task<bool> RotateAsync(
+    public Task<bool> DLRotateAsync(
         Guid sessionId, string expectedHash, string newHash, string previousHash,
         DateTime rotatedAt, DateTime expiresAt, CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ public sealed class InMemoryPhienDangNhapRepository(InMemoryStore<phien_dang_nha
         return Task.FromResult(Store.TryReplace(session));
     }
 
-    public Task RevokeAsync(Guid sessionId, DateTime revokedAt, CancellationToken cancellationToken)
+    public Task DLRevokeAsync(Guid sessionId, DateTime revokedAt, CancellationToken cancellationToken)
     {
         var session = Store.Find(sessionId);
         if (session is { ngay_thu_hoi: null })
@@ -39,7 +39,7 @@ public sealed class InMemoryPhienDangNhapRepository(InMemoryStore<phien_dang_nha
         return Task.CompletedTask;
     }
 
-    public Task RevokeAllOfUserAsync(Guid userId, Guid? exceptSessionId, DateTime revokedAt, CancellationToken cancellationToken)
+    public Task DLRevokeAllOfUserAsync(Guid userId, Guid? exceptSessionId, DateTime revokedAt, CancellationToken cancellationToken)
     {
         foreach (var session in Store.All().Where(s => s.tai_khoan_id == userId && s.ngay_thu_hoi is null && s.Id != exceptSessionId))
         {

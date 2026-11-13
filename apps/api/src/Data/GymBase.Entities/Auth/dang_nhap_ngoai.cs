@@ -3,7 +3,6 @@ using GymBase.Entities.Auth.Enums;
 
 namespace GymBase.Entities.Auth;
 
-// TODO(DB): chưa có migration (InitialBase); sơ đồ ở database/diagrams/01-tai-khoan-ho-so.md. Mục 3.
 /// <summary>
 /// Liên kết một tài khoản với tài khoản đăng nhập ngoài (Google). Định danh bằng mã của nhà cung cấp, không
 /// dùng email.

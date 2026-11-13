@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/07-goi-pt-buoi-tap.md. Mục 3.
 /// <summary>
 /// Sổ cái cộng, trừ, hoàn số buổi PT. Bất biến: không UPDATE hay DELETE, điều chỉnh bằng giao dịch bù.
 /// </summary>

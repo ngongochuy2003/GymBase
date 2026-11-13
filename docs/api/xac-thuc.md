@@ -15,13 +15,13 @@
 | Băm mật khẩu | `PasswordHasher` của ASP.NET, 600.000 vòng | Có sẵn, tự nâng cấp hash cũ. Mặc định chỉ 100.000 vòng nên phải đặt lại |
 | Mật khẩu | Tối thiểu **8 ký tự** | Chốt 08/11, xem mục 5 |
 | Tạo tài khoản | Người dùng tự đăng ký bằng Google (mục 8). `Admin` vẫn tạo được tài khoản mật khẩu cho người khác | Chốt 11/11: Google nằm trong V1 |
-| Phân quyền | Theo `vai_tro`: `Admin`, `Trainer`, `Trainee` | Quy tắc theo dữ liệu (đúng PT, đúng học viên) kiểm tra trong service |
+| Phân quyền | Ba lớp: `vai_tro` (`Admin`, `User`) trong token, năng lực theo hồ sơ đọc từ DB mỗi request, quyền trên từng bản ghi | Chi tiết: [phan-quyen.md](phan-quyen.md) |
 
 Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các tiêu chuẩn không quy định con số cụ thể.
 
 ## 2. Endpoint
 
-Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `AuthService`.
+Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucService`.
 
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ Response của `login` và `refresh`:
   "access_token": "eyJ…",
   "expires_in": 900,
   "refresh_token": "…",
-  "user": { "id": "…", "ten_dang_nhap": "pt.minh", "ho_ten": "Nguyễn Văn Minh", "vai_tro": "Trainer" }
+  "user": { "id": "…", "ten_dang_nhap": "pt.minh", "ho_ten": "Nguyễn Văn Minh", "vai_tro": "User" }
 }
 ```
 
@@ -64,7 +64,7 @@ JWT chỉ được **ký, không mã hóa**: ai có token đều đọc được
   "sid": "01a1bb8a-8cf4-721e-9083-6d18f82be80c",
   "jti": "01a1bb8a-9d10-7c11-8a02-1f0c2b7e4a55",
   "preferred_username": "pt.minh",
-  "role": "Trainer",
+  "role": "User",
   "iat": 1794150000,
   "nbf": 1794150000,
   "exp": 1794150900
@@ -81,7 +81,7 @@ JWT chỉ được **ký, không mã hóa**: ai có token đều đọc được
 | `role` | `vai_tro` | `[Authorize(Roles = "...")]` |
 | `iat`, `nbf`, `exp` | Thời điểm cấp, bắt đầu có hiệu lực, hết hạn | Kiểm tra thời hạn |
 
-**Không đưa vào token:** mật khẩu hay hash, email, số điện thoại, họ tên, `is_deleted`, hay dữ liệu nghiệp vụ.
+**Không đưa vào token:** mật khẩu hay hash, email, số điện thoại, họ tên, hay dữ liệu nghiệp vụ.
 Màn hình cần thông tin người dùng thì đọc từ `user` lúc đăng nhập hoặc gọi `GET /me`.
 
 **Khi kiểm tra token phải:** chỉ chấp nhận đúng HS256; kiểm tra chữ ký, `iss`, `aud`, `exp`, `typ`; tắt
@@ -145,15 +145,17 @@ xem lại mức này cho tài khoản `Admin`.
 
 ## 7. Phân quyền
 
+`vai_tro` chỉ có hai giá trị, là vai trò **hệ thống**. Việc một người là PT hay học viên, và PT đã xác minh chưa, lấy từ hồ sơ
+(`ho_so_nguoi_dung`), không nằm trong `vai_tro`. Cách phân quyền đầy đủ (policy, quyền trên bản ghi, mã lỗi): [phan-quyen.md](phan-quyen.md).
+
 | Vai trò | Được làm |
 | --- | --- |
-| `Admin` | Quản lý người dùng, danh mục |
-| `Trainer` | Nghiệp vụ của chính PT đó |
-| `Trainee` | Dữ liệu của chính học viên đó |
+| `Admin` | Quản lý người dùng, duyệt PT. Không tự xem được dữ liệu riêng của học viên |
+| `User` | Dùng app; quyền cụ thể theo hồ sơ và theo kết nối PT |
 
 - API quản lý người dùng (`/users`) chỉ cho `Admin`, không mở cho học viên trên mobile.
-- `[Authorize(Roles = ...)]` chỉ kiểm tra vai trò. Quyền trên từng bản ghi kiểm tra trong service, dùng
-  `ICurrentUser`.
+- `[Authorize(Roles = ...)]` hoặc policy chỉ cho biết có được dùng chức năng không. Quyền trên từng bản ghi kiểm tra trong BL, dùng
+  `ICurrentUser` và `TruyCapService`.
 - Tiền tố `/mob` không phải ranh giới bảo mật.
 - Lỗi 401, 403 trả ProblemDetails như các lỗi khác.
 

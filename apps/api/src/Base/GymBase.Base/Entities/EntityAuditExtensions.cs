@@ -1,7 +1,7 @@
 namespace GymBase.Base.Entities;
 
 /// <summary>
-/// Cách duy nhất để ghi các trường audit và xóa mềm. Các hàm audit bắt buộc thời gian là UTC,
+/// Cách duy nhất để ghi các trường audit. Các hàm audit bắt buộc thời gian là UTC,
 /// để một giá trị giờ địa phương không lọt vào DB. Tầng DL gọi các hàm này trước khi insert/update/delete.
 /// </summary>
 public static class EntityAuditExtensions
@@ -21,12 +21,6 @@ public static class EntityAuditExtensions
         entity.ngay_chinh_sua = utcNow;
         entity.nguoi_chinh_sua = userName;
     }
-
-    /// <summary>Đánh dấu xóa mềm.</summary>
-    public static void MarkDeleted(this ISoftDelete entity) => entity.is_deleted = true;
-
-    /// <summary>Khôi phục bản ghi đã xóa mềm.</summary>
-    public static void Restore(this ISoftDelete entity) => entity.is_deleted = false;
 
     private static void EnsureUtc(DateTime value)
     {

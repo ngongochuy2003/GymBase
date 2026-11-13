@@ -44,14 +44,14 @@ public sealed class SortFilterTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Soft_deleted_user_stays_hidden_when_filtering()
+    public async Task Filter_combines_two_columns()
     {
         Assert.Equal(["hv.huy", "pt.lan", "pt.minh"], await UserNames("filter=vai_tro:eq:User,dang_hoat_dong:eq:true"));
     }
 
     [Theory]
     [InlineData("sort=mat_khau_hash", "sort")]
-    [InlineData("filter=is_deleted:eq:true", "filter")]
+    [InlineData("filter=mat_khau_hash:eq:x", "filter")]
     [InlineData("filter=vai_tro", "filter")]
     public async Task Invalid_sort_or_filter_returns_400_with_field_error(string query, string field)
     {

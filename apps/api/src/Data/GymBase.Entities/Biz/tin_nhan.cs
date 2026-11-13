@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/05-nhan-tin.md. Mục 3.
 /// <summary>
 /// Tin nhắn văn bản hoặc kèm file (qua tep_tin).
 /// </summary>
@@ -26,6 +25,6 @@ public sealed class tin_nhan : BaseEntity
     /// <summary>Lúc server ghi nhận (UTC).</summary>
     public DateTime ngay_gui { get; set; }
 
-    /// <summary>Ẩn hoặc xóa theo nghiệp vụ. Entity không có ISoftDelete nên service phải lọc.</summary>
+    /// <summary>Lúc tin nhắn bị ẩn hoặc xóa theo nghiệp vụ; null là còn hiển thị. Không có query filter nên service phải lọc.</summary>
     public DateTime? ngay_xoa { get; set; }
 }

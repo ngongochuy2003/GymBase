@@ -8,15 +8,22 @@ roll-forward `latestFeature` (máy dev đang dùng SDK 10.0.402). Gói
 `Microsoft.AspNetCore.OpenApi` và `Microsoft.Extensions.Hosting` lên `10.0.14`.
 OpenAPI do .NET 10 sinh ra là phiên bản 3.1.
 
+## Cập nhật — Bỏ xóa mềm (12/11/2026)
+
+Bỏ hẳn xóa mềm: không còn `ISoftDelete`, cột `is_deleted` và query filter. Riêng `tin_nhan` và `tuong_tac_bai_viet` giữ
+cột `ngay_xoa` (đánh dấu ẩn hoặc xóa theo nghiệp vụ, service tự lọc `ngay_xoa IS NULL`). Xóa là xóa hẳn dòng; dòng
+đang được bảng khác tham chiếu thì từ chối bằng 409 `IN_USE` (khóa ngoại `RESTRICT`). Tên đăng nhập là unique index thường.
+Tài khoản không còn cần giữ lại để hiển thị: muốn ngừng dùng thì đặt `dang_hoat_dong = false`.
+Mục "Entity gốc" bên dưới đã bỏ phần xóa mềm.
+
 ## Cập nhật — Entity gốc (08/11/2026)
 
 Tên bảng/cột dùng tiếng Việt không dấu snake_case; property C# của entity và DTO trùng
 tên cột (ví dụ `ten_dang_nhap`, `ho_ten`, `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`,
 `nguoi_chinh_sua`). Riêng khóa chính giữ tên `Id`.
 Khóa chính là UUIDv7 (`Guid.CreateVersion7()`). Mọi mốc thời gian lưu ở UTC.
-Xóa mềm bằng cờ `is_deleted` (property trùng tên cột).
 Tách `BaseEntity` (chỉ Id) và `BaseAuditableEntity` (thêm 4 trường audit) vì
-bảng nối, log và lịch sử không cần audit; xóa mềm là interface `ISoftDelete` riêng.
+bảng nối, log và lịch sử không cần audit.
 Mã nguồn: `apps/api/src/Base/GymBase.Base/Entities`.
 
 ## Cập nhật — API base

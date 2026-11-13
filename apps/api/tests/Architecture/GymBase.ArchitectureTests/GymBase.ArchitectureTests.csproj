@@ -2,6 +2,20 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Base\GymBase.Base.Hosting\GymBase.Base.Hosting.csproj" />
+    <ProjectReference Include="..\..\..\src\Data\GymBase.Persistence\GymBase.Persistence.csproj" />
+  </ItemGroup>
+
+  <!-- NamingConventionTests nạp assembly BL/DL bằng tên để kiểm tra tên hàm: thêm nhóm hoặc project BL/DL mới thì thêm vào đây. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.Contract\GymBase.DLAuth.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.MySql\GymBase.DLAuth.MySql.csproj" />
+    <ProjectReference Include="..\..\..\src\DI\GymBase.BLDI\GymBase.BLDI.csproj" />
+    <ProjectReference Include="..\..\..\src\DI\GymBase.DLDI.Contract\GymBase.DLDI.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\DI\GymBase.DLDI.MySql\GymBase.DLDI.MySql.csproj" />
+    <ProjectReference Include="..\..\..\src\BIZ\GymBase.BLBiz\GymBase.BLBiz.csproj" />
+    <ProjectReference Include="..\..\..\src\BIZ\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\BIZ\GymBase.DLBiz.MySql\GymBase.DLBiz.MySql.csproj" />
   </ItemGroup>
 
 </Project>

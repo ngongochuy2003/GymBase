@@ -1,0 +1,27 @@
+meta {
+  name: Quyền theo hồ sơ
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{mobileApi}}/auth/quyen-han
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Quyền của người đang đăng nhập theo hồ sơ (nhóm, trạng thái xác minh PT, năng lực), tính từ database mỗi lần gọi. Tài khoản Admin chưa có hồ sơ nên da_thiet_lap_ho_so là false.
+}

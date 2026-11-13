@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/06-huan-luyen.md. Mục 3.
 /// <summary>
 /// Gộp lịch bữa ăn và lịch tập. Chi tiết riêng lưu JSON, kiểm tra theo schema của từng loại.
 /// </summary>

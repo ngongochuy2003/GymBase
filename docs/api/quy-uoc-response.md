@@ -166,8 +166,9 @@ của framework. Client không nên hiện `errors` của các lỗi này cho ng
 | 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ten_dang_nhap`, email sai định dạng |
 | 401 | `UNAUTHORIZED` | Chưa xác thực | Chưa đăng nhập, token sai hoặc hết hạn, sai tên đăng nhập hoặc mật khẩu | Gọi API không kèm token |
 | 403 | `FORBIDDEN` | Không có quyền | Đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa | Học viên gọi API quản trị |
-| 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id. Bản ghi đã xóa mềm cũng tính là không có | `GET /users/{id}` với id không tồn tại |
+| 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id | `GET /users/{id}` với id không tồn tại |
 | 409 | `DUPLICATE` | Dữ liệu bị xung đột | Trùng giá trị phải duy nhất | Trùng mã gói tập |
+| 409 | `IN_USE` | Dữ liệu bị xung đột | Không xóa được vì bản ghi đang được bảng khác tham chiếu | Xóa người dùng đã có dữ liệu |
 | 409 | `CONCURRENCY_CONFLICT` | Dữ liệu bị xung đột | Bản ghi đã bị người khác sửa trước, client cần tải lại | Hai người cùng sửa một hội viên |
 | 422 | `BUSINESS_RULE` | Không thực hiện được | Dữ liệu đúng định dạng nhưng vi phạm quy tắc nghiệp vụ | Gia hạn gói tập đã hủy |
 | 500 | `INTERNAL_ERROR` | Lỗi hệ thống | Lỗi không lường trước, kể cả lỗi DB. `detail` luôn là câu chung chung | Mất kết nối MySQL |
@@ -198,8 +199,12 @@ HTTP của mã chung tương ứng**.
 
 | HTTP | `code` | Hằng số | Khi nào | Trạng thái |
 | --- | --- | --- | --- | --- |
-| 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `ten_dang_nhap` với người dùng còn hiệu lực (không phân biệt hoa thường). `errors` có `ten_dang_nhap` | Đang dùng |
+| 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `ten_dang_nhap` với người dùng khác (không phân biệt hoa thường). `errors` có `ten_dang_nhap` | Đang dùng |
 | 401 | `AUTH_INVALID_CREDENTIALS` | | Đăng nhập không thành công: sai tên đăng nhập, sai mật khẩu, hoặc tài khoản bị khóa (dùng chung một mã để không lộ trạng thái tài khoản, xem [xac-thuc.md](xac-thuc.md)) | Đang dùng |
+| 403 | `PT_NOT_VERIFIED` | `BizErrorCodes.PtNotVerified` | PT chưa được xác minh (hoặc tài khoản bị khóa) mà quản lý học viên | Đang dùng |
+| 403 | `CONNECTION_NOT_ACTIVE` | `BizErrorCodes.ConnectionNotActive` | Không có kết nối PT đang hoạt động với học viên | Đang dùng |
+| 403 | `SCOPE_NOT_ALLOWED` | `BizErrorCodes.ScopeNotAllowed` | Kết nối PT không phụ trách lĩnh vực này (`tap_luyen` hoặc `dinh_duong`) | Đang dùng |
+| 403 | `DATA_NOT_SHARED` | `BizErrorCodes.DataNotShared` | Dữ liệu của học viên chưa được chia sẻ cho người gọi | Đang dùng |
 
 Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code dùng mã đó.
 
@@ -222,7 +227,7 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
   `Errors` (thành `errors`). BL chỉ biết `BusinessErrorKind`, không biết mã HTTP; tầng API đổi
   `Kind` sang mã HTTP (`AppExceptionHandler.ToStatusCode`).
 - Hàm khởi tạo nhận `code` để thay bằng mã chi tiết. Lỗi gắn với một trường thì truyền tên trường
-  để có `errors`, ví dụ trong `UserService.BeforeCreateAsync`:
+  để có `errors`, ví dụ trong `TaiKhoanService.BLBeforeCreateAsync`:
 
   ```csharp
   throw new ConflictException(
@@ -234,7 +239,7 @@ Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code
 - Hằng số mã lỗi: mã chung ở `ErrorCodes` (`GymBase.Base`), mã chi tiết ở `<Nhóm>ErrorCodes` trong
   BL của nhóm (ví dụ `GymBase.BLAuth.AuthErrorCodes`).
 - `BaseService` tự ném `NotFoundException` khi xem, sửa, xóa bản ghi không có. Câu báo lỗi dùng
-  `EntityDisplayName` (ví dụ `UserService` đặt là "người dùng").
+  `EntityDisplayName` (ví dụ `TaiKhoanService` đặt là "người dùng").
 - `AppExceptionHandler` (`IExceptionHandler`, ở `GymBase.Base.Hosting/Errors`) đổi exception thành
   ProblemDetails. Controller **không** viết `try/catch`. Lỗi 4xx ghi log mức Information; lỗi
   khác ghi log mức Error kèm stack trace, rồi trả `detail` chung chung. Request bị client hủy

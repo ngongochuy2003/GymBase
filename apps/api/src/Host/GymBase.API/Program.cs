@@ -14,6 +14,17 @@ using GymBase.DLBiz.Contract;
 using GymBase.DLBiz.MySql;
 using GymBase.DLFile.Contract;
 using GymBase.DLFile.MySql;
+using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.BLAuth.BLXacThuc;
+using GymBase.BLBiz;
+using GymBase.DLAuth.Contract.DLPhienDangNhap;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
+using GymBase.DLAuth.MySql.DLPhienDangNhap;
+using GymBase.DLAuth.MySql.DLTaiKhoan;
+using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
+using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.DLBiz.MySql.DLHoSoNguoiDung;
+using GymBase.DLBiz.MySql.DLKetNoiPt;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +33,7 @@ var builder = WebApplication.CreateBuilder(args);
 // controller trong Mob/Controllers/ có tiền tố /api/v1/mob.
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
 builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly, typeof(BaiVietService).Assembly);
+builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly);
 
 // Log kỹ thuật ra console và file, cấu hình ở mục "Serilog" của appsettings.
 builder.Services.AddAppLogging(builder.Configuration);
@@ -31,7 +43,7 @@ builder.Services.AddAppPersistence(builder.Configuration);
 
 // Auth: người dùng, đăng nhập
 builder.Services.AddAuthBusiness();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
 builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
 
 // BIZ: mạng xã hội (bài viết, tương tác thích/bình luận)
@@ -42,6 +54,10 @@ builder.Services.AddScoped<ITuongTacBaiVietRepository, TuongTacBaiVietRepository
 // File: lưu trữ tệp tin (Local/S3) và push notification
 builder.Services.AddFileBusiness(builder.Configuration);
 builder.Services.AddScoped<ITepTinRepository, TepTinRepository>();
+// Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
+builder.Services.AddBizBusiness();
+builder.Services.AddScoped<IHoSoNguoiDungRepository, HoSoNguoiDungRepository>();
+builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
 
 var app = builder.Build();
 
@@ -59,7 +75,7 @@ if (args is ["create-admin", var adminUserName])
     await using var scope = app.Services.CreateAsyncScope();
     try
     {
-        await scope.ServiceProvider.GetRequiredService<AuthService>().CreateOrResetAdminAsync(adminUserName, password, CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminUserName, password, CancellationToken.None);
     }
     catch (ValidationFailedException ex)
     {

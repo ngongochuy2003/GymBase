@@ -48,7 +48,6 @@ Bạn cũng cần xác định bảng thuộc **nhóm** nào, vì nhóm quyết 
 | **Service** | Nơi đặt nghiệp vụ, nằm giữa controller và repository | `GoiTapService` |
 | **Controller** | Lớp nhận yêu cầu HTTP, gọi service rồi trả kết quả | `GoiTapController` |
 | **Đăng ký dịch vụ** | Khai báo trong `Program.cs` để ứng dụng biết cần tạo lớp nào | Bước 7 |
-| **Xóa mềm** | Không xóa dòng khỏi bảng mà đặt `is_deleted = true`, API sẽ không thấy dòng đó nữa | `ISoftDelete` |
 
 Một yêu cầu đi qua các lớp theo thứ tự này:
 
@@ -71,9 +70,9 @@ MySQL        bảng goi_tap
 | --- | --- | --- |
 | 1 | Entity `goi_tap.cs` | `GymBase.Entities` |
 | 2 | Cấu hình bảng `GoiTapConfiguration.cs` và migration | `GymBase.Persistence` |
-| 3 | Repository `IGoiTapRepository.cs`, `GoiTapRepository.cs` | `GymBase.DLDI.Contract`, `GymBase.DLDI.MySql` |
-| 4 | DTO `GoiTapDtos.cs` | `GymBase.BLDI` |
-| 5 | Validator `GoiTapValidators.cs` và service `GoiTapService.cs` | `GymBase.BLDI` |
+| 3 | Repository `IGoiTapRepository.cs`, `GoiTapRepository.cs` | thư mục `DLGoiTap/` trong `GymBase.DLDI.Contract` và `GymBase.DLDI.MySql` |
+| 4 | DTO `GoiTapDtos.cs` | thư mục `BLGoiTap/` trong `GymBase.BLDI` |
+| 5 | Validator `GoiTapValidators.cs` và service `GoiTapService.cs` | thư mục `BLGoiTap/` trong `GymBase.BLDI` |
 | 6 | Controller `GoiTapController.cs` | `GymBase.API` |
 | 7 | Đăng ký trong `Program.cs` | `GymBase.API` |
 | 8 | Chạy thử | |
@@ -94,12 +93,11 @@ using GymBase.Base.Entities;
 namespace GymBase.Entities.DI;
 
 /// <summary>Gói tập mà phòng gym bán cho học viên.</summary>
-public sealed class goi_tap : BaseAuditableEntity, ISoftDelete
+public sealed class goi_tap : BaseAuditableEntity
 {
     public string ma_goi { get; set; } = string.Empty;
     public string ten_goi { get; set; } = string.Empty;
     public decimal gia { get; set; }
-    public bool is_deleted { get; set; }
 }
 ```
 
@@ -109,8 +107,7 @@ Những điểm cần chú ý:
   của dự án, không phải lỗi đặt tên.
 - `BaseAuditableEntity` cho bạn sẵn các cột `Id`, `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua` và
   `nguoi_chinh_sua`. Không khai báo lại các cột này.
-- `ISoftDelete` bật xóa mềm và yêu cầu có property `is_deleted`. Bỏ `ISoftDelete` thì `DELETE` sẽ xóa
-  hẳn dòng khỏi bảng.
+- `DELETE` xóa hẳn dòng khỏi bảng. Dòng đang được bảng khác tham chiếu thì API trả 409 `IN_USE`.
 
 ### Bước 2: Cấu hình bảng và tạo migration
 
@@ -160,11 +157,11 @@ Interface mô tả những gì lớp nghiệp vụ được phép gọi. Interfa
 kế thừa từ `IBaseRepository`.
 
 ```csharp
-// src/DI/GymBase.DLDI.Contract/IGoiTapRepository.cs
+// src/DI/GymBase.DLDI.Contract/DLGoiTap/IGoiTapRepository.cs
 using GymBase.Base.Crud;
 using GymBase.Entities.DI;
 
-namespace GymBase.DLDI.Contract;
+namespace GymBase.DLDI.Contract.DLGoiTap;
 
 /// <summary>Truy cập dữ liệu gói tập.</summary>
 public interface IGoiTapRepository : IBaseRepository<goi_tap>
@@ -175,13 +172,13 @@ public interface IGoiTapRepository : IBaseRepository<goi_tap>
 Lớp hiện thực dùng lại toàn bộ `BaseRepository`. Bạn chỉ cần chọn cột được tìm kiếm.
 
 ```csharp
-// src/DI/GymBase.DLDI.MySql/GoiTapRepository.cs
+// src/DI/GymBase.DLDI.MySql/DLGoiTap/GoiTapRepository.cs
 using System.Linq.Expressions;
-using GymBase.DLDI.Contract;
+using GymBase.DLDI.Contract.DLGoiTap;
 using GymBase.Entities.DI;
 using GymBase.Persistence;
 
-namespace GymBase.DLDI.MySql;
+namespace GymBase.DLDI.MySql.DLGoiTap;
 
 /// <summary>Truy cập bảng <c>goi_tap</c>.</summary>
 public sealed class GoiTapRepository(AppDbContext db) : BaseRepository<goi_tap>(db), IGoiTapRepository
@@ -199,10 +196,10 @@ số `search` bị bỏ qua.
 Mỗi bảng có 3 DTO, ứng với 3 dạng dữ liệu đi qua API.
 
 ```csharp
-// src/DI/GymBase.BLDI/GoiTap/GoiTapDtos.cs
+// src/DI/GymBase.BLDI/BLGoiTap/GoiTapDtos.cs
 using GymBase.Base.Entities;
 
-namespace GymBase.BLDI.GoiTap;
+namespace GymBase.BLDI.BLGoiTap;
 
 /// <summary>Dữ liệu API trả về.</summary>
 public sealed record GoiTapDto(Guid Id, string ma_goi, string ten_goi, decimal gia, DateTime ngay_tao) : IHasId;
@@ -223,7 +220,7 @@ public sealed class GoiTapUpdateDto
 }
 ```
 
-Việc tách DTO giúp người gọi API không thể tự gửi `Id`, `ngay_tao` hay `is_deleted`. Muốn một cột
+Việc tách DTO giúp người gọi API không thể tự gửi `Id` hay `ngay_tao`. Muốn một cột
 không sửa được, chỉ cần không đưa nó vào `GoiTapUpdateDto`.
 
 ### Bước 5: Tạo validator và service
@@ -231,11 +228,11 @@ không sửa được, chỉ cần không đưa nó vào `GoiTapUpdateDto`.
 Validator kiểm tra dữ liệu trước khi xử lý. `WithName` là tên cột hiển thị trong câu báo lỗi tiếng Việt.
 
 ```csharp
-// src/DI/GymBase.BLDI/GoiTap/GoiTapValidators.cs
+// src/DI/GymBase.BLDI/BLGoiTap/GoiTapValidators.cs
 using FluentValidation;
 using GymBase.Base.Validation;
 
-namespace GymBase.BLDI.GoiTap;
+namespace GymBase.BLDI.BLGoiTap;
 
 public sealed class GoiTapCreateValidator : AppValidator<GoiTapCreateDto>
 {
@@ -262,14 +259,14 @@ Giữ `MaximumLength` bằng đúng độ dài cột đã khai báo ở bước 
 Service kế thừa `BaseService`, và bạn viết 3 hàm chuyển đổi giữa entity và DTO:
 
 ```csharp
-// src/DI/GymBase.BLDI/GoiTap/GoiTapService.cs
+// src/DI/GymBase.BLDI/BLGoiTap/GoiTapService.cs
 using FluentValidation;
 using GymBase.Base.Auth;
 using GymBase.Base.Crud;
-using GymBase.DLDI.Contract;
+using GymBase.DLDI.Contract.DLGoiTap;
 using GymBase.Entities.DI;
 
-namespace GymBase.BLDI.GoiTap;
+namespace GymBase.BLDI.BLGoiTap;
 
 /// <summary>Nghiệp vụ gói tập, dùng chung cho controller web và mobile.</summary>
 public sealed class GoiTapService(
@@ -283,12 +280,12 @@ public sealed class GoiTapService(
 {
     protected override string EntityDisplayName => "gói tập";
 
-    protected override GoiTapDto ToDto(goi_tap e) => new(e.Id, e.ma_goi, e.ten_goi, e.gia, e.ngay_tao);
+    protected override GoiTapDto BLToDto(goi_tap e) => new(e.Id, e.ma_goi, e.ten_goi, e.gia, e.ngay_tao);
 
-    protected override goi_tap CreateEntity(GoiTapCreateDto dto) =>
+    protected override goi_tap BLCreateEntity(GoiTapCreateDto dto) =>
         new() { ma_goi = dto.ma_goi.Trim(), ten_goi = dto.ten_goi.Trim(), gia = dto.gia };
 
-    protected override void ApplyUpdate(goi_tap e, GoiTapUpdateDto dto)
+    protected override void BLApplyUpdate(goi_tap e, GoiTapUpdateDto dto)
     {
         e.ten_goi = dto.ten_goi.Trim();
         e.gia = dto.gia;
@@ -298,12 +295,12 @@ public sealed class GoiTapService(
 
 | Hàm hoặc property | Khi nào chạy | Bạn viết gì |
 | --- | --- | --- |
-| `ToDto` | Trước khi trả dữ liệu | Chọn các cột trả ra API |
-| `CreateEntity` | Khi thêm | Chép từ DTO sang entity. Không gán `Id`, `ngay_tao` |
-| `ApplyUpdate` | Khi sửa | Chỉ chép những cột được phép sửa |
+| `BLToDto` | Trước khi trả dữ liệu | Chọn các cột trả ra API |
+| `BLCreateEntity` | Khi thêm | Chép từ DTO sang entity. Không gán `Id`, `ngay_tao` |
+| `BLApplyUpdate` | Khi sửa | Chỉ chép những cột được phép sửa |
 | `EntityDisplayName` | Khi không tìm thấy | Tên trong câu báo lỗi, ví dụ "Không tìm thấy gói tập…" |
 
-`BaseService` tự lo phần còn lại: chạy validator, điền ngày và người tạo hoặc sửa, xóa mềm, báo 404.
+`BaseService` tự lo phần còn lại: chạy validator, điền ngày và người tạo hoặc sửa, báo 404.
 
 ### Bước 6: Tạo controller
 
@@ -313,7 +310,7 @@ Controller chỉ cần vài dòng, vì 5 API đã có sẵn trong `BaseCrudContr
 // src/Host/GymBase.API/Controllers/GoiTapController.cs
 using GymBase.Base.Auth;
 using GymBase.Base.Hosting;
-using GymBase.BLDI.GoiTap;
+using GymBase.BLDI.BLGoiTap;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GymBase.API.Controllers;
@@ -340,15 +337,15 @@ Mở `src/Host/GymBase.API/Program.cs` và sửa 3 chỗ.
 **Thêm `using` ở đầu file:**
 
 ```csharp
-using GymBase.BLDI.GoiTap;
-using GymBase.DLDI.Contract;
-using GymBase.DLDI.MySql;
+using GymBase.BLDI.BLGoiTap;
+using GymBase.DLDI.Contract.DLGoiTap;
+using GymBase.DLDI.MySql.DLGoiTap;
 ```
 
 **Thêm assembly của BLDI vào `AddAppApi`**, để ứng dụng tìm thấy validator. Mỗi BL chỉ cần làm một lần:
 
 ```csharp
-builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly, typeof(GoiTapService).Assembly);
+builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(GoiTapService).Assembly);
 ```
 
 **Đăng ký repository và service**, đặt sau các dòng đăng ký của Auth:
@@ -422,8 +419,8 @@ Sau đó tạo file test:
 ```csharp
 // tests/Unit/GymBase.UnitTests/DI/GoiTapServiceTests.cs
 using GymBase.Base.Exceptions;
-using GymBase.BLDI.GoiTap;
-using GymBase.DLDI.Contract;
+using GymBase.BLDI.BLGoiTap;
+using GymBase.DLDI.Contract.DLGoiTap;
 using GymBase.Entities.DI;
 using GymBase.TestDoubles;
 
@@ -449,7 +446,7 @@ public class GoiTapServiceTests
     [Fact]
     public async Task Create_saves_row_and_returns_it()
     {
-        var created = await CreateService().CreateAsync(ValidBody(), CancellationToken.None);
+        var created = await CreateService().BLCreateAsync(ValidBody(), CancellationToken.None);
 
         Assert.Equal("G01", created.ma_goi);
         Assert.Single(_store.All());
@@ -459,18 +456,18 @@ public class GoiTapServiceTests
     public async Task Negative_price_is_rejected()
     {
         await Assert.ThrowsAsync<ValidationFailedException>(
-            () => CreateService().CreateAsync(ValidBody(gia: -1), CancellationToken.None));
+            () => CreateService().BLCreateAsync(ValidBody(gia: -1), CancellationToken.None));
     }
 
     [Fact]
     public async Task Deleted_row_is_no_longer_found()
     {
         var service = CreateService();
-        var created = await service.CreateAsync(ValidBody(), CancellationToken.None);
+        var created = await service.BLCreateAsync(ValidBody(), CancellationToken.None);
 
-        await service.DeleteAsync(created.Id, CancellationToken.None);
+        await service.BLDeleteAsync(created.Id, CancellationToken.None);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(created.Id, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.BLGetByIdAsync(created.Id, CancellationToken.None));
     }
 }
 ```
@@ -488,18 +485,17 @@ người khác dùng lại. Thư mục cần có `folder.bru` để đặt tên 
 
 ### Chặn trùng dữ liệu, ví dụ mã gói
 
-Thêm hàm kiểm tra vào `IGoiTapRepository`, viết hàm đó trong `GoiTapRepository` bằng `Set.AnyAsync(...)`,
-rồi override `BeforeCreateAsync` trong service và ném `ConflictException` khi trùng. Mẫu đầy đủ là
-`ExistsByTenDangNhapAsync` trong `UserRepository` và `BeforeCreateAsync` trong `UserService`.
+Thêm hàm kiểm tra vào `IGoiTapRepository` (tên bắt đầu bằng `DL`, ví dụ `DLExistsByMaGoiAsync`), viết hàm đó trong `GoiTapRepository` bằng `Set.AnyAsync(...)`,
+rồi override `BLBeforeCreateAsync` trong service và ném `ConflictException` khi trùng. Mẫu đầy đủ là
+`DLExistsByTenDangNhapAsync` trong `TaiKhoanRepository` và `BLBeforeCreateAsync` trong `TaiKhoanService`.
 
-Nên thêm cả unique index ở database để chặn hai yêu cầu gửi cùng lúc. Bảng có xóa mềm thì index phải bỏ
-qua dòng đã xóa, nếu không mã của gói đã xóa sẽ không dùng lại được. Mẫu là cột `ten_dang_nhap_hieu_luc`
+Nên thêm cả unique index ở database để chặn hai yêu cầu gửi cùng lúc. Mẫu là `HasIndex(e => e.ten_dang_nhap).IsUnique()`
 trong `TaiKhoanConfiguration`.
 
 ### Kiểm tra nghiệp vụ khi sửa hoặc xóa
 
-Override `UpdateAsync` hoặc `DeleteAsync` trong service, kiểm tra xong gọi `base.UpdateAsync(...)` hoặc
-`base.DeleteAsync(...)`. Vi phạm thì ném exception trong `GymBase.Base.Exceptions`. Danh sách exception
+Override `BLUpdateAsync` hoặc `BLDeleteAsync` trong service, kiểm tra xong gọi `base.BLUpdateAsync(...)` hoặc
+`base.BLDeleteAsync(...)`. Vi phạm thì ném exception trong `GymBase.Base.Exceptions`. Danh sách exception
 và mã lỗi: [quy-uoc-response.md](quy-uoc-response.md). Không viết SQL trong service.
 
 ### Sắp xếp và lọc

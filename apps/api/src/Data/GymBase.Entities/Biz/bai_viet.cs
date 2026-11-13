@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/03-mang-xa-hoi.md. Mục 3.
 /// <summary>
 /// Bài đăng văn bản, ảnh hoặc video. Bảng tin và feed video dùng chung. File đính kèm gắn qua tep_tin.
 /// </summary>

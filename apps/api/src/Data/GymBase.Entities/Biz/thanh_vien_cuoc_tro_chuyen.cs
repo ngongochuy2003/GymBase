@@ -1,6 +1,5 @@
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/05-nhan-tin.md. Mục 3.
 /// <summary>
 /// Thành viên của hội thoại và mốc đã đọc. Khóa chính kép (cuoc_tro_chuyen_id, tai_khoan_id).
 /// </summary>
