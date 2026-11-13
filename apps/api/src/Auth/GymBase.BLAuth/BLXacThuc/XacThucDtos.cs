@@ -37,6 +37,15 @@ public sealed class DangKyDto
     public string? ten_thiet_bi { get; init; }
 }
 
+/// <summary>Body đăng nhập hoặc đăng ký bằng Google: ID token app lấy từ Google.</summary>
+public sealed class DangNhapGoogleDto
+{
+    public string id_token { get; init; } = string.Empty;
+
+    /// <summary>Tên thiết bị để người dùng nhận biết phiên, không bắt buộc.</summary>
+    public string? ten_thiet_bi { get; init; }
+}
+
 /// <summary>Body đổi refresh token lấy cặp token mới, hoặc đăng xuất khỏi phiên.</summary>
 public sealed class LamMoiTokenDto
 {

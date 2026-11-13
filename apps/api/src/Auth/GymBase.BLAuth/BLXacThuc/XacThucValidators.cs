@@ -32,6 +32,16 @@ public sealed class DangKyValidator : AppValidator<DangKyDto>
     }
 }
 
+public sealed class DangNhapGoogleValidator : AppValidator<DangNhapGoogleDto>
+{
+    public DangNhapGoogleValidator()
+    {
+        // ID token của Google dài khoảng 1 đến 2 KB; giới hạn để chuỗi quá dài không tốn tài nguyên xác minh.
+        RuleFor(x => x.id_token).NotEmpty().MaximumLength(8192).WithName("ID token");
+        RuleFor(x => x.ten_thiet_bi).MaximumLength(100).WithName("Tên thiết bị");
+    }
+}
+
 public sealed class LamMoiTokenValidator : AppValidator<LamMoiTokenDto>
 {
     public LamMoiTokenValidator()

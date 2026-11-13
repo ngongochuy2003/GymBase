@@ -6,9 +6,11 @@ using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Validation;
 using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
+using GymBase.Entities.Auth.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace GymBase.BLAuth.BLXacThuc;
@@ -29,8 +31,13 @@ public sealed class XacThucService(
     IValidator<LamMoiTokenDto> refreshValidator,
     IValidator<DoiMatKhauDto> changePasswordValidator,
     IValidator<DatLaiMatKhauDto> resetPasswordValidator,
-    IValidator<DangKyDto> registerValidator)
+    IValidator<DangKyDto> registerValidator,
+    IValidator<DangNhapGoogleDto> googleValidator,
+    IGoogleIdTokenVerifier googleVerifier,
+    IDangNhapNgoaiRepository externalLogins)
 {
+    private const int MaxDisplayNameLength = 100;
+
     private static readonly TimeSpan RefreshInactivity = TimeSpan.FromDays(30);
     private static readonly TimeSpan RefreshMaxLifetime = TimeSpan.FromDays(90);
 
@@ -108,6 +115,87 @@ public sealed class XacThucService(
         await users.DLInsertAsync(user, cancellationToken);
 
         return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Đăng nhập bằng Google; lần đầu thì tạo tài khoản (không mật khẩu, họ tên và email lấy từ Google) rồi liên kết.
+    /// Tài khoản được tìm theo <c>sub</c> của Google, không theo email. Email trùng tài khoản đã có thì từ chối, không tự
+    /// liên kết (ADR-0001, docs/api/xac-thuc.md mục 8).
+    /// </summary>
+    /// <exception cref="UnauthorizedException">
+    /// <see cref="AuthErrorCodes.GoogleTokenInvalid"/>, <see cref="AuthErrorCodes.GoogleEmailUnverified"/>, hoặc tài khoản đã liên kết bị khóa.
+    /// </exception>
+    /// <exception cref="ConflictException">
+    /// <see cref="AuthErrorCodes.EmailUsedPassword"/> hoặc <see cref="AuthErrorCodes.UserEmailTaken"/>: email Google đã thuộc tài khoản khác.
+    /// </exception>
+    public async Task<KetQuaDangNhapDto> BLDangNhapGoogleAsync(DangNhapGoogleDto dto, CancellationToken cancellationToken)
+    {
+        await googleValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
+        var identity = await googleVerifier.VerifyAsync(dto.id_token, cancellationToken)
+            ?? throw new UnauthorizedException("Không xác minh được tài khoản Google. Vui lòng thử lại.", AuthErrorCodes.GoogleTokenInvalid);
+
+        var link = await externalLogins.DLFindByMaNgoaiAsync(NhaCungCap.google, identity.Subject, cancellationToken);
+        if (link is not null)
+        {
+            var linked = await users.DLGetByIdAsync(link.tai_khoan_id, cancellationToken);
+            if (linked is not { dang_hoat_dong: true })
+            {
+                throw new UnauthorizedException("Không thể đăng nhập bằng Google với tài khoản này.");
+            }
+
+            return await StartSessionAsync(linked, dto.ten_thiet_bi, isNewAccount: false, cancellationToken);
+        }
+
+        var created = await CreateGoogleAccountAsync(identity, cancellationToken);
+        return await StartSessionAsync(created, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+    }
+
+    private async Task<tai_khoan> CreateGoogleAccountAsync(GoogleIdentity identity, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(identity.Email) || !identity.EmailVerified)
+        {
+            throw new UnauthorizedException("Tài khoản Google chưa có email đã xác minh.", AuthErrorCodes.GoogleEmailUnverified);
+        }
+
+        var email = EmailRules.Normalize(identity.Email);
+        var sameEmail = await users.DLFindByEmailAsync(email, cancellationToken);
+        if (sameEmail is not null)
+        {
+            throw string.IsNullOrEmpty(sameEmail.mat_khau_hash)
+                ? new ConflictException(nameof(DangKyDto.email), $"Email '{email}' đã được dùng.", AuthErrorCodes.UserEmailTaken)
+                : new ConflictException(
+                    nameof(DangKyDto.email),
+                    "Email này đã đăng ký bằng mật khẩu. Hãy đăng nhập bằng mật khẩu.",
+                    AuthErrorCodes.EmailUsedPassword);
+        }
+
+        var now = UtcNow;
+        var user = new tai_khoan
+        {
+            email = email,
+            ho_ten = DisplayName(identity.Name, email),
+            vai_tro = AppRoles.User,
+            // Màn đăng nhập Google ghi sẵn "bằng việc tiếp tục, bạn đồng ý với Điều khoản và Chính sách bảo mật".
+            ngay_dong_y_dieu_khoan = now,
+        };
+        user.MarkCreated(email, now);
+        await users.DLInsertAsync(user, cancellationToken);
+
+        try
+        {
+            await externalLogins.DLInsertAsync(
+                new dang_nhap_ngoai { tai_khoan_id = user.Id, nha_cung_cap = NhaCungCap.google, ma_ngoai = identity.Subject, ngay_tao = now },
+                cancellationToken);
+        }
+        catch
+        {
+            // Không để lại tài khoản mồ côi: lần sau email này sẽ bị báo trùng mà không đăng nhập được.
+            await users.DLDeleteAsync(user.Id, CancellationToken.None);
+            throw;
+        }
+
+        return user;
     }
 
     private async Task<KetQuaDangNhapDto> StartSessionAsync(tai_khoan user, string? deviceName, bool isNewAccount, CancellationToken cancellationToken)
@@ -289,6 +377,13 @@ public sealed class XacThucService(
     {
         var token = tokenIssuer.CreateAccessToken(new AccessTokenRequest(user.Id, user.ten_dang_nhap ?? user.email ?? user.Id.ToString(), user.vai_tro, sessionId));
         return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user), isNewAccount);
+    }
+
+    /// <summary>Họ tên lấy từ Google (cột <c>ho_ten</c> tối đa 100 ký tự); không có thì lấy phần trước <c>@</c> của email.</summary>
+    private static string DisplayName(string? googleName, string email)
+    {
+        var name = string.IsNullOrWhiteSpace(googleName) ? EmailRules.LocalPart(email) : googleName.Trim();
+        return name.Length <= MaxDisplayNameLength ? name : name[..MaxDisplayNameLength];
     }
 
     private static void EnsureNotUserName(string password, string userName, string field)
