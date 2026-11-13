@@ -51,7 +51,7 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:5020
 | --- | --- |
 | Android Emulator | `http://10.0.2.2:5020` |
 | Trình duyệt (Expo web), iOS Simulator | `http://localhost:5020` |
-| Điện thoại thật | `http://<IP-máy-tính>:5020`, cần chạy API theo mục "Điện thoại thật" của cach-chay-api.md |
+| Điện thoại thật | `http://<IP-máy-tính>:5020`, API phải nghe trên mọi địa chỉ mạng: chạy task **`Dev: API + Expo (LAN)`** (xem mục "Điện thoại thật" của cach-chay-api.md) |
 
 - `EXPO_PUBLIC_TERMS_URL` và `EXPO_PUBLIC_PRIVACY_URL` (không bắt buộc) là liên kết Điều khoản và Chính sách bảo mật ở màn đăng ký;
   để trống thì dùng URL giữ chỗ.

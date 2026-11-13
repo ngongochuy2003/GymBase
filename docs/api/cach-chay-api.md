@@ -72,10 +72,11 @@ Nhấn `Ctrl+Shift+P`, chọn **Tasks: Run Task**, rồi chọn task:
 | Task | Việc làm |
 | --- | --- |
 | `API: chạy` | Build rồi chạy `GymBase.API` (5020) |
-| `API: chạy cho điện thoại thật (LAN)` | Như trên nhưng nghe trên mọi địa chỉ mạng (xem mục 4) |
+| `API: chạy cho điện thoại thật (LAN)` | Như trên nhưng nghe trên mọi địa chỉ mạng (xem mục 5) |
 | `API: build` | Build solution. Phím tắt `Ctrl+Shift+B` |
 | `API: test` | Chạy toàn bộ test (Unit, Integration, Architecture) |
 | **`Dev: API + Expo`** | Build API, rồi chạy song song `GymBase.API` (5020) và Expo (8081). Dùng khi làm app mobile |
+| **`Dev: API + Expo (LAN)`** | Như `Dev: API + Expo` nhưng API nghe `0.0.0.0:5020`, dùng cho điện thoại thật (mục 5). Chỉ bật khi cần, vì mọi máy cùng mạng gọi được API |
 | `Mobile: chạy Expo` | `pnpm mobile`. Trong terminal của task nhấn `a` (Android), `w` (web), `r` (reload) |
 | `Mobile: chạy Expo (xóa cache)` | Như trên kèm `-c`, dùng khi app hiển thị code cũ hoặc lỗi bundle lạ |
 | `Mobile: kiểm tra (lint + typecheck + test)` | `pnpm mobile:check` |
