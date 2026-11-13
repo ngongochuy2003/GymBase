@@ -1,0 +1,40 @@
+meta {
+  name: Đăng ký
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{webApi}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "ho_ten": "Người đăng ký thử",
+    "email": "{{registerEmail}}",
+    "so_dien_thoai": "0912 345 678",
+    "mat_khau": "Mk-thu-nghiem-1",
+    "dong_y_dieu_khoan": true,
+    "ma_gioi_thieu": ""
+  }
+}
+
+script:pre-request {
+  // Email mới mỗi lần gửi, vì gửi lại cùng email sẽ bị 409 USER_EMAIL_TAKEN.
+  bru.setVar("registerEmail", "dk.thu." + Date.now() + "@gymbase.local");
+}
+
+assert {
+  res.status: eq 200
+  res.body.tai_khoan_moi: eq true
+}
+
+docs {
+  Đăng ký bằng mật khẩu, có phiên ngay (token như đăng nhập, thêm tai_khoan_moi: true). Mã giới thiệu chưa xử lý. Tài khoản thử này không tự dọn; xóa bằng request Người dùng nếu cần.
+}

@@ -15,7 +15,7 @@
 | Băm mật khẩu | `PasswordHasher` của ASP.NET, 600.000 vòng | Có sẵn, tự nâng cấp hash cũ. Mặc định chỉ 100.000 vòng nên phải đặt lại |
 | Mật khẩu | Tối thiểu **8 ký tự** | Chốt 08/11, xem mục 5 |
 | Định danh đăng nhập | **Email** (chữ thường, bỏ khoảng trắng), duy nhất trên mọi tài khoản. `ten_dang_nhap` còn trong DB nhưng không dùng để đăng nhập | ADR-0001, chốt 13/11 |
-| Tạo tài khoản | Người dùng tự đăng ký bằng mật khẩu hoặc Google (mục 8). `Admin` vẫn tạo được tài khoản mật khẩu cho người khác | Chốt 11/11 và 13/11: cả hai nằm trong V1. **Đăng ký tự phục vụ chưa làm** |
+| Tạo tài khoản | Người dùng tự đăng ký bằng mật khẩu hoặc Google (mục 8). `Admin` vẫn tạo được tài khoản mật khẩu cho người khác | Chốt 11/11 và 13/11: cả hai nằm trong V1. Đăng ký bằng mật khẩu đã làm (mục 2.1); Google chưa |
 | Phân quyền | Ba lớp: `vai_tro` (`Admin`, `User`) trong token, năng lực theo hồ sơ đọc từ DB mỗi request, quyền trên từng bản ghi | Chi tiết: [phan-quyen.md](phan-quyen.md) |
 
 Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các tiêu chuẩn không quy định con số cụ thể.
@@ -27,13 +27,32 @@ Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucServ
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
 | `POST /login` | Không | Body `{ email, mat_khau }`. 200: token kèm thông tin người dùng. 401 `AUTH_INVALID_CREDENTIALS`. Email không đúng định dạng: 400 |
+| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: như `login`, thêm `tai_khoan_moi: true`. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
 | `POST /refresh` | Không | 200: cặp token mới. 401 `UNAUTHORIZED` |
 | `POST /logout` | Có | 204: thu hồi phiên hiện tại |
 | `GET /me` | Có | 200: thông tin người dùng lấy từ DB |
 | `POST /change-password` | Có | 204: thu hồi các phiên khác |
 
+### 2.1. Đăng ký bằng mật khẩu
+
+Người mới tự tạo tài khoản và có phiên ngay, nên không phải đăng nhập lại. Response của `login`, `register`, `refresh` có cùng dạng;
+`tai_khoan_moi` là `true` chỉ ở lần `register` (và lần đầu đăng nhập Google, sau này), `false` ở mọi lần khác, để app hiện màn "Đăng ký thành công"
+đúng một lần.
+
+| Trường | Quy tắc |
+| --- | --- |
+| `ho_ten` | Bắt buộc, tối đa 100 ký tự |
+| `email` | Bắt buộc, đúng định dạng, duy nhất không phân biệt hoa thường (ADR-0001), lưu chữ thường. Trùng: 409 `USER_EMAIL_TAKEN` |
+| `so_dien_thoai` | Bắt buộc, số **di động** Việt Nam (đầu 03, 05, 07, 08, 09; nhận `0…`, `+84…`, `84…`, bỏ khoảng trắng, chấm, gạch), lưu dạng `0xxxxxxxxx`. Không duy nhất, không xác minh |
+| `mat_khau` | Quy tắc mục 5, và không chứa phần trước `@` của email |
+| `dong_y_dieu_khoan` | Phải là `true`; lưu lúc đồng ý vào `tai_khoan.ngay_dong_y_dieu_khoan` (UTC) |
+| `ma_gioi_thieu` | Nhận nhưng bỏ qua (`TODO(REFERRAL)`) |
+
+Tài khoản tạo ra có `vai_tro = User`, chưa có hồ sơ (app đưa người dùng tới bước chọn nhóm). Email và số điện thoại chưa xác minh (`TODO(VERIFY)`).
+`/register` dùng chung giới hạn 20 lần mỗi phút theo IP với `/login`.
+
 Admin đặt lại mật khẩu cho người khác qua `POST /api/v1/web/users/{id}/reset-password`, mọi phiên của người đó bị thu hồi.
-Không có token hợp lệ thì mọi đường dẫn đều trả 401, kể cả đường dẫn không tồn tại, trừ `/health`, `/auth/login`, `/auth/refresh`.
+Không có token hợp lệ thì mọi đường dẫn đều trả 401, kể cả đường dẫn không tồn tại, trừ `/health`, `/auth/login`, `/auth/register`, `/auth/refresh`.
 
 Response của `login` và `refresh`:
 
@@ -140,7 +159,7 @@ xem lại mức này cho tài khoản `Admin`.
 - Sai 4 lần đầu không khóa. Từ lần thứ 5: khóa 1 phút, mỗi lần sai tiếp theo gấp đôi, tối đa 15 phút; đếm theo email,
   cả email không tồn tại (`LoginThrottle`). Không khóa vĩnh viễn, vì kẻ xấu có thể cố tình khóa người khác.
 - Bộ đếm nằm trong bộ nhớ vì V1 chỉ có một host; khi chạy nhiều instance phải chuyển sang kho dùng chung.
-- Giới hạn 20 lần gọi mỗi phút theo IP cho `/auth/login`, `/auth/refresh`, `/auth/change-password`, vượt quá trả 429.
+- Giới hạn 20 lần gọi mỗi phút theo IP cho `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/change-password`, vượt quá trả 429.
   Sau Nginx phải bật ForwardedHeaders (mục 14), nếu không mọi client bị tính chung một IP.
 - Không ghi mật khẩu, token vào log.
 
