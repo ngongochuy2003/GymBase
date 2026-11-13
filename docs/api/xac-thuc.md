@@ -15,7 +15,7 @@
 | Băm mật khẩu | `PasswordHasher` của ASP.NET, 600.000 vòng | Có sẵn, tự nâng cấp hash cũ. Mặc định chỉ 100.000 vòng nên phải đặt lại |
 | Mật khẩu | Tối thiểu **8 ký tự** | Chốt 08/11, xem mục 5 |
 | Định danh đăng nhập | **Email** (chữ thường, bỏ khoảng trắng), duy nhất trên mọi tài khoản. `ten_dang_nhap` còn trong DB nhưng không dùng để đăng nhập | ADR-0001, chốt 13/11 |
-| Tạo tài khoản | Người dùng tự đăng ký bằng mật khẩu hoặc Google (mục 8). `Admin` vẫn tạo được tài khoản mật khẩu cho người khác | Chốt 11/11 và 13/11: cả hai nằm trong V1. Đăng ký bằng mật khẩu đã làm (mục 2.1); Google chưa |
+| Tạo tài khoản | Người dùng tự đăng ký bằng mật khẩu hoặc Google (mục 8). `Admin` vẫn tạo được tài khoản mật khẩu cho người khác | Chốt 11/11 và 13/11: cả hai nằm trong V1. Đăng ký bằng mật khẩu (mục 2.1) và Google (mục 8) đã làm ở backend |
 | Phân quyền | Ba lớp: `vai_tro` (`Admin`, `User`) trong token, năng lực theo hồ sơ đọc từ DB mỗi request, quyền trên từng bản ghi | Chi tiết: [phan-quyen.md](phan-quyen.md) |
 
 Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các tiêu chuẩn không quy định con số cụ thể.
@@ -28,6 +28,7 @@ Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucServ
 | --- | --- | --- |
 | `POST /login` | Không | Body `{ email, mat_khau }`. 200: token kèm thông tin người dùng. 401 `AUTH_INVALID_CREDENTIALS`. Email không đúng định dạng: 400 |
 | `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: như `login`, thêm `tai_khoan_moi: true`. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
+| `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`, `tai_khoan_moi: true` ở lần đầu. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
 | `POST /refresh` | Không | 200: cặp token mới. 401 `UNAUTHORIZED` |
 | `POST /logout` | Có | 204: thu hồi phiên hiện tại |
 | `GET /me` | Có | 200: thông tin người dùng lấy từ DB |
@@ -36,7 +37,7 @@ Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucServ
 ### 2.1. Đăng ký bằng mật khẩu
 
 Người mới tự tạo tài khoản và có phiên ngay, nên không phải đăng nhập lại. Response của `login`, `register`, `refresh` có cùng dạng;
-`tai_khoan_moi` là `true` chỉ ở lần `register` (và lần đầu đăng nhập Google, sau này), `false` ở mọi lần khác, để app hiện màn "Đăng ký thành công"
+`tai_khoan_moi` là `true` chỉ ở lần `register` (và lần đầu đăng nhập Google), `false` ở mọi lần khác, để app hiện màn "Đăng ký thành công"
 đúng một lần.
 
 | Trường | Quy tắc |
@@ -181,8 +182,7 @@ xem lại mức này cho tài khoản `Admin`.
 
 ## 8. Đăng nhập và đăng ký bằng Google (V1)
 
-**Chốt 11/11:** Google nằm trong V1, người lạ tự đăng ký được. **Backend chưa làm**, các mục khác trong tài liệu này
-(đã triển khai) chưa tính tới Google. App lấy ID token từ Google rồi gửi cho API. API xác minh rồi cấp
+**Chốt 11/11:** Google nằm trong V1, người lạ tự đăng ký được. **Backend đã làm** (`POST /google`, 13/11); app mobile chưa nối. App lấy ID token từ Google rồi gửi cho API. API xác minh rồi cấp
 **JWT và refresh token của GymBase**, nên phần còn lại của hệ thống không phân biệt cách đăng nhập.
 
 ```text
@@ -223,6 +223,22 @@ mật khẩu bằng email đã có tài khoản Google báo email đã dùng.
 trên iOS thường phải có thêm Sign in with Apple theo quy định của App Store (kiểm tra lại khi làm). Các mục 1, 2, 7 còn
 nói về `Trainer`/`Trainee` và `[Authorize(Roles = ...)]`, trong khi thiết kế mới chỉ có `Admin`/`User`: cần cập nhật khi
 làm phân quyền.
+
+### 8.1. Cấu hình và hành vi đã làm
+
+- Client ID khai báo ở `Google:ClientIds` (mảng; user-secrets `Google:ClientIds:0` khi dev, biến môi trường `Google__ClientIds__0`
+  khi chạy thật). Dùng client ID **Web** của dự án làm `aud` khi app lấy ID token qua `webClientId`; thêm client ID Android vào
+  mảng nếu app lấy token bằng chính client ID Android. Chưa cấu hình thì mọi token bị từ chối (`AUTH_GOOGLE_TOKEN_INVALID`) và API ghi log lỗi.
+- Xác minh bằng thư viện `Google.Apis.Auth` (`GoogleIdTokenVerifier`): chữ ký, `iss`, `exp`, `aud`. Lỗi mạng khi tải khóa của Google
+  thành 500, không báo nhầm là token sai.
+- Tài khoản tìm theo `sub` (bảng `dang_nhap_ngoai`), không theo email: đổi email Google không tạo tài khoản mới.
+- Lần đầu: cần email đã xác minh (`AUTH_GOOGLE_EMAIL_UNVERIFIED` nếu không có); tạo `tai_khoan` không mật khẩu, `ho_ten` lấy từ Google
+  (không có thì lấy phần trước `@`), `ngay_dong_y_dieu_khoan` ghi lúc tạo vì màn đăng nhập Google có dòng "bằng việc tiếp tục bạn
+  đồng ý…". Không tạo được liên kết thì xóa tài khoản vừa tạo để không để lại tài khoản mồ côi.
+- Email đã thuộc tài khoản có mật khẩu: 409 `AUTH_EMAIL_USED_PASSWORD`; đã thuộc tài khoản khác không có mật khẩu: 409 `USER_EMAIL_TAKEN`.
+- Tài khoản đã liên kết bị khóa: 401 chung. Tài khoản chỉ dùng Google không đăng nhập được bằng mật khẩu.
+- Dùng chung giới hạn 20 lần mỗi phút theo IP với `/login`.
+- Chưa làm: liên kết Google vào tài khoản mật khẩu từ Hồ sơ; Sign in with Apple.
 
 ## 9. Chưa làm trong V1
 

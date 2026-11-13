@@ -50,7 +50,14 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    Remove-Item Env:GYMBASE_ADMIN_PASSWORD
    ```
 
-Môi trường thật đặt khóa ký bằng biến `Jwt__SigningKey`. Đổi khóa thì mọi access token cũ hết hiệu lực ngay.
+6. Đăng nhập Google (tùy chọn, khi làm app nối Google): khai báo client ID, một hoặc nhiều giá trị. Chưa khai báo thì
+   `POST /auth/google` luôn trả 401 `AUTH_GOOGLE_TOKEN_INVALID`:
+
+   ```bash
+   dotnet user-secrets set "Google:ClientIds:0" "<client-id-web>.apps.googleusercontent.com" --project src/Host/GymBase.API
+   ```
+
+Môi trường thật đặt khóa ký bằng biến `Jwt__SigningKey` và client ID Google bằng `Google__ClientIds__0`. Đổi khóa thì mọi access token cũ hết hiệu lực ngay.
 
 Khi đổi entity, tạo migration mới (đặt tên rõ theo nội dung thay đổi) rồi lặp lại bước 2:
 

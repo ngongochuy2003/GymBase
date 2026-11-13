@@ -139,9 +139,11 @@ GymBase.BLAuth/
 │   └── TaiKhoanService.cs               # Nghiệp vụ, kế thừa BaseService
 └── AuthErrorCodes.cs           # Mã lỗi chi tiết của nhóm
 GymBase.DLAuth.Contract/
-└── DLTaiKhoan/ITaiKhoanRepository.cs
+├── DLTaiKhoan/ITaiKhoanRepository.cs
+└── DLDangNhapNgoai/IDangNhapNgoaiRepository.cs   # Liên kết tài khoản với Google
 GymBase.DLAuth.MySql/
-└── DLTaiKhoan/TaiKhoanRepository.cs        # Hiện thực ITaiKhoanRepository, kế thừa BaseRepository
+├── DLTaiKhoan/TaiKhoanRepository.cs        # Hiện thực ITaiKhoanRepository, kế thừa BaseRepository
+└── DLDangNhapNgoai/DangNhapNgoaiRepository.cs
 GymBase.Entities/Auth/
 └── tai_khoan.cs               # Tên class trùng tên bảng, property trùng tên cột
 GymBase.Persistence/Configurations/Auth/
