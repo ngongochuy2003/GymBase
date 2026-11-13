@@ -60,9 +60,9 @@ Chưa có trong docx, đã vẽ vào sơ đồ, cần duyệt trước khi viế
   `lich_su_chinh_sua`, `bien_dong_so_buoi`, `chi_so_co_the`, `tin_nhan`, `tuong_tac_bai_viet`, `thong_bao`, `tep_tin`, `ket_noi_pt`)
   giữ cột thời gian riêng như tài liệu. `cuoc_tro_chuyen.ngay_cap_nhat` cũng giữ nguyên vì nghĩa là thời điểm hoạt động gần nhất
   (tin nhắn mới), không phải lần sửa bản ghi. Đây là phần tôi tự xếp, cần bạn xem lại.
-- **Xóa mềm:** bảng của Base dùng `is_deleted` kèm query filter. `tuong_tac_bai_viet` và `tin_nhan` dùng `ngay_xoa`,
-  `bai_viet` dùng `trang_thai`. Các bảng này không có `ISoftDelete` nên query filter không tự lọc, service phải lọc.
-- **Khóa ngoại:** dùng `RESTRICT` cho mọi FK tới `tai_khoan`, vì tài khoản chỉ xóa mềm. MySQL cấm `CHECK` trên cột đang dùng trong FK
+- **Cột `ngay_xoa`:** `tin_nhan` và `tuong_tac_bai_viet` giữ `ngay_xoa` (NULL là còn hiển thị). Không có query filter nên service
+  phải lọc `ngay_xoa IS NULL`. Không còn xóa mềm kiểu `is_deleted`.
+- **Khóa ngoại:** dùng `RESTRICT` cho mọi FK tới `tai_khoan`, để xóa bản ghi cha không kéo theo xóa con; cha đang được tham chiếu thì không xóa được (409 `IN_USE`). MySQL cấm `CHECK` trên cột đang dùng trong FK
   có `ON DELETE SET NULL` hoặc `CASCADE`, nên cột FK nào có `CHECK` (như `theo_doi`, `chan_tai_khoan`) phải để `RESTRICT`.
 - **Trạng thái:** `varchar` kèm `CHECK`, danh sách giá trị khai báo một chỗ trong code và dùng chung cho `CHECK` và validator.
 - **MySQL:** `timestamptz` thành `datetime(6)` UTC. `jsonb` thành `json`, index GIN của `chuyen_mon` không có, V1 lọc bằng

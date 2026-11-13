@@ -22,9 +22,9 @@ HTTP ──► BaseCrudController<TDto, TCreateDto, TUpdateDto>     GymBase.Base
 | --- | --- | --- |
 | `BaseCrudController<TDto, TCreateDto, TUpdateDto>` | `GymBase.Base.Hosting` | Đủ 5 action: `GET` (phân trang, tìm kiếm), `GET {id}`, `POST`, `PUT {id}`, `DELETE {id}`. `TDto` phải có `Id` (`IHasId`). Controller web và mobile cùng kế thừa |
 | `ICrudService<TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Interface mà controller gọi; controller không biết entity |
-| `BaseService<TEntity, TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (UTC), xóa mềm |
-| `IBaseRepository<TEntity>` | `GymBase.Base` | `GetPagingAsync`, `GetByIdAsync`, `InsertAsync`, `UpdateAsync`, `DeleteAsync` |
-| `BaseRepository<TEntity>` | `GymBase.Persistence` | Hiện thực `IBaseRepository` bằng EF Core: ẩn bản ghi xóa mềm (query filter), tìm kiếm, mới tạo trước, phân trang; trùng unique index thì ném `ConflictException` |
+| `BaseService<TEntity, TDto, TCreateDto, TUpdateDto>` | `GymBase.Base` | Chuẩn hóa phân trang, map entity ↔ DTO, tự điền audit (UTC) |
+| `IBaseRepository<TEntity>` | `GymBase.Base` | `DLGetPagingAsync`, `DLGetByIdAsync`, `DLInsertAsync`, `DLUpdateAsync`, `DLDeleteAsync` |
+| `BaseRepository<TEntity>` | `GymBase.Persistence` | Hiện thực `IBaseRepository` bằng EF Core: tìm kiếm, mới tạo trước, phân trang; trùng unique index thì ném `ConflictException` |
 | `InMemoryBaseRepository<TEntity>`, `InMemoryStore<TEntity>` | `tests/Shared/GymBase.TestDoubles` | DL giả để test BL không cần MySQL; hành vi phải khớp `BaseRepository` |
 
 `AppDbContext` và `BaseRepository` nằm trong `GymBase.Persistence` (quyết định Q9), mọi `DL*.MySql` tham chiếu project này.
@@ -36,8 +36,8 @@ src/Data/GymBase.Entities/
 └── Auth/tai_khoan.cs                class tai_khoan (bảng tai_khoan)
                                       namespace GymBase.Entities.Auth
 src/Auth/GymBase.BLAuth/
-└── TaiKhoan/                        namespace GymBase.BLAuth.TaiKhoan
-    ├── UserService.cs
+└── BLTaiKhoan/                      namespace GymBase.BLAuth.BLTaiKhoan
+    ├── TaiKhoanService.cs
     └── TaiKhoanDtos.cs              TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto
 ```
 
@@ -64,10 +64,10 @@ controller trong `Mob/Controllers/`. Bảng dưới ghi phần sau tiền tố.
 | Request | Thành công | Lỗi |
 | --- | --- | --- |
 | `GET /users?page=1&page_size=20&search=abc` | 200, `PagingResult<TDto>`: `data` (mảng `TDto`) và `meta` (`page`, `page_size`, `total`, `total_page`, `ranger` gồm `from`, `to`) | |
-| `GET /users/{id}` | 200, `TDto` | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
+| `GET /users/{id}` | 200, `TDto` | 404 `NOT_FOUND` nếu không có |
 | `POST /users` | 201, `TDto`, header `Location` trỏ tới bản ghi mới | 400 `VALIDATION_FAILED` nếu body không qua validator; 409 `USER_USERNAME_TAKEN` nếu trùng `ten_dang_nhap` |
-| `PUT /users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 `NOT_FOUND` nếu không có hoặc đã xóa |
-| `DELETE /users/{id}` | 204 | 404 `NOT_FOUND` nếu không có hoặc đã xóa |
+| `PUT /users/{id}` | 200, `TDto` sau khi sửa | 400 như trên; 404 `NOT_FOUND` nếu không có |
+| `DELETE /users/{id}` | 204 | 404 `NOT_FOUND` nếu không có; 409 `IN_USE` nếu đang được bảng khác tham chiếu |
 
 Mọi lỗi trả ProblemDetails có `code`, `detail` tiếng Việt và `trace_id`. Lỗi 400 do `[ApiController]`
 tự trả trước khi vào BL, có `errors` theo từng trường. Các lỗi khác do BL ném exception, global
@@ -91,9 +91,9 @@ không có giá trị "lấy tất cả". Quy ước response đầy đủ, gồ
 | Thao tác | Việc BaseService làm |
 | --- | --- |
 | Danh sách | `request.Normalize()` (page ≥ 1, page_size 1–100, trim search), gọi DL, map sang DTO |
-| Thêm | `CreateEntity(dto)` → Id UUIDv7 có sẵn → nếu là `BaseAuditableEntity` thì gán `ngay_tao`, `nguoi_tao` → `InsertAsync` |
-| Sửa | Đọc bản ghi → `ApplyUpdate(entity, dto)` → gán `ngay_chinh_sua`, `nguoi_chinh_sua` → `UpdateAsync` |
-| Xóa | Entity có `ISoftDelete` thì đặt `is_deleted = true` rồi `UpdateAsync` (xóa mềm); không có thì `DeleteAsync` (xóa hẳn) |
+| Thêm | `BLCreateEntity(dto)` → Id UUIDv7 có sẵn → nếu là `BaseAuditableEntity` thì gán `ngay_tao`, `nguoi_tao` → `DLInsertAsync` |
+| Sửa | Đọc bản ghi → `BLApplyUpdate(entity, dto)` → gán `ngay_chinh_sua`, `nguoi_chinh_sua` → `DLUpdateAsync` |
+| Xóa | `DLDeleteAsync` xóa hẳn; bản ghi đang được bảng khác tham chiếu thì `ConflictException` (409 `IN_USE`) |
 | Xem, sửa, xóa bản ghi không có | Ném `NotFoundException` ("Không tìm thấy {EntityDisplayName} hoặc … đã bị xóa."); override `EntityDisplayName` để câu báo lỗi nói đúng tên đối tượng |
 
 - Giờ lấy từ `TimeProvider` (đăng ký `TimeProvider.System`), test truyền giờ cố định.

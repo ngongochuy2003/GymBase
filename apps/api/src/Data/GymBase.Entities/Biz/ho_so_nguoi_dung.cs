@@ -2,7 +2,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/01-tai-khoan-ho-so.md. Mục 3.
 /// <summary>
 /// Hồ sơ duy nhất của mỗi tài khoản. Khóa chính là tai_khoan_id nên không kế thừa BaseEntity và không dùng CRUD
 /// chung; bốn cột audit khai báo và ghi bằng tay. Tài khoản chưa chọn nhóm thì chưa có dòng nào.

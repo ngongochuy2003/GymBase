@@ -1,7 +1,9 @@
 using GymBase.API.Controllers;
-using GymBase.BLAuth.XacThuc;
+using GymBase.Base.Auth;
+using GymBase.BLAuth.BLXacThuc;
 
 namespace GymBase.API.Mob.Controllers;
 
 /// <summary>Đăng nhập cho app mobile: /api/v1/mob/auth.</summary>
-public sealed class AuthController(AuthService authService) : AuthControllerBase(authService);
+public sealed class AuthController(XacThucService authService, IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
+    : AuthControllerBase(authService, quyenHanProvider, currentUser);

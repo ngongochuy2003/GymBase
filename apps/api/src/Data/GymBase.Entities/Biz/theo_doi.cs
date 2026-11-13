@@ -1,6 +1,5 @@
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/03-mang-xa-hoi.md. Mục 3.
 /// <summary>
 /// Quan hệ theo dõi giữa hai tài khoản. Khóa chính kép (nguoi_theo_doi_id, nguoi_duoc_theo_doi_id), không được
 /// tự theo dõi.

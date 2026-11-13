@@ -9,16 +9,16 @@ namespace GymBase.Base.Crud;
 /// </summary>
 public interface ICrudService<TDto, in TCreateDto, in TUpdateDto>
 {
-    Task<PagingResult<TDto>> GetPagingAsync(PagingRequest request, CancellationToken cancellationToken);
+    Task<PagingResult<TDto>> BLGetPagingAsync(PagingRequest request, CancellationToken cancellationToken);
 
     /// <exception cref="NotFoundException">Không tồn tại hoặc đã xóa.</exception>
-    Task<TDto> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<TDto> BLGetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<TDto> CreateAsync(TCreateDto dto, CancellationToken cancellationToken);
-
-    /// <exception cref="NotFoundException">Không tồn tại hoặc đã xóa.</exception>
-    Task<TDto> UpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken);
+    Task<TDto> BLCreateAsync(TCreateDto dto, CancellationToken cancellationToken);
 
     /// <exception cref="NotFoundException">Không tồn tại hoặc đã xóa.</exception>
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task<TDto> BLUpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken);
+
+    /// <exception cref="NotFoundException">Không tồn tại hoặc đã xóa.</exception>
+    Task BLDeleteAsync(Guid id, CancellationToken cancellationToken);
 }

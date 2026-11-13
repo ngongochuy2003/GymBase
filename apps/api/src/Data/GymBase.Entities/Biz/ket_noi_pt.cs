@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/04-ket-noi-pt.md. Mục 3.
 /// <summary>
 /// Gộp yêu cầu thuê PT và quan hệ huấn luyện. Mỗi lần hợp tác là một dòng. Là gốc phân quyền: PT chỉ quản lý dữ
 /// liệu thuộc kết nối đang hoạt động.

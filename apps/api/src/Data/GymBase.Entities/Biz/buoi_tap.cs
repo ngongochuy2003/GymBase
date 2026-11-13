@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/07-goi-pt-buoi-tap.md. Mục 3.
 /// <summary>
 /// Buổi tập cụ thể. Chỉ buổi pt_truc_tiep do đúng PT xác nhận mới trừ gói; tự tập không bao giờ bị trừ. Khiếu
 /// nại nằm ngay trong bảng, mỗi buổi chỉ một khiếu nại đang xử lý.

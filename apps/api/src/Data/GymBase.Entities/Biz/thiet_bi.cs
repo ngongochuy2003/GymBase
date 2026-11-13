@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/08-thong-bao.md. Mục 3.
 /// <summary>
 /// Điện thoại của người dùng, giữ push token FCM theo từng thiết bị. Một tài khoản có thể có nhiều thiết bị.
 /// </summary>

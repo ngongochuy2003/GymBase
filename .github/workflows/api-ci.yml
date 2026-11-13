@@ -1,0 +1,58 @@
+name: API CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - '.github/workflows/api-ci.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'apps/api/**'
+      - '.github/workflows/api-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_NOLOGO: '1'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      SOLUTION: apps/api/GymBase.slnx
+      # Chỉ để dotnet ef dựng được host lúc kiểm tra model; bước đó không kết nối database.
+      ConnectionStrings__DefaultConnection: Server=localhost;Port=3306;Database=ci_model_only
+      Jwt__SigningKey: Y2ktb25seS1zaWduaW5nLWtleS0zMi1ieXRlcy1sb25nLTAwMQ==
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: apps/api/global.json
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('apps/api/Directory.Packages.props', 'apps/api/Directory.Build.props', 'apps/api/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - run: dotnet restore "$SOLUTION"
+      - run: dotnet build "$SOLUTION" --no-restore -c Release
+      # Unit, kiến trúc và tích hợp (TestServer, DL giả trong bộ nhớ); không cần MySQL.
+      - run: dotnet test "$SOLUTION" --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+      - name: Model EF khớp migration
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.14
+          dotnet ef migrations has-pending-model-changes \
+            --project apps/api/src/Data/GymBase.Persistence \
+            --startup-project apps/api/src/Host/GymBase.API \
+            --no-build --configuration Release
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: apps/api/tests/**/TestResults/*.trx
+          if-no-files-found: ignore

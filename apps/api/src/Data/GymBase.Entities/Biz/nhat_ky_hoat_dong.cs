@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/06-huan-luyen.md. Mục 3.
 /// <summary>
 /// Gộp nhật ký bữa ăn và báo cáo buổi tập. PT nhận xét và duyệt; mỗi lần sửa hoặc đánh giá lại ghi vào
 /// lich_su_chinh_sua.

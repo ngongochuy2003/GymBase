@@ -65,28 +65,63 @@ Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (co
 `docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
 
 Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
-(`TaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
+(`BLTaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
 thêm thư mục hay chức năng; phải có lý do về ranh giới.
 
 **Quy ước đặt tên:** `BIZ` cho thư mục nhóm, `Biz` trong tên project (`GymBase.BLBiz`);
 `MySql` (không phải `Mysql` hay `MySQL`) trong tên project; `DI`, `Auth` giữ nguyên.
 
-**Tên lớp theo chuẩn Service / Repository** (chốt 08/11): nghiệp vụ là `UserService`, truy cập dữ liệu là
-`IUserRepository` / `UserRepository`, lớp nền là `BaseService`, `BaseRepository`. "BL" và "DL" chỉ còn là tên
-tầng và tên project (`GymBase.BLAuth`, `GymBase.DLAuth.MySql`).
+**Tên lớp theo chuẩn Service / Repository** (chốt 08/11): nghiệp vụ là `TaiKhoanService`, truy cập dữ liệu là
+`ITaiKhoanRepository` / `TaiKhoanRepository`, lớp nền là `BaseService`, `BaseRepository`. Tên lớp không mang tiền tố.
+
+**Ngôn ngữ trong tên** (chốt 11/11): danh từ và việc nghiệp vụ dùng tiếng Việt không dấu, từ kỹ thuật dùng tiếng Anh.
+Hỏi "chủ phòng gym hoặc PT có nói từ này không?": có thì tiếng Việt (`TaiKhoan`, `BuoiTap`, `DangNhap`,
+`XacNhanBuoiTap`), không thì tiếng Anh (`Service`, `Repository`, `Get`, `Find`, `Insert`, `Async`). Không dịch từ kỹ thuật
+sang tiếng Việt: code luôn lẫn API của .NET và thư viện (`Task`, `ControllerBase`), nên dịch một phần chỉ thêm một
+nhóm phải nhớ.
+
+**Tên theo danh từ nghiệp vụ** (chốt 11/11): tên lớp và file là danh từ nghiệp vụ tiếng Việt viết hoa từng chữ cộng hậu tố
+vai trò tiếng Anh, và cùng một danh từ lặp ở mọi tầng: `tai_khoan` (entity), `TaiKhoanConfiguration`, `TaiKhoanDtos`,
+`TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập là `XacThucService`.
+Mỗi Service và Repository nằm trong file cùng tên (test kiểm tra). Controller giữ tên theo URL (`UsersController` ứng
+với `/users`), vì URL là hợp đồng với mobile.
+
+**Phụ thuộc giữa các thư mục BL** đi một chiều: `BLXacThuc` dùng `BLTaiKhoan`, không ngược lại. Phần dùng chung đặt ở
+thư mục sở hữu dữ liệu (quy tắc mật khẩu `PasswordRules` nằm ở `BLTaiKhoan`). Hai thư mục cần nhau theo cả hai chiều
+thì gộp lại hoặc đưa phần chung xuống thư mục nền.
+
+**Tiền tố tầng** (chốt 11/11): hàm public và protected của Service, và thư mục chức năng ngay dưới project BL, bắt đầu
+bằng `BL` (`BLLamMoiTokenAsync`, `BLXacThuc/`). Hàm của Repository và thư mục chức năng ngay dưới project DL bắt đầu bằng
+`DL` (`DLFindByTokenHashAsync`, `DLTaiKhoan/`). Hàm private giữ tên thường. Namespace theo thư mục
+(`GymBase.BLAuth.BLXacThuc`). `NamingConventionTests` giữ quy tắc này; project BL/DL mới phải được thêm vào
+`GymBase.ArchitectureTests.csproj` để test nạp được.
+
+**Tên hàm** (chốt 11/11): `BL` hoặc `DL` + tên + `Async` khi trả `Task`. Hàm BL đặt theo **việc nghiệp vụ bằng tiếng
+Việt** và khớp tên DTO của việc đó (`BLDangNhapAsync` nhận `DangNhapDto`, `BLXacNhanBuoiTapAsync`); hàm nền dùng chung cho
+mọi bảng (`BLGetByIdAsync`, `BLCreateAsync`) giữ tiếng Anh. Hàm DL đặt theo thao tác dữ liệu bằng động từ tiếng Anh:
+`DLGetByIdAsync`, `DLInsertAsync`, `DLFindBy…Async` (trả null nếu không có), `DLExistsBy…Async` (trả bool); tên bảng hoặc
+cột trong tên hàm giữ tiếng Việt (`DLFindByTenDangNhapAsync`).
+
+**Route mới** (chốt 11/11): đặt `[Route("buoi-tap")]` tường minh trên controller (chữ thường, gạch nối, danh từ tiếng
+Việt) và action là việc (`XacNhan` ứng với `{id}/xac-nhan`). Route tường minh thay hẳn route lấy theo tên controller của
+`BaseApiController` (có test: `ChannelRoutingTests`). URL đã công bố (`/users`, `/auth`) không đổi.
+
+**Phân việc:** BL chỉ chứa luật nghiệp vụ (điều kiện, chuyển trạng thái, tính toán, map DTO). DL chỉ truy vấn và ghi dữ
+liệu, không quyết định nghiệp vụ; điều kiện trong câu lệnh chỉ để ghi nguyên tử (ví dụ `DLRotateAsync` chống hai request
+cùng lúc).
 
 ## 3. Trách nhiệm từng project
 
 | Project | Được chứa | Không được chứa |
 | --- | --- | --- |
 | `GymBase.API` | `Controllers/` cho web, `Mob/Controllers/` cho mobile; request/response HTTP, policy, đăng ký dịch vụ, OpenAPI | Quy tắc nghiệp vụ, SQL, DbContext; BL/DL riêng cho mobile |
-| `GymBase.Base` | Entity gốc (`BaseEntity`, `BaseAuditableEntity`, `ISoftDelete`), phân trang, CRUD dùng chung (`IBaseRepository`, `BaseService`, `ICrudService`), exception nghiệp vụ và mã lỗi | Logic PT, gói tập; tham chiếu tới Auth, DI, BIZ |
+| `GymBase.Base` | Entity gốc (`BaseEntity`, `BaseAuditableEntity`), phân trang, CRUD dùng chung (`IBaseRepository`, `BaseService`, `ICrudService`), exception nghiệp vụ và mã lỗi | Logic PT, gói tập; tham chiếu tới Auth, DI, BIZ |
 | `GymBase.Base.Hosting` | `BaseApiController`, `BaseCrudController`, route theo kênh, xử lý lỗi ProblemDetails, extension đăng ký dịch vụ nền | Quy tắc nghiệp vụ riêng |
 | `GymBase.ModuleContracts` | Interface công khai và DTO tối thiểu cho giao tiếp giữa các nhóm | DbContext, repository nội bộ, controller |
 | `GymBase.BLAuth` | Người dùng, đăng nhập, refresh/logout, phân quyền, chính sách tài khoản | Truy vấn EF trực tiếp, controller |
 | `GymBase.Entities` | Entity và enum của cột, chia thư mục theo nhóm sở hữu bảng | Nghiệp vụ, EF Core |
 | `GymBase.Persistence` | `AppDbContext`, `BaseRepository`, cấu hình bảng, migrations, đăng ký EF Core | Nghiệp vụ, repository riêng của từng bảng |
-| `GymBase.DLAuth.Contract` | Interface DL (`IUserRepository`), danh sách cột sort/filter | Hiện thực MySQL |
+| `GymBase.DLAuth.Contract` | Interface DL (`ITaiKhoanRepository`), danh sách cột sort/filter | Hiện thực MySQL |
 | `GymBase.DLAuth.MySql` | Hiện thực DL của Auth, truy vấn | Quy tắc nghiệp vụ, gọi BLAuth |
 | `GymBase.BLDI` | CRUD và ràng buộc danh mục, phân loại, kiểm tra mã danh mục | Quy tắc trừ buổi tập |
 | `GymBase.DLDI.Contract` / `.MySql` | Interface DL của danh mục / hiện thực MySQL | Nghiệp vụ thanh toán, PT |
@@ -99,14 +134,14 @@ Một chức năng có vị trí song song trong BL và DL. Mẫu đang có (ng�
 
 ```text
 GymBase.BLAuth/
-├── TaiKhoan/
+├── BLTaiKhoan/
 │   ├── TaiKhoanDtos.cs        # DTO trả ra API và body thêm/sửa
-│   └── UserService.cs               # Nghiệp vụ, kế thừa BaseService
+│   └── TaiKhoanService.cs               # Nghiệp vụ, kế thừa BaseService
 └── AuthErrorCodes.cs           # Mã lỗi chi tiết của nhóm
 GymBase.DLAuth.Contract/
-└── IUserRepository.cs
+└── DLTaiKhoan/ITaiKhoanRepository.cs
 GymBase.DLAuth.MySql/
-└── UserRepository.cs                   # Hiện thực IUserRepository, kế thừa BaseRepository
+└── DLTaiKhoan/TaiKhoanRepository.cs        # Hiện thực ITaiKhoanRepository, kế thừa BaseRepository
 GymBase.Entities/Auth/
 └── tai_khoan.cs               # Tên class trùng tên bảng, property trùng tên cột
 GymBase.Persistence/Configurations/Auth/
@@ -200,7 +235,7 @@ Ví dụ luồng:
 
 ```text
 GET /api/v1/web/users/{id} → Controllers/UsersController     ┐
-GET /api/v1/mob/users/{id} → Mob/Controllers/UsersController ┴→ UserService.GetByIdAsync → IUserRepository → MySQL
+GET /api/v1/mob/users/{id} → Mob/Controllers/UsersController ┴→ TaiKhoanService.BLGetByIdAsync → ITaiKhoanRepository → MySQL
 ```
 
 ## 7. Ví dụ một luồng nghiệp vụ V1: PT hoàn thành buổi tập
@@ -278,7 +313,7 @@ Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [huong-dan-t
 
 | Bước | Project | File | Nội dung |
 | --- | --- | --- | --- |
-| 1 | `GymBase.Entities` | `DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity, ISoftDelete`, property trùng tên cột |
+| 1 | `GymBase.Entities` | `DI/goi_tap.cs` | `class goi_tap : BaseAuditableEntity`, property trùng tên cột |
 | 2 | `GymBase.DLDI.Contract` | `IGoiTapRepository.cs` | `interface IGoiTapRepository : IBaseRepository<goi_tap>` |
 | 3 | `GymBase.DLDI.MySql`, `GymBase.Persistence` | `GoiTapRepository.cs`, `Configurations/DI/GoiTapConfiguration.cs` | `class GoiTapRepository : BaseRepository<goi_tap>, IGoiTapRepository`; cấu hình bảng; tạo migration mới |
 | 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapValidators.cs`, `GoiTap/GoiTapService.cs` | DTO và validator; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |

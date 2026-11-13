@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/08-thong-bao.md. Mục 3.
 /// <summary>
 /// Hộp thông báo và hàng đợi logic cho nhắc ăn, nhắc tập.
 /// </summary>

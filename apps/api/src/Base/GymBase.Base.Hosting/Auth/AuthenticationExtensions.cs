@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using GymBase.Base.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
@@ -50,8 +51,17 @@ public static class AuthenticationExtensions
             };
         });
 
-        services.AddAuthorizationBuilder().SetFallbackPolicy(
-            new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+        // Policy theo hồ sơ cần IQuyenHanProvider (BLBiz đăng ký); chỉ được gọi khi endpoint dùng policy đó.
+        services.AddScoped<IAuthorizationHandler, QuyenHanHandler>();
+        services.AddAuthorizationBuilder()
+            .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
+            .AddPolicy(AppPolicies.RequireAdmin, policy => policy.RequireRole(AppRoles.Admin))
+            .AddPolicy(AppPolicies.RequireProfile, policy => policy.RequireAuthenticatedUser()
+                .AddRequirements(new QuyenHanRequirement(AppPolicies.RequireProfile)))
+            .AddPolicy(AppPolicies.RequirePtProfile, policy => policy.RequireAuthenticatedUser()
+                .AddRequirements(new QuyenHanRequirement(AppPolicies.RequirePtProfile)))
+            .AddPolicy(AppPolicies.RequireVerifiedPt, policy => policy.RequireAuthenticatedUser()
+                .AddRequirements(new QuyenHanRequirement(AppPolicies.RequireVerifiedPt)));
 
         // TODO(HOST): sau Nginx phải bật ForwardedHeaders, nếu không mọi client chung một IP của proxy. Mục 14.
         services.AddRateLimiter(options =>

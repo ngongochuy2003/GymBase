@@ -1,6 +1,6 @@
 using GymBase.Base.Logging;
 using GymBase.Base.Paging;
-using GymBase.DLAuth.Contract;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
 using GymBase.Persistence;
 using GymBase.Persistence.Logging;
@@ -48,16 +48,6 @@ public class AppDbContextModelTests
         var sql = db.Set<tai_khoan>().Where(u => u.Id == id).ToQueryString();
 
         Assert.Contains("'0193f0a0-0000-7000-8000-000000000001'", sql);
-    }
-
-    [Fact]
-    public void Soft_deleted_rows_are_filtered_out()
-    {
-        using var db = CreateContext();
-
-        var sql = db.Set<tai_khoan>().ToQueryString();
-
-        Assert.Contains("NOT (`t`.`is_deleted`)", sql);
     }
 
     [Fact]
@@ -109,14 +99,13 @@ public class AppDbContextModelTests
     }
 
     [Fact]
-    public void Username_is_unique_only_among_active_users()
+    public void Username_is_unique()
     {
         using var db = CreateContext();
 
         var script = db.Database.GenerateCreateScript();
 
-        Assert.Contains("`ten_dang_nhap_hieu_luc` varchar(50)", script);
-        Assert.Contains("IF(`is_deleted` = 0, `ten_dang_nhap`, NULL)", script);
-        Assert.Contains("CREATE UNIQUE INDEX", script);
+        Assert.Contains("CREATE UNIQUE INDEX `IX_tai_khoan_ten_dang_nhap` ON `tai_khoan` (`ten_dang_nhap`)", script);
+        Assert.DoesNotContain("is_deleted", script);
     }
 }

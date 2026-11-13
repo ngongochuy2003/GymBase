@@ -3,7 +3,6 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.Entities.Biz;
 
-// TODO(DB): chưa có migration (AddBizTables); sơ đồ ở database/diagrams/06-huan-luyen.md. Mục 3.
 /// <summary>
 /// Kế hoạch dinh dưỡng hoặc tập luyện, áp dụng trong một kết nối PT.
 /// </summary>

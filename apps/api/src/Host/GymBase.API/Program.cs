@@ -2,10 +2,17 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
-using GymBase.BLAuth.TaiKhoan;
-using GymBase.BLAuth.XacThuc;
-using GymBase.DLAuth.Contract;
-using GymBase.DLAuth.MySql;
+using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.BLAuth.BLXacThuc;
+using GymBase.BLBiz;
+using GymBase.DLAuth.Contract.DLPhienDangNhap;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
+using GymBase.DLAuth.MySql.DLPhienDangNhap;
+using GymBase.DLAuth.MySql.DLTaiKhoan;
+using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
+using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.DLBiz.MySql.DLHoSoNguoiDung;
+using GymBase.DLBiz.MySql.DLKetNoiPt;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Host duy nhất cho cả web và mobile. Controller trong Controllers/ có tiền tố /api/v1/web,
 // controller trong Mob/Controllers/ có tiền tố /api/v1/mob.
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
-builder.Services.AddAppApi(builder.Configuration, typeof(UserService).Assembly);
+builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly);
 
 // Log kỹ thuật ra console và file, cấu hình ở mục "Serilog" của appsettings.
 builder.Services.AddAppLogging(builder.Configuration);
@@ -23,8 +30,13 @@ builder.Services.AddAppPersistence(builder.Configuration);
 
 // Auth: người dùng, đăng nhập
 builder.Services.AddAuthBusiness();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
 builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
+
+// Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
+builder.Services.AddBizBusiness();
+builder.Services.AddScoped<IHoSoNguoiDungRepository, HoSoNguoiDungRepository>();
+builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
 
 var app = builder.Build();
 
@@ -42,7 +54,7 @@ if (args is ["create-admin", var adminUserName])
     await using var scope = app.Services.CreateAsyncScope();
     try
     {
-        await scope.ServiceProvider.GetRequiredService<AuthService>().CreateOrResetAdminAsync(adminUserName, password, CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminUserName, password, CancellationToken.None);
     }
     catch (ValidationFailedException ex)
     {

@@ -34,7 +34,7 @@ erDiagram
         text noi_dung
         guid tra_loi_tin_nhan_id FK
         datetime ngay_gui
-        datetime ngay_xoa "xóa mềm"
+        datetime ngay_xoa "NULL, lúc ẩn hoặc xóa theo nghiệp vụ; service lọc"
     }
     tai_khoan {
         guid Id PK

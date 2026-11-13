@@ -25,7 +25,6 @@ erDiagram
         string so_dien_thoai
         string vai_tro "Admin hoặc User"
         bool dang_hoat_dong
-        bool is_deleted
         datetime ngay_tao
         string nguoi_tao
         datetime ngay_chinh_sua
@@ -136,8 +135,7 @@ flowchart TD
 - `vai_tro` chỉ có `Admin` hoặc `User`. `ca_hai` (vừa là PT vừa là học viên) không còn vướng với cột `vai_tro`.
 - `dang_nhap_ngoai` có hai unique: `(nha_cung_cap, ma_ngoai)` để một tài khoản Google không gắn vào hai tài khoản
   GymBase, và `(tai_khoan_id, nha_cung_cap)` để mỗi tài khoản chỉ liên kết một Google.
-- `ten_dang_nhap` cho phép NULL. MySQL không có partial unique, nên dùng cột sinh tự động
-  `IF(is_deleted = 0, ten_dang_nhap, NULL)` kèm unique index, cùng cách với cột `tai_khoan_hieu_luc` hiện tại.
+- `ten_dang_nhap` cho phép NULL (tài khoản chỉ dùng Google) và là unique index thường; MySQL cho phép nhiều NULL trong unique index.
 - Cột `nguoi_tao` và `nguoi_chinh_sua` ghi `ten_dang_nhap` nếu có, không thì ghi `email`.
 - `ho_so_nguoi_dung` có khóa chính là `tai_khoan_id`, nên không kế thừa `BaseEntity` và không dùng CRUD chung. Bốn cột
   audit (`ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`, `nguoi_chinh_sua`) giống `BaseAuditableEntity` nhưng phải khai báo và ghi
