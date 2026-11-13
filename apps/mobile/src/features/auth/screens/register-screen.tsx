@@ -50,6 +50,7 @@ export function RegisterScreen() {
         dong_y_dieu_khoan: form.agreed,
         ...(form.referral ? { ma_gioi_thieu: form.referral } : {}),
       });
+      router.replace('/register-success');
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
       if (apiError?.code === 'USER_EMAIL_TAKEN') {

@@ -24,6 +24,7 @@ export function LoginScreen() {
     setFailure(null);
     try {
       await signIn(email, password);
+      router.replace('/home');
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
       setFailure({

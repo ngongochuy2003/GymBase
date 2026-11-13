@@ -11,7 +11,7 @@ export function ProfileSetupScreen() {
           Hồ sơ giúp GymBase biết bạn là học viên hay PT. Phần này sắp có, bạn có thể quay lại sau.
         </AppText>
       </Card>
-      <Button label="Để sau" secondary onPress={() => router.replace('/today')} />
+      <Button label="Để sau" secondary onPress={() => router.replace('/home')} />
     </Screen>
   );
 }

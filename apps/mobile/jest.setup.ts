@@ -1,6 +1,5 @@
 import mockSafeAreaContext from 'react-native-safe-area-context/jest/mock';
 
-
 // Đặt trước khi test import `@/core/config/env` (setupFilesAfterEnv chạy trước file test).
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:5020';
 process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID = 'test-web-client.apps.googleusercontent.com';
@@ -25,34 +24,6 @@ jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
   setItemAsync: jest.fn(async () => undefined),
   deleteItemAsync: jest.fn(async () => undefined),
-}));
-jest.mock('expo-image-picker', () => ({
-  requestMediaLibraryPermissionsAsync: jest.fn(async () => ({
-    status: 'granted',
-    granted: true,
-    canAskAgain: true,
-  })),
-  getMediaLibraryPermissionsAsync: jest.fn(async () => ({
-    status: 'granted',
-    granted: true,
-    canAskAgain: true,
-  })),
-  launchImageLibraryAsync: jest.fn(async () => ({
-    canceled: false,
-    assets: [
-      {
-        uri: 'https://picsum.photos/seed/mock-pick/800/800',
-        width: 800,
-        height: 800,
-        type: 'image',
-      },
-    ],
-  })),
-  MediaTypeOptions: {
-    All: 'All',
-    Images: 'Images',
-    Videos: 'Videos',
-  },
 }));
 jest.mock('react-native-safe-area-context', () => mockSafeAreaContext);
 

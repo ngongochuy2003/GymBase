@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
+import { BottomTabBar } from '@/shared/ui-kit';
 import { EmptyState, ErrorState, LoadingState, Screen } from '@/shared/components/ui';
 import { PostList } from '../components/post-list';
 import { useFeedPosts, useToggleLikeMutation } from '../hooks/use-feed-posts';
@@ -58,9 +59,11 @@ export function FeedScreen() {
     [activeFilter, handleActionPress, posts, router],
   );
 
-  if (feed.isPending) return <Screen><LoadingState /></Screen>;
-  if (feed.isError) return <Screen><ErrorState message="Không tải được bảng tin từ máy chủ." onRetry={() => void feed.refetch()} /></Screen>;
-  if (posts.length === 0) return <Screen><EmptyState message="Chưa có bài viết. Hãy là người đầu tiên chia sẻ tiến trình tập luyện." /></Screen>;
+  const footer = <BottomTabBar tabs={feedTabs} activeId="home" onChange={onTabPress} />;
+
+  if (feed.isPending) return <Screen footer={footer}><LoadingState /></Screen>;
+  if (feed.isError) return <Screen footer={footer}><ErrorState message="Không tải được bảng tin từ máy chủ." onRetry={() => void feed.refetch()} /></Screen>;
+  if (posts.length === 0) return <Screen footer={footer}><EmptyState message="Chưa có bài viết. Hãy là người đầu tiên chia sẻ tiến trình tập luyện." /></Screen>;
   return <ScreenRenderer config={config} onTabPress={onTabPress} />;
 }
 

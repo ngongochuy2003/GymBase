@@ -1,22 +1,19 @@
-import { Stack, Tabs, useTheme } from 'expo-router';
+import { Text } from 'react-native';
+import { Tabs } from 'expo-router';
 
 export default function ProtectedLayout() {
-
-  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        // Các màn ScreenRenderer tự vẽ footer theo thiết kế; ẩn tab bar native để không bị lặp.
+        tabBarStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen
-        name="today"
+        name="home"
         options={{
-          title: 'Hôm nay',
+          title: 'Bài viết',
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }}>◉</Text>,
         }}
       />
@@ -27,6 +24,7 @@ export default function ProtectedLayout() {
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }}>◎</Text>,
         }}
       />
+      <Tabs.Screen name="compose" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="profile-setup" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="register-success" options={{ tabBarButton: () => null }} />
     </Tabs>

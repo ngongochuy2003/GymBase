@@ -23,10 +23,10 @@
           "photosPermission": "Cho phép GymBase truy cập thư viện ảnh để chọn ảnh và video đăng bài.",
           "cameraPermission": "Cho phép GymBase truy cập máy ảnh để chụp ảnh và quay video đăng bài."
         }
-      ],
-      { "package": "vn.gymbase.app" }
+      ]
     ],
     "android": {
+      "package": "vn.gymbase.app",
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",
@@ -37,10 +37,18 @@
     },
     "ios": {
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
-    "web": { "bundler": "metro", "output": "single", "name": "GymBase Mobile" },
-    "experiments": { "typedRoutes": true }
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "GymBase Mobile"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

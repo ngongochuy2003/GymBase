@@ -28,6 +28,8 @@ export const DEFAULT_HEADER_ACTIONS: HeaderAction[] = [
 export function useTabNavigation(): (tab: TabItem) => void {
   const router = useRouter();
   return (tab) => {
-    if (tab.href) router.navigate(tab.href as Href);
+    if (!tab.href) return;
+    if (tab.id === 'compose') router.push(tab.href as Href);
+    else router.navigate(tab.href as Href);
   };
 }

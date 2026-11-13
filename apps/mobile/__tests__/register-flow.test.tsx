@@ -9,7 +9,7 @@ import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import RegisterRoute from '@/app/(auth)/register';
 import ProtectedLayout from '@/app/(protected)/_layout';
-import TodayRoute from '@/app/(protected)/today';
+import HomeRoute from '@/app/(protected)/home';
 import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import RegisterSuccessRoute from '@/app/(protected)/register-success';
@@ -46,7 +46,7 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(auth)/register': RegisterRoute,
   '(protected)/_layout': ProtectedLayout,
-  '(protected)/today': TodayRoute,
+  '(protected)/home': HomeRoute,
   '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
   '(protected)/register-success': RegisterSuccessRoute,
@@ -208,9 +208,9 @@ test('skipping goes to the home screen and the success screen does not come back
 
   await fireEvent.press(await screen.findByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   await act(async () => router.navigate('/' as never));
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
 });
 
@@ -290,6 +290,6 @@ test('signing in again later goes straight to the app, not the success screen', 
 
   await renderRouter(routes, { initialUrl: '/' });
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
 });

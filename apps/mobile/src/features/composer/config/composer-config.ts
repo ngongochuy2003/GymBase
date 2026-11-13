@@ -32,5 +32,5 @@ export const toolbarDefinitions: Omit<ToolbarAction, 'onPress'>[] = [
   { id: 'add-hashtag', label: 'Thêm hashtag', icon: 'hashtag' },
 ];
 
-export const composerTabs = pickTabs(['home', 'discover', 'compose', 'messages', 'profile']);
+export const composerTabs = pickTabs(['home', 'route', 'compose', 'messages', 'profile']);
 
