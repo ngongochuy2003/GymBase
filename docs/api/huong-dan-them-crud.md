@@ -488,6 +488,8 @@ người khác dùng lại. Thư mục cần có `folder.bru` để đặt tên 
 Thêm hàm kiểm tra vào `IGoiTapRepository` (tên bắt đầu bằng `DL`, ví dụ `DLExistsByMaGoiAsync`), viết hàm đó trong `GoiTapRepository` bằng `Set.AnyAsync(...)`,
 rồi override `BLBeforeCreateAsync` trong service và ném `ConflictException` khi trùng. Mẫu đầy đủ là
 `DLExistsByTenDangNhapAsync` trong `TaiKhoanRepository` và `BLBeforeCreateAsync` trong `TaiKhoanService`.
+Chặn đổi sang giá trị đã có khi sửa thì override `BLBeforeUpdateAsync` (chạy sau validator, trước khi ghi), như
+`TaiKhoanService` làm với email.
 
 Nên thêm cả unique index ở database để chặn hai yêu cầu gửi cùng lúc. Mẫu là `HasIndex(e => e.ten_dang_nhap).IsUnique()`
 trong `TaiKhoanConfiguration`.

@@ -18,6 +18,12 @@ public sealed class TaiKhoanRepository(AppDbContext db) : BaseRepository<tai_kho
     public Task<bool> DLExistsByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
         Set.AnyAsync(u => u.ten_dang_nhap == tenDangNhap, cancellationToken);
 
+    public Task<bool> DLExistsByEmailAsync(string email, Guid? exceptId, CancellationToken cancellationToken) =>
+        Set.AnyAsync(u => u.email == email && u.Id != exceptId, cancellationToken);
+
+    public Task<tai_khoan?> DLFindByEmailAsync(string email, CancellationToken cancellationToken) =>
+        Set.FirstOrDefaultAsync(u => u.email == email, cancellationToken);
+
     public Task<tai_khoan?> DLFindByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
         Set.FirstOrDefaultAsync(u => u.ten_dang_nhap == tenDangNhap, cancellationToken);
 }

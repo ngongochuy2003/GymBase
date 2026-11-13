@@ -15,6 +15,10 @@
 *.keystore
 *.mobileprovision
 
+# Expo prebuild (dev build): thư mục native sinh ra từ app.json, không commit
+apps/mobile/android/
+apps/mobile/ios/
+
 # JavaScript / Expo / Next.js
 node_modules/
 .pnpm-store/

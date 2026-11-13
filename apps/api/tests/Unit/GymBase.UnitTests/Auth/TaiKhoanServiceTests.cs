@@ -40,7 +40,7 @@ public class TaiKhoanServiceTests
         var before = _store.All().Count;
 
         var error = await Assert.ThrowsAsync<ValidationFailedException>(
-            () => _service.BLCreateAsync(new TaiKhoanCreateDto { ten_dang_nhap = null!, ho_ten = "", vai_tro = "User" }, CancellationToken.None));
+            () => _service.BLCreateAsync(new TaiKhoanCreateDto { ten_dang_nhap = null!, ho_ten = "", email = "a@gymbase.local", vai_tro = "User" }, CancellationToken.None));
 
         Assert.Equal(["ho_ten", "mat_khau", "ten_dang_nhap"], error.Errors!.Keys.Order());
         Assert.Equal(before, _store.All().Count);
@@ -59,7 +59,7 @@ public class TaiKhoanServiceTests
         var created = await _service.BLCreateAsync(NewUser, CancellationToken.None);
         Assert.Equal("nv.thu", _store.Find(created.Id)!.nguoi_tao);
 
-        var update = new TaiKhoanUpdateDto { ho_ten = "Tên mới", vai_tro = "User" };
+        var update = new TaiKhoanUpdateDto { ho_ten = "Tên mới", email = "admin@gymbase.local", vai_tro = "User" };
         await _service.BLUpdateAsync(AdminId, update, CancellationToken.None);
         Assert.Equal("nv.thu", _store.Find(AdminId)!.nguoi_chinh_sua);
     }
@@ -177,7 +177,7 @@ public class TaiKhoanServiceTests
     [Fact]
     public async Task Update_changes_allowed_fields_and_sets_modified_time()
     {
-        var update = new TaiKhoanUpdateDto { ho_ten = "Admin mới", vai_tro = "Admin", dang_hoat_dong = false };
+        var update = new TaiKhoanUpdateDto { ho_ten = "Admin mới", email = "admin@gymbase.local", vai_tro = "Admin", dang_hoat_dong = false };
 
         var updated = await _service.BLUpdateAsync(AdminId, update, CancellationToken.None);
 
@@ -191,7 +191,7 @@ public class TaiKhoanServiceTests
     [Fact]
     public async Task Update_throws_not_found_for_missing_user()
     {
-        var update = new TaiKhoanUpdateDto { ho_ten = "X", vai_tro = "User" };
+        var update = new TaiKhoanUpdateDto { ho_ten = "X", email = "x@gymbase.local", vai_tro = "User" };
 
         await Assert.ThrowsAsync<NotFoundException>(() => _service.BLUpdateAsync(Guid.NewGuid(), update, CancellationToken.None));
     }

@@ -147,6 +147,9 @@ namespace GymBase.Persistence.Migrations
                     b.Property<DateTime?>("ngay_chinh_sua")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("ngay_dong_y_dieu_khoan")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("ngay_tao")
                         .HasColumnType("datetime(6)");
 
@@ -172,6 +175,9 @@ namespace GymBase.Persistence.Migrations
                         .HasColumnType("varchar(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("email")
+                        .IsUnique();
 
                     b.HasIndex("ten_dang_nhap")
                         .IsUnique();

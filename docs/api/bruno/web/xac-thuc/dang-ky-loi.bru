@@ -1,0 +1,34 @@
+meta {
+  name: Đăng ký sai dữ liệu (400)
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{webApi}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "ho_ten": "",
+    "email": "khong-phai-email",
+    "so_dien_thoai": "12345",
+    "mat_khau": "ngan",
+    "dong_y_dieu_khoan": false
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq VALIDATION_FAILED
+}
+
+docs {
+  Mỗi trường sai có một mục trong errors: ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan.
+}

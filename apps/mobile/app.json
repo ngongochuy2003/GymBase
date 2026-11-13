@@ -6,7 +6,8 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "plugins": ["expo-router", "expo-secure-store"],
+    "android": { "package": "vn.gymbase.app" },
+    "plugins": ["expo-router", "expo-secure-store", "expo-dev-client"],
     "web": { "bundler": "metro", "output": "single", "name": "GymBase Mobile" },
     "experiments": { "typedRoutes": true }
   }

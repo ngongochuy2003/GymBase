@@ -1,3 +1,4 @@
+import '../../global.css';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AppProviders } from '@/providers/app-providers';
@@ -24,7 +25,7 @@ function Navigation() {
         <Stack.Protected guard={status === 'guest'}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={status === 'demo'}>
+        <Stack.Protected guard={status === 'authenticated'}>
           <Stack.Screen name="(protected)" />
         </Stack.Protected>
       </Stack>

@@ -26,4 +26,7 @@ public sealed class tai_khoan : BaseAuditableEntity
 
     /// <summary>Mật khẩu đã băm. Null với tài khoản chỉ dùng Google. Không bao giờ trả ra API.</summary>
     public string? mat_khau_hash { get; set; }
+
+    /// <summary>Lúc người dùng tick đồng ý Điều khoản sử dụng và Chính sách bảo mật khi tự đăng ký (UTC). Null với tài khoản Admin tạo.</summary>
+    public DateTime? ngay_dong_y_dieu_khoan { get; set; }
 }

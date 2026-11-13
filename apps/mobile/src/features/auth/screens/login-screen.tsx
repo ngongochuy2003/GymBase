@@ -1,96 +1,108 @@
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
-import { env } from '@/core/config/env';
 import { AppText, Button, Card, Screen, TextField } from '@/shared/components/ui';
-import { useTheme } from '@/shared/theme/theme';
-import { demoSchema, type DemoForm } from '../schemas/demo-schema';
+import { GoogleSignInButton } from '../components/google-sign-in-button';
+import { loginSchema, type LoginForm } from '../schemas/login-schema';
+
+const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
 
 export function LoginScreen() {
-  const { enterDemo } = useSession();
-  const { colors } = useTheme();
-  const { control, handleSubmit } = useForm<DemoForm>({
-    resolver: zodResolver(demoSchema),
-    defaultValues: { name: '' },
+  const { signIn } = useSession();
+  const [failure, setFailure] = useState<{ message: string; retryable: boolean } | null>(null);
+  const { control, handleSubmit, formState } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
   });
+
+  const submit = handleSubmit(async ({ email, password }) => {
+    setFailure(null);
+    try {
+      await signIn(email, password);
+    } catch (error) {
+      const apiError = error instanceof ApiError ? error : null;
+      setFailure({
+        message: apiError?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.',
+        retryable: apiError ? CONNECTION_CODES.includes(apiError.code) : false,
+      });
+    }
+  });
+
   return (
     <Screen>
-      <View style={styles.brandRow}>
-        <View style={[styles.mark, { backgroundColor: colors.primary }]}>
-          <Text style={{ color: colors.onPrimary, fontWeight: '900', fontSize: 22 }}>G</Text>
+      <View className="flex-row items-center gap-3 py-3">
+        <View className="size-11 items-center justify-center rounded-[14px] bg-primary">
+          <Text className="text-[22px] font-black text-primary-foreground">G</Text>
         </View>
-        <AppText title>gymbase</AppText>
-      </View>
-      <View style={[styles.hero, { backgroundColor: colors.hero }]}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>MỖI NGÀY MỘT CHÚT TIẾN BỘ</Text>
-        <Text style={[styles.headline, { color: colors.heroText }]}>
-          Tập có kế hoạch.{'\n'}Tiến bộ cùng nhau.
-        </Text>
-        <Text style={[styles.copy, { color: colors.heroText }]}>
-          Một nơi để bạn và PT đồng hành trên từng buổi tập.
-        </Text>
-        <View style={styles.tags}>
-          {['Lịch tập', 'Tiến trình', 'Kết nối PT'].map((t) => (
-            <View key={t} style={styles.tag}>
-              <Text style={{ color: colors.heroText }}>{t}</Text>
-            </View>
-          ))}
-        </View>
+        <AppText title>GymBase</AppText>
       </View>
       <Card>
-        <AppText title>Bắt đầu cùng GymBase</AppText>
-        <AppText muted>Bản trải nghiệm • Dữ liệu minh họa, chưa kết nối backend.</AppText>
-        {env.dataMode === 'demo' ? (
-          <>
-            <Controller
-              control={control}
-              name="name"
-              render={({ field, fieldState }) => (
-                <TextField
-                  label="Tên của bạn"
-                  placeholder="Ví dụ: Minh Anh"
-                  autoComplete="name"
-                  maxLength={40}
-                  value={field.value}
-                  onChangeText={field.onChange}
-                  onBlur={field.onBlur}
-                  error={fieldState.error?.message}
-                  returnKeyType="go"
-                  onSubmitEditing={() => void handleSubmit(({ name }) => enterDemo(name))()}
-                />
-              )}
+        <AppText title>Đăng nhập</AppText>
+        <AppText muted>Dùng email và mật khẩu bạn đã đăng ký.</AppText>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Email"
+              placeholder="ban@email.com"
+              autoComplete="email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              returnKeyType="next"
             />
-            <Button
-              label="Khám phá bản demo"
-              onPress={handleSubmit(({ name }) => enterDemo(name))}
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Mật khẩu"
+              autoComplete="current-password"
+              secureTextEntry
+              autoCapitalize="none"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              returnKeyType="go"
+              onSubmitEditing={() => void submit()}
             />
-          </>
-        ) : (
-          <AppText>
-            Chế độ API chưa được tích hợp đăng nhập. Cần hoàn thiện backend trước khi sử dụng.
-          </AppText>
-        )}
+          )}
+        />
+        {failure ? (
+          <Text accessibilityRole="alert" className="text-destructive">
+            {failure.message}
+          </Text>
+        ) : null}
+        <Button
+          label="Đăng nhập tài khoản"
+          loading={formState.isSubmitting}
+          onPress={() => void submit()}
+        />
+        {failure?.retryable ? (
+          <Button label="Thử lại" secondary onPress={() => void submit()} />
+        ) : null}
       </Card>
-      <AppText muted>
-        Không cần tài khoản. Phiên demo kết thúc khi bạn tải lại hoặc thoát ứng dụng.
-      </AppText>
+      <View className="gap-3">
+        <AppText muted>Hoặc tiếp tục với</AppText>
+        <GoogleSignInButton />
+      </View>
+      <Button
+        label="Quay lại"
+        secondary
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
+      />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  brandRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12 },
-  mark: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  hero: { borderRadius: 28, padding: 28, gap: 22 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.6 },
-  headline: { fontSize: 36, lineHeight: 43, fontWeight: '800', letterSpacing: -1 },
-  copy: { fontSize: 16, lineHeight: 25, opacity: 0.85 },
-  tags: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  tag: {
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: '#FFFFFF18',
-  },
-});

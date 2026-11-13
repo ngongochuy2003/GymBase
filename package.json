@@ -10,6 +10,7 @@
     "mobile": "pnpm --filter @gymbase/mobile start",
     "mobile:web": "pnpm --filter @gymbase/mobile web",
     "mobile:android": "pnpm --filter @gymbase/mobile android",
+    "mobile:android:dev": "pnpm --filter @gymbase/mobile android:dev",
     "mobile:check": "pnpm --filter @gymbase/mobile check"
   }
 }

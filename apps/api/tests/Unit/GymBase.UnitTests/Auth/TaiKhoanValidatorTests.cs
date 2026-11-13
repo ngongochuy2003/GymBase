@@ -8,7 +8,7 @@ public class TaiKhoanValidatorTests
     private static readonly TaiKhoanCreateValidator Validator = new();
 
     private static TaiKhoanCreateDto Valid(
-        string tenDangNhap = "hv.moi", string hoTen = "Học viên", string? email = "a@gymbase.local", string? phone = "0912 345 678", string vaiTro = "User") => new()
+        string tenDangNhap = "hv.moi", string hoTen = "Học viên", string email = "a@gymbase.local", string? phone = "0912 345 678", string vaiTro = "User") => new()
     {
         ten_dang_nhap = tenDangNhap,
         mat_khau = AuthTestHelpers.ValidPassword,
@@ -25,7 +25,12 @@ public class TaiKhoanValidatorTests
     public void Accepts_valid_body() => Assert.Empty(ErrorFields(Valid()));
 
     [Fact]
-    public void Optional_fields_may_be_null() => Assert.Empty(ErrorFields(Valid(email: null, phone: null)));
+    public void Phone_may_be_null() => Assert.Empty(ErrorFields(Valid(phone: null)));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("khong-co-a-cong")]
+    public void Rejects_missing_or_malformed_email(string value) => Assert.Equal(["email"], ErrorFields(Valid(email: value)));
 
     [Theory]
     [InlineData("")]

@@ -5,8 +5,10 @@ using GymBase.BLAuth;
 using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLAuth.BLXacThuc;
 using GymBase.BLBiz;
+using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
+using GymBase.DLAuth.MySql.DLDangNhapNgoai;
 using GymBase.DLAuth.MySql.DLPhienDangNhap;
 using GymBase.DLAuth.MySql.DLTaiKhoan;
 using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
@@ -32,6 +34,7 @@ builder.Services.AddAppPersistence(builder.Configuration);
 builder.Services.AddAuthBusiness();
 builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
 builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
+builder.Services.AddScoped<IDangNhapNgoaiRepository, DangNhapNgoaiRepository>();
 
 // Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
 builder.Services.AddBizBusiness();
@@ -40,9 +43,9 @@ builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
 
 var app = builder.Build();
 
-// Tạo tài khoản Admin đầu tiên: dotnet run --project src/Host/GymBase.API -- create-admin <tên>
+// Tạo tài khoản Admin đầu tiên: dotnet run --project src/Host/GymBase.API -- create-admin <email>
 // Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử dòng lệnh.
-if (args is ["create-admin", var adminUserName])
+if (args is ["create-admin", var adminEmail])
 {
     var password = Environment.GetEnvironmentVariable("GYMBASE_ADMIN_PASSWORD");
     if (string.IsNullOrEmpty(password))
@@ -54,7 +57,7 @@ if (args is ["create-admin", var adminUserName])
     await using var scope = app.Services.CreateAsyncScope();
     try
     {
-        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminUserName, password, CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminEmail, password, CancellationToken.None);
     }
     catch (ValidationFailedException ex)
     {
@@ -62,7 +65,7 @@ if (args is ["create-admin", var adminUserName])
         return 1;
     }
 
-    Console.WriteLine($"Đã tạo hoặc đặt lại tài khoản Admin '{adminUserName}'.");
+    Console.WriteLine($"Đã tạo hoặc đặt lại tài khoản Admin '{adminEmail}'.");
     return 0;
 }
 

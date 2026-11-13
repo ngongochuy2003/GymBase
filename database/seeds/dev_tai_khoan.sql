@@ -10,4 +10,4 @@ VALUES
     ('0193f0a0-0000-7000-8000-000000000002', 'pt.minh', 'Nguyễn Văn Minh', 'minh@gymbase.local', '0900000002', 'User', 1, 'mock-not-a-real-hash', '2026-11-02 00:00:00', 'seed'),
     ('0193f0a0-0000-7000-8000-000000000003', 'pt.lan', 'Trần Thị Lan', 'lan@gymbase.local', '0900000003', 'User', 1, 'mock-not-a-real-hash', '2026-11-03 00:00:00', 'seed'),
     ('0193f0a0-0000-7000-8000-000000000004', 'hv.huy', 'Ngô Ngọc Huy', 'huy@gymbase.local', '0900000004', 'User', 1, 'mock-not-a-real-hash', '2026-11-04 00:00:00', 'seed'),
-    ('0193f0a0-0000-7000-8000-000000000005', 'hv.phuong', 'Lê Thu Phương', NULL, '0900000005', 'User', 0, 'mock-not-a-real-hash', '2026-11-05 00:00:00', 'seed');
+    ('0193f0a0-0000-7000-8000-000000000005', 'hv.phuong', 'Lê Thu Phương', 'phuong@gymbase.local', '0900000005', 'User', 0, 'mock-not-a-real-hash', '2026-11-05 00:00:00', 'seed');

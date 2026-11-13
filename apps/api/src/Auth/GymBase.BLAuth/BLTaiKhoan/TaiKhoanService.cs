@@ -11,7 +11,7 @@ namespace GymBase.BLAuth.BLTaiKhoan;
 /// <summary>
 /// Nghiệp vụ người dùng, dùng chung cho controller web (Controllers/) và mobile (Mob/Controllers/).
 /// CRUD lấy từ <see cref="BaseService{TEntity,TDto,TCreateDto,TUpdateDto}"/>; ở đây map entity ↔ DTO
-/// và chặn trùng tên đăng nhập.
+/// và chặn trùng tên đăng nhập, trùng email.
 /// </summary>
 public sealed class TaiKhoanService(
     ITaiKhoanRepository userRepository,
@@ -39,6 +39,20 @@ public sealed class TaiKhoanService(
                 $"Tên đăng nhập '{tenDangNhap}' đã tồn tại.",
                 AuthErrorCodes.UserUsernameTaken);
         }
+
+        await EnsureEmailFreeAsync(EmailRules.Normalize(dto.email), null, nameof(TaiKhoanCreateDto.email), cancellationToken);
+    }
+
+    /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc người dùng khác.</exception>
+    protected override Task BLBeforeUpdateAsync(Guid id, TaiKhoanUpdateDto dto, CancellationToken cancellationToken) =>
+        EnsureEmailFreeAsync(EmailRules.Normalize(dto.email), id, nameof(TaiKhoanUpdateDto.email), cancellationToken);
+
+    private async Task EnsureEmailFreeAsync(string email, Guid? exceptId, string field, CancellationToken cancellationToken)
+    {
+        if (await userRepository.DLExistsByEmailAsync(email, exceptId, cancellationToken))
+        {
+            throw new ConflictException(field, $"Email '{email}' đã được dùng.", AuthErrorCodes.UserEmailTaken);
+        }
     }
 
     protected override TaiKhoanDto BLToDto(tai_khoan entity) => new(
@@ -58,7 +72,7 @@ public sealed class TaiKhoanService(
         {
             ten_dang_nhap = dto.ten_dang_nhap.Trim(),
             ho_ten = dto.ho_ten.Trim(),
-            email = dto.email?.Trim(),
+            email = EmailRules.Normalize(dto.email),
             so_dien_thoai = dto.so_dien_thoai?.Trim(),
             vai_tro = dto.vai_tro,
         };
@@ -69,7 +83,7 @@ public sealed class TaiKhoanService(
     protected override void BLApplyUpdate(tai_khoan entity, TaiKhoanUpdateDto dto)
     {
         entity.ho_ten = dto.ho_ten.Trim();
-        entity.email = dto.email?.Trim();
+        entity.email = EmailRules.Normalize(dto.email);
         entity.so_dien_thoai = dto.so_dien_thoai?.Trim();
         entity.vai_tro = dto.vai_tro;
         entity.dang_hoat_dong = dto.dang_hoat_dong;

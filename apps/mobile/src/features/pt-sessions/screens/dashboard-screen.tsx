@@ -23,7 +23,7 @@ export function DashboardScreen() {
         </View>
       </View>
       <View style={{ gap: 4 }}>
-        <AppText muted>Chào {user?.name ?? 'bạn'},</AppText>
+        <AppText muted>Chào {user?.ho_ten ?? 'bạn'},</AppText>
         <AppText title>Sẵn sàng cho phiên bản{'\n'}khỏe hơn của bạn?</AppText>
       </View>
       <View style={[styles.hero, { backgroundColor: colors.hero }]}>

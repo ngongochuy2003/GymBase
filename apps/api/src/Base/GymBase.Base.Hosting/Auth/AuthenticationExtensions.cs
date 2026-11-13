@@ -28,6 +28,7 @@ public static class AuthenticationExtensions
 
         services.AddSingleton(settings);
         services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
+        services.AddSingleton<IGoogleIdTokenVerifier, GoogleIdTokenVerifier>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
         {

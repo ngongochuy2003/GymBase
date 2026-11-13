@@ -28,6 +28,8 @@ export default function ProtectedLayout() {
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }}>◎</Text>,
         }}
       />
+      <Tabs.Screen name="profile-setup" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="register-success" options={{ tabBarButton: () => null }} />
     </Tabs>
   );
 }

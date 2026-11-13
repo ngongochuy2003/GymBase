@@ -23,5 +23,8 @@ public sealed class TaiKhoanConfiguration : IEntityTypeConfiguration<tai_khoan>
         // Tên đăng nhập duy nhất, không phân biệt hoa thường (collation mặc định). Tài khoản chỉ dùng Google có
         // ten_dang_nhap NULL; MySQL cho phép nhiều NULL trong unique index.
         builder.HasIndex(e => e.ten_dang_nhap).IsUnique();
+
+        // Email là định danh đăng nhập (ADR-0001): duy nhất, lưu chữ thường. NULL vẫn được phép với dữ liệu cũ.
+        builder.HasIndex(e => e.email).IsUnique();
     }
 }
