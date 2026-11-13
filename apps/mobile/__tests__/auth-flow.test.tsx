@@ -87,12 +87,10 @@ test('guest deep link goes to the welcome screen, not the protected page or not-
   expect(screen.queryByText('Không tìm thấy màn hình')).toBeNull();
 });
 
-test('welcome offers sign in, register and Google, the last one not wired yet', async () => {
+test('welcome offers register, sign in and Google, and Sign in opens the login form', async () => {
   await renderRouter(routes, { initialUrl: '/' });
   expect(await screen.findByRole('button', { name: 'Đăng ký tài khoản' })).toBeTruthy();
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập với Google' }));
-  expect(await screen.findByText('Tính năng này sắp có.')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Đăng nhập với Google' })).toBeTruthy();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
   await waitFor(() => expect(screen).toHavePathname('/login'));

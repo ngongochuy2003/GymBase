@@ -1,12 +1,9 @@
-import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Button, Screen } from '@/shared/components/ui';
+import { GoogleSignInButton } from '../components/google-sign-in-button';
 
 export function WelcomeScreen() {
-  const [notice, setNotice] = useState<string | null>(null);
-  // TODO(GOOGLE): nối "Đăng nhập với Google" khi làm đăng nhập Google trên mobile (#20).
-  const comingSoon = () => setNotice('Tính năng này sắp có.');
   return (
     <Screen>
       <View className="flex-row items-center gap-3 py-3">
@@ -28,12 +25,7 @@ export function WelcomeScreen() {
         <Button label="Đăng ký tài khoản" onPress={() => router.push('/register')} />
         <Button label="Đăng nhập" secondary onPress={() => router.push('/login')} />
         <AppText muted>Hoặc tiếp tục với</AppText>
-        <Button label="Đăng nhập với Google" secondary onPress={comingSoon} />
-        {notice ? (
-          <Text accessibilityRole="alert" className="text-muted-foreground">
-            {notice}
-          </Text>
-        ) : null}
+        <GoogleSignInButton />
       </View>
     </Screen>
   );

@@ -47,6 +47,13 @@ export const authApi = {
     });
     return data;
   },
+  async google(input: { id_token: string; ten_thiet_bi?: string }): Promise<AuthResult> {
+    const { data } = await anonymousClient.post<AuthResult>('/auth/google', {
+      ten_thiet_bi: Platform.OS,
+      ...input,
+    });
+    return data;
+  },
   async refresh(refreshToken: string): Promise<AuthResult> {
     const { data } = await anonymousClient.post<AuthResult>('/auth/refresh', {
       refresh_token: refreshToken,

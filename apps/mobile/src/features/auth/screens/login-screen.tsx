@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
 import { AppText, Button, Card, Screen, TextField } from '@/shared/components/ui';
+import { GoogleSignInButton } from '../components/google-sign-in-button';
 import { loginSchema, type LoginForm } from '../schemas/login-schema';
 
 const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
@@ -93,6 +94,10 @@ export function LoginScreen() {
           <Button label="Thử lại" secondary onPress={() => void submit()} />
         ) : null}
       </Card>
+      <View className="gap-3">
+        <AppText muted>Hoặc tiếp tục với</AppText>
+        <GoogleSignInButton />
+      </View>
       <Button
         label="Quay lại"
         secondary

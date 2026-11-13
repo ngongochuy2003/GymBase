@@ -8,6 +8,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 import { authApi, authRuntime, type RegisterInput } from '../api/auth-api';
+import { googleSignIn } from './google-sign-in';
 import type { AuthResult, AuthUser } from './types';
 
 type Session = {
@@ -15,6 +16,8 @@ type Session = {
   user: AuthUser | null;
   /** Đăng nhập bằng email và mật khẩu; ném `ApiError` khi không thành công. */
   signIn(email: string, password: string): Promise<AuthResult>;
+  /** Đăng nhập hoặc đăng ký bằng ID token của Google; ném `ApiError` khi không thành công. */
+  signInWithGoogle(idToken: string): Promise<AuthResult>;
   /** Đăng ký bằng mật khẩu, có phiên ngay; ném `ApiError` khi không thành công. */
   register(input: RegisterInput): Promise<AuthResult>;
   /** True ngay sau khi tài khoản vừa được tạo, cho tới khi người dùng chọn thiết lập hồ sơ hoặc bỏ qua. */
@@ -54,26 +57,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const result = await authApi.login({
-      email: email.trim().toLowerCase(),
-      mat_khau: password,
-    });
-    await authRuntime.save({
-      accessToken: result.access_token,
-      refreshToken: result.refresh_token,
-    });
-    setUser(result.user);
-    return result;
-  }, []);
-
-  const register = useCallback(async (input: RegisterInput) => {
-    const result = await authApi.register({
-      ...input,
-      ho_ten: input.ho_ten.trim(),
-      email: input.email.trim().toLowerCase(),
-      so_dien_thoai: input.so_dien_thoai.trim(),
-    });
+  /** Lưu token và chuyển sang trạng thái đã đăng nhập; `tai_khoan_moi` quyết định có hiện màn "Đăng ký thành công" không. */
+  const startSession = useCallback(async (result: AuthResult) => {
     await authRuntime.save({
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
@@ -82,6 +67,30 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setUser(result.user);
     return result;
   }, []);
+
+  const signIn = useCallback(
+    async (email: string, password: string) =>
+      startSession(await authApi.login({ email: email.trim().toLowerCase(), mat_khau: password })),
+    [startSession],
+  );
+
+  const register = useCallback(
+    async (input: RegisterInput) =>
+      startSession(
+        await authApi.register({
+          ...input,
+          ho_ten: input.ho_ten.trim(),
+          email: input.email.trim().toLowerCase(),
+          so_dien_thoai: input.so_dien_thoai.trim(),
+        }),
+      ),
+    [startSession],
+  );
+
+  const signInWithGoogle = useCallback(
+    async (idToken: string) => startSession(await authApi.google({ id_token: idToken })),
+    [startSession],
+  );
 
   const completeWelcome = useCallback(() => setPendingWelcome(false), []);
 
@@ -93,6 +102,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       setUser(null);
       setPendingWelcome(false);
       await authRuntime.clear();
+      await googleSignIn.signOut();
     }
   }, []);
 
@@ -101,12 +111,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       status: !ready ? 'loading' : user ? 'authenticated' : 'guest',
       user,
       signIn,
+      signInWithGoogle,
       register,
       pendingWelcome,
       completeWelcome,
       signOut,
     }),
-    [ready, user, signIn, register, pendingWelcome, completeWelcome, signOut],
+    [ready, user, signIn, signInWithGoogle, register, pendingWelcome, completeWelcome, signOut],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

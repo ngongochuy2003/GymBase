@@ -34,7 +34,8 @@ Màn hình mở đầu: **Chào mừng** → **Đăng nhập** bằng email và 
 Phiên được lưu bằng SecureStore, mở lại app tự khôi phục; token tự gia hạn, hết phiên thì về màn chào mừng.
 **Đăng ký tài khoản** (họ tên, email, số điện thoại di động Việt Nam, mật khẩu, tick điều khoản) có phiên ngay, rồi hiện màn
 "Đăng ký thành công" đúng một lần: "Thiết lập hồ sơ ngay" (màn giữ chỗ) hoặc "Bỏ qua, vào Trang chủ".
-Ô mã giới thiệu có trên form nhưng chưa tính điểm. "Đăng nhập với Google" chưa nối (ticket #20).
+Ô mã giới thiệu có trên form nhưng chưa tính điểm. **Đăng nhập với Google** (Android) cần bản dev build, không chạy trong Expo Go: xem
+[chay-mobile.md](../../docs/onboarding/chay-mobile.md) mục 6.
 Tab **Hôm nay**: lịch tập mẫu, đánh dấu/bỏ đánh dấu đã tập để cập nhật tiến trình.
 Tab **Cá nhân**: đổi giao diện sáng/tối hoặc đăng xuất.
 
