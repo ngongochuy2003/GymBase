@@ -53,6 +53,8 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:5020
 | Trình duyệt (Expo web), iOS Simulator | `http://localhost:5020` |
 | Điện thoại thật | `http://<IP-máy-tính>:5020`, cần chạy API theo mục "Điện thoại thật" của cach-chay-api.md |
 
+- `EXPO_PUBLIC_TERMS_URL` và `EXPO_PUBLIC_PRIVACY_URL` (không bắt buộc) là liên kết Điều khoản và Chính sách bảo mật ở màn đăng ký;
+  để trống thì dùng URL giữ chỗ.
 - `EXPO_PUBLIC_DATA_MODE=demo` chỉ quyết định nguồn dữ liệu **lịch tập** (dữ liệu mẫu, chưa có API lịch tập). Đăng nhập luôn
   gọi API thật.
 - Biến `EXPO_PUBLIC_*` được nhúng lúc build. Đổi `.env` xong phải chạy lại Expo với cache sạch (`pnpm --filter @gymbase/mobile start -c`, hoặc task
@@ -83,8 +85,17 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
 3. Tab **Cá nhân** có tên và email của tài khoản; **Đăng xuất** thu hồi phiên và về màn chào mừng.
 4. Đóng hẳn app rồi mở lại: app khôi phục phiên, không hỏi đăng nhập.
 
-Màn đăng ký trong app và đăng nhập Google chưa nối. Muốn có thêm tài khoản thường để thử thì gọi API đăng ký bằng Bruno
-(request **Đăng ký** trong `Mobile (/api/v1/mob)` → `Xác thực`), rồi đăng nhập bằng email đó trong app.
+## 5. Đăng ký tài khoản mới trong app
+
+1. Ở màn chào mừng bấm **Đăng ký tài khoản**.
+2. Nhập họ và tên, email, số điện thoại di động Việt Nam (`0912 345 678`, `+84912345678`...), mật khẩu (tối thiểu 8 ký tự, không quá
+   phổ biến, không chứa phần trước `@` của email), xác nhận mật khẩu, tick đồng ý điều khoản. Mã giới thiệu để trống cũng được
+   (chưa tính điểm).
+3. Bấm **Đăng ký**: app có phiên ngay và hiện màn **Đăng ký thành công**. **Bỏ qua, vào Trang chủ** vào tab Hôm nay; **Thiết lập hồ sơ
+   ngay** mở màn giữ chỗ (phần thiết lập hồ sơ chưa làm). Màn này chỉ hiện một lần, các lần đăng nhập sau vào thẳng app.
+4. Email đã dùng thì form báo "Email này đã được dùng" kèm nút **Đã có tài khoản? Đăng nhập**.
+
+Đăng nhập Google chưa nối.
 
 ## Lỗi thường gặp
 
@@ -95,4 +106,5 @@ Màn đăng ký trong app và đăng nhập Google chưa nối. Muốn có thêm
 | "Email hoặc mật khẩu không đúng." với đúng thông tin | Tài khoản chưa có email (DB chưa chạy migration), hoặc chưa tạo Admin; thử `create-admin` lại để đặt lại mật khẩu |
 | Đúng mật khẩu mà vẫn báo sai sau nhiều lần thử | Đăng nhập sai từ lần thứ 5 bị khóa tạm 1 đến 15 phút (vẫn báo email hoặc mật khẩu không đúng); chờ rồi thử lại. Quá 20 lần gọi mỗi phút theo IP thì trả 429 |
 | App báo `EXPO_PUBLIC_API_URL là bắt buộc` khi mở | Chưa tạo `apps/mobile/.env` |
+| Đăng ký báo email đã dùng nhưng bạn chưa từng đăng ký | Email đó đã có trong DB (tài khoản mẫu hoặc Admin); dùng email khác |
 | `/health` trả `Unhealthy` | MySQL chưa chạy, sai connection string, hoặc chưa chạy `dotnet ef database update` |

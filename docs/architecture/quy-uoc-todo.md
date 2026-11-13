@@ -26,3 +26,7 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 | `AUTH` | Xác thực, phân quyền, mật khẩu |
 | `REFERRAL` | Mã giới thiệu và điểm thưởng khi đăng ký (V1 chỉ nhận ô nhập, chưa xử lý) |
 | `VERIFY` | Xác minh email, số điện thoại (OTP hoặc link) và quên mật khẩu qua email |
+| `PROFILE` | Màn thiết lập hồ sơ và chọn nhóm người dùng (hiện là màn giữ chỗ) |
+| `ASSET` | Logo, ảnh hero, carousel của màn chào mừng (hiện là khối màu giữ chỗ) |
+| `GOOGLE` | Đăng nhập Google trên mobile (nút hiện chưa nối) |
+| `LEGAL` | Điều khoản sử dụng và Chính sách bảo mật thật (hiện là URL giữ chỗ) |
