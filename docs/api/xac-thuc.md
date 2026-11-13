@@ -182,7 +182,7 @@ xem lại mức này cho tài khoản `Admin`.
 
 ## 8. Đăng nhập và đăng ký bằng Google (V1)
 
-**Chốt 11/11:** Google nằm trong V1, người lạ tự đăng ký được. **Backend đã làm** (`POST /google`, 13/11); app mobile chưa nối. App lấy ID token từ Google rồi gửi cho API. API xác minh rồi cấp
+**Chốt 11/11:** Google nằm trong V1, người lạ tự đăng ký được. **Backend đã làm** (`POST /google`, 13/11); app mobile đã nối trên Android (dev build). App lấy ID token từ Google rồi gửi cho API. API xác minh rồi cấp
 **JWT và refresh token của GymBase**, nên phần còn lại của hệ thống không phân biệt cách đăng nhập.
 
 ```text
@@ -228,7 +228,8 @@ làm phân quyền.
 
 - Client ID khai báo ở `Google:ClientIds` (mảng; user-secrets `Google:ClientIds:0` khi dev, biến môi trường `Google__ClientIds__0`
   khi chạy thật). Dùng client ID **Web** của dự án làm `aud` khi app lấy ID token qua `webClientId`; thêm client ID Android vào
-  mảng nếu app lấy token bằng chính client ID Android. Chưa cấu hình thì mọi token bị từ chối (`AUTH_GOOGLE_TOKEN_INVALID`) và API ghi log lỗi.
+  mảng nếu app lấy token bằng chính client ID Android. Chưa cấu hình thì mọi token bị từ chối (`AUTH_GOOGLE_TOKEN_INVALID`) và API ghi log lỗi. App mobile (Android, dev build) lấy ID token
+  bằng `webClientId` này, xem [chay-mobile.md](../onboarding/chay-mobile.md) mục 6.
 - Xác minh bằng thư viện `Google.Apis.Auth` (`GoogleIdTokenVerifier`): chữ ký, `iss`, `exp`, `aud`. Lỗi mạng khi tải khóa của Google
   thành 500, không báo nhầm là token sai.
 - Tài khoản tìm theo `sub` (bảng `dang_nhap_ngoai`), không theo email: đổi email Google không tạo tài khoản mới.

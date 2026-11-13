@@ -95,7 +95,50 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
    ngay** mở màn giữ chỗ (phần thiết lập hồ sơ chưa làm). Màn này chỉ hiện một lần, các lần đăng nhập sau vào thẳng app.
 4. Email đã dùng thì form báo "Email này đã được dùng" kèm nút **Đã có tài khoản? Đăng nhập**.
 
-Đăng nhập Google chưa nối.
+Đăng nhập Google cần bản dev build, xem mục 6.
+
+## 6. Đăng nhập với Google (dev build, chỉ Android)
+
+Nút **Đăng nhập với Google** dùng thư viện native nên **không chạy trong Expo Go**; app phải chạy từ một bản dev build. Trong Expo
+Go nút chỉ báo "cần bản dev build". iOS chưa làm (`TODO(IOS)`).
+
+**Làm một lần, trên Google Cloud Console** (ticket #15):
+
+1. Tạo project, cấu hình màn hình đồng ý OAuth (OAuth consent screen).
+2. Tạo OAuth client ID loại **Web application**. Giá trị này là `aud` của ID token và là client ID dùng cho cả app lẫn backend.
+3. Tạo OAuth client ID loại **Android** với package name `vn.gymbase.app` (đặt ở `apps/mobile/app.json`, phải trùng) và SHA-1 của
+   keystore dev (bước dưới). Client ID Android không đưa vào code, nhưng phải tồn tại để Google chấp nhận app.
+
+**Tạo dev build và lấy SHA-1.** Cần JDK 17 và Android SDK (đã có nếu chạy được emulator):
+
+```bash
+# Tại thư mục gốc repo. Lần đầu sinh thư mục native apps/mobile/android (không commit), build rồi cài lên emulator.
+pnpm mobile:android:dev
+```
+
+```powershell
+# SHA-1 của keystore debug, dán vào client ID Android ở bước 3:
+keytool -list -v -keystore apps\mobile\android\app\debug.keystore -alias androiddebugkey -storepass android -keypass android
+```
+
+**Khai báo client ID** (cùng một Web client ID cho cả hai nơi):
+
+```bash
+# Backend, tại apps/api
+dotnet user-secrets set "Google:ClientIds:0" "<web-client-id>.apps.googleusercontent.com" --project src/Host/GymBase.API
+```
+
+```text
+# apps/mobile/.env
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<web-client-id>.apps.googleusercontent.com
+```
+
+Sau khi sửa `.env`, build lại hoặc chạy Metro với `-c`. Từ đó mở app dev build (không phải Expo Go), chạy API (task `Dev: API + Expo`)
+và bấm **Đăng nhập với Google**: lần đầu app hiện màn "Đăng ký thành công", các lần sau vào thẳng app. Google báo `DEVELOPER_ERROR`
+thường do package name hoặc SHA-1 của client ID Android không khớp bản build.
+
+Email Google trùng email của tài khoản đã đăng ký bằng mật khẩu thì app báo "Email này đã đăng ký bằng mật khẩu"; việc liên kết
+Google vào tài khoản có sẵn từ màn Cá nhân chưa làm.
 
 ## Lỗi thường gặp
 
@@ -107,4 +150,6 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
 | Đúng mật khẩu mà vẫn báo sai sau nhiều lần thử | Đăng nhập sai từ lần thứ 5 bị khóa tạm 1 đến 15 phút (vẫn báo email hoặc mật khẩu không đúng); chờ rồi thử lại. Quá 20 lần gọi mỗi phút theo IP thì trả 429 |
 | App báo `EXPO_PUBLIC_API_URL là bắt buộc` khi mở | Chưa tạo `apps/mobile/.env` |
 | Đăng ký báo email đã dùng nhưng bạn chưa từng đăng ký | Email đó đã có trong DB (tài khoản mẫu hoặc Admin); dùng email khác |
+| Nút Google báo "cần bản dev build" | Đang chạy trong Expo Go; build và mở bản dev build (mục 6) |
+| Nút Google báo "chưa được cấu hình" | Thiếu `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` trong `.env` (build lại hoặc chạy Metro với `-c`) |
 | `/health` trả `Unhealthy` | MySQL chưa chạy, sai connection string, hoặc chưa chạy `dotnet ef database update` |

@@ -28,5 +28,6 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 | `VERIFY` | Xác minh email, số điện thoại (OTP hoặc link) và quên mật khẩu qua email |
 | `PROFILE` | Màn thiết lập hồ sơ và chọn nhóm người dùng (hiện là màn giữ chỗ) |
 | `ASSET` | Logo, ảnh hero, carousel của màn chào mừng (hiện là khối màu giữ chỗ) |
-| `GOOGLE` | Đăng nhập Google trên mobile (nút hiện chưa nối) |
+| `LINK-GOOGLE` | Liên kết Google vào tài khoản mật khẩu có sẵn từ tab Cá nhân (backend và mobile) |
+| `IOS` | Đăng nhập Google trên iOS (plugin `iosUrlScheme`, client ID iOS) và Sign in with Apple |
 | `LEGAL` | Điều khoản sử dụng và Chính sách bảo mật thật (hiện là URL giữ chỗ) |
