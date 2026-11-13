@@ -41,12 +41,12 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    dotnet user-secrets set "Jwt:SigningKey" ([Convert]::ToBase64String($bytes)) --project src/Host/GymBase.API
    ```
 
-5. Tạo tài khoản Admin. Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh. Tên đã tồn tại thì đặt lại
-   mật khẩu và chuyển thành Admin:
+5. Tạo tài khoản Admin, đăng nhập bằng email. Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh. Email đã
+   tồn tại thì đặt lại mật khẩu và chuyển thành Admin:
 
    ```powershell
    $env:GYMBASE_ADMIN_PASSWORD = Read-Host "Mật khẩu Admin"
-   dotnet run --project src/Host/GymBase.API --launch-profile http -- create-admin admin
+   dotnet run --project src/Host/GymBase.API --launch-profile http -- create-admin admin@gymbase.local
    Remove-Item Env:GYMBASE_ADMIN_PASSWORD
    ```
 

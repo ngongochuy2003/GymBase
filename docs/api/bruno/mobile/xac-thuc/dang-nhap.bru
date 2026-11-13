@@ -16,7 +16,7 @@ headers {
 
 body:json {
   {
-    "ten_dang_nhap": "{{adminUserName}}",
+    "email": "{{adminEmail}}",
     "mat_khau": "{{adminPassword}}"
   }
 }
@@ -32,5 +32,5 @@ script:post-response {
 }
 
 docs {
-  Chạy request này trước. Các request khác dùng biến accessToken. Tài khoản Admin tạo bằng lệnh create-admin, mật khẩu đặt ở biến bí mật adminPassword của environment.
+  Chạy request này trước. Các request khác dùng biến accessToken. Tài khoản Admin tạo bằng lệnh create-admin <email> (khớp biến adminEmail), mật khẩu đặt ở biến bí mật adminPassword của environment.
 }
