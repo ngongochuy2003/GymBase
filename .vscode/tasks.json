@@ -56,7 +56,7 @@
     },
     {
       "label": "API: chạy cho điện thoại thật (LAN)",
-      "detail": "GymBase.API nghe trên mọi địa chỉ mạng: http://<IP-máy-tính>:5020/api/v1/mob/",
+      "detail": "GymBase.API nghe trên mọi địa chỉ mạng (0.0.0.0:5020): localhost, 10.0.2.2 (emulator) và http://<IP-máy-tính>:5020 đều vào được",
       "dependsOrder": "sequence",
       "dependsOn": [
         "API: build",
@@ -145,11 +145,31 @@
       "problemMatcher": []
     },
     {
+      "label": "Dev: API + Expo (LAN)",
+      "detail": "Như Dev: API + Expo nhưng API nghe trên mọi địa chỉ mạng (0.0.0.0:5020), dùng cho điện thoại thật cùng Wi-Fi. Chỉ bật khi cần",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "API: build",
+        "_run API (LAN) + Expo"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "_run API + Expo",
       "hide": true,
       "dependsOrder": "parallel",
       "dependsOn": [
         "_run API",
+        "Mobile: chạy Expo"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "_run API (LAN) + Expo",
+      "hide": true,
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "_run API (LAN)",
         "Mobile: chạy Expo"
       ],
       "problemMatcher": []

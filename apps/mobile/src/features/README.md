@@ -1,6 +1,7 @@
 # Ranh giới feature
 
-`auth` xác thực với backend; `feed` tải bảng tin và lượt thích; `composer` đăng bài và tải media; `profile` hiển thị tài khoản, đổi theme và đăng xuất.
+`auth` là màn chào mừng và đăng nhập; `pt-sessions` có màn hình lịch tập, typed repository,
+query keys, hook và UI; `profile` chứa tùy chỉnh giao diện/thoát phiên.
 
 `feed/config` và `composer/config` chỉ chứa cấu hình giao diện tĩnh (nhãn bộ lọc, chủ đề, hành động). Dữ liệu nghiệp vụ đi qua repository API, không có bộ dữ liệu mẫu ở runtime.
 

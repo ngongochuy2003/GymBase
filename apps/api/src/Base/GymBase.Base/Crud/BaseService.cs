@@ -50,6 +50,9 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
     /// <summary>Kiểm tra nghiệp vụ trước khi thêm, ví dụ chặn trùng mã. Chạy sau validator nên dto đã hợp lệ.</summary>
     protected virtual Task BLBeforeCreateAsync(TCreateDto dto, CancellationToken cancellationToken) => Task.CompletedTask;
 
+    /// <summary>Kiểm tra nghiệp vụ trước khi sửa, ví dụ chặn đổi sang giá trị đã có người dùng. Chạy sau validator.</summary>
+    protected virtual Task BLBeforeUpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken) => Task.CompletedTask;
+
     public virtual async Task<PagingResult<TDto>> BLGetPagingAsync(PagingRequest request, CancellationToken cancellationToken)
     {
         var page = await Repository.DLGetPagingAsync(request.Normalize(), cancellationToken);
@@ -77,6 +80,7 @@ public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>(
     public virtual async Task<TDto> BLUpdateAsync(Guid id, TUpdateDto dto, CancellationToken cancellationToken)
     {
         await updateValidator.ValidateOrThrowAsync(dto, cancellationToken);
+        await BLBeforeUpdateAsync(id, dto, cancellationToken);
 
         var entity = await BLGetEntityOrThrowAsync(id, cancellationToken);
 

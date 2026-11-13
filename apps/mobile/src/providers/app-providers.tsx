@@ -1,5 +1,11 @@
 import { Component, useState, type PropsWithChildren, type ErrorInfo } from 'react';
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text, View } from 'react-native';
 import { useEffect } from 'react';
@@ -9,6 +15,14 @@ import { ThemeProvider } from '@/shared/theme/theme';
 
 export function createQueryClient() {
   return new QueryClient({
+    // Chức năng cần hồ sơ mà tài khoản chưa có (PROFILE_REQUIRED): đưa người dùng tới bước thiết lập hồ sơ.
+    queryCache: new QueryCache({
+      onError: (error) => {
+        if (error instanceof ApiError && error.code === 'PROFILE_REQUIRED') {
+          router.navigate('/profile-setup');
+        }
+      },
+    }),
     defaultOptions: {
       queries: {
         staleTime: 30_000,

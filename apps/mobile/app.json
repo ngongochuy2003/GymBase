@@ -9,6 +9,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-dev-client",
       [
         "expo-notifications",
         {
@@ -22,7 +23,8 @@
           "photosPermission": "Cho phép GymBase truy cập thư viện ảnh để chọn ảnh và video đăng bài.",
           "cameraPermission": "Cho phép GymBase truy cập máy ảnh để chụp ảnh và quay video đăng bài."
         }
-      ]
+      ],
+      { "package": "vn.gymbase.app" }
     ],
     "android": {
       "permissions": [

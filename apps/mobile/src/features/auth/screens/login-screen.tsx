@@ -1,42 +1,109 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { StyleSheet, Text, View } from 'react-native';
-import { useSession } from '@/core/auth/session';
+import { Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
+import { useSession } from '@/core/auth/session';
+
 import { AppText, Button, Card, Screen, TextField } from '@/shared/components/ui';
-import { useTheme } from '@/shared/theme/theme';
+import { GoogleSignInButton } from '../components/google-sign-in-button';
 import { loginSchema, type LoginForm } from '../schemas/login-schema';
 
+const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
+
 export function LoginScreen() {
-  const { login } = useSession();
-  const { colors } = useTheme();
-  const [submitError, setSubmitError] = useState('');
-  const { control, handleSubmit, formState: { isSubmitting } } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema), defaultValues: { userName: '', password: '' },
+  const { signIn } = useSession();
+  const [failure, setFailure] = useState<{ message: string; retryable: boolean } | null>(null);
+  const { control, handleSubmit, formState } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
   });
-  const submit = handleSubmit(async ({ userName, password }) => {
-    setSubmitError('');
-    try { await login(userName, password); }
-    catch (error) { setSubmitError(error instanceof ApiError ? error.message : 'Không thể đăng nhập. Kiểm tra kết nối API.'); }
+
+  const submit = handleSubmit(async ({ email, password }) => {
+    setFailure(null);
+    try {
+      await signIn(email, password);
+    } catch (error) {
+      const apiError = error instanceof ApiError ? error : null;
+      setFailure({
+        message: apiError?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.',
+        retryable: apiError ? CONNECTION_CODES.includes(apiError.code) : false,
+      });
+    }
   });
+
   return (
     <Screen>
-      <View style={styles.brandRow}><View style={[styles.mark, { backgroundColor: colors.primary }]}><Text style={{ color: colors.onPrimary, fontWeight: '900', fontSize: 22 }}>G</Text></View><AppText title>GymBase</AppText></View>
-      <View style={[styles.hero, { backgroundColor: colors.hero }]}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>GYMBASE</Text>
-        <Text style={[styles.headline, { color: colors.heroText }]}>Tập có kế hoạch.{ '\n' }Tiến bộ cùng nhau.</Text>
-        <Text style={[styles.copy, { color: colors.heroText }]}>Đăng nhập để xem bảng tin và chia sẻ tiến trình tập luyện.</Text>
+      <View className="flex-row items-center gap-3 py-3">
+        <View className="size-11 items-center justify-center rounded-[14px] bg-primary">
+          <Text className="text-[22px] font-black text-primary-foreground">G</Text>
+        </View>
+        <AppText title>GymBase</AppText>
       </View>
       <Card>
         <AppText title>Đăng nhập</AppText>
-        <Controller control={control} name="userName" render={({ field, fieldState }) => <TextField label="Tên đăng nhập" autoCapitalize="none" autoComplete="username" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={fieldState.error?.message} returnKeyType="next" />} />
-        <Controller control={control} name="password" render={({ field, fieldState }) => <TextField label="Mật khẩu" secureTextEntry autoComplete="password" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={fieldState.error?.message} onSubmitEditing={() => void submit()} returnKeyType="go" />} />
-        {submitError ? <AppText>{submitError}</AppText> : null}
-        <Button label="Đăng nhập" loading={isSubmitting} onPress={() => void submit()} />
+        <AppText muted>Dùng email và mật khẩu bạn đã đăng ký.</AppText>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Email"
+              placeholder="ban@email.com"
+              autoComplete="email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              returnKeyType="next"
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Mật khẩu"
+              autoComplete="current-password"
+              secureTextEntry
+              autoCapitalize="none"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              returnKeyType="go"
+              onSubmitEditing={() => void submit()}
+            />
+          )}
+        />
+        {failure ? (
+          <Text accessibilityRole="alert" className="text-destructive">
+            {failure.message}
+          </Text>
+        ) : null}
+        <Button
+          label="Đăng nhập tài khoản"
+          loading={formState.isSubmitting}
+          onPress={() => void submit()}
+        />
+        {failure?.retryable ? (
+          <Button label="Thử lại" secondary onPress={() => void submit()} />
+        ) : null}
       </Card>
+      <View className="gap-3">
+        <AppText muted>Hoặc tiếp tục với</AppText>
+        <GoogleSignInButton />
+      </View>
+      <Button
+        label="Quay lại"
+        secondary
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
+      />
     </Screen>
   );
 }
-const styles = StyleSheet.create({ brandRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12 }, mark: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, hero: { borderRadius: 28, padding: 28, gap: 22 }, eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.6 }, headline: { fontSize: 36, lineHeight: 43, fontWeight: '800', letterSpacing: -1 }, copy: { fontSize: 16, lineHeight: 25, opacity: 0.85 } });
-

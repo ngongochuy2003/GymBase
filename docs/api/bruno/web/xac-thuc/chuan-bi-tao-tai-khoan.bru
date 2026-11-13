@@ -21,6 +21,7 @@ headers {
 body:json {
   {
     "ten_dang_nhap": "{{testUserName}}",
+    "email": "{{testEmail}}",
     "mat_khau": "Mk-thu-nghiem-1",
     "ho_ten": "Tài khoản thử",
     "vai_tro": "User"
@@ -28,7 +29,9 @@ body:json {
 }
 
 script:pre-request {
-  bru.setVar("testUserName", "hv.thu." + Date.now());
+  const suffix = Date.now();
+  bru.setVar("testUserName", "hv.thu." + suffix);
+  bru.setVar("testEmail", "hv.thu." + suffix + "@gymbase.local");
 }
 
 assert {

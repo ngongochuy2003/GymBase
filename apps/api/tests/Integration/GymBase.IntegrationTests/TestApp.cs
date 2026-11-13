@@ -9,6 +9,7 @@ using GymBase.BLBiz;
 using GymBase.BLBiz.BaiViet;
 using GymBase.DLBiz.Contract;
 using GymBase.BLBiz.BLTruyCap;
+using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
@@ -58,6 +59,10 @@ namespace GymBase.IntegrationTests
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
             builder.Services.AddScoped<IBaiVietRepository, InMemoryBaiVietRepository>();
             builder.Services.AddScoped<ITuongTacBaiVietRepository, InMemoryTuongTacBaiVietRepository>();
+
+            builder.Services.AddScoped<IDangNhapNgoaiRepository, InMemoryDangNhapNgoaiRepository>();
+            builder.Services.AddSingleton<FakeGoogleIdTokenVerifier>();
+            builder.Services.AddSingleton<IGoogleIdTokenVerifier>(services => services.GetRequiredService<FakeGoogleIdTokenVerifier>());
             builder.Services.AddBizBusiness();
             builder.Services.AddSingleton<InMemoryHoSoNguoiDungStore>();
             builder.Services.AddScoped<IHoSoNguoiDungRepository, InMemoryHoSoNguoiDungRepository>();

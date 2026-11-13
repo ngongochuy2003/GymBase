@@ -1,6 +1,11 @@
 import { z } from 'zod';
+
 export const loginSchema = z.object({
-  userName: z.string().trim().min(1, 'Nhập tên đăng nhập.'),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Nhập email.')
+    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Email không hợp lệ.'),
   password: z.string().min(1, 'Nhập mật khẩu.'),
 });
 export type LoginForm = z.infer<typeof loginSchema>;

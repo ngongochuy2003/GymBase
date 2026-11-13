@@ -21,6 +21,23 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     public async Task<ActionResult<KetQuaDangNhapDto>> Login(DangNhapDto dto, CancellationToken cancellationToken) =>
         Ok(await authService.BLDangNhapAsync(dto, cancellationToken));
 
+    /// <summary>Người mới tự đăng ký bằng mật khẩu; có phiên ngay. 409 nếu email đã dùng.</summary>
+    [HttpPost("register")]
+    [AllowAnonymous]
+    [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
+    public async Task<ActionResult<KetQuaDangNhapDto>> Register(DangKyDto dto, CancellationToken cancellationToken) =>
+        Ok(await authService.BLDangKyAsync(dto, cancellationToken));
+
+    /// <summary>
+    /// Đăng nhập hoặc đăng ký bằng Google bằng ID token; lần đầu thì tạo tài khoản (<c>tai_khoan_moi = true</c>).
+    /// 401 nếu token không hợp lệ, 409 nếu email đã thuộc tài khoản khác.
+    /// </summary>
+    [HttpPost("google")]
+    [AllowAnonymous]
+    [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
+    public async Task<ActionResult<KetQuaDangNhapDto>> Google(DangNhapGoogleDto dto, CancellationToken cancellationToken) =>
+        Ok(await authService.BLDangNhapGoogleAsync(dto, cancellationToken));
+
     /// <summary>Đổi refresh token lấy cặp token mới; refresh token cũ không dùng lại được.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]

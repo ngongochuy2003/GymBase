@@ -14,7 +14,7 @@ public sealed class AuditLogTests : IAsyncLifetime
     private const string Users = "/api/v1/web/testusers";
 
     private static readonly object ValidUser =
-        new { ten_dang_nhap = "hv.audit", mat_khau = "Mk-thu-nghiem-1", ho_ten = "Thử", vai_tro = "User" };
+        new { ten_dang_nhap = "hv.audit", email = "hv.audit@gymbase.test", mat_khau = "Mk-thu-nghiem-1", ho_ten = "Thử", vai_tro = "User" };
 
     private WebApplication _app = null!;
     private HttpClient _client = null!;

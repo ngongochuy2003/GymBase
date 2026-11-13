@@ -1,0 +1,30 @@
+meta {
+  name: Đăng nhập Google sai token (401)
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{webApi}}/auth/google
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "id_token": "token-khong-phai-cua-google"
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.code: eq AUTH_GOOGLE_TOKEN_INVALID
+}
+
+docs {
+  Token không hợp lệ (hoặc chưa cấu hình Google:ClientIds) bị từ chối. Thử với ID token thật của Google cần app lấy từ Google; dán token vào id_token để thử tay (token hết hạn sau khoảng 1 giờ).
+}

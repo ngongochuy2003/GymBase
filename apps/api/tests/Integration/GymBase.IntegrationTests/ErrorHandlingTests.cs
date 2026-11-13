@@ -59,6 +59,7 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
         var response = await _client.PostAsJsonAsync(Users, new
         {
             ten_dang_nhap = "pt.minh",
+            email = "trung.ten@gymbase.test",
             mat_khau = "Mk-thu-nghiem-1",
             ho_ten = "Trùng tên",
             vai_tro = "User",

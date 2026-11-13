@@ -6,9 +6,11 @@ using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Validation;
 using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
+using GymBase.Entities.Auth.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace GymBase.BLAuth.BLXacThuc;
@@ -28,8 +30,14 @@ public sealed class XacThucService(
     IValidator<DangNhapDto> loginValidator,
     IValidator<LamMoiTokenDto> refreshValidator,
     IValidator<DoiMatKhauDto> changePasswordValidator,
-    IValidator<DatLaiMatKhauDto> resetPasswordValidator)
+    IValidator<DatLaiMatKhauDto> resetPasswordValidator,
+    IValidator<DangKyDto> registerValidator,
+    IValidator<DangNhapGoogleDto> googleValidator,
+    IGoogleIdTokenVerifier googleVerifier,
+    IDangNhapNgoaiRepository externalLogins)
 {
+    private const int MaxDisplayNameLength = 100;
+
     private static readonly TimeSpan RefreshInactivity = TimeSpan.FromDays(30);
     private static readonly TimeSpan RefreshMaxLifetime = TimeSpan.FromDays(90);
 
@@ -47,9 +55,9 @@ public sealed class XacThucService(
     {
         await loginValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
-        var userName = dto.ten_dang_nhap.Trim();
-        var isLocked = throttle.IsLocked(userName);
-        var user = await users.DLFindByTenDangNhapAsync(userName, cancellationToken);
+        var email = EmailRules.Normalize(dto.email);
+        var isLocked = throttle.IsLocked(email);
+        var user = await users.DLFindByEmailAsync(email, cancellationToken);
 
         // Luôn băm, kể cả khi không có tài khoản hoặc đang khóa, để thời gian phản hồi tương đương.
         var verification = VerifyPassword(user, dto.mat_khau);
@@ -58,13 +66,13 @@ public sealed class XacThucService(
         {
             if (!isLocked)
             {
-                throttle.RecordFailure(userName);
+                throttle.RecordFailure(email);
             }
 
             throw InvalidCredentials();
         }
 
-        throttle.Reset(userName);
+        throttle.Reset(email);
 
         if (verification == PasswordVerificationResult.SuccessRehashNeeded)
         {
@@ -72,6 +80,126 @@ public sealed class XacThucService(
             await users.DLUpdateAsync(user, cancellationToken);
         }
 
+        return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: false, cancellationToken);
+    }
+
+    // TODO(VERIFY): chưa xác minh email và số điện thoại, nên email mới chỉ là định danh đăng nhập chứ chưa chứng minh
+    //   quyền sở hữu; làm cùng quên mật khẩu qua email.
+    /// <summary>
+    /// Người mới tự đăng ký bằng mật khẩu, có phiên ngay (cùng dạng kết quả với đăng nhập, <c>tai_khoan_moi = true</c>).
+    /// Chưa xác minh email và số điện thoại.
+    /// </summary>
+    /// <exception cref="ValidationFailedException">Dữ liệu không hợp lệ hoặc chưa đồng ý điều khoản.</exception>
+    /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc tài khoản khác.</exception>
+    public async Task<KetQuaDangNhapDto> BLDangKyAsync(DangKyDto dto, CancellationToken cancellationToken)
+    {
+        await registerValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
+        var email = EmailRules.Normalize(dto.email);
+        if (await users.DLExistsByEmailAsync(email, null, cancellationToken))
+        {
+            throw new ConflictException(nameof(DangKyDto.email), $"Email '{email}' đã được dùng.", AuthErrorCodes.UserEmailTaken);
+        }
+
+        var now = UtcNow;
+        var user = new tai_khoan
+        {
+            email = email,
+            ho_ten = dto.ho_ten.Trim(),
+            so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai),
+            vai_tro = AppRoles.User,
+            ngay_dong_y_dieu_khoan = now,
+        };
+        user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
+        user.MarkCreated(email, now);
+        await users.DLInsertAsync(user, cancellationToken);
+
+        return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Đăng nhập bằng Google; lần đầu thì tạo tài khoản (không mật khẩu, họ tên và email lấy từ Google) rồi liên kết.
+    /// Tài khoản được tìm theo <c>sub</c> của Google, không theo email. Email trùng tài khoản đã có thì từ chối, không tự
+    /// liên kết (ADR-0001, docs/api/xac-thuc.md mục 8).
+    /// </summary>
+    /// <exception cref="UnauthorizedException">
+    /// <see cref="AuthErrorCodes.GoogleTokenInvalid"/>, <see cref="AuthErrorCodes.GoogleEmailUnverified"/>, hoặc tài khoản đã liên kết bị khóa.
+    /// </exception>
+    /// <exception cref="ConflictException">
+    /// <see cref="AuthErrorCodes.EmailUsedPassword"/> hoặc <see cref="AuthErrorCodes.UserEmailTaken"/>: email Google đã thuộc tài khoản khác.
+    /// </exception>
+    public async Task<KetQuaDangNhapDto> BLDangNhapGoogleAsync(DangNhapGoogleDto dto, CancellationToken cancellationToken)
+    {
+        await googleValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
+        var identity = await googleVerifier.VerifyAsync(dto.id_token, cancellationToken)
+            ?? throw new UnauthorizedException("Không xác minh được tài khoản Google. Vui lòng thử lại.", AuthErrorCodes.GoogleTokenInvalid);
+
+        var link = await externalLogins.DLFindByMaNgoaiAsync(NhaCungCap.google, identity.Subject, cancellationToken);
+        if (link is not null)
+        {
+            var linked = await users.DLGetByIdAsync(link.tai_khoan_id, cancellationToken);
+            if (linked is not { dang_hoat_dong: true })
+            {
+                throw new UnauthorizedException("Không thể đăng nhập bằng Google với tài khoản này.");
+            }
+
+            return await StartSessionAsync(linked, dto.ten_thiet_bi, isNewAccount: false, cancellationToken);
+        }
+
+        var created = await CreateGoogleAccountAsync(identity, cancellationToken);
+        return await StartSessionAsync(created, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+    }
+
+    private async Task<tai_khoan> CreateGoogleAccountAsync(GoogleIdentity identity, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(identity.Email) || !identity.EmailVerified)
+        {
+            throw new UnauthorizedException("Tài khoản Google chưa có email đã xác minh.", AuthErrorCodes.GoogleEmailUnverified);
+        }
+
+        var email = EmailRules.Normalize(identity.Email);
+        var sameEmail = await users.DLFindByEmailAsync(email, cancellationToken);
+        if (sameEmail is not null)
+        {
+            throw string.IsNullOrEmpty(sameEmail.mat_khau_hash)
+                ? new ConflictException(nameof(DangKyDto.email), $"Email '{email}' đã được dùng.", AuthErrorCodes.UserEmailTaken)
+                : new ConflictException(
+                    nameof(DangKyDto.email),
+                    "Email này đã đăng ký bằng mật khẩu. Hãy đăng nhập bằng mật khẩu.",
+                    AuthErrorCodes.EmailUsedPassword);
+        }
+
+        var now = UtcNow;
+        var user = new tai_khoan
+        {
+            email = email,
+            ho_ten = DisplayName(identity.Name, email),
+            vai_tro = AppRoles.User,
+            // Màn đăng nhập Google ghi sẵn "bằng việc tiếp tục, bạn đồng ý với Điều khoản và Chính sách bảo mật".
+            ngay_dong_y_dieu_khoan = now,
+        };
+        user.MarkCreated(email, now);
+        await users.DLInsertAsync(user, cancellationToken);
+
+        try
+        {
+            await externalLogins.DLInsertAsync(
+                new dang_nhap_ngoai { tai_khoan_id = user.Id, nha_cung_cap = NhaCungCap.google, ma_ngoai = identity.Subject, ngay_tao = now },
+                cancellationToken);
+        }
+        catch
+        {
+            // Không để lại tài khoản mồ côi: lần sau email này sẽ bị báo trùng mà không đăng nhập được.
+            await users.DLDeleteAsync(user.Id, CancellationToken.None);
+            throw;
+        }
+
+        return user;
+    }
+
+    private async Task<KetQuaDangNhapDto> StartSessionAsync(tai_khoan user, string? deviceName, bool isNewAccount, CancellationToken cancellationToken)
+    {
         var now = UtcNow;
         var refreshToken = NewRefreshToken();
         var session = new phien_dang_nhap
@@ -80,12 +208,12 @@ public sealed class XacThucService(
             token_hash = Hash(refreshToken),
             ngay_het_han = now + RefreshInactivity,
             ngay_het_han_toi_da = now + RefreshMaxLifetime,
-            ten_thiet_bi = string.IsNullOrWhiteSpace(dto.ten_thiet_bi) ? null : dto.ten_thiet_bi.Trim(),
+            ten_thiet_bi = string.IsNullOrWhiteSpace(deviceName) ? null : deviceName.Trim(),
             ngay_tao = now,
         };
         await sessions.DLInsertAsync(session, cancellationToken);
 
-        return BuildResult(user, session.Id, refreshToken);
+        return BuildResult(user, session.Id, refreshToken, isNewAccount);
     }
 
     /// <summary>Đổi refresh token lấy cặp token mới. Token cũ bị dùng lại sau khoảng ân hạn thì thu hồi cả phiên.</summary>
@@ -134,7 +262,7 @@ public sealed class XacThucService(
             throw new UnauthorizedException();
         }
 
-        return BuildResult(user, session.Id, refreshToken);
+        return BuildResult(user, session.Id, refreshToken, isNewAccount: false);
     }
 
     /// <summary>Thu hồi phiên hiện tại.</summary>
@@ -179,17 +307,23 @@ public sealed class XacThucService(
         await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
-    /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu tên đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
-    public async Task BLTaoHoacDatLaiAdminAsync(string userName, string password, CancellationToken cancellationToken)
+    /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu email đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
+    /// <exception cref="ValidationFailedException">Email hoặc mật khẩu không hợp lệ.</exception>
+    public async Task BLTaoHoacDatLaiAdminAsync(string email, string password, CancellationToken cancellationToken)
     {
+        if (!EmailRules.IsValid(email))
+        {
+            throw new ValidationFailedException(nameof(DangNhapDto.email), "Email không hợp lệ.");
+        }
+
         await resetPasswordValidator.ValidateOrThrowAsync(new DatLaiMatKhauDto { mat_khau_moi = password }, cancellationToken);
 
-        var name = userName.Trim();
-        var user = await users.DLFindByTenDangNhapAsync(name, cancellationToken);
+        var normalized = EmailRules.Normalize(email);
+        var user = await users.DLFindByEmailAsync(normalized, cancellationToken);
         if (user is null)
         {
-            user = new tai_khoan { ten_dang_nhap = name, ho_ten = name, vai_tro = AppRoles.Admin };
-            EnsureNotUserName(password, name, nameof(DatLaiMatKhauDto.mat_khau_moi));
+            user = new tai_khoan { email = normalized, ho_ten = normalized[..normalized.IndexOf('@')], vai_tro = AppRoles.Admin };
+            EnsureNotUserName(password, user.ho_ten, nameof(DatLaiMatKhauDto.mat_khau_moi));
             user.mat_khau_hash = passwordHasher.HashPassword(user, password);
             user.MarkCreated("create-admin", UtcNow);
             await users.DLInsertAsync(user, cancellationToken);
@@ -239,10 +373,17 @@ public sealed class XacThucService(
         }
     }
 
-    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken)
+    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken, bool isNewAccount)
     {
         var token = tokenIssuer.CreateAccessToken(new AccessTokenRequest(user.Id, user.ten_dang_nhap ?? user.email ?? user.Id.ToString(), user.vai_tro, sessionId));
-        return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user));
+        return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user), isNewAccount);
+    }
+
+    /// <summary>Họ tên lấy từ Google (cột <c>ho_ten</c> tối đa 100 ký tự); không có thì lấy phần trước <c>@</c> của email.</summary>
+    private static string DisplayName(string? googleName, string email)
+    {
+        var name = string.IsNullOrWhiteSpace(googleName) ? EmailRules.LocalPart(email) : googleName.Trim();
+        return name.Length <= MaxDisplayNameLength ? name : name[..MaxDisplayNameLength];
     }
 
     private static void EnsureNotUserName(string password, string userName, string field)
@@ -254,7 +395,7 @@ public sealed class XacThucService(
     }
 
     private static UnauthorizedException InvalidCredentials() =>
-        new("Tên đăng nhập hoặc mật khẩu không đúng.", AuthErrorCodes.InvalidCredentials);
+        new("Email hoặc mật khẩu không đúng.", AuthErrorCodes.InvalidCredentials);
 
     private static TaiKhoanDto ToDto(tai_khoan user) => new(
         user.Id, user.ten_dang_nhap, user.ho_ten, user.email, user.so_dien_thoai,

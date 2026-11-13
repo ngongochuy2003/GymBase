@@ -14,40 +14,33 @@ export function ProfileScreen() {
   const onTabPress = useTabNavigation();
   const [busy, setBusy] = useState(false);
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1 }}>
-        <Screen>
-          <AppText title>Không gian của bạn</AppText>
-          <Card>
-            <AppText title>{user?.ho_ten}</AppText>
-            <AppText muted>Tài khoản GymBase</AppText>
-          </Card>
-          <Card>
-            <AppText title>Giao diện</AppText>
-            <AppText muted>Hiện tại: {isDark ? 'Tối' : 'Sáng'}</AppText>
-            <Button
-              label={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-              onPress={toggle}
-              secondary
-            />
-          </Card>
-          <AppText muted>
-          </AppText>
-          <Button
-            label="Đăng xuất"
-            loading={busy}
-            onPress={() => {
-              setBusy(true);
-              void signOut()
-                .catch(() => {
-                  /* Session is already revoked locally. */
-                })
-                .finally(() => setBusy(false));
-            }}
-          />
-        </Screen>
-      </View>
-      <BottomTabBar tabs={PROFILE_TABS} activeId="profile" onChange={onTabPress} />
-    </View>
+    <Screen>
+      <AppText title>Không gian của bạn</AppText>
+      <Card>
+        <AppText title>{user?.ho_ten}</AppText>
+        <AppText muted>{user?.email ?? user?.so_dien_thoai ?? ''}</AppText>
+      </Card>
+      <Card>
+        <AppText title>Giao diện</AppText>
+        <AppText muted>Hiện tại: {isDark ? 'Tối' : 'Sáng'}</AppText>
+        <Button
+          label={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+          onPress={toggle}
+          secondary
+        />
+      </Card>
+      <Button
+        label="Đăng xuất"
+        loading={busy}
+        onPress={() => {
+          setBusy(true);
+          void signOut()
+            .catch(() => {
+              /* Session is already revoked locally. */
+            })
+            .finally(() => setBusy(false));
+        }}
+      />
+    </Screen>
   );
 }

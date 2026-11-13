@@ -15,6 +15,14 @@ public interface ITaiKhoanRepository : IBaseRepository<tai_khoan>
     /// </summary>
     Task<bool> DLExistsByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Đã có người dùng khác (không phải <paramref name="exceptId"/>) dùng email này chưa. Email đã chuẩn hóa chữ thường.
+    /// </summary>
+    Task<bool> DLExistsByEmailAsync(string email, Guid? exceptId, CancellationToken cancellationToken);
+
+    /// <summary>Người dùng theo email đã chuẩn hóa chữ thường; null nếu không có.</summary>
+    Task<tai_khoan?> DLFindByEmailAsync(string email, CancellationToken cancellationToken);
+
     /// <summary>Người dùng còn hiệu lực theo tên đăng nhập, không phân biệt hoa thường; null nếu không có.</summary>
     Task<tai_khoan?> DLFindByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken);
 }

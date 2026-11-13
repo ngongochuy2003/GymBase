@@ -24,3 +24,10 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 | `CURRENT-USER` | `ICurrentUser` để ghi `nguoi_tao`, `nguoi_chinh_sua` |
 | `HOST` | `AddAppApi()` / `UseAppApi()` gom cấu hình của `GymBase.API`: CORS, LowercaseUrls… |
 | `AUTH` | Xác thực, phân quyền, mật khẩu |
+| `REFERRAL` | Mã giới thiệu và điểm thưởng khi đăng ký (V1 chỉ nhận ô nhập, chưa xử lý) |
+| `VERIFY` | Xác minh email, số điện thoại (OTP hoặc link) và quên mật khẩu qua email |
+| `PROFILE` | Màn thiết lập hồ sơ và chọn nhóm người dùng (hiện là màn giữ chỗ) |
+| `ASSET` | Logo, ảnh hero, carousel của màn chào mừng (hiện là khối màu giữ chỗ) |
+| `LINK-GOOGLE` | Liên kết Google vào tài khoản mật khẩu có sẵn từ tab Cá nhân (backend và mobile) |
+| `IOS` | Đăng nhập Google trên iOS (plugin `iosUrlScheme`, client ID iOS) và Sign in with Apple |
+| `LEGAL` | Điều khoản sử dụng và Chính sách bảo mật thật (hiện là URL giữ chỗ) |

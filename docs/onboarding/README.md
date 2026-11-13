@@ -2,7 +2,7 @@
 
 ## Hiện trạng
 
-Mobile đã chạy được; xem [hướng dẫn chạy](../../apps/mobile/README.md) và
+Mobile đã chạy được; xem [hướng dẫn chạy app với backend](chay-mobile.md), [README mobile](../../apps/mobile/README.md) và
 [bàn giao Mobile](mobile-base.md). Backend/DB chưa được triển khai.
 Phần kiểm tra REPO-01 dưới đây chỉ kiểm tra cấu trúc, không cần Docker hoặc .NET.
 
