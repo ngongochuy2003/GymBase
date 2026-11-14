@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
+using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.DLFile.Contract;
-using GymBase.Entities.File;
+using GymBase.Entities.Biz;
+using GymBase.Entities.Biz.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,6 +20,7 @@ public sealed class FileService : IFileService
 
     private readonly IStorageResolver _storageResolver;
     private readonly ITepTinRepository _tepTinRepository;
+    private readonly ITaiKhoanRepository _taiKhoanRepository;
     private readonly IImageProcessor _imageProcessor;
     private readonly StorageOptions _options;
     private readonly ILogger<FileService> _logger;
@@ -25,12 +28,14 @@ public sealed class FileService : IFileService
     public FileService(
         IStorageResolver storageResolver,
         ITepTinRepository tepTinRepository,
+        ITaiKhoanRepository taiKhoanRepository,
         IImageProcessor imageProcessor,
         IOptions<StorageOptions> options,
         ILogger<FileService> logger)
     {
         _storageResolver = storageResolver;
         _tepTinRepository = tepTinRepository;
+        _taiKhoanRepository = taiKhoanRepository;
         _imageProcessor = imageProcessor;
         _options = options.Value;
         _logger = logger;
@@ -58,7 +63,7 @@ public sealed class FileService : IFileService
             throw new ArgumentException($"Mục đích upload '{purpose}' không hợp lệ. Cho phép: {string.Join(", ", AllowedPurposes)}");
         }
 
-        var userId = GetUserId(user);
+        var userId = await GetUserIdAsync(user, ct);
 
         await using var rawStream = file.OpenReadStream();
         _imageProcessor.ValidateMagicBytes(rawStream, file.ContentType);
@@ -68,23 +73,38 @@ public sealed class FileService : IFileService
                              ?? processed.Variants.First();
 
         var fileId = Guid.NewGuid();
-        var storageKey = $"{normalizedPurpose}/{userId:N}/{fileId:N}.webp";
+        // Đổi tên ảnh thành mã ngẫu nhiên theo mục đích (avatar_20261114_..., post_20261114_...)
+        // và phân loại theo từng folder riêng trên MinIO / S3 (avatar/, post/, ...)
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        var randomCode = Guid.NewGuid().ToString("N")[..8];
+        var fileName = $"{normalizedPurpose}_{timestamp}_{randomCode}.webp";
+        var storageKey = $"{normalizedPurpose}/{fileName}";
 
         var provider = _storageResolver.GetDefault();
+        var bucketName = string.Equals(provider.ProviderName, "LOCAL", StringComparison.OrdinalIgnoreCase)
+            ? "LOCAL"
+            : (string.IsNullOrWhiteSpace(_options.BucketName) ? provider.ProviderName : _options.BucketName);
+        var accessMode = normalizedPurpose is "avatar" or "post" ? CheDoTruyCap.cong_khai : CheDoTruyCap.rieng_tu;
+        var targetType = normalizedPurpose switch
+        {
+            "avatar" => LoaiDoiTuongTepTin.ho_so_nguoi_dung,
+            "post" => LoaiDoiTuongTepTin.bai_viet,
+            _ => (LoaiDoiTuongTepTin?)null
+        };
 
         var entity = new tep_tin
         {
             Id = fileId,
             nguoi_tai_len_id = userId,
             ten_tep_goc = Path.GetFileName(file.FileName),
-            khoa_luu_tru = storageKey,
-            nha_cung_cap = provider.ProviderName,
+            s3_key = storageKey,
+            s3_bucket = bucketName,
             loai_mime = "image/webp",
-            dung_luong = primaryVariant.WebpBytes.Length,
-            muc_dich = normalizedPurpose,
-            trang_thai = "UPLOADING",
-            blurhash = processed.Blurhash,
-            che_do_truy_cap = normalizedPurpose is "avatar" or "post" ? "cong_khai" : "rieng_tu",
+            kich_thuoc_byte = primaryVariant.WebpBytes.Length,
+            muc_dich = normalizedPurpose.Length > 32 ? normalizedPurpose[..32] : normalizedPurpose,
+            loai_doi_tuong = targetType,
+            trang_thai = TrangThaiTepTin.cho_tai_len,
+            che_do_truy_cap = accessMode,
             ngay_tao = DateTime.UtcNow
         };
 
@@ -95,30 +115,30 @@ public sealed class FileService : IFileService
             using var saveStream = new MemoryStream(primaryVariant.WebpBytes, writable: false);
             await provider.SaveAsync(storageKey, saveStream, "image/webp", ct);
 
-            entity.trang_thai = "READY";
-            entity.ngay_cap_nhat = DateTime.UtcNow;
+            entity.trang_thai = TrangThaiTepTin.da_tai_len;
+            entity.ngay_xac_nhan = DateTime.UtcNow;
             await _tepTinRepository.DLUpdateAsync(entity, ct);
 
-            _logger.LogInformation("Upload tệp tin thành công: Id={FileId}, Provider={Provider}, Key={Key}",
-                fileId, provider.ProviderName, storageKey);
+            _logger.LogInformation("Upload tệp tin thành công: Id={FileId}, Bucket={Bucket}, Key={Key}",
+                fileId, entity.s3_bucket, storageKey);
 
             return new FileUploadResultDto(
                 FileId: entity.Id,
-                OriginalName: entity.ten_tep_goc,
+                OriginalName: entity.ten_tep_goc ?? file.FileName,
                 ContentType: entity.loai_mime,
-                Size: entity.dung_luong,
-                Purpose: entity.muc_dich,
-                Provider: entity.nha_cung_cap,
-                Blurhash: entity.blurhash,
-                ContentUrl: $"/api/files/{entity.Id}/content"
+                Size: entity.kich_thuoc_byte,
+                Purpose: entity.muc_dich ?? normalizedPurpose,
+                Provider: provider.ProviderName,
+                Blurhash: processed.Blurhash,
+                ContentUrl: $"/api/v1/mob/files/{entity.Id}/content"
             );
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Lỗi khi lưu tệp tin {FileId} xuống storage {Provider}.", fileId, provider.ProviderName);
 
-            entity.trang_thai = "FAILED";
-            entity.ngay_cap_nhat = DateTime.UtcNow;
+            entity.trang_thai = TrangThaiTepTin.loi;
+            entity.ngay_xac_nhan = DateTime.UtcNow;
             try { await _tepTinRepository.DLUpdateAsync(entity, ct); } catch { }
 
             try { await provider.DeleteAsync(storageKey, ct); } catch { }
@@ -133,24 +153,75 @@ public sealed class FileService : IFileService
         CancellationToken ct = default)
     {
         var entity = await _tepTinRepository.DLGetByIdAsync(id, ct);
-        if (entity == null || entity.trang_thai != "READY")
+        if (entity == null || entity.trang_thai is TrangThaiTepTin.loi or TrangThaiTepTin.da_xoa)
         {
-            throw new FileNotFoundException($"Tệp tin {id} không tồn tại hoặc chưa sẵn sàng.");
+            throw new FileNotFoundException($"Tệp tin {id} không tồn tại hoặc không khả dụng.");
         }
 
-        var currentUserId = GetUserId(user);
-        var isOwner = entity.nguoi_tai_len_id == currentUserId;
-        var isPublic = entity.che_do_truy_cap == "cong_khai" || entity.muc_dich is "avatar" or "post";
+        var isPublic = entity.che_do_truy_cap == CheDoTruyCap.cong_khai || entity.muc_dich is "avatar" or "post";
 
-        if (!isOwner && !isPublic && !_options.AllowAnonymousForDev)
+        if (!isPublic)
         {
-            throw new UnauthorizedAccessException("Bạn không có quyền truy cập tệp tin riêng tư này.");
+            var currentUserId = await GetUserIdAsync(user, ct);
+            var isOwner = entity.nguoi_tai_len_id == currentUserId;
+            if (!isOwner && !_options.AllowAnonymousForDev)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền truy cập tệp tin riêng tư này.");
+            }
         }
 
-        var provider = _storageResolver.Resolve(entity.nha_cung_cap);
-        var stream = await provider.OpenReadAsync(entity.khoa_luu_tru, ct);
+        // Xử lý bản ghi external (liên kết tệp hoặc bài viết đồng bộ URL)
+        var isExternal = string.Equals(entity.s3_bucket, "external", StringComparison.OrdinalIgnoreCase)
+                         || entity.s3_key.StartsWith("external", StringComparison.OrdinalIgnoreCase)
+                         || entity.s3_key.StartsWith("/api", StringComparison.OrdinalIgnoreCase);
 
-        return new FileContentStreamDto(stream, entity.loai_mime, entity.ten_tep_goc);
+        if (isExternal)
+        {
+            // 1. Trích xuất ID file gốc (vd: 626768cb-fe2b-4112-9c4d-13f83cc7713d từ chuỗi /api/v1/mob/files/{id}/content...)
+            var match = System.Text.RegularExpressions.Regex.Match(
+                entity.s3_key,
+                @"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})");
+
+            if (match.Success && Guid.TryParse(match.Value, out var originFileId) && originFileId != entity.Id)
+            {
+                var originEntity = await _tepTinRepository.DLGetByIdAsync(originFileId, ct);
+                if (originEntity != null && !string.Equals(originEntity.s3_bucket, "external", StringComparison.OrdinalIgnoreCase))
+                {
+                    var originProvider = _storageResolver.Resolve(originEntity.s3_bucket);
+                    var originStream = await originProvider.OpenReadAsync(originEntity.s3_key, ct);
+                    return new FileContentStreamDto(originStream, originEntity.loai_mime, originEntity.ten_tep_goc ?? $"{originEntity.Id}.webp");
+                }
+            }
+
+            // 2. Nếu là URL tuyệt đối bên ngoài (http/https), tải và stream nội dung
+            var cleanUrl = entity.s3_key;
+            var hashIdx = cleanUrl.IndexOf('#');
+            if (hashIdx >= 0) cleanUrl = cleanUrl[..hashIdx];
+            if (cleanUrl.StartsWith("external/", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanUrl = cleanUrl["external/".Length..];
+            }
+
+            if (cleanUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+                var httpResponse = await httpClient.GetAsync(cleanUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    var memStream = new MemoryStream();
+                    await httpResponse.Content.CopyToAsync(memStream, ct);
+                    memStream.Position = 0;
+                    var mime = httpResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                    return new FileContentStreamDto(memStream, mime, entity.ten_tep_goc ?? "external.jpg");
+                }
+            }
+        }
+
+        var provider = _storageResolver.Resolve(entity.s3_bucket);
+        var stream = await provider.OpenReadAsync(entity.s3_key, ct);
+
+        return new FileContentStreamDto(stream, entity.loai_mime, entity.ten_tep_goc ?? $"{entity.Id}.webp");
     }
 
     public async Task<TepTinMetadataDto?> BLGetMetadataAsync(
@@ -166,13 +237,13 @@ public sealed class FileService : IFileService
 
         return new TepTinMetadataDto(
             Id: entity.Id,
-            OriginalName: entity.ten_tep_goc,
+            OriginalName: entity.ten_tep_goc ?? $"{entity.Id}.webp",
             ContentType: entity.loai_mime,
-            Size: entity.dung_luong,
-            Purpose: entity.muc_dich,
-            Provider: entity.nha_cung_cap,
-            Status: entity.trang_thai,
-            Blurhash: entity.blurhash,
+            Size: entity.kich_thuoc_byte,
+            Purpose: entity.muc_dich ?? string.Empty,
+            Provider: entity.s3_bucket,
+            Status: entity.trang_thai.ToString(),
+            Blurhash: null,
             CreatedAt: entity.ngay_tao
         );
     }
@@ -188,20 +259,22 @@ public sealed class FileService : IFileService
             return;
         }
 
-        var currentUserId = GetUserId(user);
+        var currentUserId = await GetUserIdAsync(user, ct);
         if (entity.nguoi_tai_len_id != currentUserId && !_options.AllowAnonymousForDev)
         {
             throw new UnauthorizedAccessException("Bạn không có quyền xóa tệp tin này.");
         }
 
-        var provider = _storageResolver.Resolve(entity.nha_cung_cap);
-        await provider.DeleteAsync(entity.khoa_luu_tru, ct);
+        var provider = _storageResolver.Resolve(entity.s3_bucket);
+        await provider.DeleteAsync(entity.s3_key, ct);
 
-        await _tepTinRepository.DLDeleteAsync(id, ct);
+        entity.trang_thai = TrangThaiTepTin.da_xoa;
+        entity.ngay_xac_nhan = DateTime.UtcNow;
+        await _tepTinRepository.DLUpdateAsync(entity, ct);
         _logger.LogInformation("Đã xóa tệp tin {FileId} thành công.", id);
     }
 
-    private Guid GetUserId(ClaimsPrincipal user)
+    private async Task<Guid> GetUserIdAsync(ClaimsPrincipal user, CancellationToken ct)
     {
         var claim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? user.FindFirst("sub")?.Value;
@@ -211,9 +284,15 @@ public sealed class FileService : IFileService
             return parsed;
         }
 
-        return _options.AllowAnonymousForDev
-            ? Guid.Parse("11111111-1111-1111-1111-111111111111")
-            : throw new UnauthorizedAccessException("Người dùng chưa được xác thực.");
+        if (_options.AllowAnonymousForDev)
+        {
+            var devAccount = await _taiKhoanRepository.DLFindByTenDangNhapAsync("admin", ct);
+            if (devAccount != null)
+            {
+                return devAccount.Id;
+            }
+        }
+
+        throw new UnauthorizedAccessException("Người dùng chưa được xác thực.");
     }
 }
-

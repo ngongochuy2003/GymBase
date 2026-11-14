@@ -1,3 +1,4 @@
+import { tokenStorage } from '@/core/storage/token-storage';
 import { FilePurpose, FileUploadResult, UploadOptions } from './file.types';
 
 export interface ManipulatorAdapter {
@@ -76,8 +77,9 @@ export async function uploadMultipartFile(
 ): Promise<FileUploadResult> {
   const baseUrl = (options?.apiBaseUrl || '').replace(/\/+$/, '');
   const authHeaders: Record<string, string> = {};
-  if (options?.authToken) {
-    authHeaders.Authorization = `Bearer ${options.authToken}`;
+  const token = options?.authToken || (await tokenStorage.read())?.accessToken;
+  if (token) {
+    authHeaders.Authorization = `Bearer ${token}`;
   }
 
   // Bước 1: Nén ảnh

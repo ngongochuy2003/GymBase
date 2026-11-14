@@ -399,7 +399,7 @@ public sealed class BaiVietService
             return key;
         }
 
-        return $"/api/files/{file.Id}/content";
+        return $"/api/v1/mob/files/{file.Id}/content";
     }
 
     private static CheDoHienThi ParseVisibility(string raw) =>

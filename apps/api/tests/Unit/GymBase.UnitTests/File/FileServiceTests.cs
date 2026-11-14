@@ -1,8 +1,10 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using GymBase.BLFile.BLFiles;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
-using GymBase.Entities.File;
+using GymBase.Entities.Auth;
+using GymBase.Entities.Biz;
+using GymBase.Entities.Biz.Enums;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -41,6 +43,7 @@ public class FileServiceTests : IDisposable
         _service = new FileService(
             resolver,
             _repository,
+            new InMemoryTaiKhoanRepository(new InMemoryStore<tai_khoan>()),
             processor,
             Options.Create(options),
             NullLogger<FileService>.Instance);
@@ -65,7 +68,28 @@ public class FileServiceTests : IDisposable
 
         var dbEntity = await _repository.DLGetByIdAsync(result.FileId, CancellationToken.None);
         Assert.NotNull(dbEntity);
-        Assert.Equal("READY", dbEntity.trang_thai);
+        Assert.Equal(TrangThaiTepTin.da_tai_len, dbEntity.trang_thai);
+        // Kiểm tra đúng định dạng tên ngẫu nhiên theo mục đích và phân thư mục avatar/avatar_*.webp
+        Assert.StartsWith("avatar/avatar_", dbEntity.s3_key);
+        Assert.EndsWith(".webp", dbEntity.s3_key);
+    }
+
+    [Fact]
+    public async Task BLUploadAsync_PostImage_ShouldPartitionIntoPostFolderWithRandomizedName()
+    {
+        var jpegBytes = CreateSampleJpeg(100, 100);
+        var formFile = CreateFormFile(jpegBytes, "workout.jpg", "image/jpeg");
+        var user = CreateUser(Guid.NewGuid());
+
+        var result = await _service.BLUploadAsync(user, formFile, "post");
+
+        Assert.NotNull(result);
+        Assert.Equal("post", result.Purpose);
+
+        var dbEntity = await _repository.DLGetByIdAsync(result.FileId, CancellationToken.None);
+        Assert.NotNull(dbEntity);
+        Assert.StartsWith("post/post_", dbEntity.s3_key);
+        Assert.EndsWith(".webp", dbEntity.s3_key);
     }
 
     [Fact]
@@ -88,6 +112,40 @@ public class FileServiceTests : IDisposable
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             _service.BLUploadAsync(user, formFile, "invalid_purpose"));
+    }
+
+    [Fact]
+    public async Task BLOpenAuthorizedAsync_ExternalRecordReferencingOriginFile_ShouldResolveOriginFileStream()
+    {
+        var jpegBytes = CreateSampleJpeg(80, 80);
+        var formFile = CreateFormFile(jpegBytes, "origin.jpg", "image/jpeg");
+        var user = CreateUser(Guid.NewGuid());
+
+        var originUpload = await _service.BLUploadAsync(user, formFile, "post");
+
+        // Tạo bản ghi external mô phỏng việc DLSyncPostMedia đồng bộ URL
+        var externalFileId = Guid.NewGuid();
+        var externalEntity = new tep_tin
+        {
+            Id = externalFileId,
+            nguoi_tai_len_id = Guid.NewGuid(),
+            s3_bucket = "external",
+            s3_key = $"/api/v1/mob/files/{originUpload.FileId}/content#tep={externalFileId:N}",
+            ten_tep_goc = "post-media-1.jpg",
+            loai_mime = "image/jpeg",
+            che_do_truy_cap = CheDoTruyCap.cong_khai,
+            trang_thai = TrangThaiTepTin.da_lien_ket,
+            muc_dich = "post",
+            ngay_tao = DateTime.UtcNow,
+            ngay_xac_nhan = DateTime.UtcNow
+        };
+        await _repository.DLInsertAsync(externalEntity, CancellationToken.None);
+
+        var streamResult = await _service.BLOpenAuthorizedAsync(user, externalFileId);
+
+        Assert.NotNull(streamResult);
+        Assert.NotNull(streamResult.Stream);
+        Assert.Equal("image/webp", streamResult.ContentType);
     }
 
     public void Dispose()

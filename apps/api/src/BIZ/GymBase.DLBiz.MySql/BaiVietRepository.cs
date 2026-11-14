@@ -267,6 +267,6 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
             return key;
         }
 
-        return $"/api/files/{file.Id}/content";
+        return $"/api/v1/mob/files/{file.Id}/content";
     }
 }

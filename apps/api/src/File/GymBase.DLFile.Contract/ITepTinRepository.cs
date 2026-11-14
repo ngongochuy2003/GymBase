@@ -1,5 +1,5 @@
 using GymBase.Base.Crud;
-using GymBase.Entities.File;
+using GymBase.Entities.Biz;
 
 namespace GymBase.DLFile.Contract;
 

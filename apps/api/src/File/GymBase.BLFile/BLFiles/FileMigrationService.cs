@@ -34,19 +34,19 @@ public sealed class FileMigrationService : IFileMigrationService
         {
             try
             {
-                _logger.LogInformation("Đang migrate file {FileId} (Key: {Key}) sang S3...", tepTin.Id, tepTin.khoa_luu_tru);
+                _logger.LogInformation("Đang migrate file {FileId} (Key: {Key}) sang S3...", tepTin.Id, tepTin.s3_key);
 
-                await using var localStream = await localProvider.OpenReadAsync(tepTin.khoa_luu_tru, ct);
-                await s3Provider.SaveAsync(tepTin.khoa_luu_tru, localStream, tepTin.loai_mime, ct);
+                await using var localStream = await localProvider.OpenReadAsync(tepTin.s3_key, ct);
+                await s3Provider.SaveAsync(tepTin.s3_key, localStream, tepTin.loai_mime, ct);
 
-                var s3Info = await s3Provider.GetInfoAsync(tepTin.khoa_luu_tru, ct);
-                if (s3Info == null || s3Info.Length != tepTin.dung_luong)
+                var s3Info = await s3Provider.GetInfoAsync(tepTin.s3_key, ct);
+                if (s3Info == null || s3Info.Length != tepTin.kich_thuoc_byte)
                 {
-                    throw new InvalidOperationException($"Kích thước file trên S3 không khớp ({s3Info?.Length} != {tepTin.dung_luong}).");
+                    throw new InvalidOperationException($"Kích thước file trên S3 không khớp ({s3Info?.Length} != {tepTin.kich_thuoc_byte}).");
                 }
 
-                tepTin.nha_cung_cap = "S3";
-                tepTin.ngay_cap_nhat = DateTime.UtcNow;
+                tepTin.s3_bucket = "S3";
+                tepTin.ngay_xac_nhan = DateTime.UtcNow;
                 await _tepTinRepository.DLUpdateAsync(tepTin, ct);
 
                 successCount++;

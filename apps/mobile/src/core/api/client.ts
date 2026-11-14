@@ -25,7 +25,14 @@ export function createApiClient(
 
   client.interceptors.request.use(async (config) => {
     const token = await auth?.getAccessToken();
-    if (token) config.headers.set('Authorization', `Bearer ${token}`);
+    if (token) {
+      if (typeof config.headers?.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
     return config;
   });
 

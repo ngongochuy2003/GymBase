@@ -60,6 +60,23 @@ npx --yes pnpm@10.34.9 install --frozen-lockfile
 npx --yes pnpm@10.34.9 mobile
 ```
 
+Chạy MINIO từ root = PowerShell (Node 24.13.0, pnpm 10.34.9; cần API và MySQL local):
+
+```sh
+docker compose -f infrastructure/docker/docker-compose.minio.yml up -d
+```
+
+```sh
+docker run -d `
+  --name gymbase-minio `
+  -p 9000:9000 `
+  -p 9001:9001 `
+  -e "MINIO_ROOT_USER=minioadmin" `
+  -e "MINIO_ROOT_PASSWORD=minioadmin" `
+  -v minio_data:/data `
+  minio/minio server /data --console-address ":9001"
+```
+
 Trước tiên cấu hình và chạy API/MySQL theo [hướng dẫn API](docs/api/cach-chay-api.md),
 rồi cấu hình `apps/mobile/.env` theo `apps/mobile/.env.example`. Mở Expo Go tương thích
 SDK 58 và quét QR; hoặc dùng `mobile:android` khi emulator đã chạy. `mobile:web` mở

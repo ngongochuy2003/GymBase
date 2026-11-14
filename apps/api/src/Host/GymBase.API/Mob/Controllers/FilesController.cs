@@ -1,4 +1,5 @@
 using GymBase.Base.Hosting;
+using GymBase.BLFile.BLFiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -8,17 +9,13 @@ namespace GymBase.API.Mob.Controllers;
 
 /// <summary>
 /// Quản lý file trên kênh mobile: /api/v1/mob/files
-/// Cho phép truy cập từ cả phiên có JWT và phiên trải nghiệm trên ứng dụng di động.
+/// Yêu cầu xác thực khi tải lên (Upload); cho phép truy cập công khai khi xem nội dung (GetContent).
+/// Tự động lưu trữ trên MinIO / S3 tương thích ngược với fallback tệp cục bộ.
 /// </summary>
-[AllowAnonymous]
-public sealed class FilesController(IWebHostEnvironment env) : BaseApiController
+public sealed class FilesController(IFileService fileService, IWebHostEnvironment env) : BaseApiController
 {
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov"
-    };
-
     [HttpPost]
+    [Authorize]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] IFormFile? file, [FromForm] string? purpose, CancellationToken ct)
     {
@@ -27,79 +24,65 @@ public sealed class FilesController(IWebHostEnvironment env) : BaseApiController
             return BadRequest(new { message = "Tệp tin tải lên rỗng." });
         }
 
-        if (file.Length > 15 * 1024 * 1024)
-        {
-            return BadRequest(new { message = "Dung lượng tệp tin vượt quá giới hạn 15MB." });
-        }
-
-        var ext = Path.GetExtension(file.FileName);
-        if (string.IsNullOrWhiteSpace(ext) || !AllowedExtensions.Contains(ext))
-        {
-            ext = ".jpg";
-        }
-
-        var fileId = Guid.NewGuid();
-        var uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
-        Directory.CreateDirectory(uploadsDir);
-
-        var savedFileName = $"{fileId:N}{ext.ToLowerInvariant()}";
-        var fullPath = Path.Combine(uploadsDir, savedFileName);
-
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, ct);
-        }
-
         var actualPurpose = string.IsNullOrWhiteSpace(purpose) ? "post" : purpose.Trim().ToLowerInvariant();
-        var contentType = file.ContentType;
-        if (string.IsNullOrWhiteSpace(contentType) || contentType == "application/octet-stream")
-        {
-            contentType = GetMimeType(ext);
-        }
+        var result = await fileService.BLUploadAsync(User, file, actualPurpose, ct);
 
         return Ok(new
         {
-            file_id = fileId,
-            fileId,
-            original_name = Path.GetFileName(file.FileName),
-            originalName = Path.GetFileName(file.FileName),
-            content_type = contentType,
-            contentType,
-            size = file.Length,
-            purpose = actualPurpose,
-            provider = "LOCAL",
-            content_url = $"/api/v1/mob/files/{fileId}/content",
-            contentUrl = $"/api/v1/mob/files/{fileId}/content"
+            file_id = result.FileId,
+            fileId = result.FileId,
+            original_name = result.OriginalName,
+            originalName = result.OriginalName,
+            content_type = result.ContentType,
+            contentType = result.ContentType,
+            size = result.Size,
+            purpose = result.Purpose,
+            provider = result.Provider,
+            blurhash = result.Blurhash,
+            content_url = $"/api/v1/mob/files/{result.FileId}/content",
+            contentUrl = $"/api/v1/mob/files/{result.FileId}/content"
         });
     }
 
     [HttpGet("{id:guid}/content")]
-    public IActionResult GetContent(Guid id)
+    [HttpGet("/api/files/{id:guid}/content")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetContent(Guid id, CancellationToken ct)
     {
+        // 1. Kiểm tra file legacy trên ổ đĩa nếu tồn tại
         var uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
-        if (!Directory.Exists(uploadsDir))
+        if (Directory.Exists(uploadsDir))
+        {
+            var idPrefix = id.ToString("N");
+            var matchingFiles = Directory.GetFiles(uploadsDir, $"{idPrefix}*");
+            if (matchingFiles.Length == 0)
+            {
+                matchingFiles = Directory.GetFiles(uploadsDir, $"{id}*");
+            }
+
+            if (matchingFiles.Length > 0)
+            {
+                var filePath = matchingFiles[0];
+                var ext = Path.GetExtension(filePath);
+                var mime = GetMimeType(ext);
+                return PhysicalFile(filePath, mime, enableRangeProcessing: true);
+            }
+        }
+
+        // 2. Mở qua IFileService (MinIO / S3 / Local chuẩn)
+        try
+        {
+            var streamResult = await fileService.BLOpenAuthorizedAsync(User, id, ct);
+            return File(streamResult.Stream, streamResult.ContentType, enableRangeProcessing: true);
+        }
+        catch (FileNotFoundException)
         {
             return NotFound();
         }
-
-        var idPrefix = id.ToString("N");
-        var matchingFiles = Directory.GetFiles(uploadsDir, $"{idPrefix}*");
-        if (matchingFiles.Length == 0)
+        catch (UnauthorizedAccessException)
         {
-            // Thử định dạng có gạch nối
-            matchingFiles = Directory.GetFiles(uploadsDir, $"{id}*");
+            return Forbid();
         }
-
-        if (matchingFiles.Length == 0)
-        {
-            return NotFound();
-        }
-
-        var filePath = matchingFiles[0];
-        var ext = Path.GetExtension(filePath);
-        var mime = GetMimeType(ext);
-
-        return PhysicalFile(filePath, mime, enableRangeProcessing: true);
     }
 
     private static string GetMimeType(string ext) => ext.ToLowerInvariant() switch

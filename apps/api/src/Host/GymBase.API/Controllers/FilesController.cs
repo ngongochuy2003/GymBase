@@ -13,6 +13,7 @@ namespace GymBase.API.Controllers;
 public sealed class FilesController(IFileService fileService, IFileMigrationService migrationService) : BaseApiController
 {
     [HttpPost]
+    [Authorize]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string? purpose, CancellationToken ct)
     {
@@ -29,6 +30,7 @@ public sealed class FilesController(IFileService fileService, IFileMigrationServ
     }
 
     [HttpGet("{id:guid}/content")]
+    [HttpGet("/api/files/{id:guid}/content")]
     [AllowAnonymous]
     public async Task<IActionResult> GetContent(Guid id, CancellationToken ct)
     {

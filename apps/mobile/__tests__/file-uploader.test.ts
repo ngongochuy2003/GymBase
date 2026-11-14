@@ -43,7 +43,16 @@ describe('File Module (Mobile)', () => {
   });
 
   describe('uploadMultipartFile', () => {
+    class MockFormData {
+      _parts: [string, any][] = [];
+      append(key: string, value: any) {
+        this._parts.push([key, value]);
+      }
+    }
+
     beforeEach(() => {
+      // @ts-ignore
+      global.FormData = MockFormData;
       setCustomManipulator({
         manipulateAsync: jest.fn().mockResolvedValue({
           uri: 'file:///compressed.jpg',

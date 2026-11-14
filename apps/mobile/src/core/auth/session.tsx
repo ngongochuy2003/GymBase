@@ -8,6 +8,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 import { authApi, authRuntime, type RegisterInput } from '../api/auth-api';
+import { userStorage } from '../storage/user-storage';
 import { googleSignIn } from './google-sign-in';
 import type { AuthResult, AuthUser } from './types';
 
@@ -35,15 +36,28 @@ export function SessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     let active = true;
     authRuntime.setOnSignedOut(() => {
-      if (active) setUser(null);
+      if (active) {
+        void userStorage.clear();
+        setUser(null);
+      }
     });
     void (async () => {
       try {
         const tokens = await authRuntime.reload();
-        // Token còn nhưng không xác nhận được (hết phiên, mất mạng): vào màn khách, đăng nhập lại ghi đè token cũ.
         if (tokens) {
-          const current = await authApi.me();
-          if (active) setUser(current);
+          const cachedUser = await userStorage.read();
+          if (cachedUser && active) {
+            setUser(cachedUser);
+          }
+          try {
+            const current = await authApi.me();
+            if (active) {
+              setUser(current);
+              await userStorage.write(current);
+            }
+          } catch {
+            /* Lỗi mạng tạm thời, nếu đã có cachedUser thì giữ phiên */
+          }
         }
       } catch {
         /* Không khôi phục được phiên: coi như khách. */
@@ -64,6 +78,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
     });
+    await userStorage.write(result.user);
     setPendingWelcome(result.tai_khoan_moi);
     setUser(result.user);
     return result;
@@ -103,6 +118,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       setUser(null);
       setPendingWelcome(false);
       await authRuntime.clear();
+      await userStorage.clear();
       await googleSignIn.signOut();
     }
   }, []);
@@ -128,4 +144,3 @@ export function useSession() {
   if (!session) throw new Error('useSession requires SessionProvider');
   return session;
 }
-

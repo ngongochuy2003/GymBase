@@ -25,12 +25,14 @@ public sealed class StorageResolver : IStorageResolver
             return _localStorage;
         }
 
-        if (string.Equals(providerName, "S3", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(providerName, "S3", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(providerName, "MINIO", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(providerName, _options.BucketName, StringComparison.OrdinalIgnoreCase))
         {
             return _s3Storage;
         }
 
-        throw new NotSupportedException($"Nhà cung cấp lưu trữ '{providerName}' không được hỗ trợ.");
+        return GetDefault();
     }
 
     public IFileStorage GetDefault()
