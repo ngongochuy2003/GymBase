@@ -5,6 +5,7 @@
     <ProjectReference Include="..\..\..\src\Base\GymBase.Base\GymBase.Base.csproj" />
     <ProjectReference Include="..\..\..\src\Auth\GymBase.DLAuth.Contract\GymBase.DLAuth.Contract.csproj" />
     <ProjectReference Include="..\..\..\src\BIZ\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
   </ItemGroup>
 
 </Project>

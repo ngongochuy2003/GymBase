@@ -3,22 +3,21 @@
 Base Expo/React Native theo kiến trúc feature-first. Đăng nhập gọi backend thật
 (`/api/v1/mob/auth`); lịch tập vẫn là dữ liệu demo cho tới khi có API lịch tập.
 
-## Chạy từ repository root
+## Cấu hình và chạy
 
-Yêu cầu Node 24.13.0 (hoặc Node 22.13+), pnpm 10.34.9.
-Không cần cài pnpm global nếu dùng các lệnh npx dưới đây.
+1. Khởi động MySQL 8.4, áp dụng migration và cấu hình JWT theo [hướng dẫn chạy API](../../docs/api/cach-chay-api.md).
+2. Tạo tài khoản Admin bằng lệnh `create-admin` trong tài liệu API, hoặc dùng một tài khoản đã có trong DB.
+3. Sao chép `.env.example` thành `.env`. Máy tính chạy API dùng `http://localhost:5020`; thiết bị thật cần dùng IP LAN của máy chạy API.
+4. Từ repository root chạy `pnpm mobile`. Expo Go mở ứng dụng trên thiết bị/emulator.
 
-```sh
-npx --yes pnpm@10.34.9 install --frozen-lockfile
-npx --yes pnpm@10.34.9 mobile
-```
+`EXPO_PUBLIC_API_URL` là địa chỉ host gốc, không thêm `/api/v1/mob`. Không đặt mật khẩu hay token trong biến `EXPO_PUBLIC_*`.
 
-Trên Windows PowerShell dùng `npx.cmd` nếu execution policy chặn script npm.
-Mở Expo Go tương thích SDK 58, quét QR trên cùng mạng với máy phát triển.
+## Kết nối hiện có
 
-```sh
-# Emulator Android đã khởi động, Android SDK / adb đã cài:
-npx --yes pnpm@10.34.9 mobile:android
+- Đăng nhập, khôi phục `/auth/me`, refresh token xoay vòng và đăng xuất.
+- Bảng tin và lượt thích qua `/baiviet/feed` và `/baiviet/{id}/thich`.
+- Đăng bài qua `/baiviet`; ảnh/video từ thiết bị được upload trước qua `/files`.
+- Lỗi kết nối/API hiển thị trạng thái lỗi; không thay bằng dữ liệu minh họa.
 
 # Preview cùng ứng dụng React Native trên browser:
 npx --yes pnpm@10.34.9 mobile:web
@@ -100,22 +99,5 @@ Không đưa Expo dev server vào Docker.
 ## Kiểm tra
 
 ```sh
-npx --yes pnpm@10.34.9 mobile:check
-npx --yes pnpm@10.34.9 --filter @gymbase/mobile format:check
-npx --yes pnpm@10.34.9 --filter @gymbase/mobile exec expo install --check
-npx --yes pnpm@10.34.9 --filter @gymbase/mobile export
+pnpm mobile:check
 ```
-
-Export tạo JS/Hermes bundles cho Android/iOS/web; không phải APK/IPA hoặc xác nhận
-đã chạy trên iOS. `dist/`, `.expo/`, `node_modules/` được Git ignore.
-Workflow `.github/workflows/mobile-ci.yml` chạy lint/typecheck/tests/format/export.
-
-Xem [báo cáo kiểm thử và ảnh Android](../../docs/onboarding/mobile-base.md).
-EAS/signing chưa cấu hình vì chưa có Expo project ID, identifier và credentials
-của chủ dự án. Không tự submit store hoặc deploy production.
-
-## Nguồn kỹ thuật đã đối chiếu
-
-- [Expo monorepo](https://docs.expo.dev/guides/monorepos/)
-- [Expo unit testing](https://docs.expo.dev/develop/unit-testing/)
-- [Expo Router](https://docs.expo.dev/router/introduction/)

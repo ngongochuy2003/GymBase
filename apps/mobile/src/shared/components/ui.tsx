@@ -16,15 +16,19 @@ import { useTheme } from '../theme/theme';
 
 cssInterop(SafeAreaView, { className: 'style' });
 
-export function Screen({ children }: PropsWithChildren) {
+export function Screen({ children, footer }: PropsWithChildren<{ footer?: ReactNode }>) {
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={footer ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
+    >
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerClassName="flex-grow items-center p-6 pb-10"
       >
         <View className="w-full max-w-[680px] gap-5">{children}</View>
       </ScrollView>
+      {footer}
     </SafeAreaView>
   );
 }

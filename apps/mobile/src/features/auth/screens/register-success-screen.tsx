@@ -9,7 +9,7 @@ import { useTheme } from '@/shared/theme/theme';
 export function RegisterSuccessScreen() {
   const { completeWelcome } = useSession();
   const { colors } = useTheme();
-  const go = (href: '/profile-setup' | '/today') => {
+  const go = (href: '/profile-setup' | '/home') => {
     completeWelcome();
     router.replace(href);
   };
@@ -28,7 +28,7 @@ export function RegisterSuccessScreen() {
       </View>
       <View className="gap-3 pt-6">
         <Button label="Thiết lập hồ sơ ngay" onPress={() => go('/profile-setup')} />
-        <Button label="Bỏ qua, vào Trang chủ" secondary onPress={() => go('/today')} />
+        <Button label="Bỏ qua, vào Trang chủ" secondary onPress={() => go('/home')} />
         <AppText muted>Bạn có thể thiết lập sau trong tab Cá nhân.</AppText>
       </View>
     </Screen>

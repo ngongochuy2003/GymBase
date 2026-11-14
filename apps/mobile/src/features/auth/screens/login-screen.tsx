@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
+
 import { AppText, Button, Card, Screen, TextField } from '@/shared/components/ui';
 import { GoogleSignInButton } from '../components/google-sign-in-button';
 import { loginSchema, type LoginForm } from '../schemas/login-schema';
@@ -23,6 +24,7 @@ export function LoginScreen() {
     setFailure(null);
     try {
       await signIn(email, password);
+      router.replace('/home');
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
       setFailure({

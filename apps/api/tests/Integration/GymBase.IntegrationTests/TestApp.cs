@@ -6,6 +6,8 @@ using GymBase.Base.Logging;
 using GymBase.BLAuth;
 using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLBiz;
+using GymBase.BLBiz.BaiViet;
+using GymBase.DLBiz.Contract;
 using GymBase.BLBiz.BLTruyCap;
 using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
@@ -22,6 +24,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace GymBase.IntegrationTests
 {
@@ -39,19 +42,24 @@ namespace GymBase.IntegrationTests
         public static async Task<WebApplication> StartAsync()
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Production });
+            builder.Logging.ClearProviders();
             builder.WebHost.UseTestServer();
             builder.Configuration[$"{AppApiExtensions.CorsOriginsSection}:0"] = AllowedOrigin;
             builder.Configuration["Jwt:SigningKey"] = SigningKey;
-            builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly)
+            builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(BaiVietService).Assembly)
                 .AddApplicationPart(typeof(TestApp).Assembly)
                 .AddApplicationPart(typeof(GymBase.API.Controllers.AuthController).Assembly);
             builder.Services.AddAuthBusiness();
+            builder.Services.AddBizBusiness();
             builder.Services.Configure<PasswordHasherOptions>(options => options.IterationCount = 1_000);
             builder.Services.AddSingleton(typeof(InMemoryStore<>));
             builder.Services.AddSingleton<RecordingAuditLogWriter>();
             builder.Services.AddSingleton<IAuditLogWriter>(services => services.GetRequiredService<RecordingAuditLogWriter>());
             builder.Services.AddScoped<ITaiKhoanRepository, InMemoryTaiKhoanRepository>();
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
+            builder.Services.AddScoped<IBaiVietRepository, InMemoryBaiVietRepository>();
+            builder.Services.AddScoped<ITuongTacBaiVietRepository, InMemoryTuongTacBaiVietRepository>();
+
             builder.Services.AddScoped<IDangNhapNgoaiRepository, InMemoryDangNhapNgoaiRepository>();
             builder.Services.AddSingleton<FakeGoogleIdTokenVerifier>();
             builder.Services.AddSingleton<IGoogleIdTokenVerifier>(services => services.GetRequiredService<FakeGoogleIdTokenVerifier>());
@@ -59,7 +67,6 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<InMemoryHoSoNguoiDungStore>();
             builder.Services.AddScoped<IHoSoNguoiDungRepository, InMemoryHoSoNguoiDungRepository>();
             builder.Services.AddScoped<IKetNoiPtRepository, InMemoryKetNoiPtRepository>();
-
             var app = builder.Build();
             app.UseAppApi();
             await app.StartAsync();

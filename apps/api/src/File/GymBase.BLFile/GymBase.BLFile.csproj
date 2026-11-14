@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
+    <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
+    <ProjectReference Include="..\..\Contracts\GymBase.ModuleContracts\GymBase.ModuleContracts.csproj" />
+    <ProjectReference Include="..\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

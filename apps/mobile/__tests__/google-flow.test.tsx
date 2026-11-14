@@ -6,7 +6,7 @@ import AuthLayout from '@/app/(auth)/_layout';
 import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
-import TodayRoute from '@/app/(protected)/today';
+import HomeRoute from '@/app/(protected)/home';
 import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import RegisterSuccessRoute from '@/app/(protected)/register-success';
@@ -42,7 +42,7 @@ const routes = {
   '(auth)/welcome': WelcomeRoute,
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
-  '(protected)/today': TodayRoute,
+  '(protected)/home': HomeRoute,
   '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
   '(protected)/register-success': RegisterSuccessRoute,
@@ -80,8 +80,8 @@ test('first Google sign-in stores the session, shows the success screen once, th
   );
 
   await fireEvent.press(screen.getByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
-  await waitFor(() => expect(screen).toHavePathname('/today'));
-  expect(await screen.findByText('Chào Người Google,')).toBeTruthy();
+  await waitFor(() => expect(screen).toHavePathname('/home'));
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
 });
 
 test('a returning Google user goes straight to the app', async () => {
@@ -90,7 +90,7 @@ test('a returning Google user goes straight to the app', async () => {
 
   await fireEvent.press(screen.getByRole('button', GOOGLE));
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
 });
 
@@ -100,7 +100,7 @@ test('the Google button on the login screen works too', async () => {
 
   await fireEvent.press(await screen.findByRole('button', GOOGLE));
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(google).toHaveBeenCalledWith({ id_token: 'google-id-token' });
 });
 
@@ -187,7 +187,7 @@ test('after a network failure pressing the button again signs in', async () => {
 
   await fireEvent.press(screen.getByRole('button', GOOGLE));
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(google).toHaveBeenCalledTimes(2);
 });
 

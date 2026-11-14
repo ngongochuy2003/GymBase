@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
 import { GoogleSignInUnavailableError, googleSignIn } from '@/core/auth/google-sign-in';
 import { useSession } from '@/core/auth/session';
@@ -43,7 +44,8 @@ export function GoogleSignInButton() {
         setBusy(false);
         return;
       }
-      await signInWithGoogle(idToken);
+      const res = await signInWithGoogle(idToken);
+      router.replace(res.tai_khoan_moi ? '/register-success' : '/home');
     } catch (error) {
       setMessage(errorMessage(error));
       setBusy(false);

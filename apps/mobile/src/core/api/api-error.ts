@@ -44,7 +44,9 @@ const isString = (value: unknown): value is string => typeof value === 'string' 
 function readFieldErrors(value: unknown): FieldErrors {
   if (typeof value !== 'object' || value === null) return {};
   const entries = Object.entries(value).flatMap(([field, messages]) =>
-    Array.isArray(messages) && messages.every(isString) ? [[field, messages as string[]] as const] : [],
+    Array.isArray(messages) && messages.every(isString)
+      ? [[field, messages as string[]] as const]
+      : [],
   );
   return Object.fromEntries(entries);
 }
