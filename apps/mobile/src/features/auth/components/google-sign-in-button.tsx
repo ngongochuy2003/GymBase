@@ -44,8 +44,8 @@ export function GoogleSignInButton() {
         setBusy(false);
         return;
       }
-      await signInWithGoogle(idToken);
-      router.replace('/home');
+      const res = await signInWithGoogle(idToken);
+      router.replace(res.tai_khoan_moi ? '/register-success' : '/home');
     } catch (error) {
       setMessage(errorMessage(error));
       setBusy(false);

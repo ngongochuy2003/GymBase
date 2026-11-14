@@ -1,7 +1,23 @@
 import { Text } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
+import { useSession } from '@/core/auth/session';
+import { LoadingState, Screen } from '@/shared/components/ui';
 
 export default function ProtectedLayout() {
+  const { status } = useSession();
+
+  if (status === 'loading') {
+    return (
+      <Screen>
+        <LoadingState />
+      </Screen>
+    );
+  }
+
+  if (status !== 'authenticated') {
+    return <Redirect href="/welcome" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

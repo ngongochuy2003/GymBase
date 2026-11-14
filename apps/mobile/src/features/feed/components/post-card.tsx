@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   },
   time: { fontSize: theme.font.size.sm, color: theme.colors.muted },
   content: { fontSize: theme.font.size.md, lineHeight: 23, color: theme.colors.text },
-  image: { width: '100%', aspectRatio: 16 / 10 },
+  image: { width: '100%', aspectRatio: 11 / 14 },
   actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   group: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xl },
   action: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },

@@ -1,3 +1,5 @@
+import { DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
+import { env } from '@/core/config/env';
 import { tokenStorage } from '@/core/storage/token-storage';
 import { FilePurpose, FileUploadResult, UploadOptions } from './file.types';
 
@@ -27,8 +29,8 @@ export function setCustomManipulator(manipulator: ManipulatorAdapter) {
 
 /**
  * 1. Nén và chuẩn hóa ảnh phía Mobile bằng expo-image-manipulator.
- * - Cạnh dài tối đa 2048px (giữ nguyên tỷ lệ).
- * - Nén chất lượng 0.82 JPEG (giảm 70-80% dung lượng ban đầu).
+ * - Cạnh dài tối đa 2048px (giữ nguyên tỷ lệ chuẩn).
+ * - Nén chất lượng 0.90 JPEG để đảm bảo độ nét cao không bị vỡ/bóp méo.
  * - Tự động loại bỏ metadata EXIF nhạy cảm (GPS coordinates).
  */
 export async function compressImageOnDevice(
@@ -39,7 +41,7 @@ export async function compressImageOnDevice(
 
   if (activeManipulator) {
     const result = await activeManipulator.manipulateAsync(uri, [{ resize: { width: 2048 } }], {
-      compress: 0.82,
+      compress: 0.9,
       format: 'jpeg',
     });
 
@@ -75,14 +77,20 @@ export async function uploadMultipartFile(
   purpose: FilePurpose = 'avatar',
   options?: UploadOptions,
 ): Promise<FileUploadResult> {
-  const baseUrl = (options?.apiBaseUrl || '').replace(/\/+$/, '');
+  const rawBase = options?.apiBaseUrl || env.apiUrl || DEFAULT_LOCAL_API_URL;
+  const baseUrl = rawBase.replace(/\/api\/v1\/mob\/?$/, '').replace(/\/+$/, '');
   const authHeaders: Record<string, string> = {};
-  const token = options?.authToken || (await tokenStorage.read())?.accessToken;
+
+  let token = options?.authToken || (await tokenStorage.read())?.accessToken;
+  if (!token && typeof window !== 'undefined' && window.localStorage) {
+    token = window.localStorage.getItem('access_token') || undefined;
+  }
+
   if (token) {
     authHeaders.Authorization = `Bearer ${token}`;
   }
 
-  // Bước 1: Nén ảnh
+  // Bước 1: Nén ảnh giữ độ nét cao
   const compressed = await compressImageOnDevice(localUri);
 
   if (options?.signal?.aborted) {
@@ -117,8 +125,8 @@ export async function uploadMultipartFile(
     });
   }
 
-  // Bước 3: Gửi lên Backend (Hỗ trợ cả /api/v1/mob/files và /api/files)
-  const endpoint = baseUrl ? `${baseUrl}/api/v1/mob/files` : '/api/v1/mob/files';
+  // Bước 3: Gửi lên Backend (Kênh mobile /api/v1/mob/files)
+  const endpoint = `${baseUrl}/api/v1/mob/files`;
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: authHeaders,

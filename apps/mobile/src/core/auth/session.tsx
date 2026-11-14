@@ -7,6 +7,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
+import { ApiError } from '../api/api-error';
 import { authApi, authRuntime, type RegisterInput } from '../api/auth-api';
 import { userStorage } from '../storage/user-storage';
 import { googleSignIn } from './google-sign-in';
@@ -55,7 +56,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
               setUser(current);
               await userStorage.write(current);
             }
-          } catch {
+          } catch (err: unknown) {
+            if (err instanceof ApiError && err.status === 401) {
+              await authRuntime.clear();
+              await userStorage.clear();
+              if (active) setUser(null);
+            }
             /* Lỗi mạng tạm thời, nếu đã có cachedUser thì giữ phiên */
           }
         }

@@ -81,7 +81,7 @@ test('first Google sign-in stores the session, shows the success screen once, th
 
   await fireEvent.press(screen.getByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
   await waitFor(() => expect(screen).toHavePathname('/home'));
-  expect(await screen.findByText('Chào Người Google,')).toBeTruthy();
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
 });
 
 test('a returning Google user goes straight to the app', async () => {

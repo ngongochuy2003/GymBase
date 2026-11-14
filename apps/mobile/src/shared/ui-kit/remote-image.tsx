@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Image,
+  StyleSheet,
+  View,
+  type ImageResizeMode,
+  type ImageStyle,
+  type StyleProp,
+} from 'react-native';
 import { DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
 import { env } from '@/core/config/env';
 import { theme } from '../theme/tokens';
@@ -7,9 +14,10 @@ import { theme } from '../theme/tokens';
 export interface RemoteImageProps {
   uri?: string;
   accessibilityLabel?: string;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<ImageStyle>;
   /** Mặc định bo góc ảnh theo token; avatar truyền `circle`. */
   circle?: boolean;
+  resizeMode?: ImageResizeMode;
 }
 
 /**
@@ -36,7 +44,13 @@ export function resolveRemoteImageUri(uri?: string | null): string | undefined {
 }
 
 /** Ảnh từ URL; lỗi tải hoặc không có URI thì hiện nền xám thay vì crash/trống. */
-export function RemoteImage({ uri, accessibilityLabel, style, circle }: RemoteImageProps) {
+export function RemoteImage({
+  uri,
+  accessibilityLabel,
+  style,
+  circle,
+  resizeMode = 'cover',
+}: RemoteImageProps) {
   const [failed, setFailed] = useState(false);
   const resolvedUri = resolveRemoteImageUri(uri);
   const radius = circle ? theme.radius.chip : theme.radius.image;
@@ -46,7 +60,7 @@ export function RemoteImage({ uri, accessibilityLabel, style, circle }: RemoteIm
       <View
         testID="image-fallback"
         accessibilityLabel={accessibilityLabel}
-        style={[styles.fallback, { borderRadius: radius }, style]}
+        style={[styles.fallback, { borderRadius: radius }, style as object]}
       />
     );
   }
@@ -55,6 +69,7 @@ export function RemoteImage({ uri, accessibilityLabel, style, circle }: RemoteIm
     <Image
       accessibilityLabel={accessibilityLabel}
       source={{ uri: resolvedUri }}
+      resizeMode={resizeMode}
       onError={() => setFailed(true)}
       style={[styles.image, { borderRadius: radius }, style as object]}
     />
@@ -62,6 +77,6 @@ export function RemoteImage({ uri, accessibilityLabel, style, circle }: RemoteIm
 }
 
 const styles = StyleSheet.create({
-  image: { backgroundColor: theme.colors.placeholder },
+  image: { backgroundColor: theme.colors.placeholder, overflow: 'hidden' },
   fallback: { backgroundColor: theme.colors.placeholder, overflow: 'hidden' },
 });

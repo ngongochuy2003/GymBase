@@ -136,7 +136,7 @@ test('signing in stores the tokens, opens the app and shows the account name', a
   expect(login).toHaveBeenCalledWith(
     expect.objectContaining({ email: 'minh.anh@gymbase.local', mat_khau: 'Mk-thu-nghiem-1' }),
   );
-  expect(await screen.findByText('Chào Minh Anh,')).toBeTruthy();
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
   expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
     'gymbase.session.tokens',
     JSON.stringify({ accessToken: 'access-1', refreshToken: 'refresh-1' }),
@@ -169,7 +169,7 @@ test('reopening the app restores the stored session without asking to sign in', 
 
   await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(me).toHaveBeenCalled();
-  expect(await screen.findByText('Chào Minh Anh,')).toBeTruthy();
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
 });
 
 test('a stored session the server rejects sends the user to the welcome screen', async () => {

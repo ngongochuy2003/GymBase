@@ -46,7 +46,7 @@ export function useComposerState({
       mediaTypes: ['images', 'videos'],
       allowsMultipleSelection: true,
       selectionLimit: remaining,
-      quality: 0.8,
+      quality: 1,
     });
 
     if (result.canceled || !result.assets || result.assets.length === 0) {

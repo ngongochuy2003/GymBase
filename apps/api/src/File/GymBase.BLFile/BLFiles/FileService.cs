@@ -69,8 +69,11 @@ public sealed class FileService : IFileService
         _imageProcessor.ValidateMagicBytes(rawStream, file.ContentType);
 
         var processed = await _imageProcessor.ProcessVariantsAsync(rawStream, normalizedPurpose, ct);
-        var primaryVariant = processed.Variants.FirstOrDefault(v => v.VariantName == "medium")
-                             ?? processed.Variants.First();
+        var primaryVariant = normalizedPurpose == "avatar"
+            ? (processed.Variants.FirstOrDefault(v => v.VariantName == "medium") ?? processed.Variants.First())
+            : (processed.Variants.FirstOrDefault(v => v.VariantName == "large")
+               ?? processed.Variants.FirstOrDefault(v => v.VariantName == "medium")
+               ?? processed.Variants.First());
 
         var fileId = Guid.NewGuid();
         // Đổi tên ảnh thành mã ngẫu nhiên theo mục đích (avatar_20261114_..., post_20261114_...)

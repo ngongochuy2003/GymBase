@@ -8,10 +8,10 @@ public sealed class SkiaImageProcessor : IImageProcessor
     private const int MaxDimensionLimit = 8192;
     private const long MaxTotalPixels = 36_000_000;
 
-    private const int ThumbMax = 200;
-    private const int MediumMax = 720;
-    private const int LargeMax = 1440;
-    private const int WebpQuality = 82;
+    private const int ThumbMax = 240;
+    private const int MediumMax = 1080;
+    private const int LargeMax = 2048;
+    private const int WebpQuality = 90;
 
     public void ValidateMagicBytes(Stream stream, string claimedContentType)
     {
