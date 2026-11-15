@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
 import { AppText, Button, Card, Screen, TextField } from '@/shared/components/ui';
@@ -13,10 +13,15 @@ const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
 
 export function LoginScreen() {
   const { signIn } = useSession();
+  // Màn đăng ký chuyển sang đây kèm email vừa đăng ký.
+  const { email: registeredEmail, registered } = useLocalSearchParams<{
+    email?: string;
+    registered?: string;
+  }>();
   const [failure, setFailure] = useState<{ message: string; retryable: boolean } | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: registeredEmail ?? '', password: '' },
   });
 
   const submit = handleSubmit(async ({ email, password }) => {
@@ -43,6 +48,11 @@ export function LoginScreen() {
       <Card>
         <AppText title>Đăng nhập</AppText>
         <AppText muted>Dùng email và mật khẩu bạn đã đăng ký.</AppText>
+        {registered ? (
+          <Text accessibilityRole="alert" className="font-semibold text-primary">
+            Đăng ký thành công. Hãy đăng nhập để tiếp tục.
+          </Text>
+        ) : null}
         <Controller
           control={control}
           name="email"

@@ -25,13 +25,13 @@ const user: AuthUser = {
   dang_hoat_dong: true,
   ngay_tao: '2026-11-13T00:00:00Z',
   ngay_chinh_sua: null,
+  is_dang_nhap_lan_dau: false,
 };
 const result: AuthResult = {
   access_token: 'access-1',
   expires_in: 900,
   refresh_token: 'refresh-1',
   user,
-  tai_khoan_moi: false,
 };
 
 function NeedsProfile() {

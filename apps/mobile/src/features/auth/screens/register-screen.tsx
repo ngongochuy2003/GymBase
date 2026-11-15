@@ -42,13 +42,18 @@ export function RegisterScreen() {
     setFailure(null);
     try {
       // TODO(REFERRAL): backend nhận ma_gioi_thieu nhưng chưa xử lý; vẫn gửi để khớp thiết kế.
-      await register({
+      const account = await register({
         ho_ten: form.name,
         email: form.email,
         so_dien_thoai: form.phone,
         mat_khau: form.password,
         dong_y_dieu_khoan: form.agreed,
         ...(form.referral ? { ma_gioi_thieu: form.referral } : {}),
+      });
+      // Đăng ký không có phiên: về màn đăng nhập, điền sẵn email và báo đã đăng ký xong.
+      router.replace({
+        pathname: '/login',
+        params: { email: account.email ?? form.email, registered: '1' },
       });
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;

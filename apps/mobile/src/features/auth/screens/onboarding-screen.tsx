@@ -5,12 +5,12 @@ import { useSession } from '@/core/auth/session';
 import { AppText, Button, Screen } from '@/shared/components/ui';
 import { useTheme } from '@/shared/theme/theme';
 
-/** Hiện đúng một lần, ngay sau khi tài khoản vừa được tạo (cờ `pendingWelcome` của phiên). */
-export function RegisterSuccessScreen() {
-  const { completeWelcome } = useSession();
+/** Hiện sau lần đăng nhập đầu tiên, cho tới khi người dùng bấm một trong hai nút (cờ `is_dang_nhap_lan_dau`). */
+export function OnboardingScreen() {
+  const { completeOnboarding } = useSession();
   const { colors } = useTheme();
-  const go = (href: '/profile-setup' | '/today') => {
-    completeWelcome();
+  const go = async (href: '/profile-setup' | '/today') => {
+    await completeOnboarding();
     router.replace(href);
   };
   return (
@@ -20,15 +20,15 @@ export function RegisterSuccessScreen() {
           <Ionicons name="checkmark" size={56} color={colors.primary} />
         </View>
         <Text className="text-center text-[28px] font-bold leading-9 text-foreground">
-          Đăng ký thành công!
+          Đăng nhập thành công!
         </Text>
         <AppText muted>
-          Tài khoản của bạn đã được tạo. Giờ bạn có thể hoàn thiện hồ sơ để cá nhân hóa trải nghiệm.
+          Chào mừng bạn đến với GymBase. Hãy thiết lập hồ sơ để cá nhân hóa trải nghiệm.
         </AppText>
       </View>
       <View className="gap-3 pt-6">
-        <Button label="Thiết lập hồ sơ ngay" onPress={() => go('/profile-setup')} />
-        <Button label="Bỏ qua, vào Trang chủ" secondary onPress={() => go('/today')} />
+        <Button label="Thiết lập hồ sơ ngay" onPress={() => void go('/profile-setup')} />
+        <Button label="Bỏ qua, vào Trang chủ" secondary onPress={() => void go('/today')} />
         <AppText muted>Bạn có thể thiết lập sau trong tab Cá nhân.</AppText>
       </View>
     </Screen>

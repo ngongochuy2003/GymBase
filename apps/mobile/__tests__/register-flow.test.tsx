@@ -12,7 +12,7 @@ import ProtectedLayout from '@/app/(protected)/_layout';
 import TodayRoute from '@/app/(protected)/today';
 import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
-import RegisterSuccessRoute from '@/app/(protected)/register-success';
+import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
 import { authApi } from '@/core/api/auth-api';
@@ -29,14 +29,18 @@ const user: AuthUser = {
   dang_hoat_dong: true,
   ngay_tao: '2026-11-13T00:00:00Z',
   ngay_chinh_sua: null,
+  is_dang_nhap_lan_dau: true,
 };
-const created: AuthResult = {
+/** Kết quả đăng ký: chỉ có tài khoản, không có phiên. */
+const created: AuthUser = user;
+/** Lần đăng nhập đầu tiên sau khi đăng ký. */
+const firstLogin: AuthResult = {
   access_token: 'access-new',
   expires_in: 900,
   refresh_token: 'refresh-new',
   user,
-  tai_khoan_moi: true,
 };
+const onboarded: AuthUser = { ...user, is_dang_nhap_lan_dau: false };
 
 const routes = {
   _layout: RootLayout,
@@ -49,7 +53,7 @@ const routes = {
   '(protected)/today': TodayRoute,
   '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
-  '(protected)/register-success': RegisterSuccessRoute,
+  '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
 };
 
@@ -166,15 +170,16 @@ test('the terms and privacy links open the configured pages', async () => {
   expect(open).toHaveBeenNthCalledWith(2, env.privacyUrl);
 });
 
-test('registering stores the session and opens the success screen once', async () => {
+test('registering creates the account without a session and opens login with the email filled in', async () => {
   const register = jest.spyOn(authApi, 'register').mockResolvedValue(created);
   await openRegister();
   await fillForm({ email: '  Minh.Anh@GymBase.Local ', referral: 'KHOI123' });
 
   await agreeAndSubmit();
 
-  await waitFor(() => expect(screen).toHavePathname('/register-success'));
-  expect(await screen.findByText('Đăng ký thành công!')).toBeTruthy();
+  await waitFor(() => expect(screen).toHavePathname('/login'));
+  expect(await screen.findByText('Đăng ký thành công. Hãy đăng nhập để tiếp tục.')).toBeTruthy();
+  expect(screen.getByLabelText('Email').props.value).toBe('minh.anh@gymbase.local');
   expect(register).toHaveBeenCalledWith({
     ho_ten: 'Minh Anh',
     email: 'minh.anh@gymbase.local',
@@ -183,10 +188,7 @@ test('registering stores the session and opens the success screen once', async (
     dong_y_dieu_khoan: true,
     ma_gioi_thieu: 'KHOI123',
   });
-  expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-    'gymbase.session.tokens',
-    JSON.stringify({ accessToken: 'access-new', refreshToken: 'refresh-new' }),
-  );
+  expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
 });
 
 test('an empty referral code is not sent', async () => {
@@ -200,30 +202,56 @@ test('an empty referral code is not sent', async () => {
   expect(register.mock.calls[0]?.[0]).not.toHaveProperty('ma_gioi_thieu');
 });
 
-test('skipping goes to the home screen and the success screen does not come back', async () => {
+/** Đăng ký rồi đăng nhập ngay trên màn đăng nhập được điền sẵn email; kết thúc ở màn onboarding. */
+async function registerThenSignIn() {
   jest.spyOn(authApi, 'register').mockResolvedValue(created);
+  jest.spyOn(authApi, 'login').mockResolvedValue(firstLogin);
   await openRegister();
   await fillForm();
   await agreeAndSubmit();
+  await fireEvent.changeText(await screen.findByLabelText('Mật khẩu'), 'Mk-thu-nghiem-1');
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
+  await waitFor(() => expect(screen).toHavePathname('/onboarding'));
+  expect(await screen.findByText('Đăng nhập thành công!')).toBeTruthy();
+}
+
+test('the first sign-in after registering shows onboarding, and skipping goes home for good', async () => {
+  const complete = jest.spyOn(authApi, 'hoanTatDangNhapLanDau').mockResolvedValue(onboarded);
+  await registerThenSignIn();
+  expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+    'gymbase.session.tokens',
+    JSON.stringify({ accessToken: 'access-new', refreshToken: 'refresh-new' }),
+  );
 
   await fireEvent.press(await screen.findByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
 
   await waitFor(() => expect(screen).toHavePathname('/today'));
+  expect(complete).toHaveBeenCalledTimes(1);
   await act(async () => router.navigate('/' as never));
   await waitFor(() => expect(screen).toHavePathname('/today'));
-  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
+  expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
 });
 
 test('setting up the profile now opens the profile setup placeholder', async () => {
-  jest.spyOn(authApi, 'register').mockResolvedValue(created);
-  await openRegister();
-  await fillForm();
-  await agreeAndSubmit();
+  const complete = jest.spyOn(authApi, 'hoanTatDangNhapLanDau').mockResolvedValue(onboarded);
+  await registerThenSignIn();
 
   await fireEvent.press(await screen.findByRole('button', { name: 'Thiết lập hồ sơ ngay' }));
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup'));
+  expect(complete).toHaveBeenCalledTimes(1);
   expect(await screen.findByText('Thiết lập hồ sơ')).toBeTruthy();
+});
+
+test('onboarding still lets the user in when the server cannot be reached', async () => {
+  jest
+    .spyOn(authApi, 'hoanTatDangNhapLanDau')
+    .mockRejectedValue(new ApiError('Không thể kết nối.', undefined, 'NETWORK'));
+  await registerThenSignIn();
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
+
+  await waitFor(() => expect(screen).toHavePathname('/today'));
 });
 
 test('a taken email says so and offers to sign in instead', async () => {
@@ -276,11 +304,25 @@ test('a network failure shows a message and a retry button that registers', asyn
 
   await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
 
-  await waitFor(() => expect(screen).toHavePathname('/register-success'));
+  await waitFor(() => expect(screen).toHavePathname('/login'));
   expect(register).toHaveBeenCalledTimes(2);
 });
 
-test('signing in again later goes straight to the app, not the success screen', async () => {
+test('a stored session after onboarding goes straight to the app', async () => {
+  jest
+    .mocked(SecureStore.getItemAsync)
+    .mockResolvedValue(
+      JSON.stringify({ accessToken: 'stored-access', refreshToken: 'stored-refresh' }),
+    );
+  jest.spyOn(authApi, 'me').mockResolvedValue(onboarded);
+
+  await renderRouter(routes, { initialUrl: '/' });
+
+  await waitFor(() => expect(screen).toHavePathname('/today'));
+  expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
+});
+
+test('a stored session that never finished onboarding shows it again', async () => {
   jest
     .mocked(SecureStore.getItemAsync)
     .mockResolvedValue(
@@ -290,6 +332,5 @@ test('signing in again later goes straight to the app, not the success screen', 
 
   await renderRouter(routes, { initialUrl: '/' });
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
-  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
+  await waitFor(() => expect(screen).toHavePathname('/onboarding'));
 });

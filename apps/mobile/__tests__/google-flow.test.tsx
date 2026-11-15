@@ -9,7 +9,7 @@ import ProtectedLayout from '@/app/(protected)/_layout';
 import TodayRoute from '@/app/(protected)/today';
 import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
-import RegisterSuccessRoute from '@/app/(protected)/register-success';
+import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
 import { authApi } from '@/core/api/auth-api';
@@ -26,13 +26,13 @@ const user: AuthUser = {
   dang_hoat_dong: true,
   ngay_tao: '2026-11-13T00:00:00Z',
   ngay_chinh_sua: null,
+  is_dang_nhap_lan_dau: false,
 };
-const result = (isNew: boolean): AuthResult => ({
+const result = (firstLogin: boolean): AuthResult => ({
   access_token: 'access-google',
   expires_in: 900,
   refresh_token: 'refresh-google',
-  user,
-  tai_khoan_moi: isNew,
+  user: { ...user, is_dang_nhap_lan_dau: firstLogin },
 });
 
 const routes = {
@@ -45,7 +45,7 @@ const routes = {
   '(protected)/today': TodayRoute,
   '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
-  '(protected)/register-success': RegisterSuccessRoute,
+  '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
 };
 
@@ -65,14 +65,17 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test('first Google sign-in stores the session, shows the success screen once, then the app', async () => {
+test('first Google sign-in stores the session, shows onboarding until a button is pressed, then the app', async () => {
   const google = jest.spyOn(authApi, 'google').mockResolvedValue(result(true));
+  const complete = jest
+    .spyOn(authApi, 'hoanTatDangNhapLanDau')
+    .mockResolvedValue({ ...user, is_dang_nhap_lan_dau: false });
   await openWelcome();
 
   await fireEvent.press(screen.getByRole('button', GOOGLE));
 
-  await waitFor(() => expect(screen).toHavePathname('/register-success'));
-  expect(await screen.findByText('Đăng ký thành công!')).toBeTruthy();
+  await waitFor(() => expect(screen).toHavePathname('/onboarding'));
+  expect(await screen.findByText('Đăng nhập thành công!')).toBeTruthy();
   expect(google).toHaveBeenCalledWith({ id_token: 'google-id-token' });
   expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
     'gymbase.session.tokens',
@@ -81,6 +84,7 @@ test('first Google sign-in stores the session, shows the success screen once, th
 
   await fireEvent.press(screen.getByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
   await waitFor(() => expect(screen).toHavePathname('/today'));
+  expect(complete).toHaveBeenCalledTimes(1);
   expect(await screen.findByText('Chào Người Google,')).toBeTruthy();
 });
 
@@ -91,7 +95,7 @@ test('a returning Google user goes straight to the app', async () => {
   await fireEvent.press(screen.getByRole('button', GOOGLE));
 
   await waitFor(() => expect(screen).toHavePathname('/today'));
-  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
+  expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
 });
 
 test('the Google button on the login screen works too', async () => {
