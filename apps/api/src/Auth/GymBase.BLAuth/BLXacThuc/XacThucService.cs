@@ -80,18 +80,18 @@ public sealed class XacThucService(
             await users.DLUpdateAsync(user, cancellationToken);
         }
 
-        return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: false, cancellationToken);
+        return await StartSessionAsync(user, dto.ten_thiet_bi, cancellationToken);
     }
 
     // TODO(VERIFY): chưa xác minh email và số điện thoại, nên email mới chỉ là định danh đăng nhập chứ chưa chứng minh
     //   quyền sở hữu; làm cùng quên mật khẩu qua email.
     /// <summary>
-    /// Người mới tự đăng ký bằng mật khẩu, có phiên ngay (cùng dạng kết quả với đăng nhập, <c>tai_khoan_moi = true</c>).
-    /// Chưa xác minh email và số điện thoại.
+    /// Người mới tự đăng ký bằng mật khẩu. Không tạo phiên: app đưa người dùng về màn đăng nhập. Tài khoản mới có
+    /// <c>is_dang_nhap_lan_dau = true</c>. Chưa xác minh email và số điện thoại.
     /// </summary>
     /// <exception cref="ValidationFailedException">Dữ liệu không hợp lệ hoặc chưa đồng ý điều khoản.</exception>
     /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc tài khoản khác.</exception>
-    public async Task<KetQuaDangNhapDto> BLDangKyAsync(DangKyDto dto, CancellationToken cancellationToken)
+    public async Task<TaiKhoanDto> BLDangKyAsync(DangKyDto dto, CancellationToken cancellationToken)
     {
         await registerValidator.ValidateOrThrowAsync(dto, cancellationToken);
 
@@ -114,7 +114,7 @@ public sealed class XacThucService(
         user.MarkCreated(email, now);
         await users.DLInsertAsync(user, cancellationToken);
 
-        return await StartSessionAsync(user, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+        return ToDto(user);
     }
 
     /// <summary>
@@ -144,11 +144,11 @@ public sealed class XacThucService(
                 throw new UnauthorizedException("Không thể đăng nhập bằng Google với tài khoản này.");
             }
 
-            return await StartSessionAsync(linked, dto.ten_thiet_bi, isNewAccount: false, cancellationToken);
+            return await StartSessionAsync(linked, dto.ten_thiet_bi, cancellationToken);
         }
 
         var created = await CreateGoogleAccountAsync(identity, cancellationToken);
-        return await StartSessionAsync(created, dto.ten_thiet_bi, isNewAccount: true, cancellationToken);
+        return await StartSessionAsync(created, dto.ten_thiet_bi, cancellationToken);
     }
 
     private async Task<tai_khoan> CreateGoogleAccountAsync(GoogleIdentity identity, CancellationToken cancellationToken)
@@ -198,7 +198,7 @@ public sealed class XacThucService(
         return user;
     }
 
-    private async Task<KetQuaDangNhapDto> StartSessionAsync(tai_khoan user, string? deviceName, bool isNewAccount, CancellationToken cancellationToken)
+    private async Task<KetQuaDangNhapDto> StartSessionAsync(tai_khoan user, string? deviceName, CancellationToken cancellationToken)
     {
         var now = UtcNow;
         var refreshToken = NewRefreshToken();
@@ -213,7 +213,7 @@ public sealed class XacThucService(
         };
         await sessions.DLInsertAsync(session, cancellationToken);
 
-        return BuildResult(user, session.Id, refreshToken, isNewAccount);
+        return BuildResult(user, session.Id, refreshToken);
     }
 
     /// <summary>Đổi refresh token lấy cặp token mới. Token cũ bị dùng lại sau khoảng ân hạn thì thu hồi cả phiên.</summary>
@@ -262,7 +262,7 @@ public sealed class XacThucService(
             throw new UnauthorizedException();
         }
 
-        return BuildResult(user, session.Id, refreshToken, isNewAccount: false);
+        return BuildResult(user, session.Id, refreshToken);
     }
 
     /// <summary>Thu hồi phiên hiện tại.</summary>
@@ -277,6 +277,24 @@ public sealed class XacThucService(
     /// <exception cref="UnauthorizedException">Token không còn gắn với người dùng hợp lệ.</exception>
     public async Task<TaiKhoanDto> BLLayTaiKhoanHienTaiAsync(CancellationToken cancellationToken) =>
         ToDto(await GetCurrentUserEntityAsync(cancellationToken));
+
+    /// <summary>
+    /// Người dùng đã bấm một trong hai nút của màn onboarding: đánh dấu <c>is_dang_nhap_lan_dau = false</c>. Gọi lại nhiều
+    /// lần vẫn an toàn.
+    /// </summary>
+    /// <exception cref="UnauthorizedException">Token không còn gắn với người dùng hợp lệ.</exception>
+    public async Task<TaiKhoanDto> BLHoanTatDangNhapLanDauAsync(CancellationToken cancellationToken)
+    {
+        var user = await GetCurrentUserEntityAsync(cancellationToken);
+        if (user.is_dang_nhap_lan_dau)
+        {
+            user.is_dang_nhap_lan_dau = false;
+            user.MarkUpdated(currentUser.UserName, UtcNow);
+            await users.DLUpdateAsync(user, cancellationToken);
+        }
+
+        return ToDto(user);
+    }
 
     /// <summary>Đổi mật khẩu của chính mình và thu hồi các phiên khác.</summary>
     /// <exception cref="ValidationFailedException">Mật khẩu hiện tại sai hoặc mật khẩu mới không hợp lệ.</exception>
@@ -373,10 +391,10 @@ public sealed class XacThucService(
         }
     }
 
-    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken, bool isNewAccount)
+    private KetQuaDangNhapDto BuildResult(tai_khoan user, Guid sessionId, string refreshToken)
     {
         var token = tokenIssuer.CreateAccessToken(new AccessTokenRequest(user.Id, user.ten_dang_nhap ?? user.email ?? user.Id.ToString(), user.vai_tro, sessionId));
-        return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user), isNewAccount);
+        return new KetQuaDangNhapDto(token.Token, token.ExpiresInSeconds, refreshToken, ToDto(user));
     }
 
     /// <summary>Họ tên lấy từ Google (cột <c>ho_ten</c> tối đa 100 ký tự); không có thì lấy phần trước <c>@</c> của email.</summary>
@@ -399,7 +417,7 @@ public sealed class XacThucService(
 
     private static TaiKhoanDto ToDto(tai_khoan user) => new(
         user.Id, user.ten_dang_nhap, user.ho_ten, user.email, user.so_dien_thoai,
-        user.vai_tro, user.dang_hoat_dong, user.ngay_tao, user.ngay_chinh_sua);
+        user.vai_tro, user.dang_hoat_dong, user.ngay_tao, user.ngay_chinh_sua, user.is_dang_nhap_lan_dau);
 
     private static string NewRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 

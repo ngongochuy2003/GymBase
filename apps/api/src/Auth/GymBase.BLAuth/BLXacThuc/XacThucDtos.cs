@@ -67,7 +67,6 @@ public sealed class DatLaiMatKhauDto
 }
 
 /// <summary>
-/// Kết quả đăng nhập, đăng ký hoặc làm mới token. <paramref name="tai_khoan_moi"/> true khi tài khoản vừa được tạo trong
-/// chính lần gọi này; app dùng để hiện màn "Đăng ký thành công" đúng một lần.
+/// Kết quả đăng nhập hoặc làm mới token. <c>user.is_dang_nhap_lan_dau</c> cho app biết có hiện onboarding không.
 /// </summary>
-public sealed record KetQuaDangNhapDto(string access_token, int expires_in, string refresh_token, TaiKhoanDto user, bool tai_khoan_moi = false);
+public sealed record KetQuaDangNhapDto(string access_token, int expires_in, string refresh_token, TaiKhoanDto user);

@@ -12,7 +12,8 @@ public sealed record TaiKhoanDto(
     string vai_tro,
     bool dang_hoat_dong,
     DateTime ngay_tao,
-    DateTime? ngay_chinh_sua) : IHasId;
+    DateTime? ngay_chinh_sua,
+    bool is_dang_nhap_lan_dau) : IHasId;
 
 /// <summary>Body khi thêm người dùng. Id, ngày tạo không nhận từ client. Quy tắc: <see cref="TaiKhoanCreateValidator"/>.</summary>
 public sealed class TaiKhoanCreateDto

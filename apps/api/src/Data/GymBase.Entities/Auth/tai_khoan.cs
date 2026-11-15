@@ -29,4 +29,10 @@ public sealed class tai_khoan : BaseAuditableEntity
 
     /// <summary>Lúc người dùng tick đồng ý Điều khoản sử dụng và Chính sách bảo mật khi tự đăng ký (UTC). Null với tài khoản Admin tạo.</summary>
     public DateTime? ngay_dong_y_dieu_khoan { get; set; }
+
+    /// <summary>
+    /// true cho tới khi người dùng bấm một trong hai nút của màn onboarding sau lần đăng nhập đầu tiên; app dựa vào đây
+    /// để hiện onboarding. Tài khoản tạo mới mặc định true.
+    /// </summary>
+    public bool is_dang_nhap_lan_dau { get; set; } = true;
 }

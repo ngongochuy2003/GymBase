@@ -140,6 +140,9 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<bool>("is_dang_nhap_lan_dau")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("mat_khau_hash")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");

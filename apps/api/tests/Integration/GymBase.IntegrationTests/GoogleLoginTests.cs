@@ -84,16 +84,16 @@ public sealed class GoogleLoginTests : IAsyncLifetime
     [Theory]
     [InlineData(Web)]
     [InlineData(Mob)]
-    public async Task First_sign_in_creates_the_account_and_marks_it_as_new(string path)
+    public async Task First_sign_in_creates_the_account_with_the_first_login_flag(string path)
     {
         var response = await Google(Accept(), path);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await Json(response);
-        Assert.True(body.GetProperty("tai_khoan_moi").GetBoolean());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("access_token").GetString()));
         Assert.False(string.IsNullOrEmpty(body.GetProperty("refresh_token").GetString()));
         var user = body.GetProperty("user");
+        Assert.True(user.GetProperty("is_dang_nhap_lan_dau").GetBoolean());
         Assert.Equal("nguoi.moi@gmail.test", user.GetProperty("email").GetString());
         Assert.Equal("Người Mới", user.GetProperty("ho_ten").GetString());
         Assert.Equal("User", user.GetProperty("vai_tro").GetString());
@@ -128,13 +128,13 @@ public sealed class GoogleLoginTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Second_sign_in_reuses_the_account_and_is_not_marked_new()
+    public async Task Second_sign_in_reuses_the_account_and_keeps_the_flag_until_onboarding_is_completed()
     {
         var first = await Json(await Google(Accept()));
 
         var second = await Json(await Google(Accept()));
 
-        Assert.False(second.GetProperty("tai_khoan_moi").GetBoolean());
+        Assert.True(second.GetProperty("user").GetProperty("is_dang_nhap_lan_dau").GetBoolean());
         Assert.Equal(first.GetProperty("user").GetProperty("id").GetString(), second.GetProperty("user").GetProperty("id").GetString());
     }
 
@@ -145,7 +145,6 @@ public sealed class GoogleLoginTests : IAsyncLifetime
 
         var second = await Json(await Google(Accept(subject: "sub-doi-email", email: "moi@gmail.test")));
 
-        Assert.False(second.GetProperty("tai_khoan_moi").GetBoolean());
         Assert.Equal(first.GetProperty("user").GetProperty("id").GetString(), second.GetProperty("user").GetProperty("id").GetString());
         Assert.Equal("cu@gmail.test", second.GetProperty("user").GetProperty("email").GetString());
         Assert.Null(await StoredUser("moi@gmail.test"));
