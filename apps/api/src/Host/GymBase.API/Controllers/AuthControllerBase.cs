@@ -21,15 +21,15 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     public async Task<ActionResult<KetQuaDangNhapDto>> Login(DangNhapDto dto, CancellationToken cancellationToken) =>
         Ok(await authService.BLDangNhapAsync(dto, cancellationToken));
 
-    /// <summary>Người mới tự đăng ký bằng mật khẩu; có phiên ngay. 409 nếu email đã dùng.</summary>
+    /// <summary>Người mới tự đăng ký bằng mật khẩu; không có phiên, app đưa về màn đăng nhập. 409 nếu email đã dùng.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
-    public async Task<ActionResult<KetQuaDangNhapDto>> Register(DangKyDto dto, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<TaiKhoanDto>> Register(DangKyDto dto, CancellationToken cancellationToken) =>
         Ok(await authService.BLDangKyAsync(dto, cancellationToken));
 
     /// <summary>
-    /// Đăng nhập hoặc đăng ký bằng Google bằng ID token; lần đầu thì tạo tài khoản (<c>tai_khoan_moi = true</c>).
+    /// Đăng nhập hoặc đăng ký bằng Google bằng ID token; lần đầu thì tạo tài khoản (<c>is_dang_nhap_lan_dau = true</c>).
     /// 401 nếu token không hợp lệ, 409 nếu email đã thuộc tài khoản khác.
     /// </summary>
     [HttpPost("google")]
@@ -57,6 +57,11 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     [HttpGet("me")]
     public async Task<ActionResult<TaiKhoanDto>> Me(CancellationToken cancellationToken) =>
         Ok(await authService.BLLayTaiKhoanHienTaiAsync(cancellationToken));
+
+    /// <summary>Người dùng đã bấm một trong hai nút của màn onboarding; trả tài khoản với <c>is_dang_nhap_lan_dau = false</c>.</summary>
+    [HttpPost("hoan-tat-dang-nhap-lan-dau")]
+    public async Task<ActionResult<TaiKhoanDto>> HoanTatDangNhapLanDau(CancellationToken cancellationToken) =>
+        Ok(await authService.BLHoanTatDangNhapLanDauAsync(cancellationToken));
 
     /// <summary>
     /// Quyền theo hồ sơ của người đang đăng nhập (nhóm, trạng thái xác minh PT, năng lực), tính từ database mỗi lần gọi.

@@ -18,11 +18,10 @@ type Session = {
   signIn(email: string, password: string): Promise<AuthResult>;
   /** Đăng nhập hoặc đăng ký bằng ID token của Google; ném `ApiError` khi không thành công. */
   signInWithGoogle(idToken: string): Promise<AuthResult>;
-  /** Đăng ký bằng mật khẩu, có phiên ngay; ném `ApiError` khi không thành công. */
-  register(input: RegisterInput): Promise<AuthResult>;
-  /** True ngay sau khi tài khoản vừa được tạo, cho tới khi người dùng chọn thiết lập hồ sơ hoặc bỏ qua. */
-  pendingWelcome: boolean;
-  completeWelcome(): void;
+  /** Đăng ký bằng mật khẩu, không có phiên (người dùng đăng nhập sau); ném `ApiError` khi không thành công. */
+  register(input: RegisterInput): Promise<AuthUser>;
+  /** Người dùng bấm một trong hai nút của màn onboarding: ghi lên server rồi tắt cờ lần đầu của phiên. */
+  completeOnboarding(): Promise<void>;
   signOut(): Promise<void>;
 };
 const SessionContext = createContext<Session | null>(null);
@@ -30,7 +29,6 @@ const SessionContext = createContext<Session | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
-  const [pendingWelcome, setPendingWelcome] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -57,13 +55,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  /** Lưu token và chuyển sang trạng thái đã đăng nhập; `tai_khoan_moi` quyết định có hiện màn "Đăng ký thành công" không. */
+  /** Lưu token và chuyển sang trạng thái đã đăng nhập; `user.is_dang_nhap_lan_dau` quyết định có hiện onboarding không. */
   const startSession = useCallback(async (result: AuthResult) => {
     await authRuntime.save({
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
     });
-    setPendingWelcome(result.tai_khoan_moi);
     setUser(result.user);
     return result;
   }, []);
@@ -76,15 +73,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const register = useCallback(
     async (input: RegisterInput) =>
-      startSession(
-        await authApi.register({
-          ...input,
-          ho_ten: input.ho_ten.trim(),
-          email: input.email.trim().toLowerCase(),
-          so_dien_thoai: input.so_dien_thoai.trim(),
-        }),
-      ),
-    [startSession],
+      authApi.register({
+        ...input,
+        ho_ten: input.ho_ten.trim(),
+        email: input.email.trim().toLowerCase(),
+        so_dien_thoai: input.so_dien_thoai.trim(),
+      }),
+    [],
   );
 
   const signInWithGoogle = useCallback(
@@ -92,7 +87,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     [startSession],
   );
 
-  const completeWelcome = useCallback(() => setPendingWelcome(false), []);
+  const completeOnboarding = useCallback(async () => {
+    try {
+      setUser(await authApi.hoanTatDangNhapLanDau());
+    } catch {
+      // Không chặn người dùng khi mất mạng: vào app bình thường, lần mở sau server vẫn báo lần đầu nên onboarding hiện lại.
+      setUser((current) => (current ? { ...current, is_dang_nhap_lan_dau: false } : current));
+    }
+  }, []);
 
   const signOut = useCallback(async () => {
     try {
@@ -100,7 +102,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
       await authApi.logout().catch(() => undefined);
     } finally {
       setUser(null);
-      setPendingWelcome(false);
       await authRuntime.clear();
       await googleSignIn.signOut();
     }
@@ -113,11 +114,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
       signIn,
       signInWithGoogle,
       register,
-      pendingWelcome,
-      completeWelcome,
+      completeOnboarding,
       signOut,
     }),
-    [ready, user, signIn, signInWithGoogle, register, pendingWelcome, completeWelcome, signOut],
+    [ready, user, signIn, signInWithGoogle, register, completeOnboarding, signOut],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

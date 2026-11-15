@@ -9,7 +9,6 @@ const refreshed: AuthResult = {
   expires_in: 900,
   refresh_token: 'refresh-2',
   user,
-  tai_khoan_moi: false,
 };
 
 function setup(initial: Tokens | null, refresh = jest.fn(async () => refreshed)) {

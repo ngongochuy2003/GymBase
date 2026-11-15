@@ -1,7 +1,15 @@
-import { useState, type PropsWithChildren, type ReactNode } from 'react';
+import {
+  useState,
+  type ComponentRef,
+  type PropsWithChildren,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -14,17 +22,49 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../theme/theme';
 
+type IconName = keyof typeof Ionicons.glyphMap;
+
 cssInterop(SafeAreaView, { className: 'style' });
 
-export function Screen({ children }: PropsWithChildren) {
+/**
+ * Khung màn hình có cuộn và né bàn phím. `bottomInset` dành cho màn không có thanh tab (phủ kín đáy màn hình), để nội
+ * dung không chui xuống dưới thanh điều hướng của hệ thống.
+ */
+export function Screen({
+  children,
+  bottomInset = false,
+}: PropsWithChildren<{ bottomInset?: boolean }>) {
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerClassName="flex-grow items-center p-6 pb-10"
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={bottomInset ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']}
+    >
+      {/* iOS đẩy nội dung lên theo bàn phím; Android đã tự co cửa sổ (adjustResize) nên chỉ cần cuộn tới ô đang gõ. */}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View className="w-full max-w-[680px] gap-5">{children}</View>
-      </ScrollView>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
+          contentContainerClassName="flex-grow items-center p-6 pb-10"
+        >
+          <View className="w-full max-w-[680px] gap-5">{children}</View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+/**
+ * Khung màn hình không cuộn, vừa khít màn hình: các khối có chiều cao riêng (logo, cụm nút) giữ nguyên, khối `flex-1` ăn phần
+ * còn lại. Chừa vùng an toàn cả bốn phía (thanh home trên iPhone, thanh điều hướng trên Android). Dùng cho màn không có ô
+ * nhập, như màn chào mừng.
+ */
+export function FixedScreen({ children }: PropsWithChildren) {
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom', 'left', 'right']}>
+      <View className="w-full max-w-[680px] flex-1 gap-5 self-center p-6 pb-4">{children}</View>
     </SafeAreaView>
   );
 }
@@ -33,13 +73,15 @@ export function AppText({
   children,
   muted = false,
   title = false,
-}: PropsWithChildren<{ muted?: boolean; title?: boolean }>) {
+  className,
+}: PropsWithChildren<{ muted?: boolean; title?: boolean; className?: string }>) {
   return (
     <Text
       className={cn(
         'text-[15px] leading-[23px]',
         muted ? 'text-muted-foreground' : 'text-foreground',
         title && 'text-[28px] font-bold leading-9 tracking-[-0.8px]',
+        className,
       )}
     >
       {children}
@@ -59,15 +101,25 @@ export function Button({
   secondary = false,
   disabled = false,
   loading = false,
+  pill = false,
+  leading,
+  trailingIcon,
 }: {
   label: string;
   onPress(): void;
   secondary?: boolean;
   disabled?: boolean;
   loading?: boolean;
+  /** Bo tròn hẳn, dùng cho nút ở các màn auth theo thiết kế. */
+  pill?: boolean;
+  /** Nội dung đặt trước nhãn, ví dụ logo Google. */
+  leading?: ReactNode;
+  /** Biểu tượng cuối nhãn, ví dụ mũi tên `>`. */
+  trailingIcon?: IconName;
 }) {
   const { colors } = useTheme();
   const inactive = disabled || loading;
+  const textColor = secondary ? colors.text : colors.onPrimary;
   return (
     <Pressable
       accessibilityRole="button"
@@ -76,7 +128,8 @@ export function Button({
       disabled={inactive}
       onPress={onPress}
       className={cn(
-        'min-h-[50px] items-center justify-center rounded-[14px] border border-border px-5 py-3.5',
+        'min-h-[50px] items-center justify-center border border-border px-5 py-3.5',
+        pill ? 'rounded-full' : 'rounded-[14px]',
         secondary ? 'bg-card' : 'bg-primary',
         inactive ? 'opacity-50' : 'active:opacity-75',
       )}
@@ -84,30 +137,45 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={secondary ? colors.primary : colors.onPrimary} />
       ) : (
-        <Text
-          className={cn(
-            'text-[15px] font-bold',
-            secondary ? 'text-foreground' : 'text-primary-foreground',
-          )}
-        >
-          {label}
-        </Text>
+        <View className="flex-row items-center justify-center gap-2.5">
+          {leading}
+          <Text
+            className={cn(
+              'text-[15px] font-bold',
+              secondary ? 'text-foreground' : 'text-primary-foreground',
+            )}
+          >
+            {label}
+          </Text>
+          {trailingIcon ? <Ionicons name={trailingIcon} size={18} color={textColor} /> : null}
+        </View>
       )}
     </Pressable>
   );
 }
-
-type IconName = keyof typeof Ionicons.glyphMap;
 
 export function TextField({
   label,
   error,
   icon,
   passwordToggle = false,
+  hideLabel = false,
+  trailing,
+  inputRef,
+  errorAction,
   ...props
 }: TextInputProps & {
+  /** Tên ô: hiện phía trên ô, và luôn là nhãn truy cập cho trình đọc màn hình. */
   label: string;
   error?: string;
+  /** Kiểu thiết kế auth: không hiện nhãn phía trên, `label` làm placeholder (trừ khi truyền `placeholder`). */
+  hideLabel?: boolean;
+  /** Nội dung cuối ô, ví dụ biểu tượng (i). */
+  trailing?: ReactNode;
+  /** Ref của ô nhập, để form đưa con trỏ vào ô lỗi (`field.ref` của react-hook-form). */
+  inputRef?: Ref<ComponentRef<typeof TextInput>>;
+  /** Nút hành động nối ngay sau câu lỗi, dạng `<Text>` có `onPress` (ví dụ liên kết "Đăng nhập"). */
+  errorAction?: ReactNode;
   /** Biểu tượng bên trái ô nhập. */
   icon?: IconName;
   /** Thêm nút hiện/ẩn nội dung, dùng cho ô mật khẩu. */
@@ -118,7 +186,7 @@ export function TextField({
   const toggleLabel = `${visible ? 'Ẩn' : 'Hiện'} ${label.toLowerCase()}`;
   return (
     <View className="gap-2">
-      <AppText>{label}</AppText>
+      {hideLabel ? null : <AppText>{label}</AppText>}
       <View
         className={cn(
           'min-h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
@@ -128,6 +196,8 @@ export function TextField({
         {icon ? <Ionicons name={icon} size={20} color={colors.muted} /> : null}
         <TextInput
           {...props}
+          ref={inputRef}
+          placeholder={props.placeholder ?? (hideLabel ? label : undefined)}
           secureTextEntry={passwordToggle ? !visible : props.secureTextEntry}
           accessibilityLabel={label}
           placeholderTextColor={colors.muted}
@@ -147,10 +217,13 @@ export function TextField({
             />
           </Pressable>
         ) : null}
+        {trailing}
       </View>
       {error ? (
         <Text accessibilityRole="alert" className="text-destructive">
           {error}
+          {errorAction ? ' ' : null}
+          {errorAction}
         </Text>
       ) : null}
     </View>

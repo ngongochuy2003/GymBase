@@ -27,18 +27,23 @@ Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucServ
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
 | `POST /login` | Không | Body `{ email, mat_khau }`. 200: token kèm thông tin người dùng. 401 `AUTH_INVALID_CREDENTIALS`. Email không đúng định dạng: 400 |
-| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: như `login`, thêm `tai_khoan_moi: true`. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
-| `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`, `tai_khoan_moi: true` ở lần đầu. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
+| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: thông tin tài khoản vừa tạo (`is_dang_nhap_lan_dau: true`), **không có token và không có phiên**. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
+| `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`; tài khoản tạo mới có `user.is_dang_nhap_lan_dau: true`. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
 | `POST /refresh` | Không | 200: cặp token mới. 401 `UNAUTHORIZED` |
 | `POST /logout` | Có | 204: thu hồi phiên hiện tại |
 | `GET /me` | Có | 200: thông tin người dùng lấy từ DB |
+| `POST /hoan-tat-dang-nhap-lan-dau` | Có | 200: thông tin người dùng với `is_dang_nhap_lan_dau: false`. Gọi lại vẫn an toàn |
 | `POST /change-password` | Có | 204: thu hồi các phiên khác |
 
 ### 2.1. Đăng ký bằng mật khẩu
 
-Người mới tự tạo tài khoản và có phiên ngay, nên không phải đăng nhập lại. Response của `login`, `register`, `refresh` có cùng dạng;
-`tai_khoan_moi` là `true` chỉ ở lần `register` (và lần đầu đăng nhập Google), `false` ở mọi lần khác, để app hiện màn "Đăng ký thành công"
-đúng một lần.
+Người mới tự tạo tài khoản nhưng **chưa có phiên**: app đưa người dùng về màn đăng nhập. Response của `login`, `google`, `refresh`
+có cùng dạng (token kèm `user`).
+
+Cột `tai_khoan.is_dang_nhap_lan_dau` (trả ra là `user.is_dang_nhap_lan_dau`) là `true` cho tới khi người dùng bấm một trong hai nút
+của màn onboarding, lúc đó app gọi `POST /hoan-tat-dang-nhap-lan-dau` để đặt `false`. Mỗi lần đăng nhập app đọc cờ này: còn `true` thì
+hiện onboarding, nên thoát app giữa chừng thì lần sau vẫn hiện. Tài khoản có trước khi thêm cột được đặt `false`. Đăng nhập Google lần
+đầu tạo tài khoản và đăng nhập cùng lúc, cờ cũng là `true`.
 
 | Trường | Quy tắc |
 | --- | --- |
@@ -144,12 +149,12 @@ của mobile đã làm vậy).
 | Tối thiểu | 8 ký tự |
 | Tối đa | 128 ký tự, không cắt bớt, không trim |
 | Loại ký tự | Không ép chữ hoa, số, ký tự đặc biệt; cho phép mọi ký tự |
-| Danh sách chặn | Từ chối mật khẩu phổ biến và mật khẩu chứa tên đăng nhập (với tài khoản không có tên đăng nhập thì chưa kiểm tra phần trước `@` của email) |
+| Danh sách chặn | Không có: không từ chối mật khẩu phổ biến, không cấm mật khẩu chứa email hay tên đăng nhập (chốt 15/11) |
 | Đổi định kỳ | Không bắt buộc; chỉ bắt đổi khi có dấu hiệu lộ |
 
 **Về mức 8 ký tự (chốt 08/11):** NIST và OWASP đặt tối thiểu 15 ký tự khi không có xác thực nhiều lớp, và
 8 ký tự khi có. GymBase chọn 8 để học viên dễ dùng, tức là thấp hơn khuyến nghị cho đến khi có xác thực nhiều
-lớp. Danh sách chặn và giới hạn đăng nhập sai vì vậy là **bắt buộc**. Đăng nhập Google (mục 8) giúp giảm số người dùng mật khẩu. Nên
+lớp. Từ 15/11 chỉ còn kiểm tra độ dài, nên giới hạn đăng nhập sai (mục 6) là lớp chống dò mật khẩu duy nhất. Đăng nhập Google (mục 8) giúp giảm số người dùng mật khẩu. Nên
 xem lại mức này cho tài khoản `Admin`.
 
 ## 6. Chống dò mật khẩu

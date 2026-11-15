@@ -21,6 +21,7 @@ public static class AuthBusinessExtensions
         services.AddScoped<TaiKhoanService>();
         services.AddScoped<XacThucService>();
         services.AddScoped<ITaiKhoanTrangThaiProvider, TaiKhoanTrangThaiService>();
+        services.AddScoped<ITaiKhoanHoTenProvider, TaiKhoanHoTenService>();
         return services;
     }
 }
