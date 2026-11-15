@@ -3,6 +3,7 @@ import {
   Image,
   StyleSheet,
   View,
+  type ImageLoadEvent,
   type ImageResizeMode,
   type ImageStyle,
   type StyleProp,
@@ -18,6 +19,7 @@ export interface RemoteImageProps {
   /** Mặc định bo góc ảnh theo token; avatar truyền `circle`. */
   circle?: boolean;
   resizeMode?: ImageResizeMode;
+  onLoad?(event: ImageLoadEvent): void;
 }
 
 /**
@@ -50,6 +52,7 @@ export function RemoteImage({
   style,
   circle,
   resizeMode = 'cover',
+  onLoad,
 }: RemoteImageProps) {
   const [failed, setFailed] = useState(false);
   const resolvedUri = resolveRemoteImageUri(uri);
@@ -76,6 +79,7 @@ export function RemoteImage({
       source={{ uri: resolvedUri }}
       resizeMode={resizeMode}
       onError={() => setFailed(true)}
+      onLoad={onLoad}
       style={[
         styles.image,
         { borderRadius: radius },

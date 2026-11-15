@@ -2,6 +2,7 @@ import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme/tokens';
 import { AppHeader, BottomTabBar, SubHeader } from '../ui-kit';
+import { CollapsibleHeaderContext } from './collapsible-header-context';
 import { getSection } from './section-registry';
 import type { ScreenRendererProps } from './types';
 import { useCollapsibleHeader } from './use-collapsible-header';
@@ -47,31 +48,57 @@ export function ScreenRenderer({ config, onTabPress, overlay }: ScreenRendererPr
             {config.subHeader ? <SubHeader {...config.subHeader} /> : null}
           </Animated.View>
         ) : null}
-        <ScrollView
-          testID="screen-scroll-view"
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[
-            styles.content,
-            isCollapsible && { paddingTop: headerHeight },
-          ]}
-          style={styles.scroll}
-          onScroll={isCollapsible ? onScroll : undefined}
-          scrollEventThrottle={16}
-        >
-          {visibleSections.map((section) => {
-            const Component = getSection(section.type);
-            if (!Component) {
-              return (
-                <View key={section.id} accessibilityRole="alert" style={styles.unknown}>
-                  <Text style={styles.unknownText}>
-                    {`Section chưa đăng ký: "${section.type}" (${section.id})`}
-                  </Text>
-                </View>
-              );
-            }
-            return <Component key={section.id} {...(section.props ?? {})} />;
-          })}
-        </ScrollView>
+        {config.scrollable === false ? (
+          <CollapsibleHeaderContext.Provider
+            value={{
+              headerHeight,
+              onScroll: isCollapsible ? onScroll : undefined,
+              isCollapsible,
+            }}
+          >
+            <View style={styles.flexContainer}>
+              {visibleSections.map((section) => {
+                const Component = getSection(section.type);
+                if (!Component) {
+                  return (
+                    <View key={section.id} accessibilityRole="alert" style={styles.unknown}>
+                      <Text style={styles.unknownText}>
+                        {`Section chưa đăng ký: "${section.type}" (${section.id})`}
+                      </Text>
+                    </View>
+                  );
+                }
+                return <Component key={section.id} {...(section.props ?? {})} />;
+              })}
+            </View>
+          </CollapsibleHeaderContext.Provider>
+        ) : (
+          <ScrollView
+            testID="screen-scroll-view"
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[
+              styles.content,
+              isCollapsible && { paddingTop: headerHeight },
+            ]}
+            style={styles.scroll}
+            onScroll={isCollapsible ? onScroll : undefined}
+            scrollEventThrottle={16}
+          >
+            {visibleSections.map((section) => {
+              const Component = getSection(section.type);
+              if (!Component) {
+                return (
+                  <View key={section.id} accessibilityRole="alert" style={styles.unknown}>
+                    <Text style={styles.unknownText}>
+                      {`Section chưa đăng ký: "${section.type}" (${section.id})`}
+                    </Text>
+                  </View>
+                );
+              }
+              return <Component key={section.id} {...(section.props ?? {})} />;
+            })}
+          </ScrollView>
+        )}
       </View>
       <BottomTabBar tabs={config.bottomTabs} activeId={config.activeTabId} onChange={onTabPress} />
       {overlay}
@@ -87,10 +114,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   top: {
-    paddingHorizontal: theme.spacing.lg - 2,
-    paddingTop: theme.spacing.sm - 3,
-    paddingBottom: theme.spacing.sm - 3,
-    gap: theme.spacing.lg,
     backgroundColor: theme.colors.background,
   },
   collapsibleTop: {
@@ -103,6 +126,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   scroll: { flex: 1 },
+  flexContainer: { flex: 1 },
   content: {
     paddingHorizontal: 0,
     paddingBottom: theme.spacing.xl,

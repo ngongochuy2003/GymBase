@@ -68,6 +68,10 @@ export function formatRelativeTimeVi(isoDate: string | null | undefined, now = n
 }
 
 export function mapBaiVietDtoToFeedPost(dto: BaiVietDto, now?: Date): FeedPostData {
+  const images = (dto.hinh_anh_urls ?? [])
+    .map((url) => resolveMediaUrl(url))
+    .filter((url): url is string => Boolean(url));
+
   return {
     id: dto.id,
     author: {
@@ -76,7 +80,8 @@ export function mapBaiVietDtoToFeedPost(dto: BaiVietDto, now?: Date): FeedPostDa
     },
     timeLabel: formatRelativeTimeVi(dto.ngay_dang ?? dto.ngay_tao, now),
     content: dto.noi_dung ?? '',
-    imageUri: resolveMediaUrl(dto.hinh_anh_urls?.[0]),
+    imageUri: images[0],
+    imageUris: images,
     topicId: dto.chu_de ?? undefined,
     counts: {
       like: dto.so_luot_thich ?? 0,
@@ -88,21 +93,71 @@ export function mapBaiVietDtoToFeedPost(dto: BaiVietDto, now?: Date): FeedPostDa
   };
 }
 
+export interface FeedPageResult {
+  posts: FeedPostData[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+}
+
 export interface FeedRepository {
-  getFeedPosts(tab: string): Promise<FeedPostData[]>;
+  getFeedPosts(tab: string, page?: number, pageSize?: number): Promise<FeedPostData[]>;
+  getPaginatedFeed(tab: string, page?: number, pageSize?: number): Promise<FeedPageResult>;
+  getPostById(postId: string): Promise<FeedPostData | null>;
   toggleLike(postId: string): Promise<KetQuaThichBaiVietDto>;
 }
 
 export function createFeedRepository(
   client: AxiosInstance = createMobHttpClient(),
 ): FeedRepository {
+  async function getPaginatedFeed(
+    tab: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<FeedPageResult> {
+    const response = await client.get<PagingResultDto<BaiVietDto>>('/baiviet/feed', {
+      params: { tab, page, page_size: pageSize },
+    });
+    const items = response.data?.data ?? [];
+    const meta = response.data?.meta;
+    const currentPage = meta?.page ?? page;
+    const currentPageSize = meta?.page_size ?? pageSize;
+    const total = meta?.total ?? items.length;
+    const totalPages =
+      meta?.total_pages && meta.total_pages > 0
+        ? meta.total_pages
+        : Math.max(1, Math.ceil(total / (currentPageSize || 1)));
+    const hasNextPage = currentPage < totalPages;
+
+    return {
+      posts: items.map((dto) => mapBaiVietDtoToFeedPost(dto)),
+      page: currentPage,
+      pageSize: currentPageSize,
+      total,
+      totalPages,
+      hasNextPage,
+    };
+  }
+
   return {
-    async getFeedPosts(tab: string): Promise<FeedPostData[]> {
-      const response = await client.get<PagingResultDto<BaiVietDto>>('/baiviet/feed', {
-          params: { tab, page: 1, page_size: 20 },
-        });
-        const items = response.data?.data ?? [];
-      return items.map((dto) => mapBaiVietDtoToFeedPost(dto));
+    getPaginatedFeed,
+    async getFeedPosts(tab: string, page = 1, pageSize = 20): Promise<FeedPostData[]> {
+      const res = await getPaginatedFeed(tab, page, pageSize);
+      return res.posts;
+    },
+
+    async getPostById(postId: string): Promise<FeedPostData | null> {
+      try {
+        const response = await client.get<BaiVietDto>(`/baiviet/${postId}`);
+        if (response.data) {
+          return mapBaiVietDtoToFeedPost(response.data);
+        }
+        return null;
+      } catch {
+        return null;
+      }
     },
 
     async toggleLike(postId: string): Promise<KetQuaThichBaiVietDto> {

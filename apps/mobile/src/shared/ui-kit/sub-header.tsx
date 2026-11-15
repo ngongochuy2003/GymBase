@@ -1,4 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { Icon } from '../icons';
 import { theme } from '../theme/tokens';
 
@@ -6,21 +13,37 @@ export interface SubHeaderConfig {
   title: string;
   onBack?(): void;
   action?: { label: string; onPress(): void; disabled?: boolean };
+  style?: StyleProp<ViewStyle>;
+  titleSize?: number;
+  backIconSize?: number;
 }
 
 /** Thanh phụ dưới AppHeader: nút back, tiêu đề, nút hành động dạng pill. */
-export function SubHeader({ title, onBack, action }: SubHeaderConfig) {
+export function SubHeader({
+  title,
+  onBack,
+  action,
+  style,
+  titleSize,
+  backIconSize,
+}: SubHeaderConfig) {
+  const iconSize = backIconSize ?? theme.iconSize.lg - 2;
+  const resolvedTitleSize = titleSize ?? theme.font.size.xl - 2;
+
   return (
-    <View style={styles.row}>
+    <View style={[styles.subHeader, style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Quay lại"
         onPress={onBack}
         hitSlop={8}
       >
-        <Icon name="back" size={theme.iconSize.lg} />
+        <Icon name="back" size={iconSize} />
       </Pressable>
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text
+        accessibilityRole="header"
+        style={[styles.title, { fontSize: resolvedTitleSize }]}
+      >
         {title}
       </Text>
       {action ? (
@@ -40,7 +63,14 @@ export function SubHeader({ title, onBack, action }: SubHeaderConfig) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg - 2,
+    paddingTop: theme.spacing.md + 4, 
+    paddingBottom: theme.spacing.sm - 3,
+  },
   title: {
     flex: 1,
     fontSize: theme.font.size.xl,

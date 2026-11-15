@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { Icon } from '../icons';
 import { theme } from '../theme/tokens';
 import { RemoteImage } from './remote-image';
@@ -18,6 +25,7 @@ export interface AppHeaderProps {
   onActionPress?(id: string): void;
   onAvatarPress?(): void;
   renderAction?(action: HeaderAction): ReactNode;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function AppHeader({
@@ -26,9 +34,10 @@ export function AppHeader({
   onActionPress,
   onAvatarPress,
   renderAction,
+  style,
 }: AppHeaderProps) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.header, style]}>
       <View style={styles.brand}>
         <Text style={styles.logo}>G</Text>
         <Text style={styles.brandText}>GymBase</Text>
@@ -45,7 +54,7 @@ export function AppHeader({
               onPress={() => onActionPress?.(action.id)}
               hitSlop={8}
             >
-              <Icon name={action.icon} size={theme.iconSize.md-3} />
+              <Icon name={action.icon} size={theme.iconSize.md - 3} />
               {action.badge ? <View testID={`badge-${action.id}`} style={styles.badge} /> : null}
             </Pressable>
           ),
@@ -64,7 +73,14 @@ export function AppHeader({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.lg - 2,
+    paddingTop: theme.spacing.sm - 3,
+    paddingBottom: theme.spacing.sm - 3,
+  },
   brand: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   logo: { fontSize: 26, fontWeight: '900', color: theme.colors.primary, fontStyle: 'italic' },
   brandText: {

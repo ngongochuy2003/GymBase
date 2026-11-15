@@ -3,17 +3,14 @@ import { useRouter } from 'expo-router';
 import { useSession } from '@/core/auth/session';
 import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
-import { BottomTabBar } from '@/shared/ui-kit';
-import { EmptyState, ErrorState, LoadingState, Screen } from '@/shared/components/ui';
 import { resolveMediaUrl } from '../api/feed-api';
 import { PostList } from '../components/post-list';
 import { useFeedPosts, useToggleLikeMutation } from '../hooks/use-feed-posts';
 import { feedFilters, postActionTemplates } from '../config/feed-config';
 import { feedTabs } from '../config/tabs';
+import type { FeedPostData } from '../types';
 
 registerSection('postList', PostList);
-
-const EMPTY_POSTS: import('../types').FeedPostData[] = [];
 
 export function FeedScreen() {
   const router = useRouter();
@@ -21,7 +18,7 @@ export function FeedScreen() {
   const { user } = useSession();
   const [activeFilter, setActiveFilter] = useState(feedFilters[0]?.id ?? 'for-you');
   const feed = useFeedPosts(activeFilter);
-  const posts = feed.data ?? EMPTY_POSTS;
+  const posts = feed.posts;
   const { mutate: toggleLike } = useToggleLikeMutation();
 
   const handleActionPress = useCallback(
@@ -31,6 +28,33 @@ export function FeedScreen() {
       }
     },
     [toggleLike],
+  );
+
+  const handleEndReached = useCallback(() => {
+    if (!feed.isFetchingNextPage && feed.hasNextPage) {
+      void feed.fetchNextPage();
+    }
+  }, [feed]);
+
+  const handleRefresh = useCallback(() => {
+    void feed.refetch();
+  }, [feed]);
+
+  const handleRetry = useCallback(() => {
+    void feed.refetch();
+  }, [feed]);
+
+  const handleOpenPostDetail = useCallback(
+    (post: FeedPostData) => {
+      router.push({
+        pathname: '/(protected)/post-detail',
+        params: {
+          postId: post.id,
+          postJson: JSON.stringify(post),
+        },
+      });
+    },
+    [router],
   );
 
   const avatarUri = useMemo(() => {
@@ -52,9 +76,12 @@ export function FeedScreen() {
     return undefined;
   }, [posts, user]);
 
+  const isLoading = feed.isPending || (feed.isFetching && !feed.isFetchingNextPage);
+
   const config = useMemo<ScreenConfig>(
     () => ({
       id: 'feed',
+      scrollable: false, // Dùng FlatList ảo hóa trong PostList làm scroll view chính
       header: {
         rightActions: DEFAULT_HEADER_ACTIONS,
         avatarUri,
@@ -62,31 +89,50 @@ export function FeedScreen() {
       },
       sections: [
         {
-          id: 'filters',
-          type: 'filterChips',
-          props: { items: feedFilters, activeId: activeFilter, onChange: setActiveFilter },
-        },
-        {
           id: 'posts',
           type: 'postList',
           props: {
             posts,
             actionTemplates: postActionTemplates,
             onActionPress: handleActionPress,
+            filterChipsProps: {
+              items: feedFilters,
+              activeId: activeFilter,
+              onChange: setActiveFilter,
+            },
+            onEndReached: handleEndReached,
+            hasNextPage: feed.hasNextPage,
+            isFetchingNextPage: feed.isFetchingNextPage,
+            onRefresh: handleRefresh,
+            refreshing: feed.isRefetching,
+            isLoading,
+            isError: feed.isError,
+            onRetry: handleRetry,
+            onPostPress: handleOpenPostDetail,
+            onImagePress: (post: FeedPostData) => handleOpenPostDetail(post),
           },
         },
       ],
       bottomTabs: feedTabs,
       activeTabId: 'home',
     }),
-    [activeFilter, avatarUri, handleActionPress, posts, router],
+    [
+      activeFilter,
+      avatarUri,
+      feed.hasNextPage,
+      feed.isError,
+      feed.isFetchingNextPage,
+      feed.isRefetching,
+      handleActionPress,
+      handleEndReached,
+      handleOpenPostDetail,
+      handleRefresh,
+      handleRetry,
+      isLoading,
+      posts,
+      router,
+    ],
   );
 
-  const footer = <BottomTabBar tabs={feedTabs} activeId="home" onChange={onTabPress} />;
-
-  if (feed.isPending) return <Screen footer={footer}><LoadingState /></Screen>;
-  if (feed.isError) return <Screen footer={footer}><ErrorState message="Không tải được bảng tin từ máy chủ." onRetry={() => void feed.refetch()} /></Screen>;
-  if (posts.length === 0) return <Screen footer={footer}><EmptyState message="Chưa có bài viết. Hãy là người đầu tiên chia sẻ tiến trình tập luyện." /></Screen>;
   return <ScreenRenderer config={config} onTabPress={onTabPress} />;
 }
-

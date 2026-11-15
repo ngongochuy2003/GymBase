@@ -22,6 +22,12 @@ export interface ScreenConfig {
   activeTabId?: string;
   /** Cho phép header tự động ẩn khi vuốt xuống và từ từ hiện ra khi vuốt lên (mặc định: true khi có header). */
   collapsibleHeader?: boolean;
+  /**
+   * Nếu `false`, ScreenRenderer sẽ không bọc toàn bộ màn hình trong ScrollView.
+   * Dùng cho các màn hình có FlatList ảo hóa riêng (như bảng tin Feed) để đạt 60fps và tránh nested virtualized lists.
+   * Mặc định: true.
+   */
+  scrollable?: boolean;
 }
 
 export interface ScreenRendererProps {
