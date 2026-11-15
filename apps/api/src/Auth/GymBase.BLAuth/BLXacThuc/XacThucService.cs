@@ -308,7 +308,7 @@ public sealed class XacThucService(
             throw new ValidationFailedException(nameof(DoiMatKhauDto.mat_khau_cu), "Mật khẩu hiện tại không đúng.");
         }
 
-        await SetPasswordAsync(user, dto.mat_khau_moi, nameof(DoiMatKhauDto.mat_khau_moi), cancellationToken);
+        await SetPasswordAsync(user, dto.mat_khau_moi, cancellationToken);
         await sessions.DLRevokeAllOfUserAsync(user.Id, currentUser.SessionId, UtcNow, cancellationToken);
     }
 
@@ -321,7 +321,7 @@ public sealed class XacThucService(
         var user = await users.DLGetByIdAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Không tìm thấy người dùng hoặc người dùng đã bị xóa.");
 
-        await SetPasswordAsync(user, dto.mat_khau_moi, nameof(DatLaiMatKhauDto.mat_khau_moi), cancellationToken);
+        await SetPasswordAsync(user, dto.mat_khau_moi, cancellationToken);
         await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
@@ -341,7 +341,6 @@ public sealed class XacThucService(
         if (user is null)
         {
             user = new tai_khoan { email = normalized, ho_ten = normalized[..normalized.IndexOf('@')], vai_tro = AppRoles.Admin };
-            EnsureNotUserName(password, user.ho_ten, nameof(DatLaiMatKhauDto.mat_khau_moi));
             user.mat_khau_hash = passwordHasher.HashPassword(user, password);
             user.MarkCreated("create-admin", UtcNow);
             await users.DLInsertAsync(user, cancellationToken);
@@ -349,14 +348,12 @@ public sealed class XacThucService(
         }
 
         user.vai_tro = AppRoles.Admin;
-        await SetPasswordAsync(user, password, nameof(DatLaiMatKhauDto.mat_khau_moi), cancellationToken);
+        await SetPasswordAsync(user, password, cancellationToken);
         await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
-    private async Task SetPasswordAsync(tai_khoan user, string password, string field, CancellationToken cancellationToken)
+    private async Task SetPasswordAsync(tai_khoan user, string password, CancellationToken cancellationToken)
     {
-        EnsureNotUserName(password, user.ten_dang_nhap ?? string.Empty, field);
-
         user.mat_khau_hash = passwordHasher.HashPassword(user, password);
         user.MarkUpdated(currentUser.UserName, UtcNow);
 
@@ -402,14 +399,6 @@ public sealed class XacThucService(
     {
         var name = string.IsNullOrWhiteSpace(googleName) ? EmailRules.LocalPart(email) : googleName.Trim();
         return name.Length <= MaxDisplayNameLength ? name : name[..MaxDisplayNameLength];
-    }
-
-    private static void EnsureNotUserName(string password, string userName, string field)
-    {
-        if (PasswordRules.ContainsUserName(password, userName))
-        {
-            throw new ValidationFailedException(field, "Mật khẩu không được chứa tên đăng nhập.");
-        }
     }
 
     private static UnauthorizedException InvalidCredentials() =>

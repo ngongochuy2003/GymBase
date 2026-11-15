@@ -149,12 +149,12 @@ của mobile đã làm vậy).
 | Tối thiểu | 8 ký tự |
 | Tối đa | 128 ký tự, không cắt bớt, không trim |
 | Loại ký tự | Không ép chữ hoa, số, ký tự đặc biệt; cho phép mọi ký tự |
-| Danh sách chặn | Từ chối mật khẩu phổ biến và mật khẩu chứa tên đăng nhập (với tài khoản không có tên đăng nhập thì chưa kiểm tra phần trước `@` của email) |
+| Danh sách chặn | Không có: không từ chối mật khẩu phổ biến, không cấm mật khẩu chứa email hay tên đăng nhập (chốt 15/11) |
 | Đổi định kỳ | Không bắt buộc; chỉ bắt đổi khi có dấu hiệu lộ |
 
 **Về mức 8 ký tự (chốt 08/11):** NIST và OWASP đặt tối thiểu 15 ký tự khi không có xác thực nhiều lớp, và
 8 ký tự khi có. GymBase chọn 8 để học viên dễ dùng, tức là thấp hơn khuyến nghị cho đến khi có xác thực nhiều
-lớp. Danh sách chặn và giới hạn đăng nhập sai vì vậy là **bắt buộc**. Đăng nhập Google (mục 8) giúp giảm số người dùng mật khẩu. Nên
+lớp. Từ 15/11 chỉ còn kiểm tra độ dài, nên giới hạn đăng nhập sai (mục 6) là lớp chống dò mật khẩu duy nhất. Đăng nhập Google (mục 8) giúp giảm số người dùng mật khẩu. Nên
 xem lại mức này cho tài khoản `Admin`.
 
 ## 6. Chống dò mật khẩu

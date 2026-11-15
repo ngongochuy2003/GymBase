@@ -12,9 +12,7 @@ public sealed class TaiKhoanCreateValidator : AppValidator<TaiKhoanCreateDto>
         RuleFor(x => x.ten_dang_nhap).NotEmpty().WithName("Tên đăng nhập")
             .Must(value => value.Trim().Length >= 3).WithMessage("Tên đăng nhập phải có ít nhất 3 ký tự.")
             .MaximumLength(50).WithName("Tên đăng nhập");
-        RuleFor(x => x.mat_khau).ValidNewPassword()
-            .Must((dto, password) => !PasswordRules.ContainsUserName(password, dto.ten_dang_nhap))
-            .WithMessage("Mật khẩu không được chứa tên đăng nhập.");
+        RuleFor(x => x.mat_khau).ValidNewPassword();
         RuleFor(x => x.ho_ten).NotEmpty().MaximumLength(100).WithName("Họ tên");
         RuleFor(x => x.email).ValidEmail();
         RuleFor(x => x.so_dien_thoai).PhoneNumber().WithName("Số điện thoại");

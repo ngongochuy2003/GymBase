@@ -203,15 +203,23 @@ public sealed class RegisterTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, (await Register(Body(email: "hai@gymbase.test"))).StatusCode);
     }
 
+    [Fact]
+    public async Task Password_shorter_than_eight_characters_is_rejected()
+    {
+        var response = await Register(Body(password: "ngan"));
+
+        await AssertProblem(response, HttpStatusCode.BadRequest, "VALIDATION_FAILED", "mat_khau");
+    }
+
     [Theory]
     [InlineData("12345678")]
     [InlineData("matkhau123")]
     [InlineData("Mk-phuong.thao-1")]
-    public async Task Weak_or_email_containing_passwords_are_rejected(string password)
+    public async Task Only_length_matters_so_common_or_email_containing_passwords_are_accepted(string password)
     {
         var response = await Register(Body(email: "phuong.thao@gymbase.test", password: password));
 
-        await AssertProblem(response, HttpStatusCode.BadRequest, "VALIDATION_FAILED", "mat_khau");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
