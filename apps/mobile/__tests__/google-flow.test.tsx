@@ -6,8 +6,9 @@ import AuthLayout from '@/app/(auth)/_layout';
 import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
-import TodayRoute from '@/app/(protected)/today';
-import ProfileRoute from '@/app/(protected)/profile';
+import TabsLayout from '@/app/(protected)/(tabs)/_layout';
+import TodayRoute from '@/app/(protected)/(tabs)/today';
+import ProfileRoute from '@/app/(protected)/(tabs)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
@@ -42,8 +43,9 @@ const routes = {
   '(auth)/welcome': WelcomeRoute,
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
-  '(protected)/today': TodayRoute,
-  '(protected)/profile': ProfileRoute,
+  '(protected)/(tabs)/_layout': TabsLayout,
+  '(protected)/(tabs)/today': TodayRoute,
+  '(protected)/(tabs)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
   '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
@@ -76,6 +78,9 @@ test('first Google sign-in stores the session, shows onboarding until a button i
 
   await waitFor(() => expect(screen).toHavePathname('/onboarding'));
   expect(await screen.findByText('Đăng nhập thành công!')).toBeTruthy();
+  // Onboarding phủ kín màn hình, không có thanh tab của nhóm đã đăng nhập.
+  expect(screen.queryByText('Hôm nay')).toBeNull();
+  expect(screen.queryByText('Cá nhân')).toBeNull();
   expect(google).toHaveBeenCalledWith({ id_token: 'google-id-token' });
   expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
     'gymbase.session.tokens',

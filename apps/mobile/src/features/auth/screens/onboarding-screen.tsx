@@ -16,7 +16,7 @@ export function OnboardingScreen() {
     router.replace(href);
   };
   return (
-    <Screen>
+    <Screen bottomInset>
       <AuthHeader />
       <View className="items-center gap-4 pt-6">
         <SuccessBadge />
@@ -24,7 +24,8 @@ export function OnboardingScreen() {
           Đăng nhập thành công!
         </Text>
         <AppText muted className="text-center">
-          Chào mừng bạn đến với GymBase. Hãy thiết lập hồ sơ để cá nhân hóa trải nghiệm.
+          Chào mừng bạn đến với GymBase. Hãy thiết lập hồ sơ và vai trò sử dụng để có trải nghiệm
+          phù hợp nhất.
         </AppText>
       </View>
       <View className="flex-row items-center gap-3 rounded-2xl bg-secondary p-4">

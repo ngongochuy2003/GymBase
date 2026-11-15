@@ -26,10 +26,19 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 cssInterop(SafeAreaView, { className: 'style' });
 
-/** Khung màn hình có cuộn và né bàn phím. */
-export function Screen({ children }: PropsWithChildren) {
+/**
+ * Khung màn hình có cuộn và né bàn phím. `bottomInset` dành cho màn không có thanh tab (phủ kín đáy màn hình), để nội
+ * dung không chui xuống dưới thanh điều hướng của hệ thống.
+ */
+export function Screen({
+  children,
+  bottomInset = false,
+}: PropsWithChildren<{ bottomInset?: boolean }>) {
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={bottomInset ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']}
+    >
       {/* iOS đẩy nội dung lên theo bàn phím; Android đã tự co cửa sổ (adjustResize) nên chỉ cần cuộn tới ô đang gõ. */}
       <KeyboardAvoidingView
         className="flex-1"

@@ -7,8 +7,9 @@ import AuthLayout from '@/app/(auth)/_layout';
 import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
-import TodayRoute from '@/app/(protected)/today';
-import ProfileRoute from '@/app/(protected)/profile';
+import TabsLayout from '@/app/(protected)/(tabs)/_layout';
+import TodayRoute from '@/app/(protected)/(tabs)/today';
+import ProfileRoute from '@/app/(protected)/(tabs)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
@@ -52,8 +53,9 @@ const routes = {
   '(auth)/welcome': WelcomeRoute,
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
-  '(protected)/today': TodayRoute,
-  '(protected)/profile': ProfileRoute,
+  '(protected)/(tabs)/_layout': TabsLayout,
+  '(protected)/(tabs)/today': TodayRoute,
+  '(protected)/(tabs)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
   '+not-found': NotFound,
 };
@@ -227,7 +229,10 @@ test('a PROFILE_REQUIRED error sends the signed-in user to the profile setup pla
   jest.spyOn(authApi, 'me').mockResolvedValue(user);
 
   // Màn "Hôm nay" được thay bằng một màn có query trả PROFILE_REQUIRED.
-  await renderRouter({ ...routes, '(protected)/today': NeedsProfile }, { initialUrl: '/today' });
+  await renderRouter(
+    { ...routes, '(protected)/(tabs)/today': NeedsProfile },
+    { initialUrl: '/today' },
+  );
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup'));
   expect(await screen.findByText('Thiết lập hồ sơ')).toBeTruthy();

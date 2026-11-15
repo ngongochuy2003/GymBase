@@ -4,7 +4,7 @@ import { AppText, Button, Card, Screen } from '@/shared/components/ui';
 // TODO(PROFILE): màn giữ chỗ; thay bằng bước chọn nhóm người dùng và thiết lập hồ sơ (ticket sau).
 export function ProfileSetupScreen() {
   return (
-    <Screen>
+    <Screen bottomInset>
       <AppText title>Thiết lập hồ sơ</AppText>
       <Card>
         <AppText muted>
