@@ -42,7 +42,8 @@ function DefaultAction({ action }: { action: PostCardAction }) {
       hitSlop={8}
       style={styles.action}
     >
-      <Icon name={name} size={theme.iconSize.lg} color={color} />
+      {/* Giảm kích thước action đi 2px theo yêu cầu (từ 26px xuống 24px) */}
+      <Icon name={name} size={theme.iconSize.lg - 4} color={color} />
       {action.count !== undefined ? (
         <Text style={styles.count}>{formatCount(action.count)}</Text>
       ) : null}
@@ -65,7 +66,8 @@ export function PostCard({
     </View>
   );
   return (
-    <Surface>
+    <Surface style={styles.card}>
+      {/* 1. Header (Avatar, Tên, Thời gian, Nút tùy chọn): căn padding riêng 4-8px */}
       <View style={styles.head}>
         <RemoteImage uri={author.avatarUri} circle style={styles.avatar} />
         <View style={styles.meta}>
@@ -78,13 +80,24 @@ export function PostCard({
           onPress={onMorePress}
           hitSlop={8}
         >
-          <Icon name="more" size={theme.iconSize.lg} />
+          <Icon name="more" size={theme.iconSize.md} />
         </Pressable>
       </View>
-      <Text style={styles.content}>{content}</Text>
+
+      {/* 2. Nội dung Text bài viết: căn padding riêng 4-8px */}
+      {content ? <Text style={styles.content}>{content}</Text> : null}
+
+      {/* 3. Ảnh bài viết: full 100% chiều ngang màn hình, không bo góc */}
       {imageUri ? (
-        <RemoteImage uri={imageUri} accessibilityLabel="Ảnh bài viết" style={styles.image} />
+        <RemoteImage
+          uri={imageUri}
+          accessibilityLabel="Ảnh bài viết"
+          style={styles.image}
+          resizeMode="cover"
+        />
       ) : null}
+
+      {/* 4. Hàng nút Action (tim, comment, share, lưu): căn padding riêng 4-8px */}
       <View style={styles.actions}>
         <View style={styles.group}>{actions.filter((a) => a.align !== 'end').map(draw)}</View>
         <View style={styles.group}>{actions.filter((a) => a.align === 'end').map(draw)}</View>
@@ -94,19 +107,58 @@ export function PostCard({
 }
 
 const styles = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  avatar: { width: 46, height: 46 },
+  card: {
+    backgroundColor: theme.colors.card,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    // Dòng gạch ngang ngăn cách giữa các card bài viết 2px
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
+    paddingHorizontal: 0,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.sm-3,
+    gap: theme.spacing.xs,
+    borderRadius: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm, // Căn lề riêng 8px
+    paddingTop: theme.spacing.xs,
+  },
+  avatar: { width: 33, height: 33 },
   meta: { flex: 1 },
   name: {
     fontSize: theme.font.size.md,
     fontWeight: theme.font.weight.bold,
     color: theme.colors.text,
   },
-  time: { fontSize: theme.font.size.sm, color: theme.colors.muted },
-  content: { fontSize: theme.font.size.md, lineHeight: 23, color: theme.colors.text },
-  image: { width: '100%', aspectRatio: 11 / 14 },
-  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  group: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xl },
-  action: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  count: { fontSize: theme.font.size.md, color: theme.colors.text },
+  time: { fontSize: theme.font.size.xs-1.6, color: theme.colors.muted },
+  content: {
+    fontSize: theme.font.size.md-1,
+    lineHeight: 22,
+    color: theme.colors.text,
+    paddingHorizontal: theme.spacing.sm, // Căn lề riêng 8px
+    paddingVertical: 2,
+  },
+  image: {
+    width: '100%',
+    aspectRatio: 11 / 14,
+    borderRadius: 0,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.sm+2, // Căn lề riêng 8px
+    paddingTop: theme.spacing.xs,
+    paddingBottom: 1,
+  },
+  group: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
+  action: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs+2 },
+  count: { fontSize: theme.font.size.sm, color: theme.colors.text },
 });

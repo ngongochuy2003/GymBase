@@ -58,6 +58,9 @@ Chạy Mobile từ root (Node 24.13.0, pnpm 10.34.9; cần API và MySQL local):
 ```sh
 npx --yes pnpm@10.34.9 install --frozen-lockfile
 npx --yes pnpm@10.34.9 mobile
+
+pnpm.cmd --filter @gymbase/mobile exec expo start --go -c
+
 ```
 
 Chạy MINIO từ root = PowerShell (Node 24.13.0, pnpm 10.34.9; cần API và MySQL local):

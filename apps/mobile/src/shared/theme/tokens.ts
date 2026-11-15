@@ -24,10 +24,10 @@ export const theme = {
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
   font: {
     family: undefined as string | undefined, // system sans-serif (Inter có thể gắn sau)
-    size: { xs: 12, sm: 13, md: 15, lg: 17, xl: 22 },
+    size: { xsss: 8,xss: 10,xs: 12, sm: 13, md: 15, lg: 17, xl: 22 },
     weight: { regular: '400', medium: '500', bold: '700' } as const,
   },
-  iconSize: { sm: 18, md: 22, lg: 26 },
+  iconSize: { xsss: 10,xss: 12,xs: 14,sm: 18, md: 22, lg: 26 },
 } as const;
 
 export type AppTheme = typeof theme;

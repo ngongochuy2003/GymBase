@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
-import { theme } from '@/shared/theme/tokens';
+import { StyleSheet, View } from 'react-native';
 import type { FeedPostData, PostActionTemplate } from '../types';
 import { PostCard, type PostCardAction, type PostCardProps } from './post-card';
 
@@ -17,7 +16,7 @@ export function PostList({ posts, actionTemplates, onActionPress, renderAction }
   const key = (postId: string, actionId: string) => `${postId}:${actionId}`;
 
   return (
-    <View style={{ gap: theme.spacing.lg }}>
+    <View style={styles.list}>
       {posts.map((post) => {
         const actions: PostCardAction[] = actionTemplates.map((template) => {
           const initial = post.initialActive?.[template.id] ?? false;
@@ -58,3 +57,10 @@ export function PostList({ posts, actionTemplates, onActionPress, renderAction }
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  list: {
+    width: '100%',
+    gap: 0,
+  },
+});

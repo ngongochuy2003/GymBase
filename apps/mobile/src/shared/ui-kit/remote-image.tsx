@@ -71,7 +71,7 @@ export function RemoteImage({
       source={{ uri: resolvedUri }}
       resizeMode={resizeMode}
       onError={() => setFailed(true)}
-      style={[styles.image, { borderRadius: radius }, style as object]}
+      style={[styles.image, style as object]}
     />
   );
 }

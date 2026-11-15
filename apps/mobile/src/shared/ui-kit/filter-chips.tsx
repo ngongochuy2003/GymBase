@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Chip } from './chip';
 import { theme } from '../theme/tokens';
 
@@ -17,15 +17,10 @@ export interface FilterChipsProps {
   renderItem?(item: FilterChipItem, active: boolean, select: () => void): ReactNode;
 }
 
-/** Hàng chip cuộn ngang, chọn một. */
+/** Thanh subheader chip cố định, không cuộn ngang, cách đều giữa các phần tử và 2 bên lề. */
 export function FilterChips({ items, activeId, onChange, renderItem }: FilterChipsProps) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-      style={styles.scroll}
-    >
+    <View style={styles.container}>
       {items.map((item) => {
         const active = item.id === activeId;
         const select = () => onChange(item.id);
@@ -41,11 +36,17 @@ export function FilterChips({ items, activeId, onChange, renderItem }: FilterChi
           />
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flexGrow: 0, marginHorizontal: -theme.spacing.xl },
-  row: { gap: theme.spacing.sm, paddingHorizontal: theme.spacing.xl },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    paddingVertical: theme.spacing.xs,
+    backgroundColor: theme.colors.background,
+  },
 });

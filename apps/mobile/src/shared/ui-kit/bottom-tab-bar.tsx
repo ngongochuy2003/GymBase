@@ -48,7 +48,7 @@ export function BottomTabBar({ tabs, activeId, onChange, renderIcon }: BottomTab
                 {renderIcon ? (
                   renderIcon(tab, active, color)
                 ) : (
-                  <Icon name={iconName} size={30} color={color} />
+                  <Icon name={iconName} size={21} color={color} />
                 )}
               </View>
             ) : (
@@ -57,7 +57,7 @@ export function BottomTabBar({ tabs, activeId, onChange, renderIcon }: BottomTab
                   {renderIcon ? (
                     renderIcon(tab, active, color)
                   ) : (
-                    <Icon name={iconName} size={theme.iconSize.lg} color={color} />
+                    <Icon name={iconName} size={theme.iconSize.sm} color={color} />
                   )}
                   {tab.badge ? <View style={styles.badge} /> : null}
                 </View>
@@ -77,10 +77,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-around',
     backgroundColor: theme.colors.card,
-    borderTopLeftRadius: theme.radius.card + 8,
-    borderTopRightRadius: theme.radius.card + 8,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.sm-3,
     paddingHorizontal: theme.spacing.xs,
     shadowColor: '#000',
     shadowOpacity: 0.06,
@@ -88,12 +85,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     elevation: 8,
   },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4, minHeight: 48 },
-  label: { fontSize: theme.font.size.xs, fontWeight: theme.font.weight.medium },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4, minHeight: 42 },
+  label: { fontSize: theme.font.size.xsss, fontWeight: theme.font.weight.medium },
   center: {
-    width: 58,
-    height: 58,
-    borderRadius: 20,
+    width: 36,
+    height: 26,
+    borderRadius: 5,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

@@ -45,7 +45,7 @@ export function AppHeader({
               onPress={() => onActionPress?.(action.id)}
               hitSlop={8}
             >
-              <Icon name={action.icon} size={theme.iconSize.lg} />
+              <Icon name={action.icon} size={theme.iconSize.md-3} />
               {action.badge ? <View testID={`badge-${action.id}`} style={styles.badge} /> : null}
             </Pressable>
           ),
@@ -65,9 +65,9 @@ export function AppHeader({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  logo: { fontSize: 34, fontWeight: '900', color: theme.colors.primary, fontStyle: 'italic' },
+  logo: { fontSize: 26, fontWeight: '900', color: theme.colors.primary, fontStyle: 'italic' },
   brandText: {
-    fontSize: theme.font.size.xl,
+    fontSize: theme.font.size.lg,
     fontWeight: theme.font.weight.bold,
     fontStyle: 'italic',
     color: theme.colors.text,
@@ -84,5 +84,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: theme.colors.background,
   },
-  avatar: { width: 44, height: 44 },
+  avatar: { width: 34, height: 32 },
 });

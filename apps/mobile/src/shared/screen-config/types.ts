@@ -20,6 +20,8 @@ export interface ScreenConfig {
   sections: SectionConfig[];
   bottomTabs: TabItem[];
   activeTabId?: string;
+  /** Cho phép header tự động ẩn khi vuốt xuống và từ từ hiện ra khi vuốt lên (mặc định: true khi có header). */
+  collapsibleHeader?: boolean;
 }
 
 export interface ScreenRendererProps {

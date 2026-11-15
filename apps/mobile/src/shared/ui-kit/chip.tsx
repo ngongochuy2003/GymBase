@@ -37,9 +37,9 @@ export function Chip({
             : { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
       ]}
     >
-      {icon ? <Icon name={icon} size={theme.iconSize.sm} color={fg} /> : null}
+      {icon ? <Icon name={icon} size={theme.iconSize.xs-1} color={fg} /> : null}
       <Text style={[styles.label, { color: fg }]}>{label}</Text>
-      {selected && showCheck ? <Icon name="check" size={theme.iconSize.sm} color={fg} /> : null}
+      {selected && showCheck ? <Icon name="check" size={theme.iconSize.sm-1} color={fg} /> : null}
     </Pressable>
   );
 }
@@ -48,11 +48,11 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 10,
+    gap: theme.spacing.sm-1,
+    paddingHorizontal: theme.spacing.md-3,
+    paddingVertical: 8-3,
     borderRadius: theme.radius.chip,
     borderWidth: 1,
   },
-  label: { fontSize: theme.font.size.sm, fontWeight: theme.font.weight.medium },
+  label: { fontSize: theme.font.size.xss, fontWeight: theme.font.weight.medium },
 });

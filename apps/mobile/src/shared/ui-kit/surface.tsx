@@ -10,11 +10,9 @@ export function Surface({ children, style }: PropsWithChildren<{ style?: StylePr
 const styles = StyleSheet.create({
   surface: {
     backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 10,
