@@ -239,6 +239,7 @@ Ví dụ luồng:
 GET /api/v1/web/users/{id} → Controllers/UsersController     ┐
 GET /api/v1/mob/users/{id} → Mob/Controllers/UsersController ┴→ TaiKhoanService.BLGetByIdAsync → ITaiKhoanRepository → MySQL
 GET /api/v1/mob/danh-muc   → Mob/Controllers/DanhMucController → DanhMucService.BLLayDanhMucAsync → IDanhMucRepository → MySQL
+GET /api/v1/mob/ho-so      → Mob/Controllers/HoSoController     → HoSoService.BLXemHoSoAsync / BLLuuHoSoAsync → DL hồ sơ, chỉ số cơ thể → MySQL
 ```
 
 ## 7. Ví dụ một luồng nghiệp vụ V1: PT hoàn thành buổi tập

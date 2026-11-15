@@ -1,0 +1,38 @@
+meta {
+  name: Lưu với mã danh mục sai (400)
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{mobileApi}}/ho-so
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "loai_nguoi_dung": "hoc_vien",
+    "muc_tieu_tap_luyen": "khong_co_that",
+    "chieu_cao_cm": 172.5,
+    "can_nang_kg": 68.4,
+    "khu_vuc_hoat_dong": "ha_noi"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq CATEGORY_INVALID
+}
+
+docs {
+  Mã không có trong danh_muc (hoặc đã tinh_trang = 0) → CATEGORY_INVALID, errors có muc_tieu_tap_luyen.
+}

@@ -11,6 +11,7 @@ Tài liệu backend:
 | [huong-dan-them-api-nghiep-vu.md](huong-dan-them-api-nghiep-vu.md) | Hướng dẫn thêm API không phải CRUD, có nhiều quy tắc và nhiều bảng (giao dịch, mã lỗi riêng, test theo bảng quy tắc) |
 | [quy-uoc-response.md](quy-uoc-response.md) | Dạng response khi thành công và khi lỗi, phân trang, bộ mã lỗi |
 | [danh-muc.md](danh-muc.md) | Bảng `danh_muc` (nhóm DI) và `GET /api/v1/mob/danh-muc` cho dropdown mục tiêu, khu vực, chuyên môn PT |
+| [ho-so.md](ho-so.md) | `GET/PUT /api/v1/mob/ho-so`: lưu hồ sơ sau onboarding trong một transaction, quy tắc kiểm tra danh mục và chỉ số cơ thể |
 | [sort-va-filter.md](sort-va-filter.md) | Cú pháp `sort` và `filter`, lỗi trả về, cách bật cho một bảng mới |
 | [logging.md](logging.md) | Log kỹ thuật (Serilog) và audit log (bảng `system_log`): cách xem, cấu hình, truy vấn, giới hạn |
 | [phan-quyen.md](phan-quyen.md) | Phân quyền ba lớp: vai trò hệ thống, policy theo hồ sơ, quyền trên dữ liệu học viên; cách thêm endpoint có quyền, mã lỗi |
