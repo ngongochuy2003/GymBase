@@ -55,6 +55,9 @@ flowchart LR
         bao_cao_vi_pham
         chan_tai_khoan
     end
+    subgraph Category["Danh mục (DI)"]
+        danh_muc
+    end
 
     ho_so_nguoi_dung --> tep_tin
     Base --> Notify
@@ -72,7 +75,8 @@ flowchart LR
 Đường nét đứt là liên kết đa hình (không có khóa ngoại thật), xem [10-lien-ket-da-hinh.md](10-lien-ket-da-hinh.md).
 `Coaching` và `Packages` tham chiếu lẫn nhau: `nhat_ky_hoat_dong` trỏ tới `buoi_tap`, còn `buoi_tap` trỏ tới
 `muc_ke_hoach`. `Base --> Notify` là `phien_dang_nhap.thiet_bi_id` trỏ tới `thiet_bi`, nên `thiet_bi` phải tạo trước khi
-thêm cột này.
+thêm cột này. `danh_muc` không có khóa ngoại tới bảng khác (chỉ tự tham chiếu để dựng cây), xem
+[11-danh-muc.md](11-danh-muc.md).
 
 ## 2. Quan hệ giữa các bảng
 

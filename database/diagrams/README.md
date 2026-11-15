@@ -6,13 +6,14 @@ Nguồn thiết kế: `Tài liệu dự án/GymBase_V1_Thiet_ke_Database_21_bang
 > **Trạng thái:** đây là thiết kế, chưa triển khai hết. Entity của Base đã đổi `nguoi_dung` thành `tai_khoan` (chưa commit),
 > nhưng các migration hiện có vẫn tạo `nguoi_dung`. `dang_nhap_ngoai` và 21 bảng nghiệp vụ chưa có entity hay migration.
 > Dự kiến hai migration: `InitialBase` (4 bảng nền, tạo lại cho khớp tên mới), sau đó `AddBizTables` (toàn bộ 21 bảng
-> nghiệp vụ, kèm cột `phien_dang_nhap.thiet_bi_id`). Tổng cộng 25 bảng.
+> nghiệp vụ, kèm cột `phien_dang_nhap.thiet_bi_id`). Tổng cộng 26 bảng: 25 bảng ở trên cộng bảng danh mục `danh_muc`
+> (`ThemBangDanhMuc`, xem [11-danh-muc.md](11-danh-muc.md)).
 >
 > Sơ đồ có **một số thay đổi đề xuất so với tài liệu thiết kế** (bảng bên dưới). Tài liệu docx chưa được cập nhật theo.
 
 | File | Nội dung | Bảng |
 | --- | --- | --- |
-| [00-tong-quan.md](00-tong-quan.md) | Sơ đồ tổng: các nhóm bảng và mọi khóa ngoại | Tất cả 25 bảng |
+| [00-tong-quan.md](00-tong-quan.md) | Sơ đồ tổng: các nhóm bảng và mọi khóa ngoại | Tất cả 26 bảng |
 | [01-tai-khoan-ho-so.md](01-tai-khoan-ho-so.md) | Tài khoản, phiên đăng nhập, đăng nhập Google, log hệ thống, hồ sơ, luồng đăng ký và chọn nhóm | `tai_khoan`, `phien_dang_nhap`, `dang_nhap_ngoai`, `system_log`, `ho_so_nguoi_dung` |
 | [02-tep-tin.md](02-tep-tin.md) | File trên S3, vòng đời, luồng upload | `tep_tin` |
 | [03-mang-xa-hoi.md](03-mang-xa-hoi.md) | Bài viết, thích và bình luận, theo dõi | `bai_viet`, `tuong_tac_bai_viet`, `theo_doi` |
@@ -23,6 +24,7 @@ Nguồn thiết kế: `Tài liệu dự án/GymBase_V1_Thiet_ke_Database_21_bang
 | [08-thong-bao.md](08-thong-bao.md) | Thiết bị, thông báo, luồng nhắc giờ | `thiet_bi`, `thong_bao` |
 | [09-an-toan.md](09-an-toan.md) | Báo cáo vi phạm, chặn tài khoản | `bao_cao_vi_pham`, `chan_tai_khoan` |
 | [10-lien-ket-da-hinh.md](10-lien-ket-da-hinh.md) | Các liên kết không có khóa ngoại thật | `tep_tin`, `lich_su_chinh_sua`, `thong_bao`, `bao_cao_vi_pham` |
+| [11-danh-muc.md](11-danh-muc.md) | Danh mục dùng chung cho dropdown và kiểm tra mã (đã có migration) | `danh_muc` |
 
 ## Quy ước trong sơ đồ
 
