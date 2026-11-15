@@ -1572,6 +1572,78 @@ namespace GymBase.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GymBase.Entities.DI.danh_muc", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<int?>("cap")
+                        .HasColumnType("int");
+
+                    b.Property<string>("danh_muc_cap_tren_id")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("ghi_chu")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ma")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ma_dinh_danh")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("mo_ta")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("muc_luc")
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<string>("muc_luc_ma")
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<DateTime?>("ngay_chinh_sua")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ngay_tao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("nguoi_chinh_sua")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("nguoi_tao")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ten")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("tinh_trang")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("danh_muc_cap_tren_id");
+
+                    b.HasIndex("muc_luc_ma");
+
+                    b.HasIndex("ma_dinh_danh", "ma")
+                        .IsUnique();
+
+                    b.ToTable("danh_muc", (string)null);
+                });
+
             modelBuilder.Entity("GymBase.Entities.Logging.system_log", b =>
                 {
                     b.Property<string>("Id")
@@ -1971,6 +2043,14 @@ namespace GymBase.Persistence.Migrations
                     b.HasOne("GymBase.Entities.Biz.tuong_tac_bai_viet", null)
                         .WithMany()
                         .HasForeignKey("tuong_tac_cha_id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GymBase.Entities.DI.danh_muc", b =>
+                {
+                    b.HasOne("GymBase.Entities.DI.danh_muc", null)
+                        .WithMany()
+                        .HasForeignKey("danh_muc_cap_tren_id")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 #pragma warning restore 612, 618

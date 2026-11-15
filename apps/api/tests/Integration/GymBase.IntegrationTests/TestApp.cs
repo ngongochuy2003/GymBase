@@ -7,11 +7,13 @@ using GymBase.BLAuth;
 using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLBiz;
 using GymBase.BLBiz.BLTruyCap;
+using GymBase.BLDI;
 using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
 using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.DLDI.Contract.DLDanhMuc;
 using GymBase.Entities.Biz.Enums;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
@@ -59,6 +61,8 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<InMemoryHoSoNguoiDungStore>();
             builder.Services.AddScoped<IHoSoNguoiDungRepository, InMemoryHoSoNguoiDungRepository>();
             builder.Services.AddScoped<IKetNoiPtRepository, InMemoryKetNoiPtRepository>();
+            builder.Services.AddDIBusiness();
+            builder.Services.AddScoped<IDanhMucRepository, InMemoryDanhMucRepository>();
 
             var app = builder.Build();
             app.UseAppApi();
