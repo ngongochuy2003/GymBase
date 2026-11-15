@@ -27,18 +27,23 @@ Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucServ
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
 | `POST /login` | Không | Body `{ email, mat_khau }`. 200: token kèm thông tin người dùng. 401 `AUTH_INVALID_CREDENTIALS`. Email không đúng định dạng: 400 |
-| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: như `login`, thêm `tai_khoan_moi: true`. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
-| `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`, `tai_khoan_moi: true` ở lần đầu. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
+| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: thông tin tài khoản vừa tạo (`is_dang_nhap_lan_dau: true`), **không có token và không có phiên**. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
+| `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`; tài khoản tạo mới có `user.is_dang_nhap_lan_dau: true`. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
 | `POST /refresh` | Không | 200: cặp token mới. 401 `UNAUTHORIZED` |
 | `POST /logout` | Có | 204: thu hồi phiên hiện tại |
 | `GET /me` | Có | 200: thông tin người dùng lấy từ DB |
+| `POST /hoan-tat-dang-nhap-lan-dau` | Có | 200: thông tin người dùng với `is_dang_nhap_lan_dau: false`. Gọi lại vẫn an toàn |
 | `POST /change-password` | Có | 204: thu hồi các phiên khác |
 
 ### 2.1. Đăng ký bằng mật khẩu
 
-Người mới tự tạo tài khoản và có phiên ngay, nên không phải đăng nhập lại. Response của `login`, `register`, `refresh` có cùng dạng;
-`tai_khoan_moi` là `true` chỉ ở lần `register` (và lần đầu đăng nhập Google), `false` ở mọi lần khác, để app hiện màn "Đăng ký thành công"
-đúng một lần.
+Người mới tự tạo tài khoản nhưng **chưa có phiên**: app đưa người dùng về màn đăng nhập. Response của `login`, `google`, `refresh`
+có cùng dạng (token kèm `user`).
+
+Cột `tai_khoan.is_dang_nhap_lan_dau` (trả ra là `user.is_dang_nhap_lan_dau`) là `true` cho tới khi người dùng bấm một trong hai nút
+của màn onboarding, lúc đó app gọi `POST /hoan-tat-dang-nhap-lan-dau` để đặt `false`. Mỗi lần đăng nhập app đọc cờ này: còn `true` thì
+hiện onboarding, nên thoát app giữa chừng thì lần sau vẫn hiện. Tài khoản có trước khi thêm cột được đặt `false`. Đăng nhập Google lần
+đầu tạo tài khoản và đăng nhập cùng lúc, cờ cũng là `true`.
 
 | Trường | Quy tắc |
 | --- | --- |

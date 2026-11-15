@@ -91,8 +91,10 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
 2. Nhập họ và tên, email, số điện thoại di động Việt Nam (`0912 345 678`, `+84912345678`...), mật khẩu (tối thiểu 8 ký tự, không quá
    phổ biến, không chứa phần trước `@` của email), xác nhận mật khẩu, tick đồng ý điều khoản. Mã giới thiệu để trống cũng được
    (chưa tính điểm).
-3. Bấm **Đăng ký**: app có phiên ngay và hiện màn **Đăng ký thành công**. **Bỏ qua, vào Trang chủ** vào tab Hôm nay; **Thiết lập hồ sơ
-   ngay** mở màn giữ chỗ (phần thiết lập hồ sơ chưa làm). Màn này chỉ hiện một lần, các lần đăng nhập sau vào thẳng app.
+3. Bấm **Đăng ký**: app chưa có phiên, chuyển về màn **Đăng nhập** với email điền sẵn và thông báo "Đăng ký thành công". Nhập mật
+   khẩu rồi đăng nhập: lần đầu app hiện màn onboarding **Đăng nhập thành công**. **Bỏ qua, vào Trang chủ** vào tab Hôm nay;
+   **Thiết lập hồ sơ ngay** mở màn giữ chỗ (phần thiết lập hồ sơ chưa làm). Màn này hiện cho tới khi bấm một trong hai nút; sau đó các
+   lần đăng nhập vào thẳng app.
 4. Email đã dùng thì form báo "Email này đã được dùng" kèm nút **Đã có tài khoản? Đăng nhập**.
 
 Đăng nhập Google cần bản dev build, xem mục 6.
@@ -134,7 +136,7 @@ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<web-client-id>.apps.googleusercontent.com
 ```
 
 Sau khi sửa `.env`, build lại hoặc chạy Metro với `-c`. Từ đó mở app dev build (không phải Expo Go), chạy API (task `Dev: API + Expo`)
-và bấm **Đăng nhập với Google**: lần đầu app hiện màn "Đăng ký thành công", các lần sau vào thẳng app. Google báo `DEVELOPER_ERROR`
+và bấm **Đăng nhập với Google**: lần đầu app hiện màn onboarding, sau khi bấm một nút thì các lần sau vào thẳng app. Google báo `DEVELOPER_ERROR`
 thường do package name hoặc SHA-1 của client ID Android không khớp bản build.
 
 Email Google trùng email của tài khoản đã đăng ký bằng mật khẩu thì app báo "Email này đã đăng ký bằng mật khẩu"; việc liên kết
