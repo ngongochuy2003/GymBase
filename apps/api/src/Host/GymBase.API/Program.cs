@@ -12,8 +12,10 @@ using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.DLAuth.MySql.DLDangNhapNgoai;
 using GymBase.DLAuth.MySql.DLPhienDangNhap;
 using GymBase.DLAuth.MySql.DLTaiKhoan;
+using GymBase.DLBiz.Contract.DLChiSoCoThe;
 using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
 using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.DLBiz.MySql.DLChiSoCoThe;
 using GymBase.DLBiz.MySql.DLHoSoNguoiDung;
 using GymBase.DLBiz.MySql.DLKetNoiPt;
 using GymBase.DLDI.Contract.DLDanhMuc;
@@ -46,6 +48,7 @@ builder.Services.AddScoped<IDanhMucRepository, DanhMucRepository>();
 // Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
 builder.Services.AddBizBusiness();
 builder.Services.AddScoped<IHoSoNguoiDungRepository, HoSoNguoiDungRepository>();
+builder.Services.AddScoped<IChiSoCoTheRepository, ChiSoCoTheRepository>();
 builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
 
 var app = builder.Build();

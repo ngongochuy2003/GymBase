@@ -48,7 +48,8 @@ public class TruyCapServiceTests
 
     private TruyCapService CreateService()
     {
-        var quyenHan = new QuyenHanService(new InMemoryHoSoNguoiDungRepository(_hoSos), new FakeTrangThai(_taiKhoanBiKhoa));
+        var quyenHan = new QuyenHanService(
+            new InMemoryHoSoNguoiDungRepository(_hoSos, new InMemoryChiSoCoTheStore()), new FakeTrangThai(_taiKhoanBiKhoa));
         return new TruyCapService(quyenHan, new InMemoryKetNoiPtRepository(_ketNois));
     }
 

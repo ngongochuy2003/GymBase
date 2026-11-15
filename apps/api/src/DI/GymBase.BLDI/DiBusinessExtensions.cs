@@ -1,4 +1,5 @@
 using GymBase.BLDI.BLDanhMuc;
+using GymBase.ModuleContracts.DanhMuc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymBase.BLDI;
@@ -9,6 +10,7 @@ public static class DiBusinessExtensions
     public static IServiceCollection AddDIBusiness(this IServiceCollection services)
     {
         services.AddScoped<DanhMucService>();
+        services.AddScoped<IDanhMucTraCuu, DanhMucTraCuu>();
         return services;
     }
 }

@@ -17,4 +17,13 @@ public static class BizErrorCodes
 
     /// <summary>403: dữ liệu của học viên chưa được chia sẻ cho người gọi.</summary>
     public const string DataNotShared = "DATA_NOT_SHARED";
+
+    /// <summary>404: tài khoản chưa thiết lập hồ sơ.</summary>
+    public const string ProfileNotFound = "PROFILE_NOT_FOUND";
+
+    /// <summary>400: mã danh mục không tồn tại hoặc đã bị ẩn.</summary>
+    public const string CategoryInvalid = "CATEGORY_INVALID";
+
+    /// <summary>400: vai trò sử dụng không hợp lệ, hoặc gửi thông tin PT khi không phải PT.</summary>
+    public const string RoleInvalid = "ROLE_INVALID";
 }
