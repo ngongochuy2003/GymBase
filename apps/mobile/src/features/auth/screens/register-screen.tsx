@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Linking, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
 import { env } from '@/core/config/env';
-import { AppText, Button, Card, Checkbox, Screen, TextField } from '@/shared/components/ui';
+import { AppText, Button, Checkbox, Screen, TextField } from '@/shared/components/ui';
+import { useTheme } from '@/shared/theme/theme';
+import { AuthHeader } from '../components/auth-header';
+import { ReferralInfoModal } from '../components/referral-info-modal';
 import { registerSchema, type RegisterForm } from '../schemas/register-schema';
 
 const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
@@ -24,6 +28,9 @@ const SERVER_FIELDS: Record<string, keyof RegisterForm> = {
 
 export function RegisterScreen() {
   const { register } = useSession();
+  const { colors } = useTheme();
+  const [referralInfoOpen, setReferralInfoOpen] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
   const [failure, setFailure] = useState<{ message: string; retryable: boolean } | null>(null);
   const { control, handleSubmit, setError, formState } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -59,6 +66,7 @@ export function RegisterScreen() {
       const apiError = error instanceof ApiError ? error : null;
       if (apiError?.code === 'USER_EMAIL_TAKEN') {
         setError('email', { message: EMAIL_TAKEN_MESSAGE });
+        setEmailTaken(true);
         return;
       }
       const fieldMessages = Object.entries(apiError?.fieldErrors ?? {}).flatMap(
@@ -80,19 +88,24 @@ export function RegisterScreen() {
 
   return (
     <Screen>
-      <View className="gap-1 pt-3">
+      <AuthHeader
+        onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
+      />
+      <View className="items-center gap-1">
         <AppText title>Đăng ký tài khoản</AppText>
-        <AppText muted>
+        <AppText muted className="text-center">
           Tạo tài khoản GymBase để kết nối PT, theo dõi lộ trình tập luyện và dinh dưỡng của bạn.
         </AppText>
       </View>
-      <Card>
+      <View className="gap-3">
         <Controller
           control={control}
           name="name"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Họ và tên"
+              hideLabel
               icon="person-outline"
               autoComplete="name"
               maxLength={100}
@@ -109,16 +122,33 @@ export function RegisterScreen() {
           name="email"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Email"
+              hideLabel
               icon="mail-outline"
               autoComplete="email"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={(text) => {
+                // Sửa email thì câu "email đã được dùng" không còn đúng nữa.
+                setEmailTaken(false);
+                field.onChange(text);
+              }}
               onBlur={field.onBlur}
               error={fieldState.error?.message}
+              errorAction={
+                emailTaken ? (
+                  <Text
+                    accessibilityRole="link"
+                    className="font-bold underline"
+                    onPress={() => router.replace('/login')}
+                  >
+                    Đăng nhập ngay
+                  </Text>
+                ) : undefined
+              }
               returnKeyType="next"
             />
           )}
@@ -128,7 +158,9 @@ export function RegisterScreen() {
           name="phone"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Số điện thoại"
+              hideLabel
               icon="call-outline"
               autoComplete="tel"
               keyboardType="phone-pad"
@@ -145,7 +177,9 @@ export function RegisterScreen() {
           name="password"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Mật khẩu"
+              hideLabel
               icon="lock-closed-outline"
               passwordToggle
               autoComplete="new-password"
@@ -163,7 +197,9 @@ export function RegisterScreen() {
           name="confirm"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Xác nhận mật khẩu"
+              hideLabel
               icon="lock-closed-outline"
               passwordToggle
               autoComplete="new-password"
@@ -181,8 +217,20 @@ export function RegisterScreen() {
           name="referral"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Mã giới thiệu (nếu có)"
+              hideLabel
               icon="gift-outline"
+              trailing={
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Mã giới thiệu là gì?"
+                  hitSlop={8}
+                  onPress={() => setReferralInfoOpen(true)}
+                >
+                  <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
+                </Pressable>
+              }
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={50}
@@ -229,16 +277,27 @@ export function RegisterScreen() {
             {failure.message}
           </Text>
         ) : null}
-        <Button label="Đăng ký" loading={formState.isSubmitting} onPress={() => void submit()} />
+        <Button
+          pill
+          label="Đăng ký"
+          loading={formState.isSubmitting}
+          onPress={() => void submit()}
+        />
         {failure?.retryable ? (
-          <Button label="Thử lại" secondary onPress={() => void submit()} />
+          <Button pill label="Thử lại" secondary onPress={() => void submit()} />
         ) : null}
-      </Card>
-      <Button
-        label="Đã có tài khoản? Đăng nhập"
-        secondary
-        onPress={() => router.replace('/login')}
-      />
+      </View>
+      <Text className="text-center text-[15px] text-muted-foreground">
+        Đã có tài khoản?{' '}
+        <Text
+          accessibilityRole="link"
+          className="font-bold text-foreground"
+          onPress={() => router.replace('/login')}
+        >
+          Đăng nhập
+        </Text>
+      </Text>
+      <ReferralInfoModal visible={referralInfoOpen} onClose={() => setReferralInfoOpen(false)} />
     </Screen>
   );
 }

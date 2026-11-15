@@ -71,7 +71,7 @@ async function openLogin() {
 async function fillAndSubmit(email: string, password: string) {
   await fireEvent.changeText(screen.getByLabelText('Email'), email);
   await fireEvent.changeText(screen.getByLabelText('Mật khẩu'), password);
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
 }
 
 afterEach(() => {
@@ -100,14 +100,14 @@ test('login shows a field error for each invalid field and does not call the API
   const login = jest.spyOn(authApi, 'login');
   await openLogin();
 
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
-  expect(await screen.findByText('Nhập email.')).toBeTruthy();
-  expect(screen.getByText('Nhập mật khẩu.')).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
+  expect(await screen.findByText('Vui lòng nhập email.')).toBeTruthy();
+  expect(screen.getByText('Vui lòng nhập mật khẩu.')).toBeTruthy();
 
   await fireEvent.changeText(screen.getByLabelText('Email'), 'khong-phai-email');
   await fireEvent.changeText(screen.getByLabelText('Mật khẩu'), 'mk');
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
-  expect(await screen.findByText('Email không hợp lệ.')).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
+  expect(await screen.findByText('Email chưa đúng định dạng, ví dụ ban@email.com.')).toBeTruthy();
   expect(login).not.toHaveBeenCalled();
 });
 
@@ -143,7 +143,7 @@ test('signing in stores the tokens, opens the app and shows the account name', a
   );
 });
 
-test('a network failure shows a message and a retry button that signs in', async () => {
+test('a network failure shows a message and pressing sign in again retries', async () => {
   const login = jest
     .spyOn(authApi, 'login')
     .mockRejectedValueOnce(
@@ -155,7 +155,7 @@ test('a network failure shows a message and a retry button that signs in', async
   await fillAndSubmit('minh.anh@gymbase.local', 'Mk-thu-nghiem-1');
   expect(await screen.findByText('Không thể kết nối. Kiểm tra mạng và thử lại.')).toBeTruthy();
 
-  await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
 
   await waitFor(() => expect(screen).toHavePathname('/today'));
   expect(login).toHaveBeenCalledTimes(2);

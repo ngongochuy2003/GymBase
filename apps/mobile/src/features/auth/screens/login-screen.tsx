@@ -5,11 +5,21 @@ import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
-import { AppText, Button, Card, Screen, TextField } from '@/shared/components/ui';
+import { AppText, Button, Screen, TextField } from '@/shared/components/ui';
+import { AuthHeader } from '../components/auth-header';
 import { GoogleSignInButton } from '../components/google-sign-in-button';
+import { OrDivider } from '../components/or-divider';
 import { loginSchema, type LoginForm } from '../schemas/login-schema';
 
 const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
+const INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS';
+
+/**
+ * Sai từ lần này trở đi thì nhắc người dùng có thể đang bị khóa tạm: server khóa 1 đến 15 phút từ lần sai thứ 5 nhưng vẫn
+ * trả đúng câu "sai mật khẩu" để không lộ tài khoản, nên người dùng cứ thử tiếp sẽ kéo dài thời gian khóa.
+ */
+const HINT_AFTER_FAILURES = 3;
+const LOCK_HINT = 'Nếu bạn chắc chắn đã nhập đúng, hãy đợi vài phút rồi thử lại.';
 
 export function LoginScreen() {
   const { signIn } = useSession();
@@ -18,8 +28,13 @@ export function LoginScreen() {
     email?: string;
     registered?: string;
   }>();
-  const [failure, setFailure] = useState<{ message: string; retryable: boolean } | null>(null);
-  const { control, handleSubmit, formState } = useForm<LoginForm>({
+  const [failure, setFailure] = useState<{
+    message: string;
+    retryable: boolean;
+    hint?: string;
+  } | null>(null);
+  const [wrongPasswords, setWrongPasswords] = useState(0);
+  const { control, handleSubmit, formState, resetField, setFocus } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: registeredEmail ?? '', password: '' },
   });
@@ -30,24 +45,34 @@ export function LoginScreen() {
       await signIn(email, password);
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
+      const wrongPassword = apiError?.code === INVALID_CREDENTIALS;
+      const attempts = wrongPassword ? wrongPasswords + 1 : wrongPasswords;
+      if (wrongPassword) {
+        setWrongPasswords(attempts);
+        // Xóa mật khẩu vừa gõ sai và đưa con trỏ về ô đó để nhập lại ngay.
+        resetField('password');
+        setFocus('password');
+      }
       setFailure({
         message: apiError?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.',
         retryable: apiError ? CONNECTION_CODES.includes(apiError.code) : false,
+        hint: wrongPassword && attempts >= HINT_AFTER_FAILURES ? LOCK_HINT : undefined,
       });
     }
   });
 
   return (
     <Screen>
-      <View className="flex-row items-center gap-3 py-3">
-        <View className="size-11 items-center justify-center rounded-[14px] bg-primary">
-          <Text className="text-[22px] font-black text-primary-foreground">G</Text>
-        </View>
-        <AppText title>GymBase</AppText>
-      </View>
-      <Card>
+      <AuthHeader
+        onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
+      />
+      <View className="items-center gap-1">
         <AppText title>Đăng nhập</AppText>
-        <AppText muted>Dùng email và mật khẩu bạn đã đăng ký.</AppText>
+        <AppText muted className="text-center">
+          Dùng email và mật khẩu bạn đã đăng ký.
+        </AppText>
+      </View>
+      <View className="gap-3">
         {registered ? (
           <Text accessibilityRole="alert" className="font-semibold text-primary">
             Đăng ký thành công. Hãy đăng nhập để tiếp tục.
@@ -58,8 +83,10 @@ export function LoginScreen() {
           name="email"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Email"
-              placeholder="ban@email.com"
+              hideLabel
+              icon="mail-outline"
               autoComplete="email"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -77,9 +104,12 @@ export function LoginScreen() {
           name="password"
           render={({ field, fieldState }) => (
             <TextField
+              inputRef={field.ref}
               label="Mật khẩu"
+              hideLabel
+              icon="lock-closed-outline"
+              passwordToggle
               autoComplete="current-password"
-              secureTextEntry
               autoCapitalize="none"
               value={field.value}
               onChangeText={field.onChange}
@@ -91,28 +121,24 @@ export function LoginScreen() {
           )}
         />
         {failure ? (
-          <Text accessibilityRole="alert" className="text-destructive">
-            {failure.message}
-          </Text>
+          <View className="gap-1">
+            <Text accessibilityRole="alert" className="text-destructive">
+              {failure.message}
+            </Text>
+            {failure.hint ? (
+              <Text className="text-sm text-muted-foreground">{failure.hint}</Text>
+            ) : null}
+          </View>
         ) : null}
         <Button
-          label="Đăng nhập tài khoản"
+          pill
+          label="Đăng nhập"
           loading={formState.isSubmitting}
           onPress={() => void submit()}
         />
-        {failure?.retryable ? (
-          <Button label="Thử lại" secondary onPress={() => void submit()} />
-        ) : null}
-      </Card>
-      <View className="gap-3">
-        <AppText muted>Hoặc tiếp tục với</AppText>
-        <GoogleSignInButton />
       </View>
-      <Button
-        label="Quay lại"
-        secondary
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
-      />
+      <OrDivider />
+      <GoogleSignInButton />
     </Screen>
   );
 }

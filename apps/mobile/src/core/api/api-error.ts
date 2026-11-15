@@ -36,6 +36,7 @@ const FALLBACK_MESSAGES: Record<number, string> = {
   404: 'Không tìm thấy dữ liệu.',
   409: 'Dữ liệu bị trùng hoặc đã thay đổi. Vui lòng tải lại.',
   422: 'Không thể thực hiện thao tác này.',
+  429: 'Bạn thao tác quá nhanh. Vui lòng đợi một phút rồi thử lại.',
 };
 const BUSY_MESSAGE = 'Dịch vụ đang bận. Vui lòng thử lại.';
 

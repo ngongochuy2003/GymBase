@@ -113,11 +113,11 @@ test('an empty form shows an error for every required field and does not call th
 
   await fireEvent.press(screen.getByRole('button', SUBMIT));
 
-  expect(await screen.findByText('Nhập họ và tên.')).toBeTruthy();
-  expect(screen.getByText('Nhập email.')).toBeTruthy();
-  expect(screen.getByText('Nhập số điện thoại.')).toBeTruthy();
-  expect(screen.getByText('Nhập mật khẩu.')).toBeTruthy();
-  expect(screen.getByText('Nhập lại mật khẩu để xác nhận.')).toBeTruthy();
+  expect(await screen.findByText('Vui lòng nhập họ và tên.')).toBeTruthy();
+  expect(screen.getByText('Vui lòng nhập email.')).toBeTruthy();
+  expect(screen.getByText('Vui lòng nhập số điện thoại.')).toBeTruthy();
+  expect(screen.getByText('Vui lòng nhập mật khẩu.')).toBeTruthy();
+  expect(screen.getByText('Vui lòng nhập lại mật khẩu.')).toBeTruthy();
   expect(screen.getByText(TERMS_ERROR)).toBeTruthy();
   expect(register).not.toHaveBeenCalled();
 });
@@ -129,8 +129,8 @@ test('malformed values get their own messages', async () => {
 
   await agreeAndSubmit();
 
-  expect(await screen.findByText('Email không hợp lệ.')).toBeTruthy();
-  expect(screen.getByText('Số điện thoại phải là số di động Việt Nam.')).toBeTruthy();
+  expect(await screen.findByText('Email chưa đúng định dạng, ví dụ ban@email.com.')).toBeTruthy();
+  expect(screen.getByText('Nhập số di động Việt Nam, ví dụ 0912 345 678.')).toBeTruthy();
   expect(screen.getByText('Mật khẩu cần ít nhất 8 ký tự.')).toBeTruthy();
   expect(screen.getByText('Mật khẩu xác nhận không khớp.')).toBeTruthy();
   expect(register).not.toHaveBeenCalled();
@@ -210,7 +210,7 @@ async function registerThenSignIn() {
   await fillForm();
   await agreeAndSubmit();
   await fireEvent.changeText(await screen.findByLabelText('Mật khẩu'), 'Mk-thu-nghiem-1');
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
   await waitFor(() => expect(screen).toHavePathname('/onboarding'));
   expect(await screen.findByText('Đăng nhập thành công!')).toBeTruthy();
 }
@@ -265,12 +265,13 @@ test('a taken email says so and offers to sign in instead', async () => {
 
   await agreeAndSubmit();
 
+  // Câu lỗi có kèm liên kết "Đăng nhập ngay" nên khớp theo phần đầu câu.
   expect(
-    await screen.findByText('Email này đã được dùng. Hãy đăng nhập hoặc dùng email khác.'),
+    await screen.findByText(/Email này đã được dùng\. Hãy đăng nhập hoặc dùng email khác\./),
   ).toBeTruthy();
   expect(screen).toHavePathname('/register');
 
-  await fireEvent.press(screen.getByRole('button', { name: 'Đã có tài khoản? Đăng nhập' }));
+  await fireEvent.press(screen.getByRole('link', { name: 'Đăng nhập ngay' }));
   await waitFor(() => expect(screen).toHavePathname('/login'));
 });
 
@@ -278,7 +279,7 @@ test('server field errors are shown under the matching field', async () => {
   jest.spyOn(authApi, 'register').mockRejectedValue(
     new ApiError('Thông tin chưa hợp lệ.', 400, 'VALIDATION_FAILED', {
       so_dien_thoai: ['Số điện thoại phải là số di động Việt Nam.'],
-      mat_khau: ['Mật khẩu này quá phổ biến, hãy chọn mật khẩu khác.'],
+      mat_khau: ['Mật khẩu tối đa 128 ký tự.'],
     }),
   );
   await openRegister();
@@ -287,7 +288,7 @@ test('server field errors are shown under the matching field', async () => {
   await agreeAndSubmit();
 
   expect(await screen.findByText('Số điện thoại phải là số di động Việt Nam.')).toBeTruthy();
-  expect(screen.getByText('Mật khẩu này quá phổ biến, hãy chọn mật khẩu khác.')).toBeTruthy();
+  expect(screen.getByText('Mật khẩu tối đa 128 ký tự.')).toBeTruthy();
 });
 
 test('a network failure shows a message and a retry button that registers', async () => {
