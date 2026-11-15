@@ -94,7 +94,7 @@ test('the welcome hero is a carousel of three slides starting on the first', asy
   ).toBeTruthy();
 });
 
-test('after several wrong passwords the login screen warns about a temporary lock and clears the password', async () => {
+test('after several wrong passwords the login screen warns about a temporary lock and keeps the password', async () => {
   jest
     .spyOn(authApi, 'login')
     .mockRejectedValue(
@@ -114,5 +114,6 @@ test('after several wrong passwords the login screen warns about a temporary loc
   await submit();
 
   expect(await screen.findByText(/hãy đợi vài phút/)).toBeTruthy();
-  expect(screen.getByLabelText('Mật khẩu').props.value).toBe('');
+  // Giữ nguyên mật khẩu để người dùng sửa lại thay vì nhập lại từ đầu.
+  expect(screen.getByLabelText('Mật khẩu').props.value).toBe('Mk-sai-1234');
 });

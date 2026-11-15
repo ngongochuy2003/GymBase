@@ -34,7 +34,7 @@ export function LoginScreen() {
     hint?: string;
   } | null>(null);
   const [wrongPasswords, setWrongPasswords] = useState(0);
-  const { control, handleSubmit, formState, resetField, setFocus } = useForm<LoginForm>({
+  const { control, handleSubmit, formState } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: registeredEmail ?? '', password: '' },
   });
@@ -47,12 +47,9 @@ export function LoginScreen() {
       const apiError = error instanceof ApiError ? error : null;
       const wrongPassword = apiError?.code === INVALID_CREDENTIALS;
       const attempts = wrongPassword ? wrongPasswords + 1 : wrongPasswords;
-      if (wrongPassword) {
-        setWrongPasswords(attempts);
-        // Xóa mật khẩu vừa gõ sai và đưa con trỏ về ô đó để nhập lại ngay.
-        resetField('password');
-        setFocus('password');
-      }
+      // Giữ nguyên mật khẩu người dùng vừa gõ: phần lớn trường hợp là gõ nhầm vài ký tự hoặc sai email, xóa đi thì phải
+      // nhập lại từ đầu.
+      if (wrongPassword) setWrongPasswords(attempts);
       setFailure({
         message: apiError?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.',
         retryable: apiError ? CONNECTION_CODES.includes(apiError.code) : false,
