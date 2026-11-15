@@ -60,7 +60,12 @@ export function RemoteImage({
       <View
         testID="image-fallback"
         accessibilityLabel={accessibilityLabel}
-        style={[styles.fallback, { borderRadius: radius }, style as object]}
+        style={[
+          styles.fallback,
+          { borderRadius: radius },
+          style as object,
+          circle && styles.circle,
+        ]}
       />
     );
   }
@@ -71,7 +76,12 @@ export function RemoteImage({
       source={{ uri: resolvedUri }}
       resizeMode={resizeMode}
       onError={() => setFailed(true)}
-      style={[styles.image, style as object]}
+      style={[
+        styles.image,
+        { borderRadius: radius },
+        style as object,
+        circle && styles.circle,
+      ]}
     />
   );
 }
@@ -79,4 +89,5 @@ export function RemoteImage({
 const styles = StyleSheet.create({
   image: { backgroundColor: theme.colors.placeholder, overflow: 'hidden' },
   fallback: { backgroundColor: theme.colors.placeholder, overflow: 'hidden' },
+  circle: { borderRadius: theme.radius.chip },
 });

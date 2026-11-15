@@ -54,6 +54,7 @@ export function AppHeader({
           accessibilityRole="button"
           accessibilityLabel="Ảnh đại diện"
           onPress={onAvatarPress}
+          style={styles.avatarWrapper}
         >
           <RemoteImage uri={avatarUri} circle style={styles.avatar} />
         </Pressable>
@@ -84,5 +85,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: theme.colors.background,
   },
-  avatar: { width: 34, height: 32 },
+  avatarWrapper: { width: 34, height: 34, borderRadius: 17, overflow: 'hidden' },
+  avatar: { width: 34, height: 34, borderRadius: 17 },
 });

@@ -76,7 +76,7 @@ export function ComposerCard({
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  avatar: { width: 48, height: 48 },
+  avatar: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden' },
   name: {
     fontSize: theme.font.size.md,
     fontWeight: theme.font.weight.bold,

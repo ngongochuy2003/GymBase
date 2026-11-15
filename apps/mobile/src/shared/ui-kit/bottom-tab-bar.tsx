@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
   item: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4, minHeight: 42 },
   label: { fontSize: theme.font.size.xsss, fontWeight: theme.font.weight.medium },
   center: {
-    width: 36,
-    height: 26,
+    width: 42,
+    height: 28,
     borderRadius: 5,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.sm-2,
   },
   badge: {
     position: 'absolute',

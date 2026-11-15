@@ -1,7 +1,9 @@
 import type { AxiosInstance } from 'axios';
-import { createMobHttpClient, DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
-import { env } from '@/core/config/env';
+import { createMobHttpClient } from '@/core/api/mobile-client';
+import { resolveMediaUrl } from '@/shared/file';
 import type { FeedPostData } from '../types';
+
+export { resolveMediaUrl };
 
 export interface TacGiaBaiVietDto {
   id: string;
@@ -43,22 +45,7 @@ export interface KetQuaThichBaiVietDto {
   so_luot_thich: number;
 }
 
-export function resolveMediaUrl(url?: string | null): string | undefined {
-  if (!url) return undefined;
-  const trimmed = url.trim();
-  if (!trimmed) return undefined;
-  if (
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('data:')
-  ) {
-    return trimmed;
-  }
-  const apiHostBase = (env.apiUrl || DEFAULT_LOCAL_API_URL)
-    .replace(/\/api\/v1\/mob\/?$/, '')
-    .replace(/\/+$/, '');
-  return `${apiHostBase}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
-}
+
 
 export function formatRelativeTimeVi(isoDate: string | null | undefined, now = new Date()): string {
   if (!isoDate) return 'Vừa xong';

@@ -130,14 +130,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm, // Căn lề riêng 8px
     paddingTop: theme.spacing.xs,
   },
-  avatar: { width: 33, height: 33 },
+  avatar: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden' },
   meta: { flex: 1 },
   name: {
     fontSize: theme.font.size.md,
     fontWeight: theme.font.weight.bold,
     color: theme.colors.text,
   },
-  time: { fontSize: theme.font.size.xs-1.6, color: theme.colors.muted },
+  time: { fontSize: theme.font.size.xs-2.3, color: theme.colors.muted },
   content: {
     fontSize: theme.font.size.md-1,
     lineHeight: 22,
