@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   time: { fontSize: theme.font.size.xs - 2.3, color: theme.colors.muted },
   content: {
-    fontSize: theme.font.size.md - 1,
+    fontSize: theme.font.size.md,
     lineHeight: 22,
     color: theme.colors.text,
     paddingHorizontal: theme.spacing.sm, // Căn lề riêng 8px
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   mediaStack: {
     width: '100%',
-    gap: theme.spacing.xs-2,
+    gap: theme.spacing.xs - 2,
   },
   stackImageWrapper: {
     width: '100%',
@@ -546,11 +546,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.sm + 2, // Căn lề riêng 8px
+    paddingHorizontal: theme.spacing.sm + 3, // Căn lề riêng 8px
     paddingTop: theme.spacing.xs,
     paddingBottom: 1,
   },
   group: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
-  action: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs + 2 },
+  action: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs + 4 },
   count: { fontSize: theme.font.size.sm, color: theme.colors.text },
 });
