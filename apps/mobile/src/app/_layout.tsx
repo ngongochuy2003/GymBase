@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import '../../global.css';
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
@@ -7,11 +8,21 @@ import { AppProviders } from '@/providers/app-providers';
 import { useSession } from '@/core/auth/session';
 import { useTheme } from '@/shared/theme/theme';
 import { LoadingState, Screen } from '@/shared/components/ui';
+import {
+  requestNotificationPermissionsAsync,
+  setupNotificationChannelsAsync,
+} from '@/shared/notifications';
 
 export const unstable_settings = { initialRouteName: 'index', anchor: 'index' };
 
 function Navigation() {
   const { status } = useSession();
+
+  useEffect(() => {
+    // Khởi tạo Notification Channels (IMPORTANCE_MAX) và xin quyền màn hình khóa
+    setupNotificationChannelsAsync().catch(() => {});
+    requestNotificationPermissionsAsync().catch(() => {});
+  }, []);
   const { isDark, colors } = useTheme();
 
   // Thư viện điều hướng có theme riêng (mặc định nền trắng). Không đồng bộ với theme của app thì mỗi lần chuyển màn ở chế độ

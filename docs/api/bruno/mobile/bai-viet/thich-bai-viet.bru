@@ -1,0 +1,19 @@
+meta {
+  name: Bật tắt lượt thích bài viết
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{mobileApi}}/baiviet/0193f0c0-0000-7000-8000-000000000001/thich
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}

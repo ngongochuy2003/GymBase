@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { useSession } from '@/core/auth/session';
 import { AppText, Button, Card, Screen } from '@/shared/components/ui';
+import { pickTabs, useTabNavigation } from '@/shared/navigation';
 import { useTheme } from '@/shared/theme/theme';
+import { BottomTabBar } from '@/shared/ui-kit';
+
+const profileTabs = pickTabs(['home', 'route', 'compose', 'messages', 'profile']);
 
 export function ProfileScreen() {
   const { user, signOut } = useSession();
   const { isDark, toggle } = useTheme();
+  const onTabPress = useTabNavigation();
   const [busy, setBusy] = useState(false);
   return (
-    <Screen>
+    <Screen
+      footer={
+        <BottomTabBar tabs={profileTabs} activeId="profile" onChange={onTabPress} />
+      }
+    >
       <AppText title>Không gian của bạn</AppText>
       <Card>
         <AppText title>{user?.ho_ten}</AppText>

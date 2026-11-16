@@ -9,6 +9,7 @@ import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import RegisterRoute from '@/app/(auth)/register';
 import ProtectedLayout from '@/app/(protected)/_layout';
+import HomeRoute from '@/app/(protected)/home';
 import TabsLayout from '@/app/(protected)/(tabs)/_layout';
 import TodayRoute from '@/app/(protected)/(tabs)/today';
 import ProfileRoute from '@/app/(protected)/(tabs)/profile';
@@ -51,6 +52,8 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(auth)/register': RegisterRoute,
   '(protected)/_layout': ProtectedLayout,
+  '(protected)/home': HomeRoute,
+  '(protected)/profile': ProfileRoute,
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
@@ -227,6 +230,10 @@ test('the first sign-in after registering shows onboarding, and skipping goes ho
 
   await fireEvent.press(await screen.findByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
 
+  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await act(async () => router.navigate('/' as never));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
+  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
   await waitFor(() => expect(screen).toHavePathname('/today'));
   expect(complete).toHaveBeenCalledTimes(1);
   await act(async () => router.navigate('/' as never));
@@ -335,5 +342,7 @@ test('a stored session that never finished onboarding shows it again', async () 
 
   await renderRouter(routes, { initialUrl: '/' });
 
+  await waitFor(() => expect(screen).toHavePathname('/home'));
+  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
   await waitFor(() => expect(screen).toHavePathname('/onboarding'));
 });

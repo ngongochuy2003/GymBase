@@ -35,6 +35,11 @@
     <Project Path="src/BIZ/GymBase.DLBiz.Contract/GymBase.DLBiz.Contract.csproj" />
     <Project Path="src/BIZ/GymBase.DLBiz.MySql/GymBase.DLBiz.MySql.csproj" />
   </Folder>
+  <Folder Name="/src/File/">
+    <Project Path="src/File/GymBase.BLFile/GymBase.BLFile.csproj" />
+    <Project Path="src/File/GymBase.DLFile.Contract/GymBase.DLFile.Contract.csproj" />
+    <Project Path="src/File/GymBase.DLFile.MySql/GymBase.DLFile.MySql.csproj" />
+  </Folder>
   <Folder Name="/tests/Shared/">
     <Project Path="tests/Shared/GymBase.TestDoubles/GymBase.TestDoubles.csproj" />
   </Folder>

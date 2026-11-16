@@ -7,6 +7,7 @@ import AuthLayout from '@/app/(auth)/_layout';
 import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
+import HomeRoute from '@/app/(protected)/home';
 import TabsLayout from '@/app/(protected)/(tabs)/_layout';
 import TodayRoute from '@/app/(protected)/(tabs)/today';
 import ProfileRoute from '@/app/(protected)/(tabs)/profile';
@@ -53,6 +54,8 @@ const routes = {
   '(auth)/welcome': WelcomeRoute,
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
+  '(protected)/home': HomeRoute,
+  '(protected)/profile': ProfileRoute,
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
@@ -134,11 +137,11 @@ test('signing in stores the tokens, opens the app and shows the account name', a
 
   await fillAndSubmit('  Minh.Anh@GymBase.Local ', 'Mk-thu-nghiem-1');
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(login).toHaveBeenCalledWith(
     expect.objectContaining({ email: 'minh.anh@gymbase.local', mat_khau: 'Mk-thu-nghiem-1' }),
   );
-  expect(await screen.findByText('Chào Minh Anh,')).toBeTruthy();
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
   expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
     'gymbase.session.tokens',
     JSON.stringify({ accessToken: 'access-1', refreshToken: 'refresh-1' }),
@@ -159,7 +162,7 @@ test('a network failure shows a message and pressing sign in again retries', asy
 
   await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(login).toHaveBeenCalledTimes(2);
 });
 
@@ -169,16 +172,16 @@ test('reopening the app restores the stored session without asking to sign in', 
 
   await renderRouter(routes, { initialUrl: '/' });
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(me).toHaveBeenCalled();
-  expect(await screen.findByText('Chào Minh Anh,')).toBeTruthy();
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
 });
 
 test('a stored session the server rejects sends the user to the welcome screen', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(storedTokens);
   jest.spyOn(authApi, 'me').mockRejectedValue(new ApiError('Hết phiên.', 401, 'UNAUTHORIZED'));
 
-  await renderRouter(routes, { initialUrl: '/today' });
+  await renderRouter(routes, { initialUrl: '/home' });
 
   expect(await screen.findByRole('button', { name: 'Đăng ký tài khoản' })).toBeTruthy();
   expect(screen).toHavePathname('/welcome');
@@ -229,6 +232,7 @@ test('a PROFILE_REQUIRED error sends the signed-in user to the profile setup pla
   jest.spyOn(authApi, 'me').mockResolvedValue(user);
 
   // Màn "Hôm nay" được thay bằng một màn có query trả PROFILE_REQUIRED.
+  await renderRouter({ ...routes, '(protected)/home': NeedsProfile }, { initialUrl: '/home' });
   await renderRouter(
     { ...routes, '(protected)/(tabs)/today': NeedsProfile },
     { initialUrl: '/today' },

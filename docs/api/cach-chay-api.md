@@ -89,6 +89,7 @@ Nhấn `Ctrl+Shift+P`, chọn **Tasks: Run Task**, rồi chọn task:
 | `Mobile: kiểm tra (lint + typecheck + test)` | `pnpm mobile:check` |
 
 App mobile cần `apps/mobile/.env` trỏ tới API (xem mục 5 và [chay-mobile.md](../onboarding/chay-mobile.md)). Muốn dừng API thì bấm vào terminal của task rồi nhấn Ctrl+C,
+
 hoặc chạy **Tasks: Terminate Task**.
 
 ## 3. Chạy bằng dòng lệnh

@@ -57,11 +57,15 @@ export function RegisterScreen() {
         dong_y_dieu_khoan: form.agreed,
         ...(form.referral ? { ma_gioi_thieu: form.referral } : {}),
       });
+<<<<<<< HEAD
+      router.replace('/register-success');
+=======
       // Đăng ký không có phiên: về màn đăng nhập, điền sẵn email và báo đã đăng ký xong.
       router.replace({
         pathname: '/login',
         params: { email: account.email ?? form.email, registered: '1' },
       });
+>>>>>>> develop
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
       if (apiError?.code === 'USER_EMAIL_TAKEN') {

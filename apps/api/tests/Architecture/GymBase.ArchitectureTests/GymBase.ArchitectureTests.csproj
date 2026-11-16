@@ -5,6 +5,10 @@
     <ProjectReference Include="..\..\..\src\Data\GymBase.Persistence\GymBase.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
+  </ItemGroup>
+
   <!-- NamingConventionTests nạp assembly BL/DL bằng tên để kiểm tra tên hàm: thêm nhóm hoặc project BL/DL mới thì thêm vào đây. -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
@@ -16,6 +20,9 @@
     <ProjectReference Include="..\..\..\src\BIZ\GymBase.BLBiz\GymBase.BLBiz.csproj" />
     <ProjectReference Include="..\..\..\src\BIZ\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />
     <ProjectReference Include="..\..\..\src\BIZ\GymBase.DLBiz.MySql\GymBase.DLBiz.MySql.csproj" />
+    <ProjectReference Include="..\..\..\src\File\GymBase.BLFile\GymBase.BLFile.csproj" />
+    <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.MySql\GymBase.DLFile.MySql.csproj" />
   </ItemGroup>
 
 </Project>

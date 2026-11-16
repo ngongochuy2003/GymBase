@@ -1,0 +1,31 @@
+meta {
+  name: Tạo bài viết mới
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{mobileApi}}/baiviet
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "noi_dung": "Buổi tập chân hôm nay rất sung sức!",
+    "che_do_hien_thi": "cong_khai",
+    "chu_de": "workout",
+    "hinh_anh_urls": [
+      "https://picsum.photos/seed/gymbase-legday/800/500"
+    ]
+  }
+}
+
+assert {
+  res.status: eq 201
+}

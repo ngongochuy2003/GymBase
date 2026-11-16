@@ -26,10 +26,6 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 cssInterop(SafeAreaView, { className: 'style' });
 
-/**
- * Khung màn hình có cuộn và né bàn phím. `bottomInset` dành cho màn không có thanh tab (phủ kín đáy màn hình), để nội
- * dung không chui xuống dưới thanh điều hướng của hệ thống.
- */
 export function Screen({
   children,
   bottomInset = false,

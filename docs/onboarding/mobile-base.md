@@ -1,59 +1,28 @@
-# Bàn giao Mobile base
+# Bàn giao Mobile
 
-## Kết quả
+## Trạng thái hiện tại
 
-Mobile đặt tại `apps/mobile`, giữ nguyên root monorepo và tài liệu Word.
-Stack: Expo SDK 58, React Native 0.88.1, React 19.3.0, TypeScript 6 strict,
-Expo Router, TanStack Query, Axios, React Hook Form/Zod và SecureStore.
-Root pin pnpm 10.34.9, có `pnpm-lock.yaml`, hoisted workspace và Node version file.
+Mobile tại `apps/mobile` dùng Expo SDK 58, React Native 0.88.1, React 19.3.0, TypeScript 6 strict, Expo Router, TanStack Query, Axios, React Hook Form/Zod và SecureStore.
 
-Đã tạo route khách/protected, demo session, theme sáng/tối, UI primitives,
-API error mapping/refresh seam, storage adapters và feature lịch tập mẫu.
-Màn hình demo không gọi backend; trạng thái hoàn thành chỉ nằm trong Query cache
-và không trừ gói buổi PT. API mode chủ động chặn demo khi chưa có auth adapter thật.
+Ứng dụng chạy với API thật, không nạp bài viết hoặc tài khoản mẫu ở runtime. Đã nối đăng nhập, khôi phục phiên qua `/auth/me`, refresh token, đăng xuất, tải feed, thích bài và tạo bài. Ảnh/video từ thiết bị được tải lên backend trước khi tạo bài. Bài viết và tương tác được lưu qua backend/MySQL; file dùng cấu hình lưu trữ backend.
 
-## Kiểm thử
+## Kiểm tra
 
-- TypeScript strict, ESLint (0 warnings), Prettier: **PASS**.
-- Jest/RNTL/Expo Router: **15/15 tests PASS** (4 suites), gồm form validation, vào/thoát demo,
-  cập nhật tiến trình, xóa dữ liệu phiên cũ, đổi theme, empty/error/retry,
-  API status mapping, timeout/offline, concurrent refresh, retry giới hạn,
-  config validation và secure storage/corrupt data.
-- Router integration test dùng routes/layouts thật: guest deep-link tới profile
-  được chuyển về login; vào demo tới today; logout quay về login, không rơi vào 404.
-- Expo export: đã tạo bundles **Android + iOS + web** thành công.
-- `expo install --check`: dependencies tương thích.
-- Đã mở app trên **Pixel_6a_API_35, Android emulator**, bằng Expo Go.
-- Chưa chạy thiết bị iOS, chưa build APK/IPA, chưa tích hợp backend thật.
-- Workflow GitHub Actions đã viết; chưa push nên chưa có kết quả CI remote.
+- `pnpm mobile:check`: lint, typecheck và 33 test trong 7 suites đều pass.
+- `dotnet test GymBase.slnx`: architecture 66, integration 72 và unit 188 đều pass (chạy với `-p:NuGetAudit=false` khi NuGet audit không truy cập được).
+- Expo web đã chạy được tại `http://localhost:8082`; app hiển thị màn hình đăng nhập.
+- Chưa xác minh login bằng tài khoản người dùng cụ thể, thiết bị iOS hoặc build APK/IPA.
 
-Ảnh chụp từ emulator, không phải mockup:
+## Cấu hình chạy
 
-- [Màn hình vào demo](screenshots/mobile-login-android.png)
-- [Màn hình lịch tập](screenshots/mobile-dashboard-android.png)
+1. Khởi động MySQL 8.4 và áp dụng migrations.
+2. Đặt connection string và khóa JWT bằng User Secrets hoặc environment variables.
+3. Chạy API trên cổng 5020 và cấu hình CORS cho nguồn Expo web.
+4. Đặt `EXPO_PUBLIC_API_URL` trong `apps/mobile/.env` thành `http://localhost:5020`. Trên thiết bị thật, dùng IP LAN của máy phát triển.
+5. Tạo tài khoản Admin qua lệnh `create-admin` hoặc dùng một tài khoản có sẵn trong database rồi đăng nhập trong app.
 
-## Các file chính
+## Giới hạn
 
-| Khu vực | Thay đổi |
-| --- | --- |
-| Root manifest/config | Scripts mobile, packageManager, engines, .npmrc, .node-version, lockfile |
-| apps/mobile/config | Expo, TypeScript, Metro, Jest, ESLint, Prettier, env example |
-| apps/mobile/src/app | Router và layouts; routes chỉ gọi feature exports |
-| apps/mobile/src/features | auth, pt-sessions, profile, hướng dẫn thêm module |
-| apps/mobile/src/core | Config, session, API factory/errors, storage adapters |
-| apps/mobile/src/shared | UI và light/dark theme |
-| apps/mobile/src/providers | Composition, Query defaults, cache clear và error boundary |
-| apps/mobile/__tests__ | Kiểm thử hành vi và adapter |
-| .github/workflows/mobile-ci.yml | Install frozen lockfile, checks và bundle export |
-| README/docs | Hướng dẫn chạy, trạng thái kiến trúc và roadmap cập nhật |
+Backend chưa có đăng ký công khai, khôi phục mật khẩu qua email hoặc Google login. Tab lộ trình, khám phá và tin nhắn chưa có API nghiệp vụ. Bản web dùng SecureStore memory adapter nên phiên không tồn tại sau khi reload; native dùng SecureStore.
 
-## Giới hạn và công việc tiếp theo
-
-Đây là base mobile chạy demo, chưa phải toàn bộ base production/auth trong tài liệu.
-Các phần còn chờ: backend API contract, restore phiên thật, refresh rotation/revoke,
-logout-vs-refresh race, permissions, API repository, integration/E2E thật,
-EAS project/signing, app identifiers và tests trên thiết bị iOS.
-
-Không tạo modules V2/V3 rỗng, native projects hoặc Expo project ID giả.
-Đọc [README Mobile](../../apps/mobile/README.md) trước khi phát triển feature mới.
-Không thay đổi backend/database, không commit/push/merge trong lần thi công này.
+EAS project/signing, app identifiers và kiểm thử thiết bị iOS chưa cấu hình. Không tạo modules V2/V3 rỗng hoặc Expo project ID giả.

@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { tokenStorage } from '@/core/storage/token-storage';
 import { parseEnv } from '@/core/config/env';
 
+
 test('requires a valid API URL because sign-in always calls the backend', () => {
   expect(() => parseEnv({})).toThrow('EXPO_PUBLIC_API_URL');
   expect(() => parseEnv({ dataMode: 'api' })).toThrow('EXPO_PUBLIC_API_URL');
