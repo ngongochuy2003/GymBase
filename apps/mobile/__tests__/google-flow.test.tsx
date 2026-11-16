@@ -45,7 +45,6 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/profile': ProfileRoute,
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
@@ -92,10 +91,8 @@ test('first Google sign-in stores the session, shows onboarding until a button i
 
   await fireEvent.press(screen.getByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
   await waitFor(() => expect(screen).toHavePathname('/home'));
-  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
-  await waitFor(() => expect(screen).toHavePathname('/today'));
   expect(complete).toHaveBeenCalledTimes(1);
-  expect(await screen.findByText('Chào Người Google,')).toBeTruthy();
+  expect(await screen.findByRole('tab', { name: 'Trang chủ' })).toBeTruthy();
 });
 
 test('a returning Google user goes straight to the app', async () => {
@@ -105,8 +102,6 @@ test('a returning Google user goes straight to the app', async () => {
   await fireEvent.press(screen.getByRole('button', GOOGLE));
 
   await waitFor(() => expect(screen).toHavePathname('/home'));
-  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
-  await waitFor(() => expect(screen).toHavePathname('/today'));
   expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
 });
 

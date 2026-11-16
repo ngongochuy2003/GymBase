@@ -11,7 +11,7 @@ import { SuccessBadge } from '../components/success-badge';
 export function OnboardingScreen() {
   const { completeOnboarding } = useSession();
   const { colors } = useTheme();
-  const go = async (href: '/profile-setup' | '/today') => {
+  const go = async (href: '/profile-setup' | '/home') => {
     await completeOnboarding();
     router.replace(href);
   };
@@ -46,7 +46,7 @@ export function OnboardingScreen() {
           label="Bỏ qua, vào Trang chủ"
           secondary
           trailingIcon="chevron-forward"
-          onPress={() => void go('/today')}
+          onPress={() => void go('/home')}
         />
       </View>
     </Screen>

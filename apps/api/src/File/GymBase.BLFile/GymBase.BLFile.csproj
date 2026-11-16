@@ -11,7 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Auth\GymBase.BLAuth\GymBase.BLAuth.csproj" />
     <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
     <ProjectReference Include="..\..\Contracts\GymBase.ModuleContracts\GymBase.ModuleContracts.csproj" />
     <ProjectReference Include="..\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
