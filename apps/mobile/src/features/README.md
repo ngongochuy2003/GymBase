@@ -1,7 +1,6 @@
 # Ranh giới feature
 
-`auth` là màn chào mừng và đăng nhập; `pt-sessions` có màn hình lịch tập, typed repository,
-query keys, hook và UI; `profile` chứa tùy chỉnh giao diện/thoát phiên.
+`auth` là màn chào mừng và đăng nhập; `profile` chứa tùy chỉnh giao diện/thoát phiên và các bước thiết lập hồ sơ.
 
 `feed/config` và `composer/config` chỉ chứa cấu hình giao diện tĩnh (nhãn bộ lọc, chủ đề, hành động). Dữ liệu nghiệp vụ đi qua repository API, không có bộ dữ liệu mẫu ở runtime.
 

@@ -119,11 +119,10 @@ Id người dùng mẫu (sau khi nạp seed): `0193f0a0-0000-7000-8000-000000000
 ## 5. Cho app mobile gọi được API
 
 Cấu hình `apps/mobile/.env` (xem `.env.example`). `EXPO_PUBLIC_API_URL` là địa chỉ **host của API, không kèm** tiền tố
-`/api/v1/mob` (app tự thêm). Đăng nhập luôn gọi API thật; `EXPO_PUBLIC_DATA_MODE=demo` chỉ chọn dữ liệu mẫu cho lịch tập.
+`/api/v1/mob` (app tự thêm). App luôn gọi API thật.
 Hướng dẫn từng bước từ đầu: [chay-mobile.md](../onboarding/chay-mobile.md).
 
 ```text
-EXPO_PUBLIC_DATA_MODE=demo
 EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 ```
 

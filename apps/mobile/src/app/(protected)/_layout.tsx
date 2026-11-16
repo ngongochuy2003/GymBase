@@ -5,8 +5,7 @@ import { LoadingState, Screen } from '@/shared/components/ui';
 import { useTheme } from '@/shared/theme/theme';
 
 /**
- * Nhóm đã đăng nhập: các màn chưa vào app (onboarding, thiết lập hồ sơ) nằm cùng Stack với nhóm tab, nên chúng phủ kín
- * màn hình, không có thanh tab phía dưới.
+ * Nhóm đã đăng nhập: các màn chưa vào app (onboarding, thiết lập hồ sơ) là màn riêng trong Stack, phủ kín màn hình và không có thanh tab.
  */
 export default function ProtectedLayout() {
   const { status } = useSession();
@@ -35,7 +34,7 @@ export default function ProtectedLayout() {
         }}
       >
         <Stack.Screen name="home" />
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="profile" />
         <Stack.Screen name="compose" />
         <Stack.Screen name="post-detail" />
         <Stack.Screen name="onboarding" />

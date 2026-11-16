@@ -8,9 +8,7 @@ import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
 import HomeRoute from '@/app/(protected)/home';
-import TabsLayout from '@/app/(protected)/(tabs)/_layout';
-import TodayRoute from '@/app/(protected)/(tabs)/today';
-import ProfileRoute from '@/app/(protected)/(tabs)/profile';
+import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
@@ -55,9 +53,7 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/(tabs)/_layout': TabsLayout,
-  '(protected)/(tabs)/today': TodayRoute,
-  '(protected)/(tabs)/profile': ProfileRoute,
+  '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup/index': ProfileSetupRoute,
   '+not-found': NotFound,
 };

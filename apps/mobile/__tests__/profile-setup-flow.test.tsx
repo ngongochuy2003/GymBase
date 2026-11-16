@@ -7,9 +7,7 @@ import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
 import HomeRoute from '@/app/(protected)/home';
-import TabsLayout from '@/app/(protected)/(tabs)/_layout';
-import TodayRoute from '@/app/(protected)/(tabs)/today';
-import ProfileRoute from '@/app/(protected)/(tabs)/profile';
+import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import PersonalInfoRoute from '@/app/(protected)/profile-setup/ca-nhan';
 import ProfileDetailRoute from '@/app/(protected)/profile-setup/chi-tiet';
@@ -40,9 +38,7 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/(tabs)/_layout': TabsLayout,
-  '(protected)/(tabs)/today': TodayRoute,
-  '(protected)/(tabs)/profile': ProfileRoute,
+  '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup/index': ProfileSetupRoute,
   '(protected)/profile-setup/ca-nhan': PersonalInfoRoute,
   '(protected)/profile-setup/chi-tiet': ProfileDetailRoute,
@@ -86,8 +82,7 @@ test('the role picker shows the three roles with no tab bar and no placeholder',
   expect(screen.getByText('Tôi là PT')).toBeTruthy();
   expect(screen.getByText('Tôi muốn cả hai')).toBeTruthy();
   expect(screen.getByText('Một tài khoản, một hồ sơ chung.')).toBeTruthy();
-  expect(screen.queryByText('Hôm nay')).toBeNull();
-  expect(screen.queryByText('Cá nhân')).toBeNull();
+  expect(screen.queryByText('Khám phá')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Để sau' })).toBeNull();
 });
 

@@ -10,9 +10,7 @@ import LoginRoute from '@/app/(auth)/login';
 import RegisterRoute from '@/app/(auth)/register';
 import ProtectedLayout from '@/app/(protected)/_layout';
 import HomeRoute from '@/app/(protected)/home';
-import TabsLayout from '@/app/(protected)/(tabs)/_layout';
-import TodayRoute from '@/app/(protected)/(tabs)/today';
-import ProfileRoute from '@/app/(protected)/(tabs)/profile';
+import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
@@ -53,9 +51,7 @@ const routes = {
   '(auth)/register': RegisterRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/(tabs)/_layout': TabsLayout,
-  '(protected)/(tabs)/today': TodayRoute,
-  '(protected)/(tabs)/profile': ProfileRoute,
+  '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup/index': ProfileSetupRoute,
   '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
