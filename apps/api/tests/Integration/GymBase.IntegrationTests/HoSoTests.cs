@@ -40,9 +40,17 @@ public sealed class HoSoTests : IAsyncLifetime
         string khuVuc = "ha_noi",
         decimal chieuCao = 172.5m,
         decimal canNang = 68.4m,
-        string loaiNguoiDung = "hoc_vien") => new
+        string loaiNguoiDung = "hoc_vien",
+        string ngaySinh = "1998-05-20",
+        string gioiTinh = "nam",
+        string trinhDo = "co_nen_tang",
+        string? tenHienThi = null) => new
     {
         loai_nguoi_dung = loaiNguoiDung,
+        ten_hien_thi = tenHienThi,
+        ngay_sinh = ngaySinh,
+        gioi_tinh = gioiTinh,
+        trinh_do_tap = trinhDo,
         muc_tieu_tap_luyen = mucTieu,
         chieu_cao_cm = chieuCao,
         can_nang_kg = canNang,
@@ -131,6 +139,9 @@ public sealed class HoSoTests : IAsyncLifetime
         var response = await Luu(client, new
         {
             loai_nguoi_dung = "pt",
+            ngay_sinh = "1990-03-10",
+            gioi_tinh = "nam",
+            trinh_do_tap = "lau_nam",
             muc_tieu_tap_luyen = "tang_co",
             chieu_cao_cm = 178m,
             can_nang_kg = 75m,
@@ -180,6 +191,9 @@ public sealed class HoSoTests : IAsyncLifetime
         var response = await Luu(client, new
         {
             loai_nguoi_dung = "hoc_vien",
+            ngay_sinh = "1998-05-20",
+            gioi_tinh = "nam",
+            trinh_do_tap = "co_nen_tang",
             muc_tieu_tap_luyen = "tang_co",
             chieu_cao_cm = 172.5m,
             can_nang_kg = 68.4m,
@@ -200,6 +214,115 @@ public sealed class HoSoTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("ROLE_INVALID", await CodeOf(response));
+    }
+
+    [Fact]
+    public async Task Luu_ngay_sinh_gioi_tinh_trinh_do_va_doc_lai_dung()
+    {
+        var client = Client(HocVien);
+
+        var response = await Luu(client, BodyHocVien(ngaySinh: "1998-05-20", gioiTinh: "nu", trinhDo: "lau_nam"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var doc = await client.GetFromJsonAsync<JsonElement>(HoSo);
+        Assert.Equal("1998-05-20", doc.GetProperty("ngay_sinh").GetString());
+        Assert.Equal("nu", doc.GetProperty("gioi_tinh").GetString());
+        Assert.Equal("lau_nam", doc.GetProperty("trinh_do_tap").GetString());
+    }
+
+    [Theory]
+    [InlineData("ngay_sinh")]
+    [InlineData("gioi_tinh")]
+    [InlineData("trinh_do_tap")]
+    public async Task Thieu_truong_ca_nhan_bat_buoc_tra_400(string truong)
+    {
+        var client = Client(HocVien);
+        var body = JsonSerializer.SerializeToNode(BodyHocVien())!.AsObject();
+        body.Remove(truong);
+
+        var response = await Luu(client, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("VALIDATION_FAILED", json.GetProperty("code").GetString());
+        Assert.True(json.GetProperty("errors").TryGetProperty(truong, out _));
+    }
+
+    [Theory]
+    [InlineData("2999-01-01")] // tương lai
+    [InlineData("2020-01-01")] // dưới 13 tuổi
+    [InlineData("1900-01-01")] // trên 100 tuổi
+    public async Task Ngay_sinh_ngoai_khoang_tuoi_tra_400(string ngaySinh)
+    {
+        var client = Client(HocVien);
+
+        var response = await Luu(client, BodyHocVien(ngaySinh: ngaySinh));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("VALIDATION_FAILED", json.GetProperty("code").GetString());
+        Assert.True(json.GetProperty("errors").TryGetProperty("ngay_sinh", out _));
+    }
+
+    [Theory]
+    [InlineData("gioi_tinh")]
+    [InlineData("trinh_do_tap")]
+    public async Task Ma_gioi_tinh_hoac_trinh_do_sai_tra_400_CATEGORY_INVALID(string truong)
+    {
+        var client = Client(HocVien);
+
+        var response = await Luu(client, truong == "gioi_tinh"
+            ? BodyHocVien(gioiTinh: "khong_co_that")
+            : BodyHocVien(trinhDo: "khong_co_that"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("CATEGORY_INVALID", await CodeOf(response));
+    }
+
+    [Fact]
+    public async Task Gui_ten_hien_thi_thi_doi_khong_gui_thi_giu()
+    {
+        var client = Client(HocVien);
+
+        var taoMoi = await (await Luu(client, BodyHocVien(tenHienThi: "  Huy Gym  "))).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Huy Gym", taoMoi.GetProperty("ten_hien_thi").GetString());
+
+        var giu = await (await Luu(client, BodyHocVien())).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Huy Gym", giu.GetProperty("ten_hien_thi").GetString());
+
+        var doi = await (await Luu(client, BodyHocVien(tenHienThi: "Huy Mới"))).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Huy Mới", doi.GetProperty("ten_hien_thi").GetString());
+    }
+
+    [Fact]
+    public async Task Ten_hien_thi_rong_tra_400()
+    {
+        var client = Client(HocVien);
+
+        var response = await Luu(client, BodyHocVien(tenHienThi: "   "));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(json.GetProperty("errors").TryGetProperty("ten_hien_thi", out _));
+    }
+
+    [Fact]
+    public async Task Ho_so_cu_chua_co_truong_moi_doc_ra_null()
+    {
+        _app.Services.GetRequiredService<InMemoryHoSoNguoiDungStore>().Set(new ho_so_nguoi_dung
+        {
+            tai_khoan_id = HocVien,
+            loai_nguoi_dung = LoaiNguoiDung.hoc_vien,
+            ten_hien_thi = "Huy",
+            trang_thai_xac_minh = TrangThaiXacMinh.chua_xac_minh,
+        });
+        var client = Client(HocVien);
+
+        var doc = await client.GetFromJsonAsync<JsonElement>(HoSo);
+
+        Assert.Equal(JsonValueKind.Null, doc.GetProperty("ngay_sinh").ValueKind);
+        Assert.Equal(JsonValueKind.Null, doc.GetProperty("gioi_tinh").ValueKind);
+        Assert.Equal(JsonValueKind.Null, doc.GetProperty("trinh_do_tap").ValueKind);
     }
 
     [Fact]

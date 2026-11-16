@@ -724,6 +724,10 @@ namespace GymBase.Persistence.Migrations
                     b.Property<string>("gioi_thieu")
                         .HasColumnType("text");
 
+                    b.Property<string>("gioi_tinh")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
                     b.Property<string>("khu_vuc_hoat_dong")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
@@ -745,6 +749,9 @@ namespace GymBase.Persistence.Migrations
 
                     b.Property<DateTime?>("ngay_chinh_sua")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<DateOnly?>("ngay_sinh")
+                        .HasColumnType("date");
 
                     b.Property<DateTime>("ngay_tao")
                         .HasColumnType("datetime(6)");
@@ -776,6 +783,10 @@ namespace GymBase.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<string>("trinh_do_tap")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<decimal?>("vi_do")
                         .HasPrecision(9, 6)

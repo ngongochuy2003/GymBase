@@ -28,6 +28,8 @@ public sealed class HoSoNguoiDungConfiguration : IEntityTypeConfiguration<ho_so_
         builder.Property(e => e.ten_hien_thi).HasMaxLength(100);
         builder.Property(e => e.gioi_thieu).AsText();
         builder.Property(e => e.muc_tieu_tap_luyen).AsText();
+        builder.Property(e => e.gioi_tinh).HasMaxLength(50);
+        builder.Property(e => e.trinh_do_tap).HasMaxLength(50);
         builder.Property(e => e.chuyen_mon).AsJson();
         builder.Property(e => e.khu_vuc_hoat_dong).HasMaxLength(255);
         builder.Property(e => e.vi_do).HasPrecision(9, 6);

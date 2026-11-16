@@ -18,6 +18,18 @@ public sealed class ho_so_nguoi_dung
 
     public string? gioi_thieu { get; set; }
 
+    /// <summary>
+    /// Ngày sinh, riêng tư: chỉ chính chủ đọc được, không xuất hiện ở hồ sơ công khai (kể cả dạng tuổi).
+    /// NULL với hồ sơ tạo trước khi có cột này.
+    /// </summary>
+    public DateOnly? ngay_sinh { get; set; }
+
+    /// <summary>Mã trong danh mục <c>gioi_tinh</c>, riêng tư như <see cref="ngay_sinh"/>.</summary>
+    public string? gioi_tinh { get; set; }
+
+    /// <summary>Trình độ tập của học viên, mã trong danh mục <c>trinh_do_tap</c>.</summary>
+    public string? trinh_do_tap { get; set; }
+
     /// <summary>Ảnh đại diện, trỏ tới tep_tin.</summary>
     public Guid? anh_dai_dien_tep_tin_id { get; set; }
 
