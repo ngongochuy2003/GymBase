@@ -1,5 +1,6 @@
 using GymBase.Base.Auth;
 using GymBase.BLBiz.BaiViet;
+using GymBase.BLBiz.BLHoSo;
 using GymBase.BLBiz.BLQuyenHan;
 using GymBase.BLBiz.BLTruyCap;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,7 @@ public static class BizBusinessExtensions
         services.AddScoped<QuyenHanService>();
         services.AddScoped<IQuyenHanProvider>(provider => provider.GetRequiredService<QuyenHanService>());
         services.AddScoped<TruyCapService>();
+        services.AddScoped<HoSoService>();
         return services;
     }
 }

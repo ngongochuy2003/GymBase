@@ -2,9 +2,10 @@ import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSession } from '@/core/auth/session';
-import { AppText, Button, Screen } from '@/shared/components/ui';
+import { Screen } from '@/shared/components/ui';
 import { useTheme } from '@/shared/theme/theme';
-
+import { Button } from 'react-native';
+<AppText></AppText>
 /** Hiện đúng một lần, ngay sau khi tài khoản vừa được tạo (cờ `pendingWelcome` của phiên). */
 export function RegisterSuccessScreen() {
   const { completeWelcome } = useSession();

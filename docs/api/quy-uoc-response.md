@@ -210,6 +210,9 @@ HTTP của mã chung tương ứng**.
 | 403 | `CONNECTION_NOT_ACTIVE` | `BizErrorCodes.ConnectionNotActive` | Không có kết nối PT đang hoạt động với học viên | Đang dùng |
 | 403 | `SCOPE_NOT_ALLOWED` | `BizErrorCodes.ScopeNotAllowed` | Kết nối PT không phụ trách lĩnh vực này (`tap_luyen` hoặc `dinh_duong`) | Đang dùng |
 | 403 | `DATA_NOT_SHARED` | `BizErrorCodes.DataNotShared` | Dữ liệu của học viên chưa được chia sẻ cho người gọi | Đang dùng |
+| 404 | `PROFILE_NOT_FOUND` | `BizErrorCodes.ProfileNotFound` | Tài khoản chưa thiết lập hồ sơ mà đọc hồ sơ (`GET /mob/ho-so`) | Đang dùng |
+| 400 | `CATEGORY_INVALID` | `BizErrorCodes.CategoryInvalid` | Mã danh mục (mục tiêu, khu vực, chuyên môn) không tồn tại hoặc đã ẩn. `errors` có trường tương ứng | Đang dùng |
+| 400 | `ROLE_INVALID` | `BizErrorCodes.RoleInvalid` | `loai_nguoi_dung` không phải `hoc_vien`/`pt`/`ca_hai`, hoặc tài khoản học viên gửi thông tin PT | Đang dùng |
 
 Thêm mã mới thì thêm một dòng vào bảng này, cùng commit với code dùng mã đó.
 

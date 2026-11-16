@@ -69,43 +69,57 @@ public sealed class RegisterTests : IAsyncLifetime
     [Theory]
     [InlineData(Web)]
     [InlineData(Mob)]
-    public async Task Register_returns_tokens_and_marks_the_account_as_new(string path)
+    public async Task Register_creates_the_account_without_a_session(string path)
     {
         var response = await Register(Body(), path);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("access_token", text);
+        Assert.DoesNotContain("refresh_token", text);
+        Assert.DoesNotContain("mat_khau", text);
         var body = await Json(response);
-        Assert.False(string.IsNullOrEmpty(body.GetProperty("access_token").GetString()));
-        Assert.False(string.IsNullOrEmpty(body.GetProperty("refresh_token").GetString()));
-        Assert.True(body.GetProperty("tai_khoan_moi").GetBoolean());
-        var user = body.GetProperty("user");
-        Assert.Equal("moi@gymbase.test", user.GetProperty("email").GetString());
-        Assert.Equal("User", user.GetProperty("vai_tro").GetString());
-        Assert.DoesNotContain("mat_khau", await response.Content.ReadAsStringAsync());
+        Assert.Equal("moi@gymbase.test", body.GetProperty("email").GetString());
+        Assert.Equal("User", body.GetProperty("vai_tro").GetString());
+        Assert.True(body.GetProperty("is_dang_nhap_lan_dau").GetBoolean());
     }
 
     [Fact]
-    public async Task Token_from_register_works_without_logging_in_again()
-    {
-        var token = (await Json(await Register(Body()))).GetProperty("access_token").GetString();
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"{Web}/me");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var me = await _client.SendAsync(request);
-
-        Assert.Equal(HttpStatusCode.OK, me.StatusCode);
-        Assert.Equal("moi@gymbase.test", (await Json(me)).GetProperty("email").GetString());
-    }
-
-    [Fact]
-    public async Task Registered_account_can_log_in_with_its_email_and_login_is_not_marked_new()
+    public async Task Registered_account_can_log_in_with_its_email_and_still_has_the_first_login_flag()
     {
         await Register(Body(email: "Dang.Nhap@GymBase.Test"));
 
         var login = await _client.PostAsJsonAsync($"{Web}/login", new { email = "dang.nhap@gymbase.test", mat_khau = Password });
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        Assert.False((await Json(login)).GetProperty("tai_khoan_moi").GetBoolean());
+        Assert.True((await Json(login)).GetProperty("user").GetProperty("is_dang_nhap_lan_dau").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData(Web)]
+    [InlineData(Mob)]
+    public async Task Completing_the_first_login_clears_the_flag_for_later_logins(string path)
+    {
+        await Register(Body(), path);
+        var login = await Json(await _client.PostAsJsonAsync($"{path}/login", new { email = "moi@gymbase.test", mat_khau = Password }));
+        var token = login.GetProperty("access_token").GetString();
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{path}/hoan-tat-dang-nhap-lan-dau");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var done = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, done.StatusCode);
+        Assert.False((await Json(done)).GetProperty("is_dang_nhap_lan_dau").GetBoolean());
+        var again = await Json(await _client.PostAsJsonAsync($"{path}/login", new { email = "moi@gymbase.test", mat_khau = Password }));
+        Assert.False(again.GetProperty("user").GetProperty("is_dang_nhap_lan_dau").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Completing_the_first_login_requires_a_session()
+    {
+        var response = await _client.PostAsync($"{Web}/hoan-tat-dang-nhap-lan-dau", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -189,15 +203,23 @@ public sealed class RegisterTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, (await Register(Body(email: "hai@gymbase.test"))).StatusCode);
     }
 
+    [Fact]
+    public async Task Password_shorter_than_eight_characters_is_rejected()
+    {
+        var response = await Register(Body(password: "ngan"));
+
+        await AssertProblem(response, HttpStatusCode.BadRequest, "VALIDATION_FAILED", "mat_khau");
+    }
+
     [Theory]
     [InlineData("12345678")]
     [InlineData("matkhau123")]
     [InlineData("Mk-phuong.thao-1")]
-    public async Task Weak_or_email_containing_passwords_are_rejected(string password)
+    public async Task Only_length_matters_so_common_or_email_containing_passwords_are_accepted(string password)
     {
         var response = await Register(Body(email: "phuong.thao@gymbase.test", password: password));
 
-        await AssertProblem(response, HttpStatusCode.BadRequest, "VALIDATION_FAILED", "mat_khau");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

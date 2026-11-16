@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { Image, Text, View } from 'react-native';
 import { ApiError } from '@/core/api/api-error';
 import { GoogleSignInUnavailableError, googleSignIn } from '@/core/auth/google-sign-in';
 import { useSession } from '@/core/auth/session';
 import { Button } from '@/shared/components/ui';
+
+/** Logo "G" nhiều màu chính thức của Google (nền trong suốt), cố định ở cả chế độ sáng và tối. Nguồn: assets/images/NGUON-ANH.md. */
+const GOOGLE_LOGO = require('../../../../assets/images/google-g.png');
 
 const UNAVAILABLE_MESSAGES = {
   NOT_CONFIGURED: 'Đăng nhập Google chưa được cấu hình trên bản này.',
@@ -44,8 +46,7 @@ export function GoogleSignInButton() {
         setBusy(false);
         return;
       }
-      const res = await signInWithGoogle(idToken);
-      router.replace(res.tai_khoan_moi ? '/register-success' : '/home');
+      await signInWithGoogle(idToken);
     } catch (error) {
       setMessage(errorMessage(error));
       setBusy(false);
@@ -54,7 +55,20 @@ export function GoogleSignInButton() {
 
   return (
     <View className="gap-3">
-      <Button label="Đăng nhập với Google" secondary loading={busy} onPress={() => void press()} />
+      <Button
+        pill
+        label="Đăng nhập với Google"
+        secondary
+        loading={busy}
+        leading={
+          <Image
+            source={GOOGLE_LOGO}
+            accessibilityIgnoresInvertColors
+            style={{ width: 20, height: 20 }}
+          />
+        }
+        onPress={() => void press()}
+      />
       {message ? (
         <Text accessibilityRole="alert" className="text-destructive">
           {message}

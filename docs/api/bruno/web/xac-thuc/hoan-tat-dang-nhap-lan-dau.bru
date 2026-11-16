@@ -1,0 +1,28 @@
+meta {
+  name: Hoàn tất đăng nhập lần đầu
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{webApi}}/auth/hoan-tat-dang-nhap-lan-dau
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.is_dang_nhap_lan_dau: eq false
+}
+
+docs {
+  Người dùng bấm một trong hai nút của màn onboarding. Đặt is_dang_nhap_lan_dau = false cho tài khoản đang đăng nhập; gọi lại vẫn an toàn.
+}

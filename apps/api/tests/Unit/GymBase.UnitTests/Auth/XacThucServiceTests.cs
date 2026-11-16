@@ -340,19 +340,29 @@ public class XacThucServiceTests
         Assert.True(error.Errors!.ContainsKey("mat_khau_cu"));
     }
 
-    [Theory]
-    [InlineData("ngan")]              // dưới 8 ký tự
-    [InlineData("12345678")]          // phổ biến
-    [InlineData("PASSWORD1")]         // phổ biến, khác hoa thường
-    [InlineData("xx-hv.dangnhap-xx")] // chứa tên đăng nhập
-    public async Task Weak_new_password_is_rejected(string newPassword)
+    [Fact]
+    public async Task New_password_shorter_than_eight_characters_is_rejected()
     {
+        const string newPassword = "ngan";
         var service = Service(new FakeCurrentUser(UserName, _user.Id));
 
         var error = await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLDoiMatKhauAsync(
             new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = newPassword }, CancellationToken.None));
 
         Assert.True(error.Errors!.ContainsKey("mat_khau_moi"));
+    }
+
+    [Theory]
+    [InlineData("12345678")]          // trước đây bị chặn vì phổ biến
+    [InlineData("PASSWORD1")]         // trước đây bị chặn vì phổ biến
+    [InlineData("xx-hv.dangnhap-xx")] // trước đây bị chặn vì chứa tên đăng nhập
+    public async Task Only_length_matters_so_common_or_username_containing_passwords_are_accepted(string newPassword)
+    {
+        var service = Service(new FakeCurrentUser(UserName, _user.Id));
+
+        await service.BLDoiMatKhauAsync(new DoiMatKhauDto { mat_khau_cu = Password, mat_khau_moi = newPassword }, CancellationToken.None);
+
+        await Login(password: newPassword);
     }
 
     [Fact]

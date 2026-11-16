@@ -2,7 +2,12 @@ import { Text } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { useSession } from '@/core/auth/session';
 import { LoadingState, Screen } from '@/shared/components/ui';
-
+import { Stack } from 'expo-router';
+import { useTheme } from '@/shared/theme/theme';
+/**
+ * Nhóm đã đăng nhập: các màn chưa vào app (onboarding, thiết lập hồ sơ) nằm cùng Stack với nhóm tab, nên chúng phủ kín
+ * màn hình, không có thanh tab phía dưới.
+ */
 export default function ProtectedLayout() {
   const { status } = useSession();
 
@@ -19,11 +24,11 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <Tabs
+    <Stack
       screenOptions={{
         headerShown: false,
         // Các màn ScreenRenderer tự vẽ footer theo thiết kế; ẩn tab bar native để không bị lặp.
-        tabBarStyle: { display: 'none' },
+        contentStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen
@@ -44,6 +49,15 @@ export default function ProtectedLayout() {
       <Tabs.Screen name="post-detail" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="profile-setup" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="register-success" options={{ tabBarButton: () => null }} />
-    </Tabs>
+      <Tabs.Screen
+        options={{
+          animation: 'fade',
+          
+        }}
+      />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="profile-setup" />
+    </Stack>
   );
 }

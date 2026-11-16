@@ -9,11 +9,14 @@ using GymBase.BLBiz;
 using GymBase.BLBiz.BaiViet;
 using GymBase.DLBiz.Contract;
 using GymBase.BLBiz.BLTruyCap;
+using GymBase.BLDI;
 using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
+using GymBase.DLBiz.Contract.DLChiSoCoThe;
 using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
 using GymBase.DLBiz.Contract.DLKetNoiPt;
+using GymBase.DLDI.Contract.DLDanhMuc;
 using GymBase.Entities.Biz.Enums;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
@@ -65,8 +68,14 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<IGoogleIdTokenVerifier>(services => services.GetRequiredService<FakeGoogleIdTokenVerifier>());
             builder.Services.AddBizBusiness();
             builder.Services.AddSingleton<InMemoryHoSoNguoiDungStore>();
+            builder.Services.AddSingleton<InMemoryChiSoCoTheStore>();
             builder.Services.AddScoped<IHoSoNguoiDungRepository, InMemoryHoSoNguoiDungRepository>();
+            builder.Services.AddScoped<IChiSoCoTheRepository, InMemoryChiSoCoTheRepository>();
             builder.Services.AddScoped<IKetNoiPtRepository, InMemoryKetNoiPtRepository>();
+            
+            builder.Services.AddDIBusiness();
+            builder.Services.AddScoped<IDanhMucRepository, InMemoryDanhMucRepository>();
+
             var app = builder.Build();
             app.UseAppApi();
             await app.StartAsync();

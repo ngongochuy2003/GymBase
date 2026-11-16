@@ -25,6 +25,7 @@ erDiagram
         string so_dien_thoai
         string vai_tro "Admin hoặc User"
         bool dang_hoat_dong
+        bool is_dang_nhap_lan_dau "true tới khi bấm nút ở màn onboarding sau lần đăng nhập đầu"
         datetime ngay_tao
         string nguoi_tao
         datetime ngay_chinh_sua

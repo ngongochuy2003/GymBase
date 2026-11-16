@@ -8,7 +8,9 @@ import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
 import HomeRoute from '@/app/(protected)/home';
-import ProfileRoute from '@/app/(protected)/profile';
+import TabsLayout from '@/app/(protected)/(tabs)/_layout';
+import TodayRoute from '@/app/(protected)/(tabs)/today';
+import ProfileRoute from '@/app/(protected)/(tabs)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
@@ -25,13 +27,13 @@ const user: AuthUser = {
   dang_hoat_dong: true,
   ngay_tao: '2026-11-13T00:00:00Z',
   ngay_chinh_sua: null,
+  is_dang_nhap_lan_dau: false,
 };
 const result: AuthResult = {
   access_token: 'access-1',
   expires_in: 900,
   refresh_token: 'refresh-1',
   user,
-  tai_khoan_moi: false,
 };
 
 function NeedsProfile() {
@@ -54,6 +56,9 @@ const routes = {
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
   '(protected)/profile': ProfileRoute,
+  '(protected)/(tabs)/_layout': TabsLayout,
+  '(protected)/(tabs)/today': TodayRoute,
+  '(protected)/(tabs)/profile': ProfileRoute,
   '(protected)/profile-setup': ProfileSetupRoute,
   '+not-found': NotFound,
 };
@@ -71,7 +76,7 @@ async function openLogin() {
 async function fillAndSubmit(email: string, password: string) {
   await fireEvent.changeText(screen.getByLabelText('Email'), email);
   await fireEvent.changeText(screen.getByLabelText('Mật khẩu'), password);
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
 }
 
 afterEach(() => {
@@ -100,14 +105,14 @@ test('login shows a field error for each invalid field and does not call the API
   const login = jest.spyOn(authApi, 'login');
   await openLogin();
 
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
-  expect(await screen.findByText('Nhập email.')).toBeTruthy();
-  expect(screen.getByText('Nhập mật khẩu.')).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
+  expect(await screen.findByText('Vui lòng nhập email.')).toBeTruthy();
+  expect(screen.getByText('Vui lòng nhập mật khẩu.')).toBeTruthy();
 
   await fireEvent.changeText(screen.getByLabelText('Email'), 'khong-phai-email');
   await fireEvent.changeText(screen.getByLabelText('Mật khẩu'), 'mk');
-  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập tài khoản' }));
-  expect(await screen.findByText('Email không hợp lệ.')).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
+  expect(await screen.findByText('Email chưa đúng định dạng, ví dụ ban@email.com.')).toBeTruthy();
   expect(login).not.toHaveBeenCalled();
 });
 
@@ -143,7 +148,7 @@ test('signing in stores the tokens, opens the app and shows the account name', a
   );
 });
 
-test('a network failure shows a message and a retry button that signs in', async () => {
+test('a network failure shows a message and pressing sign in again retries', async () => {
   const login = jest
     .spyOn(authApi, 'login')
     .mockRejectedValueOnce(
@@ -155,7 +160,7 @@ test('a network failure shows a message and a retry button that signs in', async
   await fillAndSubmit('minh.anh@gymbase.local', 'Mk-thu-nghiem-1');
   expect(await screen.findByText('Không thể kết nối. Kiểm tra mạng và thử lại.')).toBeTruthy();
 
-  await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }));
 
   await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(login).toHaveBeenCalledTimes(2);
@@ -228,6 +233,10 @@ test('a PROFILE_REQUIRED error sends the signed-in user to the profile setup pla
 
   // Màn "Hôm nay" được thay bằng một màn có query trả PROFILE_REQUIRED.
   await renderRouter({ ...routes, '(protected)/home': NeedsProfile }, { initialUrl: '/home' });
+  await renderRouter(
+    { ...routes, '(protected)/(tabs)/today': NeedsProfile },
+    { initialUrl: '/today' },
+  );
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup'));
   expect(await screen.findByText('Thiết lập hồ sơ')).toBeTruthy();

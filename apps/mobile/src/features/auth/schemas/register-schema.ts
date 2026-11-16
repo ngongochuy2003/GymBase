@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EMAIL_FORMAT_MESSAGE } from './login-schema';
 
 const MOBILE_PATTERN = /^(?:0|84)[35789][0-9]{8}$/;
 
@@ -12,23 +13,27 @@ export const TERMS_REQUIRED_MESSAGE = 'Bạn cần đồng ý Điều khoản s�
 
 export const registerSchema = z
   .object({
-    name: z.string().trim().min(1, 'Nhập họ và tên.').max(100, 'Họ và tên tối đa 100 ký tự.'),
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập họ và tên.')
+      .max(100, 'Họ và tên tối đa 100 ký tự.'),
     email: z
       .string()
       .trim()
-      .min(1, 'Nhập email.')
-      .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Email không hợp lệ.'),
+      .min(1, 'Vui lòng nhập email.')
+      .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, EMAIL_FORMAT_MESSAGE),
     phone: z
       .string()
       .trim()
-      .min(1, 'Nhập số điện thoại.')
-      .refine(isVietnamMobile, 'Số điện thoại phải là số di động Việt Nam.'),
+      .min(1, 'Vui lòng nhập số điện thoại.')
+      .refine(isVietnamMobile, 'Nhập số di động Việt Nam, ví dụ 0912 345 678.'),
     password: z
       .string()
-      .min(1, 'Nhập mật khẩu.')
+      .min(1, 'Vui lòng nhập mật khẩu.')
       .min(8, 'Mật khẩu cần ít nhất 8 ký tự.')
       .max(128, 'Mật khẩu tối đa 128 ký tự.'),
-    confirm: z.string().min(1, 'Nhập lại mật khẩu để xác nhận.'),
+    confirm: z.string().min(1, 'Vui lòng nhập lại mật khẩu.'),
     referral: z.string().trim().max(50, 'Mã giới thiệu tối đa 50 ký tự.'),
     agreed: z.boolean(),
   })

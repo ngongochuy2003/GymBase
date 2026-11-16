@@ -22,7 +22,7 @@ public class QuyenHanServiceTests
     }
 
     private QuyenHanService CreateService(bool taiKhoanHoatDong = true) =>
-        new(new InMemoryHoSoNguoiDungRepository(_store), new FakeTrangThai(taiKhoanHoatDong));
+        new(new InMemoryHoSoNguoiDungRepository(_store, new InMemoryChiSoCoTheStore()), new FakeTrangThai(taiKhoanHoatDong));
 
     private void GivenHoSo(LoaiNguoiDung loai, TrangThaiXacMinh xacMinh) =>
         _store.Set(new ho_so_nguoi_dung

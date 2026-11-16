@@ -64,7 +64,8 @@ public sealed class TaiKhoanService(
         entity.vai_tro,
         entity.dang_hoat_dong,
         entity.ngay_tao,
-        entity.ngay_chinh_sua);
+        entity.ngay_chinh_sua,
+        entity.is_dang_nhap_lan_dau);
 
     protected override tai_khoan BLCreateEntity(TaiKhoanCreateDto dto)
     {

@@ -40,8 +40,9 @@ export const authApi = {
     });
     return data;
   },
-  async register(input: RegisterInput): Promise<AuthResult> {
-    const { data } = await anonymousClient.post<AuthResult>('/auth/register', {
+  /** Tạo tài khoản, không có phiên: người dùng đăng nhập sau đó. */
+  async register(input: RegisterInput): Promise<AuthUser> {
+    const { data } = await anonymousClient.post<AuthUser>('/auth/register', {
       ten_thiet_bi: Platform.OS,
       ...input,
     });
@@ -62,6 +63,11 @@ export const authApi = {
   },
   async logout(): Promise<void> {
     await client.post('/auth/logout');
+  },
+  /** Người dùng đã bấm một trong hai nút của màn onboarding; server đặt `is_dang_nhap_lan_dau = false`. */
+  async hoanTatDangNhapLanDau(): Promise<AuthUser> {
+    const { data } = await client.post<AuthUser>('/auth/hoan-tat-dang-nhap-lan-dau');
+    return data;
   },
   async me(): Promise<AuthUser> {
     const { data } = await client.get<AuthUser>('/auth/me');

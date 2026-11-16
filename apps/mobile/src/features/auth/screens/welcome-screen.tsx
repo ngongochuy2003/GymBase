@@ -1,32 +1,34 @@
-import { Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { AppText, Button, Screen } from '@/shared/components/ui';
+import { View } from 'react-native';
+import { Button, FixedScreen } from '@/shared/components/ui';
+import { Appear, Rise } from '@/shared/motion';
+import { AuthHeader } from '../components/auth-header';
 import { GoogleSignInButton } from '../components/google-sign-in-button';
+import { LegalNotice } from '../components/legal-notice';
+import { OrDivider } from '../components/or-divider';
+import { WelcomeHero } from '../components/welcome-hero';
 
+/** Logo hiện dần, hero hiện dần (trong `WelcomeHero`), rồi ba nhóm nút trồi lên lần lượt cách nhau 60ms. */
 export function WelcomeScreen() {
   return (
-    <Screen>
-      <View className="flex-row items-center gap-3 py-3">
-        <View className="size-11 items-center justify-center rounded-[14px] bg-primary">
-          <Text className="text-[22px] font-black text-primary-foreground">G</Text>
+    <FixedScreen>
+      <Appear>
+        <AuthHeader />
+      </Appear>
+      <WelcomeHero />
+      <Rise delay={120}>
+        <View className="gap-3">
+          <Button pill label="Đăng ký tài khoản" onPress={() => router.push('/register')} />
+          <Button pill label="Đăng nhập" secondary onPress={() => router.push('/login')} />
         </View>
-        <AppText title>GymBase</AppText>
-      </View>
-      {/* TODO(ASSET): thay khối này bằng ảnh hero và carousel trong thiết kế khi có asset. */}
-      <View className="gap-5 rounded-[28px] bg-primary-dark p-7">
-        <Text className="text-[34px] font-extrabold leading-[41px] tracking-[-1px] text-primary-foreground">
-          Kết nối PT, theo dõi lộ trình và phát triển bản thân cùng GymBase
-        </Text>
-        <Text className="text-base leading-[25px] text-primary-foreground opacity-85">
-          Một nơi để bạn và PT đồng hành trên từng buổi tập.
-        </Text>
-      </View>
-      <View className="gap-3">
-        <Button label="Đăng ký tài khoản" onPress={() => router.push('/register')} />
-        <Button label="Đăng nhập" secondary onPress={() => router.push('/login')} />
-        <AppText muted>Hoặc tiếp tục với</AppText>
+      </Rise>
+      <Rise delay={180} style={{ gap: 20 }}>
+        <OrDivider />
         <GoogleSignInButton />
-      </View>
-    </Screen>
+      </Rise>
+      <Rise delay={240}>
+        <LegalNotice />
+      </Rise>
+    </FixedScreen>
   );
 }

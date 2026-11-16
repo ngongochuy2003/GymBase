@@ -31,8 +31,9 @@ Cần backend đang chạy ([cách chạy API](../../docs/api/cach-chay-api.md))
 
 Màn hình mở đầu: **Chào mừng** → **Đăng nhập** bằng email và mật khẩu (tài khoản tạo bằng `create-admin` hoặc seed dev).
 Phiên được lưu bằng SecureStore, mở lại app tự khôi phục; token tự gia hạn, hết phiên thì về màn chào mừng.
-**Đăng ký tài khoản** (họ tên, email, số điện thoại di động Việt Nam, mật khẩu, tick điều khoản) có phiên ngay, rồi hiện màn
-"Đăng ký thành công" đúng một lần: "Thiết lập hồ sơ ngay" (màn giữ chỗ) hoặc "Bỏ qua, vào Trang chủ".
+**Đăng ký tài khoản** (họ tên, email, số điện thoại di động Việt Nam, mật khẩu, tick điều khoản) không có phiên: app về màn đăng nhập
+với email điền sẵn. Lần đăng nhập đầu tiên hiện màn onboarding cho tới khi bấm "Thiết lập hồ sơ ngay" (màn giữ chỗ) hoặc
+"Bỏ qua, vào Trang chủ" (cờ `is_dang_nhap_lan_dau` lưu ở server).
 Ô mã giới thiệu có trên form nhưng chưa tính điểm. **Đăng nhập với Google** (Android) cần bản dev build, không chạy trong Expo Go: xem
 [chay-mobile.md](../../docs/onboarding/chay-mobile.md) mục 6.
 Tab **Hôm nay**: lịch tập mẫu, đánh dấu/bỏ đánh dấu đã tập để cập nhật tiến trình.
