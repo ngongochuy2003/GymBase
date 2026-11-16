@@ -48,7 +48,7 @@ const routes = {
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
-  '(protected)/profile-setup': ProfileSetupRoute,
+  '(protected)/profile-setup/index': ProfileSetupRoute,
   '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
 };

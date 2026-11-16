@@ -58,7 +58,7 @@ const routes = {
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
-  '(protected)/profile-setup': ProfileSetupRoute,
+  '(protected)/profile-setup/index': ProfileSetupRoute,
   '+not-found': NotFound,
 };
 
@@ -226,7 +226,7 @@ test('the theme can be switched from the profile tab', async () => {
   expect(await screen.findByText('Hiện tại: Tối')).toBeTruthy();
 });
 
-test('a PROFILE_REQUIRED error sends the signed-in user to the profile setup placeholder', async () => {
+test('a PROFILE_REQUIRED error sends the signed-in user to the role picker', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(storedTokens);
   jest.spyOn(authApi, 'me').mockResolvedValue(user);
 
@@ -237,5 +237,5 @@ test('a PROFILE_REQUIRED error sends the signed-in user to the profile setup pla
   );
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup'));
-  expect(await screen.findByText('Thiết lập hồ sơ')).toBeTruthy();
+  expect(await screen.findByText('Bạn muốn sử dụng GymBase như thế nào?')).toBeTruthy();
 });

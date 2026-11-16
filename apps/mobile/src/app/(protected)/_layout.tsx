@@ -36,7 +36,8 @@ export default function ProtectedLayout() {
       <Stack.Screen name="compose" />
       <Stack.Screen name="post-detail" />
       <Stack.Screen name="onboarding" />
-      <Stack.Screen name="profile-setup" />
+      <Stack.Screen name="profile-setup/index" />
+      <Stack.Screen name="profile-setup/chi-tiet" />
     </Stack>
   );
 }

@@ -56,7 +56,7 @@ const routes = {
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
-  '(protected)/profile-setup': ProfileSetupRoute,
+  '(protected)/profile-setup/index': ProfileSetupRoute,
   '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
 };
@@ -236,7 +236,7 @@ test('the first sign-in after registering shows onboarding, and skipping goes ho
   expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
 });
 
-test('setting up the profile now opens the profile setup placeholder', async () => {
+test('setting up the profile now opens the role picker', async () => {
   const complete = jest.spyOn(authApi, 'hoanTatDangNhapLanDau').mockResolvedValue(onboarded);
   await registerThenSignIn();
 
@@ -244,7 +244,7 @@ test('setting up the profile now opens the profile setup placeholder', async () 
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup'));
   expect(complete).toHaveBeenCalledTimes(1);
-  expect(await screen.findByText('Thiết lập hồ sơ')).toBeTruthy();
+  expect(await screen.findByText('Bạn muốn sử dụng GymBase như thế nào?')).toBeTruthy();
 });
 
 test('onboarding still lets the user in when the server cannot be reached', async () => {
