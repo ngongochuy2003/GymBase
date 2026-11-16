@@ -47,13 +47,14 @@ export const personalInfoSchema = z
       .min(1, 'Vui lòng nhập tên hiển thị.')
       .max(100, 'Tên hiển thị tối đa 100 ký tự.'),
     ngay_sinh: z.string(),
-    gioi_tinh: z.string().min(1, 'Vui lòng chọn giới tính.'),
-    khu_vuc_hoat_dong: z.string().min(1, 'Vui lòng chọn khu vực.'),
+    gioi_tinh: z.string(),
+    khu_vuc_hoat_dong: z.string(),
   })
   .superRefine((form, ctx) => {
     const fail = (message: string) =>
       ctx.addIssue({ code: 'custom', path: ['ngay_sinh'], message });
-    if (form.ngay_sinh.trim() === '') return fail('Vui lòng nhập ngày sinh.');
+    // Ngày sinh tùy chọn: để trống thì bỏ qua, có nhập thì mới kiểm tra.
+    if (form.ngay_sinh.trim() === '') return;
     const ngaySinh = parseNgaySinh(form.ngay_sinh);
     if (!ngaySinh) return fail('Ngày sinh chưa đúng, ví dụ 20/05/1998.');
     const now = new Date();

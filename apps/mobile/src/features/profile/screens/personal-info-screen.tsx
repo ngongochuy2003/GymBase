@@ -47,7 +47,12 @@ export function PersonalInfoScreen() {
 
   const { control, handleSubmit } = useForm<PersonalInfoForm>({
     resolver: zodResolver(personalInfoSchema),
-    defaultValues: { ...draft, ten_hien_thi: draft.ten_hien_thi || user?.ho_ten || '' },
+    defaultValues: {
+      ten_hien_thi: draft.ten_hien_thi || user?.ho_ten || '',
+      ngay_sinh: draft.ngay_sinh,
+      gioi_tinh: draft.gioi_tinh,
+      khu_vuc_hoat_dong: draft.khu_vuc_hoat_dong,
+    },
   });
 
   // Ghi bản nháp ngay khi gõ để quay lại từ bước sau (hoặc rời màn rồi vào lại) vẫn còn dữ liệu.
@@ -94,7 +99,7 @@ export function PersonalInfoScreen() {
         render={({ field, fieldState }) => (
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
-              <FieldLabel label="Ngày sinh *" />
+              <FieldLabel label="Ngày sinh" />
               <HelpButton
                 label="Ngày sinh dùng để làm gì?"
                 onPress={() => setHelpField('ngay_sinh')}
@@ -102,7 +107,7 @@ export function PersonalInfoScreen() {
             </View>
             <TextField
               hideLabel
-              label="Ngày sinh *"
+              label="Ngày sinh"
               placeholder="dd/MM/yyyy"
               value={field.value}
               onChangeText={(text) => field.onChange(formatNgaySinhInput(text))}
@@ -120,7 +125,7 @@ export function PersonalInfoScreen() {
         name="gioi_tinh"
         render={({ field, fieldState }) => (
           <SelectField
-            label="Giới tính *"
+            label="Giới tính"
             value={field.value || null}
             options={GIOI_TINH_OPTIONS}
             onChange={field.onChange}
@@ -133,7 +138,7 @@ export function PersonalInfoScreen() {
         name="khu_vuc_hoat_dong"
         render={({ field, fieldState }) => (
           <SelectField
-            label="Khu vực *"
+            label="Khu vực"
             value={field.value || null}
             options={danhMuc.items('khu_vuc')}
             onChange={field.onChange}

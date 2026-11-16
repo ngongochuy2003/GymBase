@@ -7,9 +7,7 @@ import WelcomeRoute from '@/app/(auth)/welcome';
 import LoginRoute from '@/app/(auth)/login';
 import ProtectedLayout from '@/app/(protected)/_layout';
 import HomeRoute from '@/app/(protected)/home';
-import TabsLayout from '@/app/(protected)/(tabs)/_layout';
-import TodayRoute from '@/app/(protected)/(tabs)/today';
-import ProfileRoute from '@/app/(protected)/(tabs)/profile';
+import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import PersonalInfoRoute from '@/app/(protected)/profile-setup/ca-nhan';
 import ProfileDetailRoute from '@/app/(protected)/profile-setup/chi-tiet';
@@ -52,9 +50,7 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/(tabs)/_layout': TabsLayout,
-  '(protected)/(tabs)/today': TodayRoute,
-  '(protected)/(tabs)/profile': ProfileRoute,
+  '(protected)/profile': ProfileRoute,
   '(protected)/profile-setup/index': ProfileSetupRoute,
   '(protected)/profile-setup/ca-nhan': PersonalInfoRoute,
   '(protected)/profile-setup/chi-tiet': ProfileDetailRoute,
@@ -90,9 +86,9 @@ async function choose(label: string, option: string) {
 
 async function fillValid() {
   await fireEvent.changeText(screen.getByLabelText('Tên hiển thị *'), 'Minh Anh Gym');
-  await fireEvent.changeText(screen.getByLabelText('Ngày sinh *'), '20051998');
-  await choose('Giới tính *', 'Nữ');
-  await choose('Khu vực *', 'Hà Nội');
+  await fireEvent.changeText(screen.getByLabelText('Ngày sinh'), '20051998');
+  await choose('Giới tính', 'Nữ');
+  await choose('Khu vực', 'Hà Nội');
 }
 
 beforeEach(() => {
@@ -107,9 +103,8 @@ test('the form opens with the display name prefilled from the account and no tab
   await openPersonalInfo();
 
   expect(screen.getByLabelText('Tên hiển thị *')).toHaveDisplayValue('Minh Anh');
-  expect(screen.getByLabelText('Ngày sinh *')).toHaveDisplayValue('');
-  expect(screen.queryByText('Hôm nay')).toBeNull();
-  expect(screen.queryByText('Cá nhân')).toBeNull();
+  expect(screen.getByLabelText('Ngày sinh')).toHaveDisplayValue('');
+  expect(screen.queryByText('Khám phá')).toBeNull();
 });
 
 test('the (?) button beside the birth date explains who can see it and what it is for', async () => {
@@ -143,7 +138,7 @@ test('a dropdown with no options says so instead of opening an empty sheet', asy
   jest.mocked(danhMucApi.get).mockResolvedValue([{ ma_dinh_danh: 'khu_vuc', items: [] }]);
   await openPersonalInfo();
 
-  await openSelect('Khu vực *');
+  await openSelect('Khu vực');
 
   expect(await screen.findByText('Chưa có lựa chọn nào.')).toBeTruthy();
 });
@@ -151,13 +146,13 @@ test('a dropdown with no options says so instead of opening an empty sheet', asy
 test('gender is a fixed list that never waits for the server, and areas come from the API', async () => {
   await openPersonalInfo();
 
-  await openSelect('Giới tính *');
+  await openSelect('Giới tính');
   expect(
     (await screen.findAllByRole('radio')).map((radio) => radio.props.accessibilityLabel),
   ).toEqual(['Nam', 'Nữ', 'Khác']);
   await fireEvent.press(screen.getByRole('radio', { name: 'Nam' }));
 
-  await openSelect('Khu vực *');
+  await openSelect('Khu vực');
   expect(
     (await screen.findAllByRole('radio')).map((radio) => radio.props.accessibilityLabel),
   ).toEqual(['Hà Nội', 'TP. Hồ Chí Minh']);
@@ -167,22 +162,31 @@ test('gender is a fixed list that never waits for the server, and areas come fro
 test('typing digits for the birth date inserts the slashes', async () => {
   await openPersonalInfo();
 
-  await fireEvent.changeText(screen.getByLabelText('Ngày sinh *'), '20051998');
+  await fireEvent.changeText(screen.getByLabelText('Ngày sinh'), '20051998');
 
-  expect(screen.getByLabelText('Ngày sinh *')).toHaveDisplayValue('20/05/1998');
+  expect(screen.getByLabelText('Ngày sinh')).toHaveDisplayValue('20/05/1998');
 });
 
-test('an empty form shows every required error and does not move on', async () => {
+test('an empty display name is the only required error and does not move on', async () => {
   await openPersonalInfo();
   await fireEvent.changeText(screen.getByLabelText('Tên hiển thị *'), '   ');
 
   await fireEvent.press(screen.getByRole('button', CONTINUE));
 
   expect(await screen.findByText('Vui lòng nhập tên hiển thị.')).toBeTruthy();
-  expect(screen.getByText('Vui lòng nhập ngày sinh.')).toBeTruthy();
-  expect(screen.getByText('Vui lòng chọn giới tính.')).toBeTruthy();
-  expect(screen.getByText('Vui lòng chọn khu vực.')).toBeTruthy();
+  expect(screen.queryByText('Vui lòng nhập ngày sinh.')).toBeNull();
+  expect(screen.queryByText('Vui lòng chọn giới tính.')).toBeNull();
+  expect(screen.queryByText('Vui lòng chọn khu vực.')).toBeNull();
   expect(screen).toHavePathname('/profile-setup/ca-nhan');
+});
+
+test('birth date, gender and area are optional: leaving them empty still moves on', async () => {
+  await openPersonalInfo();
+  await fireEvent.changeText(screen.getByLabelText('Tên hiển thị *'), 'Minh Anh Gym');
+
+  await fireEvent.press(screen.getByRole('button', CONTINUE));
+
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/chi-tiet'));
 });
 
 test.each([
@@ -194,7 +198,7 @@ test.each([
 ])('birth date %s is rejected with its own message', async (digits, message) => {
   await openPersonalInfo();
   await fillValid();
-  await fireEvent.changeText(screen.getByLabelText('Ngày sinh *'), digits);
+  await fireEvent.changeText(screen.getByLabelText('Ngày sinh'), digits);
 
   await fireEvent.press(screen.getByRole('button', CONTINUE));
 
@@ -236,11 +240,11 @@ test('going back from the next step keeps what was typed, and no save call is ma
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup/ca-nhan'));
   expect(screen.getByLabelText('Tên hiển thị *')).toHaveDisplayValue('Minh Anh Gym');
-  expect(screen.getByLabelText('Ngày sinh *')).toHaveDisplayValue('20/05/1998');
-  expect(screen.getByRole('button', { name: 'Giới tính *' })).toHaveAccessibilityValue({
+  expect(screen.getByLabelText('Ngày sinh')).toHaveDisplayValue('20/05/1998');
+  expect(screen.getByRole('button', { name: 'Giới tính' })).toHaveAccessibilityValue({
     text: 'Nữ',
   });
-  expect(screen.getByRole('button', { name: 'Khu vực *' })).toHaveAccessibilityValue({
+  expect(screen.getByRole('button', { name: 'Khu vực' })).toHaveAccessibilityValue({
     text: 'Hà Nội',
   });
   expect(save).not.toHaveBeenCalled();
@@ -256,12 +260,12 @@ test('when the categories cannot be loaded the dropdowns say so and Retry reload
   expect(
     (await screen.findAllByText('Không tải được danh sách. Vui lòng thử lại.')).length,
   ).toBeGreaterThan(0);
-  expect(screen.getByRole('button', { name: 'Khu vực *' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Khu vực' })).toBeDisabled();
   // Giới tính là danh sách cố định nên vẫn chọn được dù danh mục khu vực lỗi.
-  expect(screen.getByRole('button', { name: 'Giới tính *' })).not.toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Giới tính' })).not.toBeDisabled();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
 
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Khu vực *' })).not.toBeDisabled());
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Khu vực' })).not.toBeDisabled());
   expect(screen.queryByText('Không tải được danh sách. Vui lòng thử lại.')).toBeNull();
 });
