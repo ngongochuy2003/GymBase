@@ -36,7 +36,6 @@ và `chuyen_mon_pt`).
 | `muc_tieu_tap_luyen` | `tang_co` (Tăng cơ), `giam_mo` (Giảm mỡ), `duy_tri` (Duy trì vóc dáng), `tang_suc_ben` (Tăng sức bền), `linh_hoat` (Linh hoạt, giảm đau mỏi) |
 | `khu_vuc` | `ha_noi` (Hà Nội), `tp_hcm` (TP. Hồ Chí Minh), `da_nang` (Đà Nẵng), `hai_phong` (Hải Phòng), `can_tho` (Cần Thơ) |
 | `chuyen_mon_pt` | `tang_co` (Tăng cơ), `giam_mo` (Giảm mỡ), `cai_thien_voc_dang` (Cải thiện vóc dáng), `phuc_hoi_chuc_nang` (Phục hồi chức năng), `dinh_duong` (Dinh dưỡng) |
-| `gioi_tinh` | `nam` (Nam), `nu` (Nữ), `khac` (Khác), `khong_muon_noi` (Không muốn nói) |
 | `trinh_do_tap` | `moi_bat_dau` (Mới bắt đầu), `co_nen_tang` (Có nền tảng), `lau_nam` (Tập lâu năm) |
 
 Sửa `ten` hoặc `tinh_trang` trực tiếp trong DB là app đổi theo ngay, không cần build lại. Đổi **mã** thì phải thêm

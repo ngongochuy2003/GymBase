@@ -16,7 +16,7 @@ bản nháp phía app và gửi **một lần** ở cuối, nên API vẫn là m
 | `ho_so_nguoi_dung` | Hồ sơ duy nhất của mỗi tài khoản | Khóa chính là `tai_khoan_id` (kiêm khóa ngoại), nên không dùng CRUD chung |
 | `chi_so_co_the` | Lịch sử chiều cao, cân nặng | Bảng chỉ thêm; đọc bản mới nhất theo `ngay_do`, rồi `ngay_tao` |
 | `tai_khoan` | Nguồn `ten_hien_thi` khi tạo hồ sơ | Đọc qua `ITaiKhoanHoTenProvider` ở `GymBase.Base.Auth` (BLBiz không đọc entity của Auth) |
-| `danh_muc` | Kiểm tra mã mục tiêu, khu vực, chuyên môn | Đọc qua `IDanhMucTraCuu` ở `GymBase.ModuleContracts.DanhMuc` (BLBiz không tham chiếu BLDI) |
+| `danh_muc` | Kiểm tra mã mục tiêu, khu vực, trình độ tập, chuyên môn (giới tính là enum cố định, không qua đây) | Đọc qua `IDanhMucTraCuu` ở `GymBase.ModuleContracts.DanhMuc` (BLBiz không tham chiếu BLDI) |
 
 Cột được ghi: `loai_nguoi_dung`, `ten_hien_thi` (khi có gửi), `ngay_sinh`, `gioi_tinh`, `trinh_do_tap`,
 `muc_tieu_tap_luyen`, `khu_vuc_hoat_dong`, `chuyen_mon` (JSON), `so_nam_kinh_nghiem`, `gioi_thieu`, bốn cột audit của hồ sơ; và `hoc_vien_id`, `nguoi_nhap_id`, `ngay_do`, `chieu_cao_cm`, `can_nang_kg`,
@@ -78,7 +78,7 @@ Dùng `PUT` vì mỗi tài khoản chỉ có một hồ sơ; lần lưu đầu t
 | Khối PT | Chỉ tài khoản `pt`/`ca_hai` mới gửi `chuyen_mon`, `so_nam_kinh_nghiem`, `gioi_thieu` | `400 ROLE_INVALID` |
 | Tên hiển thị | Tùy chọn. Có gửi thì ghi sau khi cắt khoảng trắng (1–100 ký tự); không gửi thì tạo mới lấy `tai_khoan.ho_ten`, cập nhật giữ nguyên | `400 VALIDATION_FAILED` |
 | Ngày sinh | Bắt buộc, `yyyy-MM-dd`, không ở tương lai, tuổi 13–100 | `400 VALIDATION_FAILED` |
-| Giới tính | Bắt buộc; mã phải có trong `danh_muc` với `ma_dinh_danh = 'gioi_tinh'` và `tinh_trang = 1` | `400 CATEGORY_INVALID` |
+| Giới tính | Bắt buộc; một trong `nam`, `nu`, `khac`, `khong_muon_noi` (danh sách cố định trong code, **không** đọc từ `danh_muc`; app cũng để cố định). Lưu ở `ho_so_nguoi_dung.gioi_tinh` | `400 VALIDATION_FAILED` |
 | Trình độ tập | Bắt buộc (cùng khối với mục tiêu, chiều cao, cân nặng); mã phải có trong `danh_muc` với `ma_dinh_danh = 'trinh_do_tap'` | `400 CATEGORY_INVALID` |
 | Mục tiêu | Mã phải có trong `danh_muc` với `ma_dinh_danh = 'muc_tieu_tap_luyen'` và `tinh_trang = 1` | `400 CATEGORY_INVALID` |
 | Khu vực | Mã phải có trong `danh_muc` với `ma_dinh_danh = 'khu_vuc'` | `400 CATEGORY_INVALID` |
@@ -116,6 +116,6 @@ nửa chừng. Đăng ký ở `Program.cs`: `AddBizBusiness()` (BL) và hai repo
 
 - `dotnet test GymBase.slnx` tại `apps/api` — `HoSoTests` phủ: lưu lần đầu tạo hồ sơ + chỉ số; lưu lại cùng số đo không
   thêm dòng; đổi số đo thêm đúng một dòng; giữ `ten_hien_thi`/trạng thái xác minh; PT gửi chuyên môn hợp lệ; mã danh mục
-  sai; chiều cao ngoài khoảng; thiếu hoặc ngoài khoảng ngày sinh, mã giới tính/trình độ sai; gửi hoặc bỏ `ten_hien_thi`;
+  sai; chiều cao ngoài khoảng; thiếu hoặc ngoài khoảng ngày sinh, giới tính ngoài danh sách cố định, mã trình độ sai; gửi hoặc bỏ `ten_hien_thi`;
   hồ sơ cũ trả `null` cho trường mới; học viên gửi thông tin PT; vai trò sai; `GET` khi chưa có hồ sơ; 401 khi chưa đăng nhập.
 - Bruno: `docs/api/bruno/mobile/ho-so/`.
