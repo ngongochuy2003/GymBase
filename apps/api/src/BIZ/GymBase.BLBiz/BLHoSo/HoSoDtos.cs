@@ -20,7 +20,7 @@ public sealed class HoSoLuuDto
     /// <summary>Ngày sinh (<c>yyyy-MM-dd</c>), bắt buộc, tuổi 13–100. Riêng tư, không hiện ở hồ sơ công khai.</summary>
     public DateOnly? ngay_sinh { get; init; }
 
-    /// <summary>Mã trong danh mục <c>gioi_tinh</c>. Riêng tư như <see cref="ngay_sinh"/>.</summary>
+    /// <summary><c>nam</c>, <c>nu</c>, <c>khac</c> hoặc <c>khong_muon_noi</c> (cố định, không có trong danh mục). Riêng tư như <see cref="ngay_sinh"/>.</summary>
     [Required]
     public string gioi_tinh { get; init; } = string.Empty;
 

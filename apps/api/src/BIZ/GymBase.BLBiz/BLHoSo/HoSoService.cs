@@ -34,7 +34,6 @@ public sealed class HoSoService(
     private const int TenHienThiToiDa = 100;
     private const int TuoiNhoNhat = 13;
     private const int TuoiLonNhat = 100;
-    private const string GioiTinh = "gioi_tinh";
     private const string TrinhDoTap = "trinh_do_tap";
 
     /// <summary>Hồ sơ hiện tại kèm chỉ số cơ thể mới nhất.</summary>
@@ -57,6 +56,7 @@ public sealed class HoSoService(
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var loaiNguoiDung = DocLoaiNguoiDung(dto);
+        var gioiTinh = DocGioiTinh(dto);
         var tenHienThi = ChuanHoaTenHienThi(dto.ten_hien_thi);
         await KiemTraDanhMucAsync(dto, loaiNguoiDung, DateOnly.FromDateTime(now), cancellationToken);
 
@@ -92,7 +92,7 @@ public sealed class HoSoService(
 
         hoSo.loai_nguoi_dung = loaiNguoiDung;
         hoSo.ngay_sinh = dto.ngay_sinh;
-        hoSo.gioi_tinh = dto.gioi_tinh.Trim();
+        hoSo.gioi_tinh = gioiTinh;
         hoSo.trinh_do_tap = dto.trinh_do_tap.Trim();
         hoSo.muc_tieu_tap_luyen = dto.muc_tieu_tap_luyen.Trim();
         hoSo.khu_vuc_hoat_dong = dto.khu_vuc_hoat_dong.Trim();
@@ -178,6 +178,16 @@ public sealed class HoSoService(
         }
     }
 
+    private static GioiTinh DocGioiTinh(HoSoLuuDto dto) =>
+        dto.gioi_tinh.Trim() switch
+        {
+            nameof(GioiTinh.nam) => GioiTinh.nam,
+            nameof(GioiTinh.nu) => GioiTinh.nu,
+            nameof(GioiTinh.khac) => GioiTinh.khac,
+            nameof(GioiTinh.khong_muon_noi) => GioiTinh.khong_muon_noi,
+            _ => throw new ValidationFailedException(nameof(HoSoLuuDto.gioi_tinh), "Giới tính không hợp lệ."),
+        };
+
     private async Task KiemTraDanhMucAsync(
         HoSoLuuDto dto, LoaiNguoiDung loaiNguoiDung, DateOnly homNay, CancellationToken cancellationToken)
     {
@@ -207,7 +217,6 @@ public sealed class HoSoService(
 
         await KiemTraMaAsync(dto.muc_tieu_tap_luyen, MucTieuTapLuyen, nameof(HoSoLuuDto.muc_tieu_tap_luyen), "mục tiêu tập luyện", cancellationToken);
         await KiemTraMaAsync(dto.khu_vuc_hoat_dong, KhuVuc, nameof(HoSoLuuDto.khu_vuc_hoat_dong), "khu vực", cancellationToken);
-        await KiemTraMaAsync(dto.gioi_tinh, GioiTinh, nameof(HoSoLuuDto.gioi_tinh), "giới tính", cancellationToken);
         await KiemTraMaAsync(dto.trinh_do_tap, TrinhDoTap, nameof(HoSoLuuDto.trinh_do_tap), "trình độ tập", cancellationToken);
 
         var laPt = loaiNguoiDung is LoaiNguoiDung.pt or LoaiNguoiDung.ca_hai;
@@ -262,7 +271,7 @@ public sealed class HoSoService(
             hoSo.loai_nguoi_dung.ToString(),
             hoSo.ten_hien_thi,
             hoSo.ngay_sinh,
-            hoSo.gioi_tinh,
+            hoSo.gioi_tinh?.ToString(),
             hoSo.trinh_do_tap,
             hoSo.muc_tieu_tap_luyen,
             hoSo.khu_vuc_hoat_dong,

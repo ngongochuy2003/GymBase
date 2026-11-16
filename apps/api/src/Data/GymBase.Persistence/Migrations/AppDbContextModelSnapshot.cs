@@ -725,8 +725,8 @@ namespace GymBase.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("gioi_tinh")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(14)
+                        .HasColumnType("varchar(14)");
 
                     b.Property<string>("khu_vuc_hoat_dong")
                         .HasMaxLength(255)
@@ -803,6 +803,8 @@ namespace GymBase.Persistence.Migrations
                     b.ToTable("ho_so_nguoi_dung", null, t =>
                         {
                             t.HasCheckConstraint("CK_ho_so_nguoi_dung_ban_kinh", "`ban_kinh_phuc_vu_km` IS NULL OR `ban_kinh_phuc_vu_km` > 0");
+
+                            t.HasCheckConstraint("CK_ho_so_nguoi_dung_gioi_tinh", "`gioi_tinh` IN ('nam', 'nu', 'khac', 'khong_muon_noi')");
 
                             t.HasCheckConstraint("CK_ho_so_nguoi_dung_kinh_do", "`kinh_do` IS NULL OR `kinh_do` BETWEEN -180 AND 180");
 

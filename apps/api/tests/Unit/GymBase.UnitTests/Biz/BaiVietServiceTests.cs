@@ -73,7 +73,7 @@ public sealed class BaiVietServiceTests
             loai_nguoi_dung = LoaiNguoiDung.hoc_vien,
             ten_hien_thi = "Minh Khôi",
             ngay_sinh = new DateOnly(1998, 5, 20),
-            gioi_tinh = "nam",
+            gioi_tinh = GioiTinh.nam,
             trinh_do_tap = "lau_nam",
             trang_thai_xac_minh = TrangThaiXacMinh.chua_xac_minh,
             ngay_tao = DateTime.UtcNow,

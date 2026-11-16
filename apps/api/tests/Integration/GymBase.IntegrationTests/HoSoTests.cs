@@ -264,19 +264,47 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.True(json.GetProperty("errors").TryGetProperty("ngay_sinh", out _));
     }
 
-    [Theory]
-    [InlineData("gioi_tinh")]
-    [InlineData("trinh_do_tap")]
-    public async Task Ma_gioi_tinh_hoac_trinh_do_sai_tra_400_CATEGORY_INVALID(string truong)
+    [Fact]
+    public async Task Ma_trinh_do_sai_tra_400_CATEGORY_INVALID()
     {
         var client = Client(HocVien);
 
-        var response = await Luu(client, truong == "gioi_tinh"
-            ? BodyHocVien(gioiTinh: "khong_co_that")
-            : BodyHocVien(trinhDo: "khong_co_that"));
+        var response = await Luu(client, BodyHocVien(trinhDo: "khong_co_that"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("CATEGORY_INVALID", await CodeOf(response));
+    }
+
+    [Theory]
+    [InlineData("nam")]
+    [InlineData("nu")]
+    [InlineData("khac")]
+    [InlineData("khong_muon_noi")]
+    public async Task Gioi_tinh_co_dinh_luu_va_doc_lai_dung(string gioiTinh)
+    {
+        var client = Client(HocVien);
+
+        var response = await Luu(client, BodyHocVien(gioiTinh: gioiTinh));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var doc = await client.GetFromJsonAsync<JsonElement>(HoSo);
+        Assert.Equal(gioiTinh, doc.GetProperty("gioi_tinh").GetString());
+    }
+
+    [Theory]
+    [InlineData("khong_co_that")]
+    [InlineData("Nam")] // phân biệt hoa thường: app luôn gửi mã snake_case
+    [InlineData("   ")]
+    public async Task Gioi_tinh_ngoai_danh_sach_co_dinh_tra_400_va_chi_ro_truong(string gioiTinh)
+    {
+        var client = Client(HocVien);
+
+        var response = await Luu(client, BodyHocVien(gioiTinh: gioiTinh));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("VALIDATION_FAILED", json.GetProperty("code").GetString());
+        Assert.True(json.GetProperty("errors").TryGetProperty("gioi_tinh", out _));
     }
 
     [Fact]
