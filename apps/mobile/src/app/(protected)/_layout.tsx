@@ -36,8 +36,8 @@ export default function ProtectedLayout() {
       <Stack.Screen name="compose" />
       <Stack.Screen name="post-detail" />
       <Stack.Screen name="onboarding" />
-      <Stack.Screen name="profile-setup/index" />
-      <Stack.Screen name="profile-setup/chi-tiet" />
+      <Stack.Screen name="profile-setup/index" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="profile-setup/chi-tiet" options={{ animation: 'slide_from_right' }} />
     </Stack>
   );
 }

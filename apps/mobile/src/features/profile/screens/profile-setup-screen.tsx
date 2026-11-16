@@ -38,7 +38,7 @@ export function ProfileSetupScreen() {
   return (
     <Screen bottomInset>
       <AuthHeader onBack={() => router.back()} />
-      <View className="gap-2 pt-4">
+      <View className="gap-3 py-4">
         <Text className="text-[28px] font-bold leading-9 text-foreground">
           Bạn muốn sử dụng GymBase như thế nào?
         </Text>
@@ -46,7 +46,7 @@ export function ProfileSetupScreen() {
           Chọn vai trò phù hợp với nhu cầu của bạn.
         </Text>
       </View>
-      <View accessibilityRole="radiogroup" className="gap-3">
+      <View accessibilityRole="radiogroup" className="gap-4">
         {ROLES.map((role) => {
           const checked = selected === role.value;
           return (
@@ -58,15 +58,15 @@ export function ProfileSetupScreen() {
               onPress={() => setSelected(role.value)}
               className={cn(
                 'w-full flex-row items-center gap-4 rounded-2xl bg-card p-4',
-                checked ? 'border-2 border-foreground' : 'border border-border',
+                checked ? 'border-2 border-primary' : 'border border-border',
               )}
             >
               <View className="size-12 items-center justify-center rounded-full bg-secondary">
                 <Ionicons name={role.icon} size={24} color={colors.text} />
               </View>
-              <View className="flex-1 gap-1">
-                <Text className="text-base font-bold text-foreground">{role.title}</Text>
-                <Text className="text-sm leading-5 text-muted-foreground">{role.description}</Text>
+              <View className="flex-1 gap-2">
+                <Text className="text-[16px] font-bold text-foreground">{role.title}</Text>
+                <Text className="text-base leading-5 text-muted-foreground">{role.description}</Text>
               </View>
             </Pressable>
           );

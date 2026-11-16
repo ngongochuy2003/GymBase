@@ -13,7 +13,9 @@ export function OnboardingScreen() {
   const { colors } = useTheme();
   const go = async (href: '/profile-setup' | '/home') => {
     await completeOnboarding();
-    router.replace(href);
+    // Thiết lập hồ sơ là bước tiếp theo nên push để back quay lại được; vào Trang chủ thì thay hẳn onboarding.
+    if (href === '/home') router.replace(href);
+    else router.push(href);
   };
   return (
     <Screen bottomInset>

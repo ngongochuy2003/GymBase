@@ -129,11 +129,10 @@ test.each([
   },
 );
 
-// Onboarding thoát bằng `router.replace` (đã đánh dấu xong onboarding), nên back không quay lại onboarding mà về Trang chủ.
-test('the back arrow leaves the role picker for the screen beneath it', async () => {
+test('the back arrow returns to the onboarding screen', async () => {
   await openRolePicker();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Quay lại' }));
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await waitFor(() => expect(screen).toHavePathname('/onboarding'));
 });
