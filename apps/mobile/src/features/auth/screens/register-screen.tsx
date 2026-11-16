@@ -91,13 +91,13 @@ export function RegisterScreen() {
       <AuthHeader
         onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
       />
-      <View className="items-center gap-1">
+      <View className="items-center gap-2 my-4">
         <AppText title>Đăng ký tài khoản</AppText>
         <AppText muted className="text-center">
           Tạo tài khoản GymBase để kết nối PT, theo dõi lộ trình tập luyện và dinh dưỡng của bạn.
         </AppText>
       </View>
-      <View className="gap-3">
+      <View className="gap-4">
         <Controller
           control={control}
           name="name"
@@ -291,7 +291,7 @@ export function RegisterScreen() {
         Đã có tài khoản?{' '}
         <Text
           accessibilityRole="link"
-          className="font-bold text-foreground"
+          className="font-bold text-primary"
           onPress={() => router.replace('/login')}
         >
           Đăng nhập
