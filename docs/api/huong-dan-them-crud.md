@@ -512,7 +512,7 @@ override, ví dụ để đặt quyền riêng cho `GET`. Mẫu thêm action: `R
 
 ### Thêm dữ liệu mẫu
 
-Đặt script SQL trong `database/seeds`. Mẫu là `dev_tai_khoan.sql`.
+Đặt script SQL trong `database/seeds` (xem `database/seeds/README.md`).
 
 ## 7. Lỗi thường gặp
 

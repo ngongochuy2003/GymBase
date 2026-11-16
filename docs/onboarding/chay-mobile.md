@@ -21,7 +21,7 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;
 dotnet ef database update --project src/Data/GymBase.Persistence --startup-project src/Host/GymBase.API
 ```
 
-Khóa ký JWT (`Jwt:SigningKey`) tạo theo bước 4 của cach-chay-api.md.
+Khóa ký JWT (`Jwt:SigningKey`) tạo theo bước 3 của cach-chay-api.md.
 
 Tạo tài khoản Admin để đăng nhập thử. **Đăng nhập bằng email**, mật khẩu tối thiểu 8 ký tự:
 
