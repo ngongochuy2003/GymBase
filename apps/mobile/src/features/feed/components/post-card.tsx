@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.font.weight.bold,
     color: theme.colors.text,
   },
-  time: { fontSize: theme.font.size.xs - 2.3, color: theme.colors.muted },
+  time: { fontSize: theme.font.size.xs, color: theme.colors.muted },
   content: {
     fontSize: theme.font.size.md,
     lineHeight: 22,
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   readMoreText: {
-    fontSize: theme.font.size.md - 1,
+    fontSize: theme.font.size.sm,
     color: theme.colors.muted,
     opacity: 0.65,
     fontWeight: '400',

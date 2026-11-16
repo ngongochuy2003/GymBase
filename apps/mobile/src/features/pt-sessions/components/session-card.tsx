@@ -8,7 +8,7 @@ export function SessionCard({ session, onToggle }: { session: PtSession; onToggl
   return (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-        <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 16 }}>
+        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 16 }}>
           {session.time}
         </Text>
         <AppText muted>

@@ -24,7 +24,8 @@ export const theme = {
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
   font: {
     family: undefined as string | undefined, // system sans-serif (Inter có thể gắn sau)
-    size: { xsss: 8,xss: 10,xs: 12, sm: 13, md: 15, lg: 17, xl: 22 },
+    /** Khớp thang NativeWind: xs=text-xs, sm=text-sm, md=text-base, lg=text-lg. Mức sàn là 12, không dùng cỡ nhỏ hơn. */
+    size: { xs: 12, sm: 14, md: 16, lg: 18, xl: 22 },
     weight: { regular: '400', medium: '500', bold: '700' } as const,
   },
   iconSize: { xsss: 10,xss: 12,xs: 14,sm: 18, md: 22, lg: 26 },

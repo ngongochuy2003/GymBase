@@ -38,10 +38,10 @@ export function DashboardScreen() {
             </Text>
           </View>
           <View style={[styles.ring, { borderColor: colors.accent }]}>
-            <Text style={{ color: colors.accent, fontSize: 30, fontWeight: '800' }}>
+            <Text style={{ color: colors.accent, fontSize: 30, fontWeight: '700' }}>
               {completed}/{sessions.length}
             </Text>
-            <Text style={{ color: colors.heroText, fontSize: 11 }}>BUỔI TẬP</Text>
+            <Text style={{ color: colors.heroText, fontSize: 12 }}>BUỔI TẬP</Text>
           </View>
         </View>
       </View>
@@ -86,13 +86,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
-  brand: { fontSize: 27, fontWeight: '900', letterSpacing: -1 },
+  brand: { fontSize: 27, fontWeight: '700', letterSpacing: -1 },
   badge: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20 },
-  badgeText: { color: '#183C2C', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  badgeText: { color: '#183C2C', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
   hero: { padding: 24, gap: 20, borderRadius: 24 },
-  eyebrow: { fontSize: 10, letterSpacing: 1.8, fontWeight: '800' },
+  eyebrow: { fontSize: 12, letterSpacing: 1.8, fontWeight: '700' },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  heroTitle: { fontSize: 27, lineHeight: 34, fontWeight: '800', letterSpacing: -0.5 },
+  heroTitle: { fontSize: 27, lineHeight: 34, fontWeight: '700', letterSpacing: -0.5 },
   ring: {
     width: 94,
     height: 94,

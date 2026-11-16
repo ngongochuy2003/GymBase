@@ -32,6 +32,26 @@ module.exports = {
         info: token('info'),
         pending: token('pending'),
       },
+      // Cỡ chữ và line-height ghi bằng px: trên native NativeWind quy 1rem = 14px (inlineRem mặc định), nên
+      // `text-base` mặc định chỉ ra 14 thay vì 16. Không đổi inlineRem vì sẽ phóng to cả spacing.
+      fontSize: {
+        xs: ['12px', { lineHeight: '16px' }],
+        sm: ['14px', { lineHeight: '20px' }],
+        base: ['16px', { lineHeight: '24px' }],
+        lg: ['18px', { lineHeight: '28px' }],
+        xl: ['20px', { lineHeight: '28px' }],
+        '2xl': ['24px', { lineHeight: '32px' }],
+        '3xl': ['30px', { lineHeight: '36px' }],
+      },
+      lineHeight: {
+        4: '16px',
+        5: '20px',
+        6: '24px',
+        7: '28px',
+        8: '32px',
+        9: '36px',
+        10: '40px',
+      },
       borderWidth: { hairline: hairlineWidth() },
     },
   },

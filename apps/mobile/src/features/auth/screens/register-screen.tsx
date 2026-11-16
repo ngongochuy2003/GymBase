@@ -287,7 +287,7 @@ export function RegisterScreen() {
           <Button pill label="Thử lại" secondary onPress={() => void submit()} />
         ) : null}
       </View>
-      <Text className="text-center text-[15px] text-muted-foreground">
+      <Text className="text-center text-base text-muted-foreground">
         Đã có tài khoản?{' '}
         <Text
           accessibilityRole="link"

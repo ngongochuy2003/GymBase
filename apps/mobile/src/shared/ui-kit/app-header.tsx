@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.sm - 3,
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  logo: { fontSize: 26, fontWeight: '900', color: theme.colors.primary, fontStyle: 'italic' },
+  logo: { fontSize: 26, fontWeight: '700', color: theme.colors.primary, fontStyle: 'italic' },
   brandText: {
     fontSize: theme.font.size.lg,
     fontWeight: theme.font.weight.bold,
