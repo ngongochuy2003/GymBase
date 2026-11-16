@@ -57,6 +57,41 @@ public sealed class HoSoTests : IAsyncLifetime
         khu_vuc_hoat_dong = khuVuc,
     };
 
+    /// <summary>Body của PT chỉ có khối PT (không có khối học viên).</summary>
+    private static Dictionary<string, object?> BodyPt(
+        string loai = "pt",
+        string[]? chuyenMon = null,
+        int? soNam = 4,
+        string? gioiThieu = "HLV 4 năm kinh nghiệm.") => new()
+    {
+        ["loai_nguoi_dung"] = loai,
+        ["ngay_sinh"] = "1990-03-10",
+        ["gioi_tinh"] = "nam",
+        ["khu_vuc_hoat_dong"] = "tp_hcm",
+        ["chuyen_mon"] = chuyenMon ?? ["tang_co", "dinh_duong"],
+        ["so_nam_kinh_nghiem"] = soNam,
+        ["gioi_thieu"] = gioiThieu,
+    };
+
+    /// <summary>Body đủ cả hai khối, dùng cho ca_hai.</summary>
+    private static Dictionary<string, object?> BodyCaHai()
+    {
+        var body = BodyPt(loai: "ca_hai");
+        body["trinh_do_tap"] = "co_nen_tang";
+        body["muc_tieu_tap_luyen"] = "tang_co";
+        body["chieu_cao_cm"] = 178m;
+        body["can_nang_kg"] = 75m;
+        return body;
+    }
+
+    private static async Task AssertLoiTruongAsync(HttpResponseMessage response, string truong)
+    {
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("VALIDATION_FAILED", json.GetProperty("code").GetString());
+        Assert.True(json.GetProperty("errors").TryGetProperty(truong, out _), $"thiếu lỗi ở trường {truong}");
+    }
+
     private static Task<HttpResponseMessage> Luu(HttpClient client, object body) => client.PutAsJsonAsync(HoSo, body);
 
     private static async Task<string?> CodeOf(HttpResponseMessage response) =>
@@ -230,9 +265,25 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Equal("lau_nam", doc.GetProperty("trinh_do_tap").GetString());
     }
 
+    [Fact]
+    public async Task Bo_ngay_sinh_gioi_tinh_khu_vuc_van_luu_duoc_va_doc_lai_null()
+    {
+        var client = Client(HocVien);
+        var body = JsonSerializer.SerializeToNode(BodyHocVien())!.AsObject();
+        body.Remove("ngay_sinh");
+        body.Remove("gioi_tinh");
+        body.Remove("khu_vuc_hoat_dong");
+
+        var response = await Luu(client, body);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var doc = await client.GetFromJsonAsync<JsonElement>(HoSo);
+        Assert.Equal(JsonValueKind.Null, doc.GetProperty("ngay_sinh").ValueKind);
+        Assert.Equal(JsonValueKind.Null, doc.GetProperty("gioi_tinh").ValueKind);
+        Assert.Equal(JsonValueKind.Null, doc.GetProperty("khu_vuc_hoat_dong").ValueKind);
+    }
+
     [Theory]
-    [InlineData("ngay_sinh")]
-    [InlineData("gioi_tinh")]
     [InlineData("trinh_do_tap")]
     public async Task Thieu_truong_ca_nhan_bat_buoc_tra_400(string truong)
     {
@@ -351,6 +402,142 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Equal(JsonValueKind.Null, doc.GetProperty("ngay_sinh").ValueKind);
         Assert.Equal(JsonValueKind.Null, doc.GetProperty("gioi_tinh").ValueKind);
         Assert.Equal(JsonValueKind.Null, doc.GetProperty("trinh_do_tap").ValueKind);
+    }
+
+    [Fact]
+    public async Task Pt_chi_gui_khoi_pt_khong_can_khoi_hoc_vien()
+    {
+        var client = Client(Pt);
+
+        var response = await Luu(client, BodyPt());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("pt", body.GetProperty("loai_nguoi_dung").GetString());
+        Assert.Equal(["tang_co", "dinh_duong"], body.GetProperty("chuyen_mon").EnumerateArray().Select(e => e.GetString()));
+        Assert.Equal(4, body.GetProperty("so_nam_kinh_nghiem").GetInt16());
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("muc_tieu_tap_luyen").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("trinh_do_tap").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("chi_so_co_the").ValueKind);
+        Assert.Empty(ChiSoStore.All());
+    }
+
+    [Fact]
+    public async Task Pt_thieu_chuyen_mon_tra_400()
+    {
+        var client = Client(Pt);
+        var body = BodyPt();
+        body["chuyen_mon"] = Array.Empty<string>();
+
+        await AssertLoiTruongAsync(await Luu(client, body), "chuyen_mon");
+    }
+
+    [Fact]
+    public async Task Pt_thieu_so_nam_kinh_nghiem_tra_400()
+    {
+        var client = Client(Pt);
+
+        await AssertLoiTruongAsync(await Luu(client, BodyPt(soNam: null)), "so_nam_kinh_nghiem");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(61)]
+    public async Task Pt_so_nam_kinh_nghiem_ngoai_khoang_tra_400(int soNam)
+    {
+        var client = Client(Pt);
+
+        await AssertLoiTruongAsync(await Luu(client, BodyPt(soNam: soNam)), "so_nam_kinh_nghiem");
+    }
+
+    [Fact]
+    public async Task Pt_gioi_thieu_qua_dai_tra_400()
+    {
+        var client = Client(Pt);
+
+        await AssertLoiTruongAsync(await Luu(client, BodyPt(gioiThieu: new string('a', 1001))), "gioi_thieu");
+    }
+
+    [Fact]
+    public async Task Pt_chuyen_mon_trung_duoc_gop_thanh_mot()
+    {
+        var client = Client(Pt);
+
+        var response = await Luu(client, BodyPt(chuyenMon: ["tang_co", "tang_co", "giam_mo"]));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(["tang_co", "giam_mo"], body.GetProperty("chuyen_mon").EnumerateArray().Select(e => e.GetString()));
+    }
+
+    [Fact]
+    public async Task Pt_gui_chieu_cao_khong_kem_can_nang_tra_400()
+    {
+        var client = Client(Pt);
+        var body = BodyPt();
+        body["chieu_cao_cm"] = 178m;
+
+        await AssertLoiTruongAsync(await Luu(client, body), "can_nang_kg");
+    }
+
+    [Fact]
+    public async Task Ca_hai_gui_du_hai_khoi_duoc_luu()
+    {
+        var client = Client(Pt);
+
+        var response = await Luu(client, BodyCaHai());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ca_hai", body.GetProperty("loai_nguoi_dung").GetString());
+        Assert.Equal("tang_co", body.GetProperty("muc_tieu_tap_luyen").GetString());
+        Assert.Equal(75m, body.GetProperty("chi_so_co_the").GetProperty("can_nang_kg").GetDecimal());
+        Assert.Equal(4, body.GetProperty("so_nam_kinh_nghiem").GetInt16());
+        Assert.Single(ChiSoStore.All());
+    }
+
+    [Fact]
+    public async Task Ca_hai_thieu_khoi_pt_tra_400()
+    {
+        var client = Client(Pt);
+        var body = BodyCaHai();
+        body["chuyen_mon"] = null;
+
+        await AssertLoiTruongAsync(await Luu(client, body), "chuyen_mon");
+    }
+
+    [Fact]
+    public async Task Ca_hai_thieu_khoi_hoc_vien_tra_400()
+    {
+        var client = Client(Pt);
+        var body = BodyCaHai();
+        body.Remove("muc_tieu_tap_luyen");
+
+        await AssertLoiTruongAsync(await Luu(client, body), "muc_tieu_tap_luyen");
+    }
+
+    [Fact]
+    public async Task Hoc_vien_thieu_muc_tieu_tra_400()
+    {
+        var client = Client(HocVien);
+        var body = JsonSerializer.SerializeToNode(BodyHocVien())!.AsObject();
+        body.Remove("muc_tieu_tap_luyen");
+
+        await AssertLoiTruongAsync(await Luu(client, body), "muc_tieu_tap_luyen");
+    }
+
+    [Fact]
+    public async Task Doi_tu_pt_sang_hoc_vien_xoa_thong_tin_pt()
+    {
+        var client = Client(Pt);
+        await Luu(client, BodyPt());
+
+        var response = await Luu(client, BodyHocVien());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("chuyen_mon").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("so_nam_kinh_nghiem").ValueKind);
     }
 
     [Fact]

@@ -3,8 +3,8 @@
 Sau khi chọn vai trò ở onboarding, app gửi một lần "Lưu thiết lập" chứa **cả khối học viên và khối PT**. Backend ghi
 `ho_so_nguoi_dung` và `chi_so_co_the` trong **một transaction**; chỉ thêm dòng chỉ số cơ thể khi số đo thay đổi.
 
-Đợt này app chỉ gửi khối học viên cho cả ba lựa chọn vai trò; khối PT đã có ở API nhưng chưa dựng ở UI —
-`// TODO(PROFILE-PT)` trong `HoSoService`.
+Khối nào bắt buộc tùy `loai_nguoi_dung`: `hoc_vien` gửi khối học viên, `pt` gửi khối PT, `ca_hai` gửi cả hai. Trên
+app, màn thiết lập theo vai trò hiện đúng khối đó: một khối khi chọn học viên hoặc PT, hai tab khi chọn cả hai.
 
 Trên app, thiết lập chia hai bước (thông tin cá nhân, rồi thông tin theo vai trò) nhưng dữ liệu của hai bước được giữ ở
 bản nháp phía app và gửi **một lần** ở cuối, nên API vẫn là một request, một transaction.
@@ -75,18 +75,21 @@ Dùng `PUT` vì mỗi tài khoản chỉ có một hồ sơ; lần lưu đầu t
 | Quy tắc | Chi tiết | Lỗi |
 | --- | --- | --- |
 | Vai trò | `loai_nguoi_dung` là `hoc_vien`, `pt` hoặc `ca_hai` | `400 ROLE_INVALID` |
-| Khối PT | Chỉ tài khoản `pt`/`ca_hai` mới gửi `chuyen_mon`, `so_nam_kinh_nghiem`, `gioi_thieu` | `400 ROLE_INVALID` |
+| Khối học viên | Bắt buộc với `hoc_vien`/`ca_hai`: `muc_tieu_tap_luyen`, `trinh_do_tap`, `chieu_cao_cm`, `can_nang_kg`. `pt` có thể bỏ khối này; nếu gửi một trong hai số đo thì phải gửi cả hai | `400 VALIDATION_FAILED` |
+| Khối PT | Bắt buộc với `pt`/`ca_hai`: `chuyen_mon` (ít nhất 1) và `so_nam_kinh_nghiem`; `gioi_thieu` tùy chọn. `hoc_vien` không được gửi khối này | `400 VALIDATION_FAILED`; `hoc_vien` gửi thì `400 ROLE_INVALID` |
 | Tên hiển thị | Tùy chọn. Có gửi thì ghi sau khi cắt khoảng trắng (1–100 ký tự); không gửi thì tạo mới lấy `tai_khoan.ho_ten`, cập nhật giữ nguyên | `400 VALIDATION_FAILED` |
-| Ngày sinh | Bắt buộc, `yyyy-MM-dd`, không ở tương lai, tuổi 13–100 | `400 VALIDATION_FAILED` |
-| Giới tính | Bắt buộc; một trong `nam`, `nu`, `khac`, `khong_muon_noi` (danh sách cố định trong code, **không** đọc từ `danh_muc`; app cũng để cố định). Lưu ở `ho_so_nguoi_dung.gioi_tinh` | `400 VALIDATION_FAILED` |
-| Trình độ tập | Bắt buộc (cùng khối với mục tiêu, chiều cao, cân nặng); mã phải có trong `danh_muc` với `ma_dinh_danh = 'trinh_do_tap'` | `400 CATEGORY_INVALID` |
+| Ngày sinh | Tùy chọn; không gửi thì lưu `null`. Có gửi thì `yyyy-MM-dd`, không ở tương lai, tuổi 13–100 | `400 VALIDATION_FAILED` |
+| Giới tính | Tùy chọn; không gửi thì lưu `null`. Có gửi thì một trong `nam`, `nu`, `khac`, `khong_muon_noi` (danh sách cố định trong code, **không** đọc từ `danh_muc`; app cũng để cố định). Lưu ở `ho_so_nguoi_dung.gioi_tinh` | `400 VALIDATION_FAILED` |
+| Trình độ tập | Thuộc khối học viên; mã phải có trong `danh_muc` với `ma_dinh_danh = 'trinh_do_tap'` | `400 CATEGORY_INVALID` |
 | Mục tiêu | Mã phải có trong `danh_muc` với `ma_dinh_danh = 'muc_tieu_tap_luyen'` và `tinh_trang = 1` | `400 CATEGORY_INVALID` |
-| Khu vực | Mã phải có trong `danh_muc` với `ma_dinh_danh = 'khu_vuc'` | `400 CATEGORY_INVALID` |
-| Chuyên môn | Mỗi mã phải có trong `danh_muc` với `ma_dinh_danh = 'chuyen_mon_pt'`; tối đa 10 mục, tự bỏ trùng | `400 CATEGORY_INVALID` |
-| Chiều cao | Bắt buộc, 100–250 cm, làm tròn 1 chữ số thập phân | `400 VALIDATION_FAILED` |
-| Cân nặng | Bắt buộc, 20–300 kg, làm tròn 2 chữ số thập phân | `400 VALIDATION_FAILED` |
-| Kinh nghiệm | 0–60 năm | `400 VALIDATION_FAILED` |
-| Chỉ số cơ thể | Chỉ thêm dòng mới khi chiều cao hoặc cân nặng khác bản ghi mới nhất | — |
+| Khu vực | Tùy chọn; không gửi thì lưu `null`. Có gửi thì mã phải có trong `danh_muc` với `ma_dinh_danh = 'khu_vuc'` | `400 CATEGORY_INVALID` |
+| Chuyên môn | Mỗi mã phải có trong `danh_muc` với `ma_dinh_danh = 'chuyen_mon_pt'`; 1–10 mục, tự bỏ trùng | `400 CATEGORY_INVALID` |
+| Chiều cao | Khối học viên, 100–250 cm, làm tròn 1 chữ số thập phân | `400 VALIDATION_FAILED` |
+| Cân nặng | Khối học viên, 20–300 kg, làm tròn 2 chữ số thập phân | `400 VALIDATION_FAILED` |
+| Kinh nghiệm | Khối PT, 0–60 năm | `400 VALIDATION_FAILED` |
+| Giới thiệu | Khối PT, tùy chọn, tối đa 1000 ký tự | `400 VALIDATION_FAILED` |
+| Chỉ số cơ thể | Chỉ thêm dòng mới khi có số đo và chiều cao hoặc cân nặng khác bản ghi mới nhất; PT không gửi khối học viên thì không thêm | — |
+| Đổi vai trò | Lưu lại với vai trò khác thì khối không còn thuộc vai trò mới bị xóa (ví dụ PT sang học viên xóa chuyên môn, kinh nghiệm, giới thiệu) | — |
 | Giữ nguyên khi cập nhật | Ảnh đại diện, trạng thái xác minh của hồ sơ đã có (`ten_hien_thi` chỉ đổi khi có gửi) | — |
 | Tạo mới | `ten_hien_thi` = giá trị gửi lên, không có thì `tai_khoan.ho_ten`; `trang_thai_xac_minh` = `chua_xac_minh` | — |
 | Hồ sơ cũ | Hồ sơ tạo trước khi có các cột mới trả `null` cho `ngay_sinh`, `gioi_tinh`, `trinh_do_tap` | — |
