@@ -11,10 +11,12 @@ import TabsLayout from '@/app/(protected)/(tabs)/_layout';
 import TodayRoute from '@/app/(protected)/(tabs)/today';
 import ProfileRoute from '@/app/(protected)/(tabs)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
+import PersonalInfoRoute from '@/app/(protected)/profile-setup/ca-nhan';
 import ProfileDetailRoute from '@/app/(protected)/profile-setup/chi-tiet';
 import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { authApi } from '@/core/api/auth-api';
+import { danhMucApi } from '@/core/api/danh-muc-api';
 import type { AuthUser } from '@/core/auth/types';
 
 const firstTimeUser: AuthUser = {
@@ -42,6 +44,7 @@ const routes = {
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
   '(protected)/profile-setup/index': ProfileSetupRoute,
+  '(protected)/profile-setup/ca-nhan': PersonalInfoRoute,
   '(protected)/profile-setup/chi-tiet': ProfileDetailRoute,
   '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
@@ -58,6 +61,8 @@ async function openRolePicker() {
       JSON.stringify({ accessToken: 'stored-access', refreshToken: 'stored-refresh' }),
     );
   jest.spyOn(authApi, 'me').mockResolvedValue(firstTimeUser);
+  // Màn thông tin cá nhân (bước sau) tải danh mục; trả rỗng cho khỏi gọi mạng thật.
+  jest.spyOn(danhMucApi, 'get').mockResolvedValue([]);
   jest
     .spyOn(authApi, 'hoanTatDangNhapLanDau')
     .mockResolvedValue({ ...firstTimeUser, is_dang_nhap_lan_dau: false });
@@ -107,7 +112,7 @@ test.each([
   ['Tôi là PT', 'Tạo & quản lý học viên, xây dựng lịch tập, theo dõi kết quả.', 'pt'],
   ['Tôi muốn cả hai', 'Vừa tập luyện cho bản thân, vừa huấn luyện, quản lý học viên.', 'ca_hai'],
 ])(
-  'choosing "%s" and continuing opens the detail screen with loai=%s',
+  'choosing "%s" and continuing opens the personal info screen with loai=%s',
   async (title, description, loai) => {
     await openRolePicker();
 
@@ -124,7 +129,7 @@ test.each([
     ).toHaveLength(1);
     await fireEvent.press(screen.getByRole('button', CONTINUE));
 
-    await waitFor(() => expect(screen).toHavePathname('/profile-setup/chi-tiet'));
+    await waitFor(() => expect(screen).toHavePathname('/profile-setup/ca-nhan'));
     expect(screen).toHaveSearchParams({ loai });
   },
 );

@@ -42,7 +42,7 @@ export function ProfileSetupScreen() {
         <Text className="text-[28px] font-bold leading-9 text-foreground">
           Bạn muốn sử dụng GymBase như thế nào?
         </Text>
-        <Text className="text-[15px] leading-[23px] text-muted-foreground">
+        <Text className="text-base leading-6 text-muted-foreground">
           Chọn vai trò phù hợp với nhu cầu của bạn.
         </Text>
       </View>
@@ -65,8 +65,8 @@ export function ProfileSetupScreen() {
                 <Ionicons name={role.icon} size={24} color={colors.text} />
               </View>
               <View className="flex-1 gap-2">
-                <Text className="text-[16px] font-bold text-foreground">{role.title}</Text>
-                <Text className="text-base leading-5 text-muted-foreground">{role.description}</Text>
+                <Text className="text-base font-bold text-foreground">{role.title}</Text>
+                <Text className="text-sm leading-5 text-muted-foreground">{role.description}</Text>
               </View>
             </Pressable>
           );
@@ -85,7 +85,7 @@ export function ProfileSetupScreen() {
         disabled={selected === null}
         onPress={() => {
           // TODO(PROFILE-PT): hiện cả 3 vai trò dùng chung form học viên; sau này rẽ nhánh theo `loai`.
-          if (selected) router.push(`/profile-setup/chi-tiet?loai=${selected}`);
+          if (selected) router.push(`/profile-setup/ca-nhan?loai=${selected}`);
         }}
       />
     </Screen>
