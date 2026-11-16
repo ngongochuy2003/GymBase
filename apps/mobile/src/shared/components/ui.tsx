@@ -21,6 +21,7 @@ import { cssInterop } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../theme/theme';
+import { FieldLabel } from './field-label';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -182,7 +183,7 @@ export function TextField({
   const toggleLabel = `${visible ? 'Ẩn' : 'Hiện'} ${label.toLowerCase()}`;
   return (
     <View className="gap-2">
-      {hideLabel ? null : <AppText>{label}</AppText>}
+      {hideLabel ? null : <FieldLabel label={label} />}
       <View
         className={cn(
           'min-h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',

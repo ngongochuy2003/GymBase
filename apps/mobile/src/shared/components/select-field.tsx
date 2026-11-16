@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../theme/theme';
+import { FieldLabel } from './field-label';
 import { Button } from './ui';
 
 export type SelectOption = { ma: string; ten: string };
@@ -43,7 +44,7 @@ export function SelectField({
 
   return (
     <View className="gap-2">
-      <Text className="text-[15px] leading-[23px] text-foreground">{label}</Text>
+      <FieldLabel label={label} />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -84,7 +85,10 @@ export function SelectField({
           className="flex-1 justify-end bg-black/40"
         >
           <Pressable className="max-h-[70%] rounded-t-3xl bg-background px-5 pb-8 pt-5">
-            <Text className="pb-3 text-lg font-bold text-foreground">{label}</Text>
+            <FieldLabel label={label} className="pb-3 text-lg font-bold" />
+            {options.length === 0 ? (
+              <Text className="py-4 text-muted-foreground">Chưa có lựa chọn nào.</Text>
+            ) : null}
             <ScrollView accessibilityRole="radiogroup">
               {options.map((option) => {
                 const checked = option.ma === value;

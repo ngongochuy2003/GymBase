@@ -41,10 +41,6 @@ const item = (ma: string, ten: string) => ({
   danh_muc_cap_tren_id: null,
 });
 const categories: DanhMucNhom[] = [
-  {
-    ma_dinh_danh: 'gioi_tinh',
-    items: [item('nam', 'Nam'), item('nu', 'Nữ'), item('khong_muon_noi', 'Không muốn nói')],
-  },
   { ma_dinh_danh: 'khu_vuc', items: [item('ha_noi', 'Hà Nội'), item('tp_hcm', 'TP. Hồ Chí Minh')] },
 ];
 
@@ -112,25 +108,60 @@ test('the form opens with the display name prefilled from the account and no tab
 
   expect(screen.getByLabelText('Tên hiển thị *')).toHaveDisplayValue('Minh Anh');
   expect(screen.getByLabelText('Ngày sinh *')).toHaveDisplayValue('');
-  expect(screen.getByText('Thông tin này không hiển thị công khai.')).toBeTruthy();
   expect(screen.queryByText('Hôm nay')).toBeNull();
   expect(screen.queryByText('Cá nhân')).toBeNull();
 });
 
-test('dropdowns list the category names from the API', async () => {
+test('the (?) button beside the birth date explains who can see it and what it is for', async () => {
+  await openPersonalInfo();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Ngày sinh dùng để làm gì?' }));
+
+  expect(await screen.findByText('Ngày sinh dùng để làm gì?')).toBeTruthy();
+  expect(screen.getByText('Ai xem được?')).toBeTruthy();
+  expect(
+    screen.getByText(
+      'Thông tin này không hiển thị công khai. Chỉ PT đã kết nối với bạn mới xem được.',
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText('Dùng để làm gì?')).toBeTruthy();
+  expect(screen.getByText(/tính tuổi của bạn/)).toBeTruthy();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Đã hiểu' }));
+
+  await waitFor(() => expect(screen.queryByText('Ai xem được?')).toBeNull());
+  expect(screen).toHavePathname('/profile-setup/ca-nhan');
+});
+
+test('the gender field has no (?) button', async () => {
+  await openPersonalInfo();
+
+  expect(screen.queryByRole('button', { name: 'Giới tính dùng để làm gì?' })).toBeNull();
+});
+
+test('a dropdown with no options says so instead of opening an empty sheet', async () => {
+  jest.mocked(danhMucApi.get).mockResolvedValue([{ ma_dinh_danh: 'khu_vuc', items: [] }]);
+  await openPersonalInfo();
+
+  await openSelect('Khu vực *');
+
+  expect(await screen.findByText('Chưa có lựa chọn nào.')).toBeTruthy();
+});
+
+test('gender is a fixed list that never waits for the server, and areas come from the API', async () => {
   await openPersonalInfo();
 
   await openSelect('Giới tính *');
   expect(
     (await screen.findAllByRole('radio')).map((radio) => radio.props.accessibilityLabel),
-  ).toEqual(['Nam', 'Nữ', 'Không muốn nói']);
+  ).toEqual(['Nam', 'Nữ', 'Khác']);
   await fireEvent.press(screen.getByRole('radio', { name: 'Nam' }));
 
   await openSelect('Khu vực *');
   expect(
     (await screen.findAllByRole('radio')).map((radio) => radio.props.accessibilityLabel),
   ).toEqual(['Hà Nội', 'TP. Hồ Chí Minh']);
-  expect(danhMucApi.get).toHaveBeenCalledWith(['gioi_tinh', 'khu_vuc']);
+  expect(danhMucApi.get).toHaveBeenCalledWith(['khu_vuc']);
 });
 
 test('typing digits for the birth date inserts the slashes', async () => {
@@ -225,12 +256,12 @@ test('when the categories cannot be loaded the dropdowns say so and Retry reload
   expect(
     (await screen.findAllByText('Không tải được danh sách. Vui lòng thử lại.')).length,
   ).toBeGreaterThan(0);
-  expect(screen.getByRole('button', { name: 'Giới tính *' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Khu vực *' })).toBeDisabled();
+  // Giới tính là danh sách cố định nên vẫn chọn được dù danh mục khu vực lỗi.
+  expect(screen.getByRole('button', { name: 'Giới tính *' })).not.toBeDisabled();
 
-  await fireEvent.press(screen.getAllByRole('button', { name: 'Thử lại' })[0]!);
+  await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
 
-  await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Giới tính *' })).not.toBeDisabled(),
-  );
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Khu vực *' })).not.toBeDisabled());
   expect(screen.queryByText('Không tải được danh sách. Vui lòng thử lại.')).toBeNull();
 });

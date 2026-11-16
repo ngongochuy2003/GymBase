@@ -79,3 +79,18 @@ test('a validation error shows under the field', async () => {
 
   expect(screen.getByRole('alert')).toHaveTextContent('Vui lòng chọn giới tính.');
 });
+
+test('the required asterisk is its own text so it can be red, and the field name stays whole', async () => {
+  await renderField();
+
+  const asterisk = screen.getByText('*');
+  expect(asterisk.props.className).toContain('text-destructive');
+  expect(screen.getByRole('button', { name: 'Giới tính *' })).toBeTruthy();
+});
+
+test('a label without an asterisk is plain text', async () => {
+  await renderField({ label: 'Ghi chú' });
+
+  expect(screen.getByText('Ghi chú')).toBeTruthy();
+  expect(screen.queryByText('*')).toBeNull();
+});

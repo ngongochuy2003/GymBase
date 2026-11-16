@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AuthHeader } from '@/features/auth';
 import { useSession } from '@/core/auth/session';
+import { FieldLabel } from '@/shared/components/field-label';
 import { SelectField } from '@/shared/components/select-field';
 import { Button, Screen, TextField } from '@/shared/components/ui';
 import { useDanhMuc } from '@/shared/hooks/use-danh-muc';
@@ -15,22 +16,34 @@ import {
   personalInfoSchema,
   type PersonalInfoForm,
 } from '../schemas/personal-info-schema';
+import { PrivateInfoModal, type PrivateField } from '../components/private-info-modal';
 import { useProfileDraft } from '../state/profile-draft';
+import { GIOI_TINH_OPTIONS } from '../types/gioi-tinh';
 import { parseVaiTro } from '../types/vai-tro';
 
 const LOAD_ERROR = 'Không tải được danh sách. Vui lòng thử lại.';
+
+/** Nút (?) cạnh nhãn: mở giải thích thông tin riêng tư dùng để làm gì và ai được xem. */
+function HelpButton({ label, onPress }: { label: string; onPress(): void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} hitSlop={10} onPress={onPress}>
+      <Ionicons name="help-circle-outline" size={20} color={colors.muted} />
+    </Pressable>
+  );
+}
 
 /**
  * Màn 03A: thông tin cá nhân (phase 1 của thiết lập hồ sơ). Không gọi API lưu: dữ liệu vào bản nháp dùng chung, màn
  * theo vai trò (03B) gửi `PUT /ho-so` một lần ở cuối.
  */
 export function PersonalInfoScreen() {
-  const { colors } = useTheme();
   const { user } = useSession();
   const { loai } = useLocalSearchParams<{ loai?: string }>();
   const vaiTro = parseVaiTro(loai);
   const { draft, update } = useProfileDraft();
-  const danhMuc = useDanhMuc(['gioi_tinh', 'khu_vuc']);
+  const danhMuc = useDanhMuc(['khu_vuc']);
+  const [helpField, setHelpField] = useState<PrivateField | null>(null);
 
   const { control, handleSubmit } = useForm<PersonalInfoForm>({
     resolver: zodResolver(personalInfoSchema),
@@ -79,17 +92,27 @@ export function PersonalInfoScreen() {
         control={control}
         name="ngay_sinh"
         render={({ field, fieldState }) => (
-          <TextField
-            label="Ngày sinh *"
-            placeholder="dd/MM/yyyy"
-            value={field.value}
-            onChangeText={(text) => field.onChange(formatNgaySinhInput(text))}
-            onBlur={field.onBlur}
-            inputRef={field.ref}
-            keyboardType="number-pad"
-            maxLength={10}
-            error={fieldState.error?.message}
-          />
+          <View className="gap-2">
+            <View className="flex-row items-center gap-2">
+              <FieldLabel label="Ngày sinh *" />
+              <HelpButton
+                label="Ngày sinh dùng để làm gì?"
+                onPress={() => setHelpField('ngay_sinh')}
+              />
+            </View>
+            <TextField
+              hideLabel
+              label="Ngày sinh *"
+              placeholder="dd/MM/yyyy"
+              value={field.value}
+              onChangeText={(text) => field.onChange(formatNgaySinhInput(text))}
+              onBlur={field.onBlur}
+              inputRef={field.ref}
+              keyboardType="number-pad"
+              maxLength={10}
+              error={fieldState.error?.message}
+            />
+          </View>
         )}
       />
       <Controller
@@ -99,21 +122,12 @@ export function PersonalInfoScreen() {
           <SelectField
             label="Giới tính *"
             value={field.value || null}
-            options={danhMuc.items('gioi_tinh')}
+            options={GIOI_TINH_OPTIONS}
             onChange={field.onChange}
-            loading={danhMuc.isPending}
-            loadError={loadError}
-            onRetry={danhMuc.retry}
             error={fieldState.error?.message}
           />
         )}
       />
-      <View className="flex-row items-center gap-3 rounded-2xl bg-secondary p-4">
-        <Ionicons name="lock-closed-outline" size={20} color={colors.muted} />
-        <Text className="flex-1 text-sm leading-5 text-muted-foreground">
-          Thông tin này không hiển thị công khai.
-        </Text>
-      </View>
       <Controller
         control={control}
         name="khu_vuc_hoat_dong"
@@ -132,6 +146,7 @@ export function PersonalInfoScreen() {
       />
 
       <Button pill label="Tiếp tục" trailingIcon="chevron-forward" onPress={() => void next()} />
+      <PrivateInfoModal field={helpField} onClose={() => setHelpField(null)} />
     </Screen>
   );
 }
