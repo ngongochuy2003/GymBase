@@ -43,7 +43,6 @@ public class FileServiceTests : IDisposable
         _service = new FileService(
             resolver,
             _repository,
-            new InMemoryTaiKhoanRepository(new InMemoryStore<tai_khoan>()),
             processor,
             Options.Create(options),
             NullLogger<FileService>.Instance);

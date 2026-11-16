@@ -53,7 +53,6 @@ const routes = {
   '(auth)/register': RegisterRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/profile': ProfileRoute,
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
@@ -231,13 +230,9 @@ test('the first sign-in after registering shows onboarding, and skipping goes ho
   await fireEvent.press(await screen.findByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
 
   await waitFor(() => expect(screen).toHavePathname('/home'));
-  await act(async () => router.navigate('/' as never));
-  await waitFor(() => expect(screen).toHavePathname('/home'));
-  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
-  await waitFor(() => expect(screen).toHavePathname('/today'));
   expect(complete).toHaveBeenCalledTimes(1);
   await act(async () => router.navigate('/' as never));
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
 });
 
@@ -260,7 +255,7 @@ test('onboarding still lets the user in when the server cannot be reached', asyn
 
   await fireEvent.press(await screen.findByRole('button', { name: 'Bỏ qua, vào Trang chủ' }));
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
 });
 
 test('a taken email says so and offers to sign in instead', async () => {
@@ -328,7 +323,7 @@ test('a stored session after onboarding goes straight to the app', async () => {
 
   await renderRouter(routes, { initialUrl: '/' });
 
-  await waitFor(() => expect(screen).toHavePathname('/today'));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
   expect(screen.queryByText('Đăng nhập thành công!')).toBeNull();
 });
 
@@ -342,7 +337,5 @@ test('a stored session that never finished onboarding shows it again', async () 
 
   await renderRouter(routes, { initialUrl: '/' });
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
-  expect(screen.queryByText('Đăng ký thành công!')).toBeNull();
   await waitFor(() => expect(screen).toHavePathname('/onboarding'));
 });

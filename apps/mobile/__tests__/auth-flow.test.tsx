@@ -55,7 +55,6 @@ const routes = {
   '(auth)/login': LoginRoute,
   '(protected)/_layout': ProtectedLayout,
   '(protected)/home': HomeRoute,
-  '(protected)/profile': ProfileRoute,
   '(protected)/(tabs)/_layout': TabsLayout,
   '(protected)/(tabs)/today': TodayRoute,
   '(protected)/(tabs)/profile': ProfileRoute,
@@ -231,11 +230,10 @@ test('a PROFILE_REQUIRED error sends the signed-in user to the profile setup pla
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(storedTokens);
   jest.spyOn(authApi, 'me').mockResolvedValue(user);
 
-  // Màn "Hôm nay" được thay bằng một màn có query trả PROFILE_REQUIRED.
-  await renderRouter({ ...routes, '(protected)/home': NeedsProfile }, { initialUrl: '/home' });
+  // Màn "Trang chủ" được thay bằng một màn có query trả PROFILE_REQUIRED.
   await renderRouter(
-    { ...routes, '(protected)/(tabs)/today': NeedsProfile },
-    { initialUrl: '/today' },
+    { ...routes, '(protected)/home': NeedsProfile },
+    { initialUrl: '/home' },
   );
 
   await waitFor(() => expect(screen).toHavePathname('/profile-setup'));

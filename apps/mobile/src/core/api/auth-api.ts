@@ -1,11 +1,11 @@
 import { Platform } from 'react-native';
 import { createAuthTransport } from '../auth/auth-transport';
 import type { AuthResult, AuthUser } from '../auth/types';
-import { env } from '../config/env';
 import { tokenStorage } from '../storage/token-storage';
 import { createApiClient } from './client';
+import { resolveMobApiBaseUrl } from './mobile-client';
 
-const baseURL = `${env.apiUrl.replace(/\/+$/, '')}/api/v1/mob`;
+const baseURL = resolveMobApiBaseUrl();
 
 /** Client không gắn token: dùng cho login và refresh, nơi 401 nghĩa là sai thông tin, không phải hết phiên. */
 const anonymousClient = createApiClient(baseURL);

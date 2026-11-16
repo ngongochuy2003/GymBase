@@ -42,7 +42,8 @@ export function LoginScreen() {
   const submit = handleSubmit(async ({ email, password }) => {
     setFailure(null);
     try {
-      await signIn(email, password);
+      const result = await signIn(email, password);
+      router.replace(result.user.is_dang_nhap_lan_dau ? '/onboarding' : '/home');
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
       const wrongPassword = apiError?.code === INVALID_CREDENTIALS;

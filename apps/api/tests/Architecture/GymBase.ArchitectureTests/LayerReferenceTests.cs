@@ -83,7 +83,12 @@ public partial class LayerReferenceTests
     private static string? GroupOf(string project) =>
         new[] { BusinessProject(), DataContractProject(), DataMySqlProject() }
             .Select(regex => regex.Match(project))
-            .FirstOrDefault(match => match.Success)?.Groups["group"].Value;
+            .FirstOrDefault(match => match.Success)?.Groups["group"].Value switch
+            {
+                // Nhóm File (media/storage) quản lý thực thể tep_tin thuộc nhóm Biz.
+                "File" => "Biz",
+                var g => g,
+            };
 
     /// <summary>Quy tắc cho từng loại project; project không thuộc loại nào thì không được tham chiếu gì.</summary>
     private static Func<string, bool> AllowedReferences(string project)

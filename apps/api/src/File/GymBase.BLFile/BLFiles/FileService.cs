@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
-using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.DLFile.Contract;
 using GymBase.Entities.Biz;
 using GymBase.Entities.Biz.Enums;
@@ -18,9 +17,10 @@ public sealed class FileService : IFileService
         "avatar", "gym_photo", "progress", "post"
     };
 
+    private static readonly Guid DevFallbackUserId = Guid.Parse("0193f0a0-0000-7000-8000-000000000001");
+
     private readonly IStorageResolver _storageResolver;
     private readonly ITepTinRepository _tepTinRepository;
-    private readonly ITaiKhoanRepository _taiKhoanRepository;
     private readonly IImageProcessor _imageProcessor;
     private readonly StorageOptions _options;
     private readonly ILogger<FileService> _logger;
@@ -28,14 +28,12 @@ public sealed class FileService : IFileService
     public FileService(
         IStorageResolver storageResolver,
         ITepTinRepository tepTinRepository,
-        ITaiKhoanRepository taiKhoanRepository,
         IImageProcessor imageProcessor,
         IOptions<StorageOptions> options,
         ILogger<FileService> logger)
     {
         _storageResolver = storageResolver;
         _tepTinRepository = tepTinRepository;
-        _taiKhoanRepository = taiKhoanRepository;
         _imageProcessor = imageProcessor;
         _options = options.Value;
         _logger = logger;
@@ -289,11 +287,7 @@ public sealed class FileService : IFileService
 
         if (_options.AllowAnonymousForDev)
         {
-            var devAccount = await _taiKhoanRepository.DLFindByTenDangNhapAsync("admin", ct);
-            if (devAccount != null)
-            {
-                return devAccount.Id;
-            }
+            return DevFallbackUserId;
         }
 
         throw new UnauthorizedAccessException("Người dùng chưa được xác thực.");
