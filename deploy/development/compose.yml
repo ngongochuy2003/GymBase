@@ -2,8 +2,8 @@
 # Chạy trong thư mục này; docker compose tự đọc `.env` cùng thư mục (mẫu: .env.example):
 #   docker compose up --build -d
 #
-# Tách khỏi production: project `gymbase-dev` (container, volume, mạng riêng), `.env` riêng, MySQL chỉ mở cho máy này
-# (127.0.0.1), không nginx/HTTPS, không binary log, file tải lên lưu volume cục bộ thay vì S3.
+# Tách khỏi production: project `gymbase-dev` (container, volume, mạng riêng), `.env` riêng, MySQL và MinIO chỉ mở cho máy
+# này (127.0.0.1), không nginx/HTTPS, không binary log, file tải lên lưu ở MinIO (S3 chạy cục bộ) thay vì S3 thật.
 name: gymbase-dev
 
 x-api-env: &api-env
@@ -35,6 +35,22 @@ services:
       retries: 20
       start_period: 30s
 
+  # S3 chạy cục bộ để dev đi đúng đường lưu file của production. API tự tạo bucket ở lần tải lên đầu tiên.
+  # Image không có shell hay curl nên không khai báo được healthcheck; api chỉ chờ container này chạy.
+  # Cổng 9100/9101 (không phải 9000/9001) để không đụng MinIO chạy riêng ở infrastructure/docker/docker-compose.minio.yml.
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9100}:9000"          # S3 API
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9101}:9001"  # giao diện web quản lý
+    volumes:
+      - minio_data:/data
+
   # Ở dev, migration tự chạy mỗi lần `up` rồi thoát; api chỉ khởi động khi bước này thành công.
   # (Production thì chạy tay, có sao lưu trước.)
   migrate:
@@ -57,16 +73,22 @@ services:
     restart: unless-stopped
     environment:
       <<: *api-env
-      # MinIO/S3 không nằm trong compose dev nên lưu file vào volume cục bộ.
-      Storage__DefaultProvider: LOCAL
+      Storage__DefaultProvider: MINIO
+      Storage__ServiceUrl: http://minio:9000
+      Storage__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      Storage__ForcePathStyle: "true"
     ports:
       # Giữ 5020 để EXPO_PUBLIC_API_URL của mobile không đổi; đặt API_PORT khác nếu cổng này đang bận.
       - "${API_PORT:-5020}:8080"
     volumes:
+      # File đã tải lên trước khi chuyển sang MinIO (tep_tin.s3_bucket = LOCAL) vẫn đọc được từ volume này.
       - uploads_data:/app/uploads
     depends_on:
       migrate:
         condition: service_completed_successfully
+      minio:
+        condition: service_started
     healthcheck:
       # Image không có curl nên gọi /health (có kiểm tra DB) bằng bash.
       test:
@@ -84,4 +106,5 @@ services:
 
 volumes:
   mysql_data:
+  minio_data:
   uploads_data:

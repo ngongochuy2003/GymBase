@@ -25,5 +25,6 @@ docker build -f infrastructure/docker/Dockerfile.api --target migrator -t gymbas
   nâng EF thì nâng cả hai.
 - Migration tạo trigger nên MySQL cần `log_bin_trust_function_creators=1` khi bật binary log (compose production), hoặc tắt binary log
   (`--skip-log-bin`, compose dev).
-- `docker-compose.minio.yml` chạy MinIO riêng cho dev khi cần thử S3 cục bộ; compose dev mặc định lưu file vào volume, production dùng S3 bên ngoài.
+- `docker-compose.minio.yml` chạy MinIO riêng (cổng 9000, 9001) cho lúc chạy API bằng tay, khớp `appsettings.json`. Compose dev
+  ([deploy/development](../../deploy/development/README.md)) có MinIO riêng ở cổng 9100, 9101; production dùng S3 bên ngoài.
 - Expo dev server chạy ngoài Docker để debug emulator/thiết bị thật.
