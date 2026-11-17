@@ -16,7 +16,7 @@ using Microsoft.AspNetCore.Identity;
 namespace GymBase.BLAuth.BLXacThuc;
 
 /// <summary>
-/// Đăng nhập, xoay vòng refresh token, đăng xuất, đổi mật khẩu. Thiết kế: docs/api/xac-thuc.md.
+/// Đăng nhập, xoay vòng refresh token, đăng xuất, đổi mật khẩu.
 /// Mọi trường hợp đăng nhập không thành công đều trả cùng một lỗi để không lộ trạng thái tài khoản.
 /// </summary>
 public sealed class XacThucService(
@@ -83,11 +83,9 @@ public sealed class XacThucService(
         return await StartSessionAsync(user, dto.ten_thiet_bi, cancellationToken);
     }
 
-    // TODO(VERIFY): chưa xác minh email và số điện thoại, nên email mới chỉ là định danh đăng nhập chứ chưa chứng minh
-    //   quyền sở hữu; làm cùng quên mật khẩu qua email.
+    // TODO(VERIFY): chưa xác minh email và số điện thoại, nên email mới chỉ là định danh đăng nhập chứ chưa chứng minh quyền sở hữu; làm cùng quên mật khẩu qua email.
     /// <summary>
-    /// Người mới tự đăng ký bằng mật khẩu. Không tạo phiên: app đưa người dùng về màn đăng nhập. Tài khoản mới có
-    /// <c>is_dang_nhap_lan_dau = true</c>. Chưa xác minh email và số điện thoại (nếu có).
+    /// Người mới tự đăng ký bằng mật khẩu. Không tạo phiên: app đưa người dùng về màn đăng nhập. Tài khoản mới có <c>is_dang_nhap_lan_dau = true</c>. Chưa xác minh email và số điện thoại (nếu có).
     /// </summary>
     /// <exception cref="ValidationFailedException">Dữ liệu không hợp lệ hoặc chưa đồng ý điều khoản.</exception>
     /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc tài khoản khác.</exception>
@@ -108,7 +106,6 @@ public sealed class XacThucService(
             ho_ten = dto.ho_ten.Trim(),
             so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai),
             vai_tro = AppRoles.User,
-            ngay_dong_y_dieu_khoan = now,
         };
         user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
         user.MarkCreated(email, now);
@@ -119,8 +116,7 @@ public sealed class XacThucService(
 
     /// <summary>
     /// Đăng nhập bằng Google; lần đầu thì tạo tài khoản (không mật khẩu, họ tên và email lấy từ Google) rồi liên kết.
-    /// Tài khoản được tìm theo <c>sub</c> của Google, không theo email. Email trùng tài khoản đã có thì từ chối, không tự
-    /// liên kết (ADR-0001, docs/api/xac-thuc.md mục 8).
+    /// Tài khoản được tìm theo <c>sub</c> của Google, không theo email. Email trùng tài khoản đã có thì từ chối, không tự liên kết (ADR-0001, docs/api/xac-thuc.md mục 8).
     /// </summary>
     /// <exception cref="UnauthorizedException">
     /// <see cref="AuthErrorCodes.GoogleTokenInvalid"/>, <see cref="AuthErrorCodes.GoogleEmailUnverified"/>, hoặc tài khoản đã liên kết bị khóa.
@@ -176,8 +172,6 @@ public sealed class XacThucService(
             email = email,
             ho_ten = DisplayName(identity.Name, email),
             vai_tro = AppRoles.User,
-            // Màn đăng nhập Google ghi sẵn "bằng việc tiếp tục, bạn đồng ý với Điều khoản và Chính sách bảo mật".
-            ngay_dong_y_dieu_khoan = now,
         };
         user.MarkCreated(email, now);
         await users.DLInsertAsync(user, cancellationToken);

@@ -101,14 +101,13 @@ public sealed class GoogleLoginTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task First_sign_in_stores_a_passwordless_account_linked_by_google_sub_with_the_consent_time()
+    public async Task First_sign_in_stores_a_passwordless_account_linked_by_google_sub()
     {
         await Google(Accept(subject: "sub-luu"));
 
         var user = (await StoredUser("nguoi.moi@gmail.test"))!;
         Assert.Null(user.mat_khau_hash);
         Assert.Null(user.ten_dang_nhap);
-        Assert.NotNull(user.ngay_dong_y_dieu_khoan);
         var link = (await StoredLink("sub-luu"))!;
         Assert.Equal(user.Id, link.tai_khoan_id);
         Assert.Equal(DateTimeKind.Utc, link.ngay_tao.Kind);

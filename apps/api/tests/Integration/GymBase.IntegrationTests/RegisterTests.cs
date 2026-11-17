@@ -123,19 +123,14 @@ public sealed class RegisterTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Register_stores_the_hash_normalised_email_phone_and_the_consent_time()
+    public async Task Register_stores_the_hash_and_normalised_email_and_phone()
     {
-        var before = DateTime.UtcNow;
-
         await Register(Body(email: "  Luu.Tru@GymBase.Test ", phone: "+84 912 345 678"));
 
         var user = await StoredUser("luu.tru@gymbase.test");
         Assert.Equal("0912345678", user.so_dien_thoai);
         Assert.NotNull(user.mat_khau_hash);
         Assert.NotEqual(Password, user.mat_khau_hash);
-        Assert.NotNull(user.ngay_dong_y_dieu_khoan);
-        Assert.Equal(DateTimeKind.Utc, user.ngay_dong_y_dieu_khoan!.Value.Kind);
-        Assert.InRange(user.ngay_dong_y_dieu_khoan.Value, before.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
     }
 
     [Fact]
