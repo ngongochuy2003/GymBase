@@ -62,7 +62,7 @@ apps/api/
 ```
 
 Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (compose, Nginx, CI/CD),
-`docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
+`docs/` (tài liệu, ADR).
 
 Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
 (`BLTaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có

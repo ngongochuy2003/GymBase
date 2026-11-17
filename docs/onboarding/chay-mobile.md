@@ -1,6 +1,6 @@
 # Chạy app mobile với backend
 
-Hướng dẫn từ máy mới đến lúc đăng nhập được trong app. Chi tiết về API (route, Bruno, lỗi thường gặp) ở
+Hướng dẫn từ máy mới đến lúc đăng nhập được trong app. Chi tiết về API (route, lỗi thường gặp) ở
 [cach-chay-api.md](../api/cach-chay-api.md); tổng quan mobile ở [apps/mobile/README.md](../../apps/mobile/README.md).
 
 ## Cần có

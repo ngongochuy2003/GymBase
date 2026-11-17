@@ -329,5 +329,5 @@ Muốn nhận token cấp cho client ID khác (ví dụ khi sau này app lấy t
 | [XacThucServiceTests.cs](../../apps/api/tests/Unit/GymBase.UnitTests/Auth/XacThucServiceTests.cs) | Unit test nghiệp vụ đăng nhập |
 | [google-sign-in.test.ts](../../apps/mobile/__tests__/google-sign-in.test.ts), [google-flow.test.tsx](../../apps/mobile/__tests__/google-flow.test.tsx) | Mobile: bọc thư viện Google và luồng nút |
 
-Tay: thử bằng Bruno ở `docs/api/bruno/{mobile,web}/xac-thuc/dang-nhap-google-sai.bru` (trường hợp token sai). Trường hợp
+Tay: trường hợp token sai thử bằng curl hoặc Postman, gửi `POST /api/v1/mob/auth/google` với `id_token` bất kỳ, kỳ vọng 401 `AUTH_GOOGLE_TOKEN_INVALID`. Trường hợp
 thành công cần ID token thật nên chỉ thử được qua app dev build.

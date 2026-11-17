@@ -121,4 +121,3 @@ nửa chừng. Đăng ký ở `Program.cs`: `AddBizBusiness()` (BL) và hai repo
   thêm dòng; đổi số đo thêm đúng một dòng; giữ `ten_hien_thi`/trạng thái xác minh; PT gửi chuyên môn hợp lệ; mã danh mục
   sai; chiều cao ngoài khoảng; thiếu hoặc ngoài khoảng ngày sinh, giới tính ngoài danh sách cố định, mã trình độ sai; gửi hoặc bỏ `ten_hien_thi`;
   hồ sơ cũ trả `null` cho trường mới; học viên gửi thông tin PT; vai trò sai; `GET` khi chưa có hồ sơ; 401 khi chưa đăng nhập.
-- Bruno: `docs/api/bruno/mobile/ho-so/`.

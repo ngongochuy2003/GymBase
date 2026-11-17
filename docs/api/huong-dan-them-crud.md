@@ -76,7 +76,7 @@ MySQL        bảng goi_tap
 | 6 | Controller `GoiTapController.cs` | `GymBase.API` |
 | 7 | Đăng ký trong `Program.cs` | `GymBase.API` |
 | 8 | Chạy thử | |
-| 9 | Viết test và request Bruno | `GymBase.UnitTests`, `docs/api/bruno` |
+| 9 | Viết test | `GymBase.UnitTests` |
 
 Các project `BLDI`, `DLDI.Contract`, `DLDI.MySql` đã có sẵn và đã tham chiếu đúng, bạn không phải tạo mới.
 
@@ -364,11 +364,12 @@ Chạy API:
 dotnet run --project src/Host/GymBase.API --launch-profile http
 ```
 
-Mở [Bruno](https://www.usebruno.com/), mở collection ở `docs/api/bruno`, chọn environment **local**
-rồi chạy request **Đăng nhập** trong thư mục `Web > Xác thực` để lấy token. Sau đó tạo request mới:
+Gọi API bằng Postman (**Import** URL `http://localhost:5020/openapi/v1.json`) hoặc curl. Trong các ví dụ dưới đây,
+`{{webApi}}` là `http://localhost:5020/api/v1/web`. Đăng nhập bằng `POST {{webApi}}/auth/login` với tài khoản Admin
+(cách tạo: [cach-chay-api.md](cach-chay-api.md)) để lấy `access_token`. Sau đó tạo request mới:
 
 - Method `POST`, URL `{{webApi}}/goitap`
-- Auth chọn **Bearer**, token là `{{accessToken}}`
+- Auth chọn **Bearer**, token là `access_token` vừa nhận
 - Body chọn **JSON**:
 
 ```json
@@ -403,7 +404,7 @@ Thử tiếp các tình huống sau để chắc mọi thứ đúng:
 | `GET {{webApi}}/goitap/{id}` sau khi xóa | 404 |
 | Gọi mà không có token | 401 |
 
-### Bước 9: Viết test và lưu request Bruno
+### Bước 9: Viết test
 
 Test kiểm tra service mà không cần MySQL, nhờ một repository giả lưu trong bộ nhớ.
 
@@ -478,9 +479,6 @@ Chạy toàn bộ test tại `apps/api`:
 dotnet test GymBase.slnx
 ```
 
-Cuối cùng, lưu các request đã thử vào một thư mục riêng của chức năng, ví dụ `docs/api/bruno/web/goi-tap`, để
-người khác dùng lại. Thư mục cần có `folder.bru` để đặt tên và thứ tự. Xem mẫu ở `docs/api/bruno/web/nguoi-dung`.
-
 ## 6. Khi cần thêm tính năng
 
 ### Chặn trùng dữ liệu, ví dụ mã gói
@@ -535,6 +533,5 @@ override, ví dụ để đặt quyền riêng cho `GET`. Mẫu thêm action: `R
 - [ ] Controller đã khai báo đúng quyền truy cập.
 - [ ] `Program.cs` đã có assembly của BL và 2 dòng `AddScoped`.
 - [ ] `dotnet test GymBase.slnx` chạy qua hết.
-- [ ] Đã lưu request vào `docs/api/bruno`.
 
 Muốn hiểu sâu hơn về các lớp nền, đọc [crud-dung-chung.md](crud-dung-chung.md).

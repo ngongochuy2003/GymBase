@@ -28,7 +28,6 @@ Nguồn đầy đủ: `docs/`. Khi có mâu thuẫn, ưu tiên: yêu cầu trự
 - Tên bảng/cột: tiếng Việt không dấu snake_case; property C# trùng tên cột; khóa chính `Id` UUIDv7; thời gian UTC; xóa mềm `is_deleted`; audit `ngay_tao`, `nguoi_tao`, `ngay_chinh_sua`, `nguoi_chinh_sua`.
 - .NET 10, EF Core + `Microting.EntityFrameworkCore.MySql`, MySQL 8.4, một `AppDbContext` ở `GymBase.Persistence`, migrations ở `GymBase.Persistence/Migrations`.
 - OpenAPI (`/openapi/v1.json`) là nguồn contract; không chia sẻ EF entities, không log mật khẩu/token, không trả stack trace production.
-- Collection thử API: `docs/api/bruno`.
 
 ## Quy trình
 - Nhánh `feat/*`, `fix/*`, `chore/*`, PR vào `develop`. Không commit/push/merge nếu chủ repo không yêu cầu.

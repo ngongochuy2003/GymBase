@@ -90,4 +90,3 @@ GET /api/v1/mob/danh-muc → Mob/Controllers/DanhMucController
 
 - `dotnet test GymBase.slnx` tại `apps/api` — `DanhMucTests` phủ: trả đủ các loại đang dùng, lọc theo `ma_dinh_danh`,
   bỏ mục `tinh_trang = 0`, 401 khi chưa đăng nhập.
-- Bruno: `docs/api/bruno/mobile/danh-muc/` (gọi thành công và trường hợp 401).

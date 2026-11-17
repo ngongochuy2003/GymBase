@@ -204,7 +204,6 @@ Mỗi dòng của bảng quy tắc là một test BL, dùng DL giả `InMemory*`
 | Gọi hai lần | Chỉ một dòng `-1` |
 
 Chạy cùng lúc hai request thật cần MySQL (unique index chặn), `InMemory*` không làm được. Ghi rõ test nào chưa phủ được.
-Rồi thêm một request vào `docs/api/bruno` như các API hiện có.
 
 ## 6. Lỗi thường gặp
 
