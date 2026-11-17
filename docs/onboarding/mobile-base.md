@@ -19,7 +19,7 @@ Mobile tại `apps/mobile` dùng Expo SDK 58, React Native 0.88.1, React 19.3.0,
 2. Đặt connection string và khóa JWT bằng User Secrets hoặc environment variables.
 3. Chạy API trên cổng 5020 và cấu hình CORS cho nguồn Expo web.
 4. Đặt `EXPO_PUBLIC_API_URL` trong `apps/mobile/.env` thành `http://localhost:5020`. Trên thiết bị thật, dùng IP LAN của máy phát triển.
-5. Tạo tài khoản Admin qua lệnh `create-admin` hoặc dùng một tài khoản có sẵn trong database rồi đăng nhập trong app.
+5. Đăng ký tài khoản thường rồi đổi `vai_tro` thành `Admin` trực tiếp trong database khi cần thử quyền quản trị.
 
 ## Giới hạn
 

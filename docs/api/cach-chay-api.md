@@ -38,14 +38,14 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    dotnet user-secrets set "Jwt:SigningKey" ([Convert]::ToBase64String($bytes)) --project src/Host/GymBase.API
    ```
 
-4. Tạo tài khoản Admin, đăng nhập bằng email. Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh. Email đã
-   tồn tại thì đặt lại mật khẩu và chuyển thành Admin:
+4. Chưa có cơ chế tạo tài khoản Admin tự động. Đăng ký một tài khoản thường rồi cấp quyền trực tiếp trong DB:
 
-   ```powershell
-   $env:GYMBASE_ADMIN_PASSWORD = Read-Host "Mật khẩu Admin"
-   dotnet run --project src/Host/GymBase.API --launch-profile http -- create-admin admin@gymbase.local
-   Remove-Item Env:GYMBASE_ADMIN_PASSWORD
+   ```sql
+   UPDATE tai_khoan SET vai_tro = 'Admin' WHERE email = '<email-vừa-đăng-ký>';
    ```
+
+   Endpoint quản lý người dùng chỉ dành cho Admin, nên bước đầu tiên phải làm bằng SQL. Đăng ký công khai ở
+   `POST /auth/register` (xem [xac-thuc.md](xac-thuc.md)).
 
 5. Đăng nhập Google (tùy chọn, khi làm app nối Google): khai báo client ID, một hoặc nhiều giá trị. Chưa khai báo thì
    `POST /auth/google` luôn trả 401 `AUTH_GOOGLE_TOKEN_INVALID`:

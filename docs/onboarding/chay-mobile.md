@@ -23,12 +23,10 @@ dotnet ef database update --project src/Data/GymBase.Persistence --startup-proje
 
 Khóa ký JWT (`Jwt:SigningKey`) tạo theo bước 3 của cach-chay-api.md.
 
-Tạo tài khoản Admin để đăng nhập thử. **Đăng nhập bằng email**, mật khẩu tối thiểu 8 ký tự:
+Chưa có script seed Admin. Đăng ký tài khoản thường trong app rồi cấp quyền trực tiếp trong DB. **Đăng nhập bằng email**:
 
-```powershell
-$env:GYMBASE_ADMIN_PASSWORD = Read-Host "Mật khẩu Admin"
-dotnet run --project src/Host/GymBase.API --launch-profile http -- create-admin admin@gymbase.local
-Remove-Item Env:GYMBASE_ADMIN_PASSWORD
+```sql
+UPDATE tai_khoan SET vai_tro = 'Admin' WHERE email = '<email-vừa-đăng-ký>';
 ```
 
 Nếu DB cũ có tài khoản mẫu, migration `EmailLaDinhDanhDangNhap` đã cấp email dạng `<tên-đăng-nhập>@gymbase.local` cho các
@@ -144,7 +142,7 @@ Google vào tài khoản có sẵn từ màn Cá nhân chưa làm.
 | --- | --- |
 | App báo "Không thể kết nối. Kiểm tra mạng và thử lại." | API chưa chạy, sai `EXPO_PUBLIC_API_URL`, hoặc (điện thoại thật) khác mạng / API chưa nghe trên `0.0.0.0` |
 | Đăng nhập báo 404 | `EXPO_PUBLIC_API_URL` còn kèm `/api/v1/mob`, hoặc chưa chạy lại Expo với `-c` sau khi sửa `.env` |
-| "Email hoặc mật khẩu không đúng." với đúng thông tin | Tài khoản chưa có email (DB chưa chạy migration), hoặc chưa tạo Admin; thử `create-admin` lại để đặt lại mật khẩu |
+| "Email hoặc mật khẩu không đúng." với đúng thông tin | Tài khoản chưa có email (DB chưa chạy migration), hoặc sai email; kiểm tra bản ghi trong bảng `tai_khoan` |
 | Đúng mật khẩu mà vẫn báo sai sau nhiều lần thử | Đăng nhập sai từ lần thứ 5 bị khóa tạm 1 đến 15 phút (vẫn báo email hoặc mật khẩu không đúng); chờ rồi thử lại. Quá 20 lần gọi mỗi phút theo IP thì trả 429 |
 | App báo `EXPO_PUBLIC_API_URL là bắt buộc` khi mở | Chưa tạo `apps/mobile/.env` |
 | Đăng ký báo email đã dùng nhưng bạn chưa từng đăng ký | Email đó đã có trong DB (tài khoản mẫu hoặc Admin); dùng email khác |

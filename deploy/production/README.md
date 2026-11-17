@@ -47,12 +47,11 @@ docker compose --env-file .env up -d
 curl -I https://<API_DOMAIN>/health           # 200
 ```
 
-Tạo tài khoản Admin đầu tiên (mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh):
+Chưa có cơ chế tạo Admin tự động. Đăng ký một tài khoản thường rồi cấp quyền trực tiếp trong DB (MySQL chỉ mở nội bộ,
+kết nối từ VPS hoặc qua `docker compose exec`):
 
-```bash
-read -rsp "Mật khẩu Admin: " GYMBASE_ADMIN_PASSWORD; export GYMBASE_ADMIN_PASSWORD
-docker compose --env-file .env run --rm -e GYMBASE_ADMIN_PASSWORD api create-admin admin@<domain>
-unset GYMBASE_ADMIN_PASSWORD
+```sql
+UPDATE tai_khoan SET vai_tro = 'Admin' WHERE email = '<email-vừa-đăng-ký>';
 ```
 
 Mobile: đặt `EXPO_PUBLIC_API_URL=https://<API_DOMAIN>` (không kèm `/api/v1/mob`).
