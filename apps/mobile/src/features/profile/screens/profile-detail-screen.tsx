@@ -197,11 +197,11 @@ export function ProfileDetailScreen() {
       <View className="gap-3 py-4">
         <Text
           accessibilityRole="header"
-          className="text-[28px] font-bold leading-9 text-foreground"
+          className="text-[28px] font-bold leading-9 text-foreground text-center"
         >
           Thiết lập hồ sơ
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground">
+        <Text className="text-base leading-6 text-muted-foreground text-center">
           Hoàn thiện thông tin để cá nhân hóa trải nghiệm và sử dụng đầy đủ tính năng.
         </Text>
       </View>

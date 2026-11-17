@@ -72,8 +72,8 @@ export function PersonalInfoScreen() {
     <Screen bottomInset>
       <AuthHeader onBack={() => router.back()} />
       <View className="gap-3 py-4">
-        <Text className="text-[28px] font-bold leading-9 text-foreground">Thông tin cá nhân</Text>
-        <Text className="text-base leading-6 text-muted-foreground">
+        <Text className="text-[28px] font-bold leading-9 text-foreground text-center">Thông tin cá nhân</Text>
+        <Text className="text-base leading-6 text-muted-foreground text-center">
           Cho GymBase biết đôi chút về bạn để cá nhân hóa trải nghiệm.
         </Text>
       </View>

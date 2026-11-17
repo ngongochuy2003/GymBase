@@ -39,10 +39,10 @@ export function ProfileSetupScreen() {
     <Screen bottomInset>
       <AuthHeader onBack={() => router.back()} />
       <View className="gap-3 py-4">
-        <Text className="text-[28px] font-bold leading-9 text-foreground">
+        <Text className="text-[28px] font-bold leading-9 text-foreground text-center">
           Bạn muốn sử dụng GymBase như thế nào?
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground">
+        <Text className="text-base leading-6 text-muted-foreground text-center">
           Chọn vai trò phù hợp với nhu cầu của bạn.
         </Text>
       </View>
