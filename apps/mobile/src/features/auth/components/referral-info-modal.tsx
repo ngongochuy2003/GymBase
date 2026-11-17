@@ -25,7 +25,7 @@ function Row({
         <Ionicons name={icon} size={20} color={colors.primary} />
       </View>
       <View className="flex-1 gap-0.5">
-        <Text className="text-[15px] font-semibold text-foreground">{title}</Text>
+        <Text className="text-base font-semibold text-foreground">{title}</Text>
         <Text className="text-sm leading-5 text-muted-foreground">{children}</Text>
       </View>
     </View>
@@ -62,7 +62,7 @@ export function ReferralInfoModal({ visible, onClose }: { visible: boolean; onCl
               Điểm thưởng vào tài khoản khi bạn đăng ký thành công.
             </Row>
             <View className="gap-1">
-              <Text className="text-[15px] font-semibold text-foreground">Lưu ý</Text>
+              <Text className="text-base font-semibold text-foreground">Lưu ý</Text>
               {NOTES.map((note) => (
                 <Text key={note} className="text-sm leading-5 text-muted-foreground">
                   {'•'} {note}

@@ -36,6 +36,7 @@ và `chuyen_mon_pt`).
 | `muc_tieu_tap_luyen` | `tang_co` (Tăng cơ), `giam_mo` (Giảm mỡ), `duy_tri` (Duy trì vóc dáng), `tang_suc_ben` (Tăng sức bền), `linh_hoat` (Linh hoạt, giảm đau mỏi) |
 | `khu_vuc` | `ha_noi` (Hà Nội), `tp_hcm` (TP. Hồ Chí Minh), `da_nang` (Đà Nẵng), `hai_phong` (Hải Phòng), `can_tho` (Cần Thơ) |
 | `chuyen_mon_pt` | `tang_co` (Tăng cơ), `giam_mo` (Giảm mỡ), `cai_thien_voc_dang` (Cải thiện vóc dáng), `phuc_hoi_chuc_nang` (Phục hồi chức năng), `dinh_duong` (Dinh dưỡng) |
+| `trinh_do_tap` | `moi_bat_dau` (Mới bắt đầu), `co_nen_tang` (Có nền tảng), `lau_nam` (Tập lâu năm) |
 
 Sửa `ten` hoặc `tinh_trang` trực tiếp trong DB là app đổi theo ngay, không cần build lại. Đổi **mã** thì phải thêm
 migration mới (mã đã lưu trong `ho_so_nguoi_dung`).
@@ -87,6 +88,6 @@ GET /api/v1/mob/danh-muc → Mob/Controllers/DanhMucController
 
 ## 5. Test
 
-- `dotnet test GymBase.slnx` tại `apps/api` — `DanhMucTests` phủ: trả đủ 3 loại đang dùng, lọc theo `ma_dinh_danh`,
+- `dotnet test GymBase.slnx` tại `apps/api` — `DanhMucTests` phủ: trả đủ các loại đang dùng, lọc theo `ma_dinh_danh`,
   bỏ mục `tinh_trang = 0`, 401 khi chưa đăng nhập.
 - Bruno: `docs/api/bruno/mobile/danh-muc/` (gọi thành công và trường hợp 401).

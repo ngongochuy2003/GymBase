@@ -3,6 +3,13 @@
   "options": {
     "cwd": "${workspaceFolder}/apps/api"
   },
+  "inputs": [
+    {
+      "id": "tenMigration",
+      "type": "promptString",
+      "description": "Tên migration (PascalCase, ví dụ ThemIsDangNhapLanDau)"
+    }
+  ],
   "tasks": [
     {
       "label": "API: build",
@@ -128,6 +135,81 @@
       },
       "problemMatcher": [],
       "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "DB: migrate (database update)",
+      "detail": "Áp mọi migration chưa chạy lên MySQL local (dotnet ef database update)",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "ef",
+        "database",
+        "update",
+        "--project",
+        "src/Data/GymBase.Persistence",
+        "--startup-project",
+        "src/Host/GymBase.API"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "DB: thêm migration mới",
+      "detail": "Hỏi tên rồi chạy dotnet ef migrations add <Ten>. Sau đó chạy DB: migrate",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "ef",
+        "migrations",
+        "add",
+        "${input:tenMigration}",
+        "--project",
+        "src/Data/GymBase.Persistence",
+        "--startup-project",
+        "src/Host/GymBase.API"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "DB: xóa và tạo lại",
+      "detail": "XÓA database local rồi áp lại toàn bộ migration. Mất hết dữ liệu local",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "_db drop",
+        "DB: migrate (database update)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "_db drop",
+      "hide": true,
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "ef",
+        "database",
+        "drop",
+        "--force",
+        "--project",
+        "src/Data/GymBase.Persistence",
+        "--startup-project",
+        "src/Host/GymBase.API"
+      ],
+      "problemMatcher": [],
       "presentation": {
         "reveal": "always",
         "panel": "shared",

@@ -5,10 +5,8 @@ import { parseEnv } from '@/core/config/env';
 
 test('requires a valid API URL because sign-in always calls the backend', () => {
   expect(() => parseEnv({})).toThrow('EXPO_PUBLIC_API_URL');
-  expect(() => parseEnv({ dataMode: 'api' })).toThrow('EXPO_PUBLIC_API_URL');
   expect(() => parseEnv({ apiUrl: 'not-a-url' })).toThrow();
   expect(parseEnv({ apiUrl: 'http://10.0.2.2:5020' })).toMatchObject({
-    dataMode: 'demo',
     apiUrl: 'http://10.0.2.2:5020',
   });
   expect(() => parseEnv({ apiUrl: 'http://10.0.2.2:5020', termsUrl: 'khong-phai-url' })).toThrow();

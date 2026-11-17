@@ -54,5 +54,5 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.chip,
     borderWidth: 1,
   },
-  label: { fontSize: theme.font.size.xss, fontWeight: theme.font.weight.medium },
+  label: { fontSize: theme.font.size.xs, fontWeight: theme.font.weight.medium },
 });

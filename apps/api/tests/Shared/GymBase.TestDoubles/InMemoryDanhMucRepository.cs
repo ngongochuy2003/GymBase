@@ -47,6 +47,9 @@ public sealed class InMemoryDanhMucRepository : InMemoryBaseRepository<danh_muc>
         CreateMock(13, "chuyen_mon_pt", "cai_thien_voc_dang", "Cải thiện vóc dáng"),
         CreateMock(14, "chuyen_mon_pt", "phuc_hoi_chuc_nang", "Phục hồi chức năng"),
         CreateMock(15, "chuyen_mon_pt", "dinh_duong", "Dinh dưỡng"),
+        CreateMock(16, "trinh_do_tap", "moi_bat_dau", "Mới bắt đầu"),
+        CreateMock(17, "trinh_do_tap", "co_nen_tang", "Có nền tảng"),
+        CreateMock(18, "trinh_do_tap", "lau_nam", "Tập lâu năm"),
     ];
 
     private static danh_muc CreateMock(int index, string maDinhDanh, string ma, string ten)

@@ -13,29 +13,40 @@ public sealed class HoSoNguoiDungRepository(AppDbContext db) : IHoSoNguoiDungRep
             .AsNoTracking()
             .FirstOrDefaultAsync(h => h.tai_khoan_id == taiKhoanId, cancellationToken);
 
-    public async Task DLUpsertAsync(
+    public Task DLUpsertAsync(
         ho_so_nguoi_dung hoSo, chi_so_co_the? chiSoMoi, CancellationToken cancellationToken)
     {
-        // Hồ sơ và chỉ số cơ thể là hai bảng nhưng một lần bấm "Lưu thiết lập", nên ghi cùng transaction.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        var daCo = await db.Set<ho_so_nguoi_dung>()
-            .FirstOrDefaultAsync(h => h.tai_khoan_id == hoSo.tai_khoan_id, cancellationToken);
-        if (daCo is null)
+        // DbContext bật EnableRetryOnFailure (Pomelo), nên EF không cho mở transaction thủ công: phải chạy toàn bộ đơn vị
+        // công việc trong execution strategy để khi thử lại thì cả transaction được chạy lại từ đầu.
+        var strategy = db.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(async () =>
         {
-            db.Add(hoSo);
-        }
-        else
-        {
-            db.Entry(daCo).CurrentValues.SetValues(hoSo);
-        }
+            // Lần thử trước có thể đã gắn hồ sơ và chỉ số vào ChangeTracker rồi mới lỗi; bỏ đi để thêm lại cho sạch.
+            db.ChangeTracker.Clear();
 
-        if (chiSoMoi is not null)
-        {
-            db.Add(chiSoMoi);
-        }
+            // Hồ sơ và chỉ số cơ thể là hai bảng nhưng một lần bấm "Lưu thiết lập", nên ghi cùng transaction.
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+            // AsTracking: DbContext mặc định NoTracking, mà SetValues bên dưới chỉ ghi được khi thực thể đang được theo dõi.
+            var daCo = await db.Set<ho_so_nguoi_dung>()
+                .AsTracking()
+                .FirstOrDefaultAsync(h => h.tai_khoan_id == hoSo.tai_khoan_id, cancellationToken);
+            if (daCo is null)
+            {
+                db.Add(hoSo);
+            }
+            else
+            {
+                db.Entry(daCo).CurrentValues.SetValues(hoSo);
+            }
+
+            if (chiSoMoi is not null)
+            {
+                db.Add(chiSoMoi);
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
     }
 }

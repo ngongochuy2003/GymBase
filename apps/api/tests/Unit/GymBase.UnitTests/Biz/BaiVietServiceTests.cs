@@ -1,3 +1,5 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Paging;
 using GymBase.BLBiz.BaiViet;
@@ -59,6 +61,44 @@ public sealed class BaiVietServiceTests
         Assert.Equal("workout", created.chu_de);
         Assert.Single(created.hinh_anh_urls);
         Assert.Equal("https://cdn.test/gymbase-push.jpg", created.hinh_anh_urls[0]);
+    }
+
+    [Fact]
+    public async Task Public_post_responses_never_expose_private_profile_fields()
+    {
+        // Tác giả có đủ thông tin riêng tư; bảng tin, chi tiết và bình luận chỉ được lộ id, tên hiển thị, ảnh.
+        _postRepository.SeedProfile(new ho_so_nguoi_dung
+        {
+            tai_khoan_id = TestUserId,
+            loai_nguoi_dung = LoaiNguoiDung.hoc_vien,
+            ten_hien_thi = "Minh Khôi",
+            ngay_sinh = new DateOnly(1998, 5, 20),
+            gioi_tinh = GioiTinh.nam,
+            trinh_do_tap = "lau_nam",
+            trang_thai_xac_minh = TrangThaiXacMinh.chua_xac_minh,
+            ngay_tao = DateTime.UtcNow,
+        });
+        var service = CreateService();
+        var post = await service.BLCreateAsync(new BaiVietCreateDto { noi_dung = "Hôm nay tập chân" }, CancellationToken.None);
+        await service.BLAddCommentAsync(post.Id, new BinhLuanCreateDto { noi_dung = "Tập tốt" }, CancellationToken.None);
+
+        var responses = new object[]
+        {
+            await service.BLGetFeedAsync("for-you", new PagingRequest(), CancellationToken.None),
+            await service.BLGetByIdAsync(post.Id, CancellationToken.None),
+            await service.BLGetCommentsAsync(post.Id, CancellationToken.None),
+        };
+
+        foreach (var response in responses)
+        {
+            var json = JsonSerializer.Serialize(
+                response, new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            Assert.Contains("Minh Khôi", json);
+            foreach (var truong in new[] { "ngay_sinh", "tuoi", "gioi_tinh", "1998", "trinh_do_tap" })
+            {
+                Assert.DoesNotContain(truong, json, StringComparison.OrdinalIgnoreCase);
+            }
+        }
     }
 
     [Fact]

@@ -55,6 +55,10 @@ export const googleSignIn = {
       // ID token cấp cho web client ID, cũng là `aud` mà backend (Google:ClientIds) kiểm tra.
       GoogleSignin.configure({ webClientId });
       await GoogleSignin.hasPlayServices();
+      // Xóa phiên Google còn lưu trong thư viện để hộp chọn tài khoản luôn hiện. Nếu không, sau khi API từ chối một
+      // tài khoản (vd. email đã đăng ký bằng mật khẩu) thư viện dùng lại đúng tài khoản đó và người dùng không đổi được.
+      // App chỉ cần ID token, không dùng phiên Google về sau nên xóa ở đây không mất gì.
+      await GoogleSignin.signOut().catch(() => undefined);
       const response = await GoogleSignin.signIn();
       if (response.type !== 'success') return null;
       if (!response.data.idToken) throw new GoogleSignInUnavailableError('NO_ID_TOKEN');

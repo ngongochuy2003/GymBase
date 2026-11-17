@@ -16,6 +16,7 @@ public sealed class HoSoNguoiDungConfiguration : IEntityTypeConfiguration<ho_so_
         {
             table.HasEnumCheck(e => e.loai_nguoi_dung);
             table.HasEnumCheck(e => e.trang_thai_xac_minh);
+            table.HasEnumCheck(e => e.gioi_tinh);
             table.HasCheckConstraint("CK_ho_so_nguoi_dung_kinh_nghiem", "`so_nam_kinh_nghiem` IS NULL OR `so_nam_kinh_nghiem` >= 0");
             table.HasCheckConstraint("CK_ho_so_nguoi_dung_ban_kinh", "`ban_kinh_phuc_vu_km` IS NULL OR `ban_kinh_phuc_vu_km` > 0");
             table.HasCheckConstraint("CK_ho_so_nguoi_dung_vi_do", "`vi_do` IS NULL OR `vi_do` BETWEEN -90 AND 90");
@@ -28,6 +29,8 @@ public sealed class HoSoNguoiDungConfiguration : IEntityTypeConfiguration<ho_so_
         builder.Property(e => e.ten_hien_thi).HasMaxLength(100);
         builder.Property(e => e.gioi_thieu).AsText();
         builder.Property(e => e.muc_tieu_tap_luyen).AsText();
+        builder.Property(e => e.gioi_tinh).AsEnumString(14);
+        builder.Property(e => e.trinh_do_tap).HasMaxLength(50);
         builder.Property(e => e.chuyen_mon).AsJson();
         builder.Property(e => e.khu_vuc_hoat_dong).HasMaxLength(255);
         builder.Property(e => e.vi_do).HasPrecision(9, 6);

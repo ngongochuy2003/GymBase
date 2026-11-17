@@ -48,6 +48,29 @@ test('configures the mockLibrary with the web client ID and returns the ID token
   expect(mockLibrary.GoogleSignin.hasPlayServices).toHaveBeenCalled();
 });
 
+test('clears the cached Google session before showing the account picker, so another account can be chosen', async () => {
+  const order: string[] = [];
+  mockLibrary.GoogleSignin.signOut.mockImplementationOnce(async () => {
+    order.push('signOut');
+    return null;
+  });
+  mockLibrary.GoogleSignin.signIn.mockImplementationOnce(async () => {
+    order.push('signIn');
+    return success('google-id-token');
+  });
+
+  await googleSignIn.getIdToken();
+
+  expect(order).toEqual(['signOut', 'signIn']);
+});
+
+test('a failure while clearing the cached session does not block sign-in', async () => {
+  mockLibrary.GoogleSignin.signOut.mockRejectedValueOnce(new Error('not signed in'));
+  mockLibrary.GoogleSignin.signIn.mockResolvedValue(success('google-id-token'));
+
+  expect(await googleSignIn.getIdToken()).toBe('google-id-token');
+});
+
 test('a cancelled sign-in returns null', async () => {
   mockLibrary.GoogleSignin.signIn.mockResolvedValue({ type: 'cancelled', data: null });
 

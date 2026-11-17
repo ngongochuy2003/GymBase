@@ -56,6 +56,9 @@ erDiagram
         string loai_nguoi_dung "hoc_vien, pt, ca_hai"
         string ten_hien_thi
         text gioi_thieu
+        date ngay_sinh "NULL, riêng tư: không hiện ở hồ sơ công khai"
+        string gioi_tinh "NULL, nam / nu / khac / khong_muon_noi (enum cố định, CHECK), riêng tư"
+        string trinh_do_tap "NULL, mã danh mục trinh_do_tap, của học viên"
         guid anh_dai_dien_tep_tin_id FK
         text muc_tieu_tap_luyen
         json chuyen_mon "mảng mã chuyên môn"
@@ -150,6 +153,10 @@ flowchart TD
 - `phien_dang_nhap.thiet_bi_id` (đề xuất, cho phép NULL, `ON DELETE SET NULL`): khi đăng xuất hoặc thu hồi phiên, tắt
   `dang_hoat_dong` của `thiet_bi` tương ứng. Phiên đăng nhập từ web không có thiết bị nên để NULL.
 - **Đã chốt 11/11:** người lạ tự đăng ký bằng Google ngay V1. [xac-thuc.md](../../docs/api/xac-thuc.md) mục 8 đã sửa theo.
+- `ngay_sinh`, `gioi_tinh`, `trinh_do_tap` thêm ở migration `ThemThongTinCaNhanHoSo`, cho phép NULL vì hồ sơ cũ chưa có;
+  `gioi_tinh` là enum cố định (`GioiTinh`, migration `GioiTinhCoDinh` thêm `CHECK`), không dùng danh mục;
+  API bắt buộc gửi khi lưu. Ngày sinh và giới tính là riêng tư, không đưa vào DTO hiển thị người khác (xem
+  [ho-so.md](../../docs/api/ho-so.md) mục Quyền riêng tư).
 - Index đề xuất: `ho_so_nguoi_dung(loai_nguoi_dung, trang_thai_xac_minh)`.
 - `phien_dang_nhap` và `system_log` được mô tả trong [logging.md](../../docs/api/logging.md) và
   [xac-thuc.md](../../docs/api/xac-thuc.md).

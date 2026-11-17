@@ -3,6 +3,7 @@
     "name": "GymBase",
     "slug": "gymbase-mobile",
     "scheme": "gymbase",
+    "icon": "./assets/images/icon.png",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -27,6 +28,11 @@
     ],
     "android": {
       "package": "vn.gymbase.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
+        "backgroundColor": "#F7F5F3"
+      },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",
@@ -45,7 +51,8 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "GymBase Mobile"
+      "name": "GymBase Mobile",
+      "favicon": "./assets/images/favicon.png"
     },
     "experiments": {
       "typedRoutes": true

@@ -21,7 +21,7 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;
 dotnet ef database update --project src/Data/GymBase.Persistence --startup-project src/Host/GymBase.API
 ```
 
-Khóa ký JWT (`Jwt:SigningKey`) tạo theo bước 4 của cach-chay-api.md.
+Khóa ký JWT (`Jwt:SigningKey`) tạo theo bước 3 của cach-chay-api.md.
 
 Tạo tài khoản Admin để đăng nhập thử. **Đăng nhập bằng email**, mật khẩu tối thiểu 8 ký tự:
 
@@ -39,7 +39,6 @@ tài khoản chưa có email. Tài khoản mẫu không có mật khẩu thật 
 Tạo `apps/mobile/.env` từ `.env.example`:
 
 ```text
-EXPO_PUBLIC_DATA_MODE=demo
 EXPO_PUBLIC_API_URL=http://10.0.2.2:5020
 ```
 
@@ -55,8 +54,6 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:5020
 
 - `EXPO_PUBLIC_TERMS_URL` và `EXPO_PUBLIC_PRIVACY_URL` (không bắt buộc) là liên kết Điều khoản và Chính sách bảo mật ở màn đăng ký;
   để trống thì dùng URL giữ chỗ.
-- `EXPO_PUBLIC_DATA_MODE=demo` chỉ quyết định nguồn dữ liệu **lịch tập** (dữ liệu mẫu, chưa có API lịch tập). Đăng nhập luôn
-  gọi API thật.
 - Biến `EXPO_PUBLIC_*` được nhúng lúc build. Đổi `.env` xong phải chạy lại Expo với cache sạch (`pnpm --filter @gymbase/mobile start -c`, hoặc task
   `Mobile: chạy Expo (xóa cache)`), nếu không app vẫn dùng giá trị cũ.
 
@@ -81,8 +78,8 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
 ## 4. Đăng nhập thử
 
 1. Mở app, thấy màn chào mừng, bấm **Đăng nhập**.
-2. Nhập email Admin và mật khẩu vừa đặt. Vào được tab **Hôm nay** là thành công.
-3. Tab **Cá nhân** có tên và email của tài khoản; **Đăng xuất** thu hồi phiên và về màn chào mừng.
+2. Nhập email Admin và mật khẩu vừa đặt. Vào được **Trang chủ** (bảng tin) là thành công.
+3. Bấm ảnh đại diện hoặc tab **Cá nhân**: có tên và email của tài khoản; **Đăng xuất** thu hồi phiên và về màn chào mừng.
 4. Đóng hẳn app rồi mở lại: app khôi phục phiên, không hỏi đăng nhập.
 
 ## 5. Đăng ký tài khoản mới trong app
@@ -91,8 +88,8 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
 2. Nhập họ và tên, email, số điện thoại di động Việt Nam (`0912 345 678`, `+84912345678`...), mật khẩu (tối thiểu 8 ký tự), xác nhận mật khẩu, tick đồng ý điều khoản. Mã giới thiệu để trống cũng được
    (chưa tính điểm).
 3. Bấm **Đăng ký**: app chưa có phiên, chuyển về màn **Đăng nhập** với email điền sẵn và thông báo "Đăng ký thành công". Nhập mật
-   khẩu rồi đăng nhập: lần đầu app hiện màn onboarding **Đăng nhập thành công**. **Bỏ qua, vào Trang chủ** vào tab Hôm nay;
-   **Thiết lập hồ sơ ngay** mở màn giữ chỗ (phần thiết lập hồ sơ chưa làm). Màn này hiện cho tới khi bấm một trong hai nút; sau đó các
+   khẩu rồi đăng nhập: lần đầu app hiện màn onboarding **Đăng nhập thành công**. **Bỏ qua, vào Trang chủ** vào thẳng bảng tin;
+   **Thiết lập hồ sơ ngay** đi qua chọn vai trò, thông tin cá nhân và thông tin theo vai trò, lưu xong vào Trang chủ. Màn này hiện cho tới khi bấm một trong hai nút; sau đó các
    lần đăng nhập vào thẳng app.
 4. Email đã dùng thì form báo "Email này đã được dùng" kèm nút **Đã có tài khoản? Đăng nhập**.
 

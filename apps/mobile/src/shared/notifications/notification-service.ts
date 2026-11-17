@@ -54,7 +54,8 @@ export async function setupNotificationChannelsAsync(adapter?: NotificationAdapt
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#FF231F7C',
     lockscreenVisibility: 1, // AndroidNotificationVisibility.PUBLIC
-    sound: 'default',
+    // Không đặt `sound`: bỏ khóa này thì Android dùng âm mặc định của hệ thống. Chuỗi 'default' bị coi là tên file âm
+    // thanh tùy chỉnh và báo "Custom sound 'default' not found".
     enableLights: true,
     enableVibrate: true,
     bypassDnd: true,
@@ -66,7 +67,6 @@ export async function setupNotificationChannelsAsync(adapter?: NotificationAdapt
     importance: 5,
     vibrationPattern: [0, 500, 250, 500, 250, 500],
     lockscreenVisibility: 1,
-    sound: 'default',
     enableLights: true,
     enableVibrate: true,
     bypassDnd: true,

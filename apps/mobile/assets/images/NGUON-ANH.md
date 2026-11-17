@@ -20,3 +20,9 @@ và bỏ nền kem để đặt được trên nền sáng lẫn tối. Bản `-
 `google-g.png` là logo "G" nhiều màu của Google, lấy từ [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Google_%22G%22_logo.svg)
 (bản PNG 250x250 nền trong suốt) và dùng trên nút "Đăng nhập với Google". Logo là nhãn hiệu của Google; dùng theo hướng dẫn
 thương hiệu của Google cho nút đăng nhập (giữ nguyên màu, không biến dạng, không đổi màu theo giao diện sáng tối).
+
+## Biểu tượng ứng dụng
+
+`logo-mark.svg` là chữ G của logo, dò lại từ ảnh raster chủ dự án cung cấp thành đường Bézier (độ khớp với ảnh gốc khoảng 0,93; các cạnh chéo được làm thẳng).
+Từ SVG này dựng ra `icon.png` (1024, nền kem `#F7F5F3`), `adaptive-icon.png` và `adaptive-icon-monochrome.png` (1024, nền trong suốt, chữ G chiếm 50% khung để nằm trong vùng an toàn của Android) và `favicon.png` (64). Khai báo ở `app.json`.
+<!-- TODO(ASSET): thay bằng vector gốc của nhà thiết kế khi có; bản dò này chỉ chính xác ở mức ảnh raster ban đầu (266x266). -->

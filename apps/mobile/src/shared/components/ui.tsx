@@ -21,6 +21,7 @@ import { cssInterop } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../theme/theme';
+import { FieldLabel } from './field-label';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -74,7 +75,7 @@ export function AppText({
   return (
     <Text
       className={cn(
-        'text-[15px] leading-[23px]',
+        'text-base leading-6',
         muted ? 'text-muted-foreground' : 'text-foreground',
         title && 'text-[28px] font-bold leading-9 tracking-[-0.8px]',
         className,
@@ -137,7 +138,7 @@ export function Button({
           {leading}
           <Text
             className={cn(
-              'text-[15px] font-bold',
+              'text-base font-bold',
               secondary ? 'text-foreground' : 'text-primary-foreground',
             )}
           >
@@ -182,7 +183,7 @@ export function TextField({
   const toggleLabel = `${visible ? 'Ẩn' : 'Hiện'} ${label.toLowerCase()}`;
   return (
     <View className="gap-2">
-      {hideLabel ? null : <AppText>{label}</AppText>}
+      {hideLabel ? null : <FieldLabel label={label} />}
       <View
         className={cn(
           'min-h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
@@ -257,7 +258,7 @@ export function Checkbox({
         >
           {checked ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
         </Pressable>
-        <Text className="flex-1 text-[15px] leading-[23px] text-foreground">{children}</Text>
+        <Text className="flex-1 text-base leading-6 text-foreground">{children}</Text>
       </View>
       {error ? (
         <Text accessibilityRole="alert" className="text-destructive">

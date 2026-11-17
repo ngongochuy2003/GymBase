@@ -4,7 +4,7 @@ import { env } from '@/core/config/env';
 /** Dòng nhỏ cuối màn chào mừng; hai cụm có link mở Điều khoản sử dụng và Chính sách bảo mật. */
 export function LegalNotice() {
   return (
-    <Text className="px-4 text-center text-[13px] leading-5 text-muted-foreground">
+    <Text className="px-4 text-center text-sm leading-5 text-muted-foreground">
       Bằng việc tiếp tục, bạn đồng ý với{' '}
       <Text
         accessibilityRole="link"

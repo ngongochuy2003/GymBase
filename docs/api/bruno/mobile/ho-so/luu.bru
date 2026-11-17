@@ -21,6 +21,10 @@ headers {
 body:json {
   {
     "loai_nguoi_dung": "hoc_vien",
+    "ten_hien_thi": "Huy Gym",
+    "ngay_sinh": "1998-05-20",
+    "gioi_tinh": "nam",
+    "trinh_do_tap": "co_nen_tang",
     "muc_tieu_tap_luyen": "tang_co",
     "chieu_cao_cm": 172.5,
     "can_nang_kg": 68.4,
@@ -34,5 +38,5 @@ assert {
 }
 
 docs {
-  Mã mục tiêu/khu vực lấy từ GET /danh-muc. Lưu lại cùng số đo không thêm dòng chi_so_co_the; đổi chiều cao hoặc cân nặng thì thêm một dòng.
+  Mã mục tiêu, khu vực, giới tính, trình độ lấy từ GET /danh-muc. ngay_sinh dạng yyyy-MM-dd, tuổi 13–100; ten_hien_thi tùy chọn. Lưu lại cùng số đo không thêm dòng chi_so_co_the; đổi chiều cao hoặc cân nặng thì thêm một dòng.
 }

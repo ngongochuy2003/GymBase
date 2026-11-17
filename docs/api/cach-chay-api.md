@@ -31,17 +31,14 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    không cập nhật tiếp được, vì các migration đó đã được thay bằng `InitialBase` và `AddBizTables`. Xóa database đó
    (`dotnet ef database drop`) rồi tạo lại.
 
-3. Nạp dữ liệu mẫu nếu cần: chạy `database/seeds/dev_tai_khoan.sql` trên database `gymbase`. Các tài khoản mẫu không
-   đăng nhập được vì không có mật khẩu thật.
-
-4. Tạo khóa ký JWT (chuỗi ngẫu nhiên, mỗi môi trường một khóa, không dùng chung):
+3. Tạo khóa ký JWT (chuỗi ngẫu nhiên, mỗi môi trường một khóa, không dùng chung):
 
    ```powershell
    $bytes = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
    dotnet user-secrets set "Jwt:SigningKey" ([Convert]::ToBase64String($bytes)) --project src/Host/GymBase.API
    ```
 
-5. Tạo tài khoản Admin, đăng nhập bằng email. Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh. Email đã
+4. Tạo tài khoản Admin, đăng nhập bằng email. Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh. Email đã
    tồn tại thì đặt lại mật khẩu và chuyển thành Admin:
 
    ```powershell
@@ -50,7 +47,7 @@ API cần MySQL mới khởi động được. Dự án chốt MySQL 8.4 LTS. Ch
    Remove-Item Env:GYMBASE_ADMIN_PASSWORD
    ```
 
-6. Đăng nhập Google (tùy chọn, khi làm app nối Google): khai báo client ID, một hoặc nhiều giá trị. Chưa khai báo thì
+5. Đăng nhập Google (tùy chọn, khi làm app nối Google): khai báo client ID, một hoặc nhiều giá trị. Chưa khai báo thì
    `POST /auth/google` luôn trả 401 `AUTH_GOOGLE_TOKEN_INVALID`:
 
    ```bash
@@ -114,16 +111,13 @@ Dừng bằng Ctrl+C.
 - **Postman:** **Import** URL `http://localhost:5020/openapi/v1.json` để tạo collection tự động.
   Trang OpenAPI chỉ có ở môi trường Development.
 
-Id người dùng mẫu (sau khi nạp seed): `0193f0a0-0000-7000-8000-000000000001` (admin).
-
 ## 5. Cho app mobile gọi được API
 
 Cấu hình `apps/mobile/.env` (xem `.env.example`). `EXPO_PUBLIC_API_URL` là địa chỉ **host của API, không kèm** tiền tố
-`/api/v1/mob` (app tự thêm). Đăng nhập luôn gọi API thật; `EXPO_PUBLIC_DATA_MODE=demo` chỉ chọn dữ liệu mẫu cho lịch tập.
+`/api/v1/mob` (app tự thêm). App luôn gọi API thật.
 Hướng dẫn từng bước từ đầu: [chay-mobile.md](../onboarding/chay-mobile.md).
 
 ```text
-EXPO_PUBLIC_DATA_MODE=demo
 EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 ```
 
@@ -165,7 +159,7 @@ EXPO_PUBLIC_API_URL=<địa chỉ ở bảng dưới>
 | Hiện tượng | Nguyên nhân / cách xử lý |
 | --- | --- |
 | API báo `Chưa cấu hình ConnectionStrings:DefaultConnection` khi khởi động | Chưa đặt user-secrets, xem phần Chuẩn bị MySQL. User-secrets chỉ được đọc ở môi trường Development |
-| API báo `Chưa cấu hình Jwt:SigningKey` khi khởi động | Chưa tạo khóa ký, xem phần Chuẩn bị MySQL bước 4 |
+| API báo `Chưa cấu hình Jwt:SigningKey` khi khởi động | Chưa tạo khóa ký, xem phần Chuẩn bị MySQL bước 3 |
 | Mọi request trả 401, kể cả sai đường dẫn | Chưa gửi token. Đăng nhập qua `POST /auth/login` rồi gửi header `Authorization: Bearer <access_token>` |
 | Gọi `/users` trả 403 | API này chỉ dành cho `Admin` |
 | Đăng nhập trả 429 | Vượt 20 lần gọi mỗi phút, chờ một phút |

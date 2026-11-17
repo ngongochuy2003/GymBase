@@ -1,7 +1,7 @@
 # GymBase Mobile
 
-Base Expo/React Native theo kiến trúc feature-first. Đăng nhập gọi backend thật
-(`/api/v1/mob/auth`); lịch tập vẫn là dữ liệu demo cho tới khi có API lịch tập.
+Base Expo/React Native theo kiến trúc feature-first. Đăng nhập và bảng tin gọi backend thật
+(`/api/v1/mob`); app không còn dữ liệu demo.
 
 ## Cấu hình và chạy
 
@@ -32,12 +32,12 @@ Cần backend đang chạy ([cách chạy API](../../docs/api/cach-chay-api.md))
 Màn hình mở đầu: **Chào mừng** → **Đăng nhập** bằng email và mật khẩu (tài khoản tạo bằng `create-admin` hoặc seed dev).
 Phiên được lưu bằng SecureStore, mở lại app tự khôi phục; token tự gia hạn, hết phiên thì về màn chào mừng.
 **Đăng ký tài khoản** (họ tên, email, số điện thoại di động Việt Nam, mật khẩu, tick điều khoản) không có phiên: app về màn đăng nhập
-với email điền sẵn. Lần đăng nhập đầu tiên hiện màn onboarding cho tới khi bấm "Thiết lập hồ sơ ngay" (màn giữ chỗ) hoặc
-"Bỏ qua, vào Trang chủ" (cờ `is_dang_nhap_lan_dau` lưu ở server).
+với email điền sẵn. Lần đăng nhập đầu tiên hiện màn onboarding cho tới khi bấm "Thiết lập hồ sơ ngay" hoặc
+"Bỏ qua, vào Trang chủ" (cờ `is_dang_nhap_lan_dau` lưu ở server). "Thiết lập hồ sơ ngay" đi qua chọn vai trò, thông tin
+cá nhân và thông tin theo vai trò; lưu xong vào Trang chủ.
 Ô mã giới thiệu có trên form nhưng chưa tính điểm. **Đăng nhập với Google** (Android) cần bản dev build, không chạy trong Expo Go: xem
 [chay-mobile.md](../../docs/onboarding/chay-mobile.md) mục 6.
-Tab **Hôm nay**: lịch tập mẫu, đánh dấu/bỏ đánh dấu đã tập để cập nhật tiến trình.
-Tab **Cá nhân**: đổi giao diện sáng/tối hoặc đăng xuất.
+Trang chủ là bảng tin; bấm ảnh đại diện hoặc tab **Cá nhân** để đổi giao diện sáng/tối hoặc đăng xuất.
 
 ## Kiến trúc hiện có
 
@@ -46,8 +46,7 @@ src/
   app/                       # Expo Router, thin routes, guest/protected layouts
   features/
     auth/                    # Màn chào mừng, đăng ký, đăng ký thành công, đăng nhập: RHF + Zod
-    pt-sessions/             # Typed repository → query hook → screen/components
-    profile/                 # Theme settings / đăng xuất / màn giữ chỗ thiết lập hồ sơ
+    profile/                 # Cá nhân (giao diện, đăng xuất) và thiết lập hồ sơ nhiều bước
   core/
     api/                     # Axios factory, safe error mapping, API xác thực
     auth/                    # Phiên thật (SecureStore), refresh token, trạng thái loading/guest/authenticated
@@ -57,7 +56,7 @@ src/
     components/              # Screen, Card, Button, TextField, loading/empty/error
     theme/                   # Light/dark tokens and provider
   providers/                 # Query, Session, Theme, Safe Area, error boundary
-__tests__/                   # Form/demo flow, API, config/storage
+__tests__/                   # Luồng form và điều hướng, API, config/storage
 ```
 
 Chiều phụ thuộc: `app → features → core/shared`. Alias `@/` trỏ vào `src/`.
@@ -71,24 +70,12 @@ Chưa cần Zustand vì context xử lý state phiên/theme, Query quản lý d�
 
 ## API và môi trường
 
-Demo chạy không cần `.env`. Khi cần cấu hình, copy `.env.example` trong thư mục này
-sang `.env`; Expo đọc `EXPO_PUBLIC_DATA_MODE` và `EXPO_PUBLIC_API_URL`.
-Không có secret trong biến `EXPO_PUBLIC_*`.
+Copy `.env.example` trong thư mục này sang `.env`; Expo đọc `EXPO_PUBLIC_API_URL` (bắt buộc) và các biến `EXPO_PUBLIC_*` khác.
+Không có secret trong biến `EXPO_PUBLIC_*`. App luôn gọi backend thật, không có chế độ demo: cần chạy API trước
+(xem [hướng dẫn chạy API](../../docs/api/cach-chay-api.md)).
 
-`demo` là chế độ mặc định. `api` yêu cầu URL hợp lệ và **không cho vào demo**;
-chưa có login/backend adapter thật. Đừng bật API mode rồi coi auth đã hoạt động.
-
-Khi backend sẵn sàng:
-
-1. Chốt OpenAPI, login/refresh/logout, DTO/error contract và authorization.
-2. Implement auth adapter: restore/verify session, rotation/revocation, xử lý
-   logout trong khi refresh còn pending. Thay demo session bằng adapter đó.
-3. Dùng `createApiClient` với `AuthTransport`. Callback refresh phải dùng transport
-   riêng (không tự gọi client đang intercept 401), lưu token mới trước khi trả về.
-4. Inject API implementation của `SessionsRepository` và query keys theo user/filter.
-5. Thay thao tác đánh dấu demo bằng mutation thật, invalidate query sau response;
-   backend quyết định buổi tính phí và số dư gói.
-6. Kiểm tra E2E với backend thật, auth concurrency và permissions trước phát hành.
+Dùng `createApiClient` với `AuthTransport`. Callback refresh phải dùng transport riêng (không tự gọi client đang
+intercept 401), lưu token mới trước khi trả về.
 
 Native token adapter dùng SecureStore, web preview chỉ dùng memory; không lưu
 token ở AsyncStorage/localStorage. Lớp lưu trữ hiện được kiểm thử bằng native mock.

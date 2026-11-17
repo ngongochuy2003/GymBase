@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   item: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4, minHeight: 42 },
-  label: { fontSize: theme.font.size.xsss, fontWeight: theme.font.weight.medium },
+  label: { fontSize: theme.font.size.xs, fontWeight: theme.font.weight.medium },
   center: {
     width: 42,
     height: 28,

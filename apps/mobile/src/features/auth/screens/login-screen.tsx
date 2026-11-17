@@ -64,13 +64,13 @@ export function LoginScreen() {
       <AuthHeader
         onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
       />
-      <View className="items-center gap-1">
+      <View className="items-center gap-2 my-4">
         <AppText title>Đăng nhập</AppText>
         <AppText muted className="text-center">
-          Dùng email và mật khẩu bạn đã đăng ký.
+          Chào mừng bạn quay trở lại!
         </AppText>
       </View>
-      <View className="gap-3">
+      <View className="gap-4">
         {registered ? (
           <Text accessibilityRole="alert" className="font-semibold text-primary">
             Đăng ký thành công. Hãy đăng nhập để tiếp tục.
