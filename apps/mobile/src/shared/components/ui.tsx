@@ -186,7 +186,7 @@ export function TextField({
       {hideLabel ? null : <FieldLabel label={label} />}
       <View
         className={cn(
-          'min-h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
+          'h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
           error ? 'border-destructive' : 'border-border',
         )}
       >
@@ -198,7 +198,10 @@ export function TextField({
           secureTextEntry={passwordToggle ? !visible : props.secureTextEntry}
           accessibilityLabel={label}
           placeholderTextColor={colors.muted}
-          className="flex-1 py-3 text-base text-foreground"
+          // iOS: ô một dòng có lineHeight (text-base = 24px) và padding dọc thì chữ bị lệch khỏi giữa ô.
+          // Bỏ cả hai, để ô tự giãn đủ chiều cao của khung (self-stretch) và UITextField tự căn giữa chữ.
+          className="flex-1 self-stretch py-0 text-base text-foreground"
+          style={[props.style, { lineHeight: undefined }]}
         />
         {passwordToggle ? (
           <Pressable
