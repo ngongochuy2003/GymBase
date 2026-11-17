@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1
+#
+# Build context là `apps/api` (compose.dev.yml đã đặt sẵn). Ba target:
+#   runtime   API để chạy (mặc định cho `docker build`).
+#   migrator  EF migrations bundle, chạy một lần để áp migration lên database.
+#   publish   bản publish, dùng chung cho hai target trên.
+
+ARG DOTNET_VERSION=10.0
+
+# --- restore: chỉ chép file khai báo package nên sửa code không làm restore lại -------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS restore
+WORKDIR /src
+COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY --parents src/**/*.csproj ./
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore src/Host/GymBase.API/GymBase.API.csproj
+
+# --- publish ----------------------------------------------------------------------------------------------------------
+FROM restore AS publish
+COPY src ./src
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish src/Host/GymBase.API/GymBase.API.csproj \
+      --configuration Release --no-restore --output /out -p:UseAppHost=false
+
+# --- bundle: dotnet-ef phải cùng phiên bản với Microsoft.EntityFrameworkCore.Design trong Directory.Packages.props ----
+FROM publish AS bundle
+ARG DOTNET_EF_VERSION=10.0.14
+# Chỉ để dựng được host lúc tạo bundle (giống bước kiểm tra model ở CI), không kết nối database.
+ENV ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bundle_only" \
+    Jwt__SigningKey="Y2ktb25seS1zaWduaW5nLWtleS0zMi1ieXRlcy1sb25nLTAwMQ=="
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet tool install --global dotnet-ef --version ${DOTNET_EF_VERSION} \
+    && /root/.dotnet/tools/dotnet-ef migrations bundle \
+      --project src/Data/GymBase.Persistence \
+      --startup-project src/Host/GymBase.API \
+      --configuration Release \
+      --output /out/efbundle \
+      --force
+
+# --- migrator ---------------------------------------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS migrator
+WORKDIR /app
+COPY --from=bundle /out/efbundle ./efbundle
+ENTRYPOINT ["./efbundle"]
+
+# --- runtime ----------------------------------------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS runtime
+WORKDIR /app
+# Chạy bằng user không phải root ($APP_UID có sẵn trong image); Serilog ghi vào logs/, file tải lên ghi vào uploads/.
+RUN mkdir -p logs uploads && chown $APP_UID logs uploads
+COPY --from=publish /out ./
+USER $APP_UID
+ENV ASPNETCORE_HTTP_PORTS=8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "GymBase.API.dll"]
