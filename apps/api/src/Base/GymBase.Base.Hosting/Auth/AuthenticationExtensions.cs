@@ -64,7 +64,7 @@ public static class AuthenticationExtensions
             .AddPolicy(AppPolicies.RequireVerifiedPt, policy => policy.RequireAuthenticatedUser()
                 .AddRequirements(new QuyenHanRequirement(AppPolicies.RequireVerifiedPt)));
 
-        // TODO(HOST): sau Nginx phải bật ForwardedHeaders, nếu không mọi client chung một IP của proxy. Mục 14.
+        // Rate limit theo IP: sau nginx IP thật lấy từ X-Forwarded-For nhờ UseForwardedHeaders (AppApiExtensions).
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

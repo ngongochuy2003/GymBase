@@ -5,6 +5,7 @@ using GymBase.Base.Hosting.Auth;
 using GymBase.Base.Hosting.Errors;
 using GymBase.Base.Hosting.Logging;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,6 +31,16 @@ public static class AppApiExtensions
         var origins = ReadCorsOrigins(configuration);
 
         services.AddValidatorsFromAssemblies(validatorAssemblies);
+
+        // Sau reverse proxy (nginx) RemoteIpAddress là IP của proxy: đọc X-Forwarded-For/-Proto để rate limiter và audit log
+        // thấy IP thật của người dùng. Không giới hạn proxy được tin vì API chỉ nhận request từ proxy trong mạng nội bộ
+        // Docker (không mở cổng ra ngoài); nếu mở cổng trực tiếp thì phải khai báo KnownProxies.
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.KnownIPNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
 
         services.AddAppErrorHandling();
         services.AddOpenApi();
@@ -61,6 +72,7 @@ public static class AppApiExtensions
     /// <summary>Dựng pipeline và map endpoint. OpenAPI chỉ bật ở môi trường Development.</summary>
     public static WebApplication UseAppApi(this WebApplication app)
     {
+        app.UseForwardedHeaders();
         app.UseAppErrorHandling();
         if (!app.Environment.IsDevelopment())
         {

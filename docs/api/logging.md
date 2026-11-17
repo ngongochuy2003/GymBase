@@ -220,8 +220,8 @@ Request ──► Controller ──► Service ──► Repository
 - Request bị chặn ở xác thực, phân quyền hoặc giới hạn tốc độ (401, 403, 429) không có audit. Muốn
   ghi cả các trường hợp này thì cần thêm một middleware đặt trước `UseAuthentication()`.
 - Audit chỉ cho biết **ai gọi lệnh gì**, không lưu dữ liệu trước và sau khi sửa.
-- Cột `ip` là IP của proxy khi đặt sau Nginx, cho đến khi bật ForwardedHeaders (mục 11 và 14 trong
-  [viec-con-lai-base.md](viec-con-lai-base.md)). Chỗ cần sửa đã có `TODO(HOST)` trong `AuditLogFilter`.
+- Cột `ip` là IP thật của client khi API đứng sau nginx (đọc `X-Forwarded-For` qua `UseForwardedHeaders`). Chỉ đúng khi
+  API không mở cổng trực tiếp ra ngoài, xem [deploy/production/README.md](../../deploy/production/README.md).
 - Ghi audit dùng chung MySQL với dữ liệu chính. Nếu lượng ghi lớn, cần chuyển sang kho riêng hoặc
   ghi theo lô.
 - File log chưa được gom về một nơi tập trung; khi chạy nhiều bản API thì phải xem từng máy.
