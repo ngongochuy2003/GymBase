@@ -1,12 +1,10 @@
 # Development
 
-Luồng dự kiến sau MOBILE-01, API-01 và DB-01:
+Luồng local:
 
-1. Chạy MySQL bằng cấu hình trong `infrastructure/docker/`.
-2. Cấu hình backend bằng biến môi trường hoặc .NET user-secrets.
-3. Áp dụng EF migration có chủ đích lên database development.
-4. Chạy API tại `apps/api/` và Expo tại `apps/mobile/`.
-5. Trên điện thoại thật, đặt API URL theo LAN/tunnel của máy chạy backend.
-
-Các lệnh runtime chỉ được bổ sung sau khi có ứng dụng và kiểm chứng thực tế.
-Hiện tại xem onboarding để kiểm tra khung repository.
+1. Tạo `.env` ở gốc repo từ `.env.example`.
+2. Chạy MySQL và API bằng Docker (`infrastructure/docker/compose.dev.yml`, lệnh trong `infrastructure/docker/README.md`):
+   compose tự áp EF migration rồi mới khởi động API. Hoặc chạy ngoài Docker theo `docs/api/cach-chay-api.md`
+   (cấu hình bằng .NET user-secrets, áp migration có chủ đích).
+3. Chạy Expo tại `apps/mobile/` (ngoài Docker).
+4. Trên điện thoại thật, đặt API URL theo LAN/tunnel của máy chạy backend.
