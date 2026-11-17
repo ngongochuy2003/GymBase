@@ -199,6 +199,7 @@ API: xác minh ID token → tìm dang_nhap_ngoai theo (google, sub)
      └─ chưa  → tạo tai_khoan mới + dang_nhap_ngoai, rồi cấp token
 ```
 
+Cách triển khai chi tiết (sơ đồ luồng, mã lỗi, cấu hình từng môi trường): [docs/auth/dang-nhap-google.md](../auth/dang-nhap-google.md).
 Luồng đầy đủ kèm bước chọn nhóm (học viên, PT, cả hai) nằm ở
 [database/diagrams/01-tai-khoan-ho-so.md](../../database/diagrams/01-tai-khoan-ho-so.md).
 
