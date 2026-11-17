@@ -50,8 +50,8 @@ hiện onboarding, nên thoát app giữa chừng thì lần sau vẫn hiện. T
 | `ho_ten` | Bắt buộc, tối đa 100 ký tự |
 | `email` | Bắt buộc, đúng định dạng, duy nhất không phân biệt hoa thường (ADR-0001), lưu chữ thường. Trùng: 409 `USER_EMAIL_TAKEN` |
 | `so_dien_thoai` | Không bắt buộc; có thì phải là số **di động** Việt Nam (đầu 03, 05, 07, 08, 09; nhận `0…`, `+84…`, `84…`, bỏ khoảng trắng, chấm, gạch), lưu dạng `0xxxxxxxxx`. Bỏ trống hoặc `null` thì lưu `null`. Không duy nhất, không xác minh |
-| `mat_khau` | Quy tắc mục 5, và không chứa phần trước `@` của email |
-| `dong_y_dieu_khoan` | Phải là `true`; lưu lúc đồng ý vào `tai_khoan.ngay_dong_y_dieu_khoan` (UTC) |
+| `mat_khau` | Quy tắc mục 5 |
+| `dong_y_dieu_khoan` | Phải là `true`; chỉ kiểm tra lúc đăng ký, không lưu mốc thời gian |
 | `ma_gioi_thieu` | Nhận nhưng bỏ qua (`TODO(REFERRAL)`) |
 
 Tài khoản tạo ra có `vai_tro = User`, chưa có hồ sơ (app đưa người dùng tới bước chọn nhóm). Email (và số điện thoại nếu có) chưa xác minh (`TODO(VERIFY)`).
@@ -241,8 +241,8 @@ làm phân quyền.
   thành 500, không báo nhầm là token sai.
 - Tài khoản tìm theo `sub` (bảng `dang_nhap_ngoai`), không theo email: đổi email Google không tạo tài khoản mới.
 - Lần đầu: cần email đã xác minh (`AUTH_GOOGLE_EMAIL_UNVERIFIED` nếu không có); tạo `tai_khoan` không mật khẩu, `ho_ten` lấy từ Google
-  (không có thì lấy phần trước `@`), `ngay_dong_y_dieu_khoan` ghi lúc tạo vì màn đăng nhập Google có dòng "bằng việc tiếp tục bạn
-  đồng ý…". Không tạo được liên kết thì xóa tài khoản vừa tạo để không để lại tài khoản mồ côi.
+  (không có thì lấy phần trước `@`). Màn đăng nhập Google có dòng "bằng việc tiếp tục bạn đồng ý…", nhưng không lưu mốc thời gian.
+  Không tạo được liên kết thì xóa tài khoản vừa tạo để không để lại tài khoản mồ côi.
 - Email đã thuộc tài khoản có mật khẩu: 409 `AUTH_EMAIL_USED_PASSWORD`; đã thuộc tài khoản khác không có mật khẩu: 409 `USER_EMAIL_TAKEN`.
 - Tài khoản đã liên kết bị khóa: 401 chung. Tài khoản chỉ dùng Google không đăng nhập được bằng mật khẩu.
 - Dùng chung giới hạn 20 lần mỗi phút theo IP với `/login`.
@@ -257,18 +257,6 @@ làm phân quyền.
 | Gắn token với thiết bị (DPoP) | RFC 9700 khuyến nghị, quá nặng cho V1 |
 | Cách lưu token cho web | Xem khi làm web (V2) |
 | Đăng nhập bằng mật khẩu cho bên thứ ba | Không hỗ trợ. Có ứng dụng bên ngoài thì dùng Authorization Code + PKCE, vì RFC 9700 cấm Password Grant |
-
-## 10. Khác với dự án tham khảo (dev-HuyNgo)
-
-| Dự án tham khảo | GymBase |
-| --- | --- |
-| Duende IdentityServer, Password Grant | JWT tự cấp, không cần license |
-| MD5 kèm salt | PBKDF2 600.000 vòng |
-| Tắt kiểm tra issuer, audience, độ hợp lệ của khóa | Bật đủ |
-| Refresh token dùng lại nhiều lần | Xoay vòng, phát hiện dùng lại |
-| Đọc claim từ token chưa xác minh | Chỉ đọc request đã xác thực |
-
-Giữ lại từ dự án đó: response đăng nhập có kèm thông tin người dùng, `[Authorize(Roles = ...)]`, claim `ten_dang_nhap`.
 
 ## Nguồn
 

@@ -166,8 +166,8 @@ flowchart TD
 - **Không có giao dịch DB bao hai lần ghi.** `tai_khoan` được ghi trước, `dang_nhap_ngoai` sau; nếu lần sau lỗi thì
   xóa tài khoản vừa tạo để không để lại tài khoản mồ côi (nếu để lại, lần sau email này báo trùng mà không đăng nhập được).
 - **Tài khoản mới:** `vai_tro = User`, `mat_khau_hash` và `ten_dang_nhap` là NULL, `ho_ten` lấy từ Google (không có thì
-  lấy phần trước `@`, cắt còn 100 ký tự), `ngay_dong_y_dieu_khoan` ghi lúc tạo vì màn Google có dòng "bằng việc tiếp tục,
-  bạn đồng ý…", `is_dang_nhap_lan_dau = true`. Chưa có `ho_so_nguoi_dung`.
+  lấy phần trước `@`, cắt còn 100 ký tự), `is_dang_nhap_lan_dau = true`. Màn Google có dòng "bằng việc tiếp tục, bạn đồng ý…"
+  nhưng không lưu mốc thời gian. Chưa có `ho_so_nguoi_dung`.
 - **Tài khoản chỉ dùng Google không đăng nhập được bằng mật khẩu** (không có hash để so khớp).
 
 ## 5. Xác minh ID token
@@ -231,7 +231,6 @@ erDiagram
         string vai_tro "User khi tạo từ Google"
         bool dang_hoat_dong
         bool is_dang_nhap_lan_dau
-        datetime ngay_dong_y_dieu_khoan
     }
     dang_nhap_ngoai {
         guid Id PK
