@@ -1,0 +1,118 @@
+# GymBase backend trên một VPS: nginx (HTTPS) -> API -> MySQL. Chạy trong thư mục này (xem README.md):
+#   docker compose --env-file .env up -d
+# Chỉ nginx mở cổng ra ngoài; API và MySQL chỉ thấy nhau trong mạng nội bộ Docker.
+name: gymbase
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?đặt API_DOMAIN trong .env}
+    volumes:
+      # Image nginx tự thay ${API_DOMAIN} trong các file *.template rồi ghi ra /etc/nginx/conf.d.
+      - ./nginx/templates:/etc/nginx/templates:ro
+      # Nạp lại cấu hình mỗi 6 giờ để nhận chứng chỉ vừa được certbot gia hạn.
+      - ./nginx/entrypoint.d/40-reload-loop.sh:/docker-entrypoint.d/40-reload-loop.sh:ro
+      - certbot_www:/var/www/certbot:ro
+      - letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api
+
+  certbot:
+    image: certbot/certbot:v4.0.0
+    restart: unless-stopped
+    logging: *logging
+    # Gia hạn khi chứng chỉ còn dưới 30 ngày; certbot tự bỏ qua nếu chưa tới hạn.
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"]
+    volumes:
+      - certbot_www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+
+  mysql:
+    image: mysql:8.4.6
+    restart: unless-stopped
+    logging: *logging
+    # Migration tạo trigger nên cần log_bin_trust_function_creators khi bật binary log (cần để khôi phục theo thời điểm).
+    command:
+      - --log-bin-trust-function-creators=1
+      - --binlog-expire-logs-seconds=604800
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?đặt MYSQL_DATABASE trong .env}
+      MYSQL_USER: ${MYSQL_USER:?đặt MYSQL_USER trong .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?đặt MYSQL_PASSWORD trong .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?đặt MYSQL_ROOT_PASSWORD trong .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api:
+    image: ${IMAGE_PREFIX:?đặt IMAGE_PREFIX trong .env}-api:${IMAGE_TAG:?đặt IMAGE_TAG trong .env}
+    restart: unless-stopped
+    logging: *logging
+    environment: &api-env
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD}
+      Jwt__SigningKey: ${Jwt__SigningKey:?đặt Jwt__SigningKey trong .env (Base64 của ít nhất 32 byte ngẫu nhiên)}
+      Cors__AllowedOrigins__0: ${CORS_ORIGIN_0:-}
+      Google__ClientIds__0: ${GOOGLE_WEB_CLIENT_ID:-}
+      # File tải lên nằm ở S3 hoặc dịch vụ tương đương (không lưu trên máy chủ).
+      Storage__DefaultProvider: S3
+      Storage__BucketName: ${S3_BUCKET:?đặt S3_BUCKET trong .env}
+      Storage__Region: ${S3_REGION:?đặt S3_REGION trong .env}
+      Storage__ServiceUrl: ${S3_SERVICE_URL:-}
+      Storage__AccessKey: ${S3_ACCESS_KEY:?đặt S3_ACCESS_KEY trong .env}
+      Storage__SecretKey: ${S3_SECRET_KEY:?đặt S3_SECRET_KEY trong .env}
+      Storage__ForcePathStyle: ${S3_FORCE_PATH_STYLE:-false}
+      # appsettings.json mặc định true để dev; production luôn tắt.
+      Storage__AllowAnonymousForDev: "false"
+      Notification__SimulateMode: ${NOTIFICATION_SIMULATE_MODE:-true}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      # Image không có curl nên gọi /health (có kiểm tra DB) bằng bash.
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8080 &&
+          printf 'GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 &&
+          head -n 1 <&3 | grep -q ' 200 '
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Áp EF migration: chạy tay, không tự chạy khi `up`.
+  #   docker compose --env-file .env --profile tools run --rm migrate
+  migrate:
+    image: ${IMAGE_PREFIX}-migrator:${IMAGE_TAG}
+    profiles: ["tools"]
+    logging: *logging
+    environment: *api-env
+    command: ["--connection", "Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD}"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  letsencrypt:
+  certbot_www:

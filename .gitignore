@@ -65,3 +65,6 @@ pnpm-debug.log*
 Thumbs.db
 *.log
 ~$*
+
+# Sao lưu database trên máy chủ (deploy/production/scripts/backup.sh)
+deploy/production/backups/
