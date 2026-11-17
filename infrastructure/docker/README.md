@@ -8,8 +8,9 @@
 | `migrator` | `gymbase-migrator` | EF migrations bundle: áp migration lên database rồi thoát |
 | `publish` | | Bản publish, dùng chung cho hai target trên |
 
-Image được CI build và đẩy lên GHCR (`.github/workflows/api-image.yml`); cách chạy trên máy chủ nằm ở
-[deploy/production/README.md](../../deploy/production/README.md). Build thử ở local:
+Dockerfile này dùng chung cho cả hai môi trường: dev build từ mã nguồn ([deploy/development](../../deploy/development/README.md)),
+production kéo image do CI build và đẩy lên GHCR (`.github/workflows/api-image.yml`,
+[deploy/production](../../deploy/production/README.md)). Build thử ở local:
 
 ```bash
 docker build -f infrastructure/docker/Dockerfile.api --target runtime -t gymbase-api apps/api
@@ -22,6 +23,7 @@ docker build -f infrastructure/docker/Dockerfile.api --target migrator -t gymbas
 - `restore` tách riêng (chỉ chép file `.csproj`) để sửa code không làm tải lại NuGet.
 - Phiên bản `dotnet-ef` (`DOTNET_EF_VERSION`) phải khớp `Microsoft.EntityFrameworkCore.Design` ở `apps/api/Directory.Packages.props`;
   nâng EF thì nâng cả hai.
-- MySQL phải có `log_bin_trust_function_creators=1` nếu bật binary log, vì migration tạo trigger (cấu hình đã có trong compose production).
-- `docker-compose.minio.yml` chạy MinIO cho dev, không thuộc luồng production (production dùng S3 bên ngoài).
+- Migration tạo trigger nên MySQL cần `log_bin_trust_function_creators=1` khi bật binary log (compose production), hoặc tắt binary log
+  (`--skip-log-bin`, compose dev).
+- `docker-compose.minio.yml` chạy MinIO riêng cho dev khi cần thử S3 cục bộ; compose dev mặc định lưu file vào volume, production dùng S3 bên ngoài.
 - Expo dev server chạy ngoài Docker để debug emulator/thiết bị thật.

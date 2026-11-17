@@ -1,7 +1,8 @@
-# GymBase backend trên một VPS: nginx (HTTPS) -> API -> MySQL. Chạy trong thư mục này (xem README.md):
+# MÔI TRƯỜNG PRODUCTION (một VPS): nginx (HTTPS) -> API -> MySQL. Tách hẳn khỏi ../development (project, `.env`, volume riêng).
+# Chạy trong thư mục này (xem README.md):
 #   docker compose --env-file .env up -d
 # Chỉ nginx mở cổng ra ngoài; API và MySQL chỉ thấy nhau trong mạng nội bộ Docker.
-name: gymbase
+name: gymbase-prod
 
 x-logging: &logging
   driver: json-file

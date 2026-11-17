@@ -1,5 +1,8 @@
 # Triển khai production (một VPS)
 
+Môi trường **thật**, tách hẳn khỏi [development](../development/README.md): project Docker `gymbase-prod` (container, volume, mạng
+riêng), `.env` riêng, mật khẩu và khóa riêng. Đừng dùng lại giá trị của dev ở đây.
+
 ```text
 Internet ──443──▶ nginx ──▶ api ──▶ mysql          certbot gia hạn chứng chỉ
                   (HTTPS)  (nội bộ)  (nội bộ)      file tải lên: S3 bên ngoài

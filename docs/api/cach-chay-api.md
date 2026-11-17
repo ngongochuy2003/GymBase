@@ -62,6 +62,12 @@ Khi đổi entity, tạo migration mới (đặt tên rõ theo nội dung thay �
 dotnet ef migrations add <TenThayDoi> --project src/Data/GymBase.Persistence --startup-project src/Host/GymBase.API
 ```
 
+## Chạy bằng Docker (thay cho MySQL cài sẵn và `dotnet run`)
+
+Một lệnh dựng MySQL 8.4, áp migration và chạy API, không cần cài .NET hay MySQL trên máy: xem
+[deploy/development/README.md](../../deploy/development/README.md). Môi trường thật tách riêng ở
+[deploy/production/README.md](../../deploy/production/README.md).
+
 ## 1. Chạy bằng Visual Studio
 
 1. Mở `apps/api/GymBase.slnx`.
