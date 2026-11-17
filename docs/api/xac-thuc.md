@@ -27,7 +27,7 @@ Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucServ
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
 | `POST /login` | Không | Body `{ email, mat_khau }`. 200: token kèm thông tin người dùng. 401 `AUTH_INVALID_CREDENTIALS`. Email không đúng định dạng: 400 |
-| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: thông tin tài khoản vừa tạo (`is_dang_nhap_lan_dau: true`), **không có token và không có phiên**. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
+| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai?, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: thông tin tài khoản vừa tạo (`is_dang_nhap_lan_dau: true`), **không có token và không có phiên**. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
 | `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`; tài khoản tạo mới có `user.is_dang_nhap_lan_dau: true`. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
 | `POST /refresh` | Không | 200: cặp token mới. 401 `UNAUTHORIZED` |
 | `POST /logout` | Có | 204: thu hồi phiên hiện tại |
@@ -49,12 +49,12 @@ hiện onboarding, nên thoát app giữa chừng thì lần sau vẫn hiện. T
 | --- | --- |
 | `ho_ten` | Bắt buộc, tối đa 100 ký tự |
 | `email` | Bắt buộc, đúng định dạng, duy nhất không phân biệt hoa thường (ADR-0001), lưu chữ thường. Trùng: 409 `USER_EMAIL_TAKEN` |
-| `so_dien_thoai` | Bắt buộc, số **di động** Việt Nam (đầu 03, 05, 07, 08, 09; nhận `0…`, `+84…`, `84…`, bỏ khoảng trắng, chấm, gạch), lưu dạng `0xxxxxxxxx`. Không duy nhất, không xác minh |
+| `so_dien_thoai` | Không bắt buộc; có thì phải là số **di động** Việt Nam (đầu 03, 05, 07, 08, 09; nhận `0…`, `+84…`, `84…`, bỏ khoảng trắng, chấm, gạch), lưu dạng `0xxxxxxxxx`. Bỏ trống hoặc `null` thì lưu `null`. Không duy nhất, không xác minh |
 | `mat_khau` | Quy tắc mục 5, và không chứa phần trước `@` của email |
 | `dong_y_dieu_khoan` | Phải là `true`; lưu lúc đồng ý vào `tai_khoan.ngay_dong_y_dieu_khoan` (UTC) |
 | `ma_gioi_thieu` | Nhận nhưng bỏ qua (`TODO(REFERRAL)`) |
 
-Tài khoản tạo ra có `vai_tro = User`, chưa có hồ sơ (app đưa người dùng tới bước chọn nhóm). Email và số điện thoại chưa xác minh (`TODO(VERIFY)`).
+Tài khoản tạo ra có `vai_tro = User`, chưa có hồ sơ (app đưa người dùng tới bước chọn nhóm). Email (và số điện thoại nếu có) chưa xác minh (`TODO(VERIFY)`).
 `/register` dùng chung giới hạn 20 lần mỗi phút theo IP với `/login`.
 
 Admin đặt lại mật khẩu cho người khác qua `POST /api/v1/web/users/{id}/reset-password`, mọi phiên của người đó bị thu hồi.

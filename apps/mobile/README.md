@@ -31,7 +31,7 @@ Cần backend đang chạy ([cách chạy API](../../docs/api/cach-chay-api.md))
 
 Màn hình mở đầu: **Chào mừng** → **Đăng nhập** bằng email và mật khẩu (tài khoản tạo bằng `create-admin` hoặc seed dev).
 Phiên được lưu bằng SecureStore, mở lại app tự khôi phục; token tự gia hạn, hết phiên thì về màn chào mừng.
-**Đăng ký tài khoản** (họ tên, email, số điện thoại di động Việt Nam, mật khẩu, tick điều khoản) không có phiên: app về màn đăng nhập
+**Đăng ký tài khoản** (họ tên, email, mật khẩu, tick điều khoản; số điện thoại di động Việt Nam là tùy chọn) không có phiên: app về màn đăng nhập
 với email điền sẵn. Lần đăng nhập đầu tiên hiện màn onboarding cho tới khi bấm "Thiết lập hồ sơ ngay" hoặc
 "Bỏ qua, vào Trang chủ" (cờ `is_dang_nhap_lan_dau` lưu ở server). "Thiết lập hồ sơ ngay" đi qua chọn vai trò, thông tin
 cá nhân và thông tin theo vai trò; lưu xong vào Trang chủ.

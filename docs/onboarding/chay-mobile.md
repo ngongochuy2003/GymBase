@@ -85,7 +85,7 @@ Kiểm tra API trước: mở `http://localhost:5020/health`, thấy `Healthy` l
 ## 5. Đăng ký tài khoản mới trong app
 
 1. Ở màn chào mừng bấm **Đăng ký tài khoản**.
-2. Nhập họ và tên, email, số điện thoại di động Việt Nam (`0912 345 678`, `+84912345678`...), mật khẩu (tối thiểu 8 ký tự), xác nhận mật khẩu, tick đồng ý điều khoản. Mã giới thiệu để trống cũng được
+2. Nhập họ và tên, email, mật khẩu (tối thiểu 8 ký tự), xác nhận mật khẩu, tick đồng ý điều khoản. Số điện thoại di động Việt Nam (`0912 345 678`, `+84912345678`...) và mã giới thiệu để trống cũng được
    (chưa tính điểm).
 3. Bấm **Đăng ký**: app chưa có phiên, chuyển về màn **Đăng nhập** với email điền sẵn và thông báo "Đăng ký thành công". Nhập mật
    khẩu rồi đăng nhập: lần đầu app hiện màn onboarding **Đăng nhập thành công**. **Bỏ qua, vào Trang chủ** vào thẳng bảng tin;
