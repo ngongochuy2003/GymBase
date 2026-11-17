@@ -22,7 +22,7 @@ public sealed class DangKyValidator : AppValidator<DangKyDto>
     {
         RuleFor(x => x.ho_ten).NotEmpty().MaximumLength(100).WithName("Họ tên");
         RuleFor(x => x.email).ValidEmail();
-        RuleFor(x => x.so_dien_thoai).ValidMobile();
+        RuleFor(x => x.so_dien_thoai).ValidOptionalMobile();
         RuleFor(x => x.mat_khau).ValidNewPassword();
         RuleFor(x => x.dong_y_dieu_khoan).Equal(true)
             .WithMessage("Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật.");

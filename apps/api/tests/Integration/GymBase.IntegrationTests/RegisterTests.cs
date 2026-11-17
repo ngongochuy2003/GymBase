@@ -29,7 +29,7 @@ public sealed class RegisterTests : IAsyncLifetime
 
     private static object Body(
         string email = "moi@gymbase.test",
-        string phone = "0912345678",
+        string? phone = "0912345678",
         string password = Password,
         bool agreed = true,
         string name = "Người mới") => new
@@ -184,7 +184,33 @@ public sealed class RegisterTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
+    public async Task Phone_is_optional_and_stored_as_null(string? phone)
+    {
+        var response = await Register(Body(email: "khong.co.so@gymbase.test", phone: phone));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null((await StoredUser("khong.co.so@gymbase.test")).so_dien_thoai);
+    }
+
+    [Fact]
+    public async Task Omitted_phone_field_is_accepted()
+    {
+        var body = new
+        {
+            ho_ten = "Không có số",
+            email = "thieu.so@gymbase.test",
+            mat_khau = Password,
+            dong_y_dieu_khoan = true,
+        };
+
+        Assert.Equal(HttpStatusCode.OK, (await Register(body)).StatusCode);
+        Assert.Null((await StoredUser("thieu.so@gymbase.test")).so_dien_thoai);
+    }
+
+    [Theory]
     [InlineData("0123456789")]
     [InlineData("091234567")]
     [InlineData("09123456789")]

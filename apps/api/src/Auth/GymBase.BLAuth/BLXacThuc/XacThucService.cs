@@ -87,7 +87,7 @@ public sealed class XacThucService(
     //   quyền sở hữu; làm cùng quên mật khẩu qua email.
     /// <summary>
     /// Người mới tự đăng ký bằng mật khẩu. Không tạo phiên: app đưa người dùng về màn đăng nhập. Tài khoản mới có
-    /// <c>is_dang_nhap_lan_dau = true</c>. Chưa xác minh email và số điện thoại.
+    /// <c>is_dang_nhap_lan_dau = true</c>. Chưa xác minh email và số điện thoại (nếu có).
     /// </summary>
     /// <exception cref="ValidationFailedException">Dữ liệu không hợp lệ hoặc chưa đồng ý điều khoản.</exception>
     /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc tài khoản khác.</exception>
