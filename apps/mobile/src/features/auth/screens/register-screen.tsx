@@ -52,7 +52,7 @@ export function RegisterScreen() {
       const account = await register({
         ho_ten: form.name,
         email: form.email,
-        so_dien_thoai: form.phone,
+        ...(form.phone ? { so_dien_thoai: form.phone } : {}),
         mat_khau: form.password,
         dong_y_dieu_khoan: form.agreed,
         ...(form.referral ? { ma_gioi_thieu: form.referral } : {}),
@@ -159,7 +159,7 @@ export function RegisterScreen() {
           render={({ field, fieldState }) => (
             <TextField
               inputRef={field.ref}
-              label="Số điện thoại"
+              label="Số điện thoại (tùy chọn)"
               hideLabel
               icon="call-outline"
               autoComplete="tel"

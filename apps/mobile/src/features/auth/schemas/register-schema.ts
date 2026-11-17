@@ -23,11 +23,14 @@ export const registerSchema = z
       .trim()
       .min(1, 'Vui lòng nhập email.')
       .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, EMAIL_FORMAT_MESSAGE),
+    // Để trống được; có nhập thì mới kiểm tra định dạng (khớp rule của backend).
     phone: z
       .string()
       .trim()
-      .min(1, 'Vui lòng nhập số điện thoại.')
-      .refine(isVietnamMobile, 'Nhập số di động Việt Nam, ví dụ 0912 345 678.'),
+      .refine(
+        (phone) => phone === '' || isVietnamMobile(phone),
+        'Nhập số di động Việt Nam, ví dụ 0912 345 678.',
+      ),
     password: z
       .string()
       .min(1, 'Vui lòng nhập mật khẩu.')

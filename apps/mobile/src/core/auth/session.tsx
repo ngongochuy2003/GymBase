@@ -98,7 +98,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         ...input,
         ho_ten: input.ho_ten.trim(),
         email: input.email.trim().toLowerCase(),
-        so_dien_thoai: input.so_dien_thoai.trim(),
+        ...(input.so_dien_thoai ? { so_dien_thoai: input.so_dien_thoai.trim() } : {}),
       }),
     [],
   );

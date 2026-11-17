@@ -23,7 +23,7 @@ export type LoginInput = { email: string; mat_khau: string; ten_thiet_bi?: strin
 export type RegisterInput = {
   ho_ten: string;
   email: string;
-  so_dien_thoai: string;
+  so_dien_thoai?: string;
   mat_khau: string;
   dong_y_dieu_khoan: boolean;
   // TODO(REFERRAL): backend nhận nhưng chưa xử lý mã giới thiệu.
