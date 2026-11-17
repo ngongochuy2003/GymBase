@@ -319,33 +319,6 @@ public sealed class XacThucService(
         await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
     }
 
-    /// <summary>Tạo tài khoản Admin đầu tiên, hoặc đặt lại mật khẩu nếu email đã tồn tại. Chỉ dùng từ dòng lệnh.</summary>
-    /// <exception cref="ValidationFailedException">Email hoặc mật khẩu không hợp lệ.</exception>
-    public async Task BLTaoHoacDatLaiAdminAsync(string email, string password, CancellationToken cancellationToken)
-    {
-        if (!EmailRules.IsValid(email))
-        {
-            throw new ValidationFailedException(nameof(DangNhapDto.email), "Email không hợp lệ.");
-        }
-
-        await resetPasswordValidator.ValidateOrThrowAsync(new DatLaiMatKhauDto { mat_khau_moi = password }, cancellationToken);
-
-        var normalized = EmailRules.Normalize(email);
-        var user = await users.DLFindByEmailAsync(normalized, cancellationToken);
-        if (user is null)
-        {
-            user = new tai_khoan { email = normalized, ho_ten = normalized[..normalized.IndexOf('@')], vai_tro = AppRoles.Admin };
-            user.mat_khau_hash = passwordHasher.HashPassword(user, password);
-            user.MarkCreated("create-admin", UtcNow);
-            await users.DLInsertAsync(user, cancellationToken);
-            return;
-        }
-
-        user.vai_tro = AppRoles.Admin;
-        await SetPasswordAsync(user, password, cancellationToken);
-        await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
-    }
-
     private async Task SetPasswordAsync(tai_khoan user, string password, CancellationToken cancellationToken)
     {
         user.mat_khau_hash = passwordHasher.HashPassword(user, password);
@@ -377,7 +350,6 @@ public sealed class XacThucService(
         }
         catch (FormatException)
         {
-            // Hash không đúng định dạng, ví dụ dữ liệu mẫu: coi như sai mật khẩu.
             return PasswordVerificationResult.Failed;
         }
     }

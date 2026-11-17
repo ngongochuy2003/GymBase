@@ -1,4 +1,3 @@
-using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
@@ -13,7 +12,6 @@ using GymBase.DLBiz.MySql;
 using GymBase.DLFile.Contract;
 using GymBase.DLFile.MySql;
 using GymBase.BLAuth.BLTaiKhoan;
-using GymBase.BLAuth.BLXacThuc;
 using GymBase.BLDI;
 using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
@@ -69,32 +67,6 @@ builder.Services.AddScoped<IChiSoCoTheRepository, ChiSoCoTheRepository>();
 builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
 
 var app = builder.Build();
-
-// Tạo tài khoản Admin đầu tiên: dotnet run --project src/Host/GymBase.API -- create-admin <email>
-// Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử dòng lệnh.
-if (args is ["create-admin", var adminEmail])
-{
-    var password = Environment.GetEnvironmentVariable("GYMBASE_ADMIN_PASSWORD");
-    if (string.IsNullOrEmpty(password))
-    {
-        Console.Error.WriteLine("Chưa đặt biến môi trường GYMBASE_ADMIN_PASSWORD.");
-        return 1;
-    }
-
-    await using var scope = app.Services.CreateAsyncScope();
-    try
-    {
-        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminEmail, password, CancellationToken.None);
-    }
-    catch (ValidationFailedException ex)
-    {
-        Console.Error.WriteLine(string.Join(Environment.NewLine, ex.Errors!.Values.SelectMany(messages => messages)));
-        return 1;
-    }
-
-    Console.WriteLine($"Đã tạo hoặc đặt lại tài khoản Admin '{adminEmail}'.");
-    return 0;
-}
 
 app.UseAppApi();
 

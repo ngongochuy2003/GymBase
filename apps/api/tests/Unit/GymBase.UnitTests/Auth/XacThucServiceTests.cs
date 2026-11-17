@@ -386,16 +386,6 @@ public class XacThucServiceTests
     }
 
     [Fact]
-    public async Task Create_admin_creates_a_new_admin_that_can_log_in()
-    {
-        await Service().BLTaoHoacDatLaiAdminAsync("Quan.Tri@GymBase.Local", "Mat-khau-moi-2", CancellationToken.None);
-
-        var result = await Login("quan.tri@gymbase.local", "Mat-khau-moi-2");
-
-        Assert.Equal(AppRoles.Admin, result.user.vai_tro);
-    }
-
-    [Fact]
     public async Task Hash_with_fewer_iterations_is_upgraded_on_login()
     {
         var stronger = new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
