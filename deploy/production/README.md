@@ -13,27 +13,26 @@ tin header `X-Forwarded-For` do nginx đặt (cho rate limit và audit log), m�
 
 | File | Việc |
 | --- | --- |
-| `compose.yml` | nginx, certbot, mysql, api; `migrate` là công cụ chạy tay (profile `tools`) |
+| `compose.yml` | nginx, certbot, mysql, api (build từ mã nguồn); `migrate` là công cụ chạy tay (profile `tools`) |
 | `nginx/templates/default.conf.template` | HTTP chuyển sang HTTPS, proxy tới API, đặt `X-Forwarded-*` |
 | `scripts/init-letsencrypt.sh` | Xin chứng chỉ lần đầu (chạy một lần) |
-| `scripts/deploy.sh <tag>` | Sao lưu, kéo image, áp migration, khởi động lại API |
+| `scripts/deploy.sh` | Sao lưu, build image, áp migration, khởi động lại API |
 | `scripts/backup.sh` | Sao lưu database ra `backups/` |
 | `.env.example` | Danh sách biến cấu hình |
 
-Image do CI build (workflow `.github/workflows/api-image.yml`) và đẩy lên GHCR; máy chủ chỉ `pull`, không build.
+Máy chủ **tự build** image từ mã nguồn (`git pull` rồi build), không kéo image từ registry. Cần khoảng 5 đến 6 GB đĩa trống cho image nền, cache build và MySQL; nên có ổ từ 20 GB.
 
 ## Chuẩn bị máy chủ (một lần)
 
 1. Linux có Docker Engine và Docker Compose v2; mở cổng 80 và 443 ở tường lửa.
 2. Tên miền (`API_DOMAIN`) có bản ghi A/AAAA trỏ về IP máy chủ.
 3. Bucket S3 (hoặc dịch vụ tương thích) và khóa truy cập chỉ có quyền trên bucket đó.
-4. Đăng nhập registry nếu package GHCR để riêng tư: `docker login ghcr.io -u <user>` với PAT có quyền `read:packages`.
-5. Lấy mã nguồn (chỉ cần thư mục `deploy/production`) và tạo `.env`:
+4. Cài `git`, rồi clone repo (cần cả `apps/api` và `infrastructure/docker` để build, không chỉ `deploy/production`) và tạo `.env`:
 
 ```bash
-cd deploy/production
+git clone <url-repo> gymbase && cd gymbase/deploy/production
 cp .env.example .env && chmod 600 .env
-# điền .env: API_DOMAIN, LETSENCRYPT_EMAIL, IMAGE_TAG, MYSQL_*, Jwt__SigningKey (openssl rand -base64 48), S3_*...
+# điền .env: API_DOMAIN, LETSENCRYPT_EMAIL, MYSQL_*, Jwt__SigningKey (openssl rand -base64 48), S3_*...
 ```
 
 ## Lần triển khai đầu tiên
@@ -42,8 +41,8 @@ cp .env.example .env && chmod 600 .env
 # Chạy thử với LETSENCRYPT_STAGING=1 trước để khỏi chạm giới hạn của Let's Encrypt, rồi đặt về 0 và chạy lại.
 ./scripts/init-letsencrypt.sh                 # chứng chỉ HTTPS (script này bật nginx và các service phụ thuộc)
 docker compose --env-file .env up -d mysql
-docker compose --env-file .env --profile tools run --rm migrate    # tạo bảng và danh mục
-docker compose --env-file .env up -d
+docker compose --env-file .env --profile tools run --rm --build migrate    # build migrator, tạo bảng và danh mục
+docker compose --env-file .env up -d --build
 curl -I https://<API_DOMAIN>/health           # 200
 ```
 
@@ -59,15 +58,14 @@ Mobile: đặt `EXPO_PUBLIC_API_URL=https://<API_DOMAIN>` (không kèm `/api/v1/
 
 ## Cập nhật phiên bản
 
-Tag image có dạng `sha-<7 ký tự đầu của commit>` (hoặc `v1.2.3` khi push tag git), xem ở trang Packages của repo.
-
 ```bash
-./scripts/deploy.sh sha-1a2b3c4
+git pull
+./scripts/deploy.sh
 ```
 
-Script sao lưu DB, ghi tag mới vào `.env`, kéo image, áp migration rồi khởi động lại API. Nếu migration lỗi thì dừng, API cũ vẫn chạy.
+Script sao lưu DB, build image từ mã nguồn đang checkout, áp migration rồi khởi động lại API. Nếu build hoặc migration lỗi thì dừng, API cũ vẫn chạy.
 
-**Rollback code:** `./scripts/deploy.sh <tag cũ>` (script in ra tag trước đó). Migration không tự quay lui: nếu migration mới đã
+**Rollback code:** `git checkout <commit cũ>` rồi chạy lại `./scripts/deploy.sh` (script in ra commit đang chạy). Migration không tự quay lui: nếu migration mới đã
 đổi schema, khôi phục từ bản sao lưu trước đó, hoặc viết migration sửa tiếp.
 
 ## Sao lưu và khôi phục
@@ -94,6 +92,8 @@ docker compose --env-file .env ps
 docker compose --env-file .env logs -f api          # log ra console, mỗi service giữ tối đa 5 x 10 MB
 docker compose --env-file .env restart api
 ```
+
+Image và cache build cũ dồn lên sau mỗi lần cập nhật; dọn định kỳ bằng `docker image prune -f` và `docker builder prune -f`.
 
 ## Chưa có trong cấu hình này
 

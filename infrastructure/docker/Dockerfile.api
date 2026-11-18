@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Build context là `apps/api` (compose.dev.yml đã đặt sẵn). Ba target:
+# Build context là `apps/api` (các compose trong deploy/ đã đặt sẵn). Ba target:
 #   runtime   API để chạy (mặc định cho `docker build`).
 #   migrator  EF migrations bundle, chạy một lần để áp migration lên database.
 #   publish   bản publish, dùng chung cho hai target trên.

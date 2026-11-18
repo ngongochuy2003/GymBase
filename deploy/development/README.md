@@ -7,7 +7,7 @@ tách hẳn nhau:
 | --- | --- | --- |
 | Project Docker | `gymbase-dev` | `gymbase-prod` |
 | File cấu hình | `.env` ở thư mục này | `.env` ở `../production` |
-| API | build từ mã nguồn, `ASPNETCORE_ENVIRONMENT=Development` (có OpenAPI) | kéo image từ GHCR theo tag, `Production` |
+| API | build từ mã nguồn, `ASPNETCORE_ENVIRONMENT=Development` (có OpenAPI) | build từ mã nguồn trên VPS, `Production` |
 | Truy cập | `API_PORT` (5020), MySQL ở `127.0.0.1:3307`, MinIO ở `127.0.0.1:9100`, HTTP | chỉ nginx (80, 443), HTTPS |
 | Migration | tự chạy mỗi lần `up` | chạy tay, sao lưu trước |
 | MySQL | không binary log | binary log, sao lưu định kỳ |
