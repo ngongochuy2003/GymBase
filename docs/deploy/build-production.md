@@ -1,16 +1,16 @@
 # Bản build production: từ code đến container chạy
 
-> **Ngày viết:** 17/11/2026 · **Trạng thái:** PoC (đã chạy thử ở local; chưa chạy trên VPS thật, workflow CI chưa chạy lần nào, Let's Encrypt chưa thử với tên miền thật, xem mục 6) · **Đối chiếu code:** 71cef01
+> **Ngày viết:** 17/11/2026 · **Cập nhật:** 18/11/2026 · **Trạng thái:** PoC (đã chạy thử ở local; chưa chạy trên VPS thật, Let's Encrypt chưa thử với tên miền thật, xem mục 5) · **Đối chiếu code:** 169fd49 (+ thay đổi chưa commit)
 
 Tài liệu giải thích cách backend được đóng gói và đưa lên máy chủ thật. Cách vận hành từng bước (lần đầu, cập nhật, sao
 lưu) nằm ở [deploy/production/README.md](../../deploy/production/README.md); tài liệu này giải thích **vì sao** nó được dựng như vậy.
 
-Quy trình có ba giai đoạn: **build** (trên GitHub), **lưu image** (trên GHCR), **chạy** (trên VPS). VPS không bao giờ build, chỉ kéo image về.
+Mã nguồn được **build ngay trên VPS**: kéo code bằng `git pull` rồi `deploy.sh` build image, migrate và khởi động lại. Không qua
+registry và không có CI build image. Đổi lại, VPS cần cài thêm SDK .NET trong cache build (khoảng 5 đến 6 GB đĩa tổng cộng thay vì 2 đến 2,5 GB nếu chỉ kéo image).
 
 ```text
-push main ──▶ GitHub Actions ──▶ GHCR (registry) ────────────────▶ VPS: deploy.sh <tag>
-              build 2 image       gymbase-api:sha-1a2b3c4           sao lưu → pull → migrate → up
-                                  gymbase-migrator:sha-1a2b3c4
+VPS: git pull ──▶ deploy.sh
+                  sao lưu → build 2 image → migrate → up
 ```
 
 ## Thư mục nào làm gì
@@ -19,8 +19,7 @@ push main ──▶ GitHub Actions ──▶ GHCR (registry) ──────�
 | --- | --- |
 | `infrastructure/docker/` | Cách **đóng gói** API (`Dockerfile.api`). Không biết gì về môi trường, dev và production dùng chung. |
 | `deploy/development/` | Cách **chạy** ở máy dev: build từ mã nguồn, mở cổng HTTP, tự migrate. |
-| `deploy/production/` | Cách **chạy** ở máy chủ thật: nginx, HTTPS, MySQL, kéo image theo tag, migrate chạy tay. |
-| `.github/workflows/api-image.yml` | CI build và đẩy image lên GHCR. |
+| `deploy/production/` | Cách **chạy** ở máy chủ thật: nginx, HTTPS, MySQL, build từ mã nguồn, migrate chạy tay. |
 
 ## 1. Build: `Dockerfile.api` (multi-stage)
 
@@ -58,32 +57,21 @@ docker build -f infrastructure/docker/Dockerfile.api --target runtime -t gymbase
 docker build -f infrastructure/docker/Dockerfile.api --target migrator -t gymbase-migrator apps/api
 ```
 
-## 2. CI: `.github/workflows/api-image.yml`
+## 2. Triển khai: `deploy/production/scripts/deploy.sh`
 
-- **Khi nào chạy:** push lên `main` (chỉ khi đổi `apps/api/**`, `Dockerfile.api` hoặc chính workflow), push tag `v*`, hoặc chạy tay (`workflow_dispatch`).
-- **Làm gì:** đăng nhập GHCR bằng `GITHUB_TOKEN` (không cần bí mật tự tạo), build và đẩy **hai image**:
-  `ghcr.io/<owner>/gymbase-api` (target `runtime`) và `ghcr.io/<owner>/gymbase-migrator` (target `migrator`).
-- **Tag:** luôn có `sha-<7 ký tự đầu của commit>`; chạy từ tag git thì thêm tag đó (ví dụ `v1.2.3`).
-- **Không có `latest`.** Có chủ ý: `latest` không cho biết đang chạy bản nào và rollback không biết quay về đâu. Mỗi phiên bản có một tag cụ thể.
-- **Cache:** `type=gha` lưu cache layer trên GitHub nên các lần build sau nhanh hơn.
-- **`concurrency`:** hai lần chạy cùng ref xếp hàng, không chạy chồng lên nhau.
+Chạy sau `git pull`. Bốn bước theo thứ tự, dừng ngay nếu có lỗi (`set -euo pipefail`):
 
-## 3. Triển khai: `deploy/production/scripts/deploy.sh <tag>`
+1. **Sao lưu** database bằng `backup.sh` (mysqldump nén ra `backups/`). Cần MySQL đang chạy, nên lần đầu không dùng script này (xem README).
+2. **Build** hai image (`api` và `migrate`) từ mã nguồn đang checkout. Build lỗi thì dừng, **API cũ vẫn chạy**.
+3. **Áp migration** bằng service `migrate` (chạy xong thoát). Lỗi thì dừng ở đây, API cũ vẫn chạy.
+4. **`up -d`** tạo lại container API với image mới.
 
-Script chạy năm bước theo thứ tự và dừng ngay nếu có lỗi (`set -euo pipefail`):
+Script in ra commit đang triển khai (kèm cảnh báo nếu có thay đổi chưa commit ở `apps/api` hay `infrastructure/docker`).
 
-1. **Sao lưu** database bằng `backup.sh` (mysqldump nén ra `backups/`).
-2. **Ghi tag mới** vào `.env` (`IMAGE_TAG=...`); compose đọc tag từ đó để biết kéo image nào.
-3. **`pull`** image `api` và `migrator`.
-4. **Áp migration** bằng service `migrate` (chạy xong thoát). Nếu lỗi thì script dừng ở đây, **API cũ vẫn đang chạy**.
-5. **`up -d`** tạo lại container API với image mới.
+**Rollback code:** `git checkout <commit cũ>` rồi chạy lại script. **Schema không tự quay lui:** nếu migration mới đã đổi bảng,
+khôi phục từ bản sao lưu ở bước 1 hoặc viết migration sửa tiếp.
 
-Cuối cùng script in ra tag cũ để dùng khi rollback.
-
-**Rollback code:** `./scripts/deploy.sh <tag cũ>`. **Schema không tự quay lui:** nếu migration mới đã đổi bảng, khôi phục từ bản
-sao lưu ở bước 1 hoặc viết migration sửa tiếp.
-
-## 4. Các container khi chạy
+## 3. Các container khi chạy
 
 Trong `deploy/production/compose.yml` (project `gymbase-prod`):
 
@@ -102,20 +90,19 @@ Internet ──443──▶ nginx ──▶ api ──▶ mysql          certbot
 
 Vì API tin header `X-Forwarded-For` do nginx đặt, **không được mở cổng API hay MySQL ra ngoài**: mở trực tiếp thì client tự giả IP được.
 
-## 5. Lý do thiết kế
+## 4. Lý do thiết kế
 
 | Lựa chọn | Lý do |
 | --- | --- |
-| Build ở CI, VPS chỉ pull | VPS không phải gánh việc build; bản chạy giống hệt bản đã build. |
-| Tag bất biến, không `latest` | Biết chính xác đang chạy gì; rollback rõ ràng. |
+| Build ngay trên VPS | Một máy, một quy trình, không cần registry hay CI cho triển khai. Đánh đổi: tốn đĩa cho cache build và phải dọn định kỳ. |
+| Rollback bằng commit git | Biết chính xác đang chạy commit nào; quay lại bằng `git checkout`. |
 | Migration chạy tay, kèm sao lưu | Đổi schema là việc rủi ro nhất, không để API tự làm khi khởi động. |
 | User không phải root; API và MySQL không mở cổng | Giảm thiệt hại nếu một lớp bị phá. |
 
-## 6. Chưa kiểm chứng
+## 5. Chưa kiểm chứng
 
-- Workflow `api-image.yml` chưa chạy lần nào vì chỉ kích hoạt khi push lên `main`. Lần đầu nên chạy tay (`workflow_dispatch`) để kiểm tra.
 - Let's Encrypt và đường gia hạn chưa thử với tên miền thật: chạy `init-letsencrypt.sh` với `LETSENCRYPT_STAGING=1` trước.
-- Package GHCR để riêng tư thì VPS cần `docker login ghcr.io` với PAT có quyền `read:packages`.
+- Chưa build và chạy trên VPS thật, chưa đo dung lượng thực tế của cache build.
 
-Đã chạy thử ở local: build hai image, nginx với chứng chỉ tự ký (HTTPS 200, chuyển hướng 301, OpenAPI không phục vụ, IP thật vào
-audit log dù client giả header), migration trên MySQL 8.4 có binary log.
+Đã chạy thử ở local: `deploy.sh` (sao lưu, build, migrate, `up`; API healthy), migration trên MySQL 8.4 có binary log. nginx với chứng
+chỉ tự ký đã thử ở lần viết đầu (HTTPS 200, chuyển hướng 301, OpenAPI không phục vụ, IP thật vào audit log dù client giả header).
