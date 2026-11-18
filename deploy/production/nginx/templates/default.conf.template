@@ -1,0 +1,51 @@
+# ${API_DOMAIN} do image nginx thay từ biến môi trường lúc khởi động; các biến nginx ($host...) giữ nguyên.
+server_tokens off;
+
+# Docker DNS. Khai báo upstream bằng biến để nginx dò lại địa chỉ khi container api được tạo lại (đổi IP) mà không cần
+# khởi động lại nginx, và vẫn lên được khi api chưa sẵn sàng.
+resolver 127.0.0.11 valid=10s;
+
+server {
+    listen 80;
+    server_name ${API_DOMAIN};
+
+    # Thử thách HTTP-01 của Let's Encrypt.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${API_DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${API_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # MaxUploadBytes của API là 10 MB; chừa thêm cho phần bao multipart.
+    client_max_body_size 12m;
+
+    location / {
+        set $api_upstream http://api:8080;
+        proxy_pass $api_upstream;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        # Đặt (không nối thêm) để client không tự giả IP qua X-Forwarded-For; API đọc giá trị này cho rate limit và audit log.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_read_timeout 60s;
+    }
+}

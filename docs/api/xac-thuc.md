@@ -166,7 +166,8 @@ xem lại mức này cho tài khoản `Admin`.
   cả email không tồn tại (`LoginThrottle`). Không khóa vĩnh viễn, vì kẻ xấu có thể cố tình khóa người khác.
 - Bộ đếm nằm trong bộ nhớ vì V1 chỉ có một host; khi chạy nhiều instance phải chuyển sang kho dùng chung.
 - Giới hạn 20 lần gọi mỗi phút theo IP cho `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/change-password`, vượt quá trả 429.
-  Sau Nginx phải bật ForwardedHeaders (mục 14), nếu không mọi client bị tính chung một IP.
+  Sau nginx IP thật lấy từ `X-Forwarded-For` (`UseForwardedHeaders`); API không được mở cổng trực tiếp ra ngoài, nếu không
+  client có thể tự đặt header này để né giới hạn.
 - Không ghi mật khẩu, token vào log.
 
 ## 7. Phân quyền
@@ -198,6 +199,7 @@ API: xác minh ID token → tìm dang_nhap_ngoai theo (google, sub)
      └─ chưa  → tạo tai_khoan mới + dang_nhap_ngoai, rồi cấp token
 ```
 
+Cách triển khai chi tiết (sơ đồ luồng, mã lỗi, cấu hình từng môi trường): [docs/auth/dang-nhap-google.md](../auth/dang-nhap-google.md).
 Luồng đầy đủ kèm bước chọn nhóm (học viên, PT, cả hai) nằm ở
 [database/diagrams/01-tai-khoan-ho-so.md](../../database/diagrams/01-tai-khoan-ho-so.md).
 

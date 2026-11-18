@@ -79,6 +79,17 @@ public sealed class AuditLogTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Client_ip_comes_from_X_Forwarded_For_behind_a_proxy()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, Users) { Content = JsonContent.Create(ValidUser) };
+        request.Headers.Add("X-Forwarded-For", "203.0.113.7");
+
+        await _client.SendAsync(request);
+
+        Assert.Equal("203.0.113.7", (await _audit.NextAsync()).IpAddress);
+    }
+
+    [Fact]
     public async Task Writer_failure_does_not_affect_response()
     {
         _audit.FailWith = new InvalidOperationException("DB lỗi");

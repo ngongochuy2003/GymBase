@@ -37,7 +37,6 @@ public sealed class AuditLogFilter(
             StatusCode: 0,
             DurationMs: 0,
             Activity.Current?.TraceId.ToString() ?? http.TraceIdentifier,
-            // TODO(HOST): sau Nginx đây là IP của proxy, cần bật ForwardedHeaders. Mục 11, 14.
             http.Connection.RemoteIpAddress?.ToString(),
             timeProvider.GetUtcNow().UtcDateTime);
 

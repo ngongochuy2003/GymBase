@@ -1,0 +1,10 @@
+# Giữ build context nhỏ và không đưa file cục bộ vào image.
+**/bin/
+**/obj/
+**/logs/
+**/uploads/
+.vs/
+**/*.user
+**/appsettings.Local.json
+**/secrets.json
+tests/
