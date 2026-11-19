@@ -176,6 +176,10 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
                 uniqueKey = uniqueKey[..512];
             }
 
+            var isVideo = rawUrl.Contains(".mp4", StringComparison.OrdinalIgnoreCase)
+                          || rawUrl.Contains(".mov", StringComparison.OrdinalIgnoreCase)
+                          || rawUrl.Contains(".webm", StringComparison.OrdinalIgnoreCase);
+
             var file = new tep_tin
             {
                 Id = fileId,
@@ -185,8 +189,8 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
                 muc_dich = purpose,
                 s3_bucket = ExternalBucket,
                 s3_key = uniqueKey,
-                ten_tep_goc = $"post-media-{i + 1}.jpg",
-                loai_mime = "image/jpeg",
+                ten_tep_goc = isVideo ? $"post-media-{i + 1}.mp4" : $"post-media-{i + 1}.jpg",
+                loai_mime = isVideo ? "video/mp4" : "image/jpeg",
                 kich_thuoc_byte = 0,
                 che_do_truy_cap = post.che_do_hien_thi == CheDoHienThi.rieng_tu
                     ? CheDoTruyCap.rieng_tu

@@ -1,7 +1,7 @@
 import type { AxiosInstance } from 'axios';
 import { createMobHttpClient, DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
 import { env } from '@/core/config/env';
-import { uploadMultipartFile } from '@/shared/file/file-uploader';
+import { uploadMultipartFile, isVideoUrl } from '@/shared/file/file-uploader';
 import type { ComposerPayload } from '../types';
 
 export interface BaiVietCreateRequestDto {
@@ -62,12 +62,27 @@ export function createComposerRepository(
         .replace(/\/api\/v1\/mob\/?$/, '')
         .replace(/\/+$/, '');
 
+      const itemsToUpload =
+        payload.mediaItems && payload.mediaItems.length > 0
+          ? payload.mediaItems
+          : body.hinh_anh_urls.map((uri) => ({
+              id: uri,
+              uri,
+              type: undefined as 'image' | 'video' | undefined,
+              mimeType: undefined,
+            }));
+
       const processedMediaUrls: string[] = [];
-      for (const uri of body.hinh_anh_urls) {
+      for (const item of itemsToUpload) {
+        const uri = item.uri;
         if (uri.startsWith('http://') || uri.startsWith('https://')) {
           processedMediaUrls.push(uri);
         } else {
-          const uploadResult = await uploadMultipartFile(uri, 'post', { apiBaseUrl: apiHostBase });
+          const isVideo = item.type === 'video' || isVideoUrl(uri);
+          const uploadResult = await uploadMultipartFile(uri, 'post', {
+            apiBaseUrl: apiHostBase,
+            contentType: isVideo ? (item.mimeType || 'video/mp4') : undefined,
+          });
           const resultUrl = uploadResult?.content_url;
           if (!resultUrl) throw new Error('API không trả về URL sau khi tải tệp lên.');
           processedMediaUrls.push(resultUrl);

@@ -27,6 +27,11 @@ public sealed class FilesController(IFileService fileService, IWebHostEnvironmen
         var actualPurpose = string.IsNullOrWhiteSpace(purpose) ? "post" : purpose.Trim().ToLowerInvariant();
         var result = await fileService.BLUploadAsync(User, file, actualPurpose, ct);
 
+        var isVideo = result.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+        var contentPath = isVideo
+            ? $"/api/v1/mob/files/{result.FileId}/content.mp4"
+            : $"/api/v1/mob/files/{result.FileId}/content";
+
         return Ok(new
         {
             file_id = result.FileId,
@@ -39,15 +44,17 @@ public sealed class FilesController(IFileService fileService, IWebHostEnvironmen
             purpose = result.Purpose,
             provider = result.Provider,
             blurhash = result.Blurhash,
-            content_url = $"/api/v1/mob/files/{result.FileId}/content",
-            contentUrl = $"/api/v1/mob/files/{result.FileId}/content"
+            content_url = contentPath,
+            contentUrl = contentPath
         });
     }
 
     [HttpGet("{id:guid}/content")]
+    [HttpGet("{id:guid}/content.{ext}")]
     [HttpGet("/api/files/{id:guid}/content")]
+    [HttpGet("/api/files/{id:guid}/content.{ext}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetContent(Guid id, CancellationToken ct)
+    public async Task<IActionResult> GetContent(Guid id, string? ext, CancellationToken ct)
     {
         // 1. Kiểm tra file legacy trên ổ đĩa nếu tồn tại
         var uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
@@ -63,8 +70,8 @@ public sealed class FilesController(IFileService fileService, IWebHostEnvironmen
             if (matchingFiles.Length > 0)
             {
                 var filePath = matchingFiles[0];
-                var ext = Path.GetExtension(filePath);
-                var mime = GetMimeType(ext);
+                var ext2 = Path.GetExtension(filePath);
+                var mime = GetMimeType(ext2);
                 return PhysicalFile(filePath, mime, enableRangeProcessing: true);
             }
         }

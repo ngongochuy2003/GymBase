@@ -1,12 +1,5 @@
 import type { ReactNode } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Icon } from '../icons';
 import { theme } from '../theme/tokens';
 import { RemoteImage } from './remote-image';
@@ -22,6 +15,8 @@ export interface HeaderAction {
 export interface AppHeaderProps {
   rightActions?: HeaderAction[];
   avatarUri?: string;
+  /** Chỉ hiển thị avatar khi prop này bật (mặc định false). */
+  showAvatar?: boolean;
   onActionPress?(id: string): void;
   onAvatarPress?(): void;
   renderAction?(action: HeaderAction): ReactNode;
@@ -31,6 +26,7 @@ export interface AppHeaderProps {
 export function AppHeader({
   rightActions = [],
   avatarUri,
+  showAvatar = false,
   onActionPress,
   onAvatarPress,
   renderAction,
@@ -39,7 +35,6 @@ export function AppHeader({
   return (
     <View style={[styles.header, style]}>
       <View style={styles.brand}>
-        <Text style={styles.logo}>G</Text>
         <Text style={styles.brandText}>GymBase</Text>
       </View>
       <View style={styles.actions}>
@@ -54,19 +49,21 @@ export function AppHeader({
               onPress={() => onActionPress?.(action.id)}
               hitSlop={8}
             >
-              <Icon name={action.icon} size={theme.iconSize.md - 3} />
+              <Icon name={action.icon} size={24} />
               {action.badge ? <View testID={`badge-${action.id}`} style={styles.badge} /> : null}
             </Pressable>
           ),
         )}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ảnh đại diện"
-          onPress={onAvatarPress}
-          style={styles.avatarWrapper}
-        >
-          <RemoteImage uri={avatarUri} circle style={styles.avatar} />
-        </Pressable>
+        {showAvatar && (avatarUri || onAvatarPress) ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ảnh đại diện"
+            onPress={onAvatarPress}
+            style={styles.avatarWrapper}
+          >
+            <RemoteImage uri={avatarUri} circle style={styles.avatar} />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -74,30 +71,30 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   header: {
+    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.lg - 2,
-    paddingTop: theme.spacing.sm - 3,
-    paddingBottom: theme.spacing.sm - 3,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   logo: { fontSize: 26, fontWeight: '700', color: theme.colors.primary, fontStyle: 'italic' },
   brandText: {
-    fontSize: theme.font.size.lg,
-    fontWeight: theme.font.weight.bold,
-    fontStyle: 'italic',
-    color: theme.colors.text,
+    fontSize: 21.5,
+    fontWeight: '700',
+    color: theme.colors.primary,
   },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xl },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   badge: {
     position: 'absolute',
     top: 0,
     right: 1,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: theme.colors.primary,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E5484D',
     borderWidth: 1.5,
     borderColor: theme.colors.background,
   },

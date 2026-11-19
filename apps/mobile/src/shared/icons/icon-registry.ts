@@ -57,13 +57,22 @@ registerIcon('meal', MaterialCommunityIcons, 'silverware-fork-knife');
 registerIcon('progress', MaterialCommunityIcons, 'chart-bar');
 registerIcon('tip', Ionicons, 'bulb-outline');
 
-// --- Bài viết ---
+// --- Bài viết & Tương tác ---
 registerIcon('heart', Ionicons, 'heart-outline');
 registerIcon('heart-filled', Ionicons, 'heart');
 registerIcon('comment', Ionicons, 'chatbubble-outline');
 registerIcon('send', Ionicons, 'paper-plane-outline');
+registerIcon('send-filled', Ionicons, 'paper-plane');
+registerIcon('repeat', Ionicons, 'repeat-outline');
 registerIcon('bookmark', Ionicons, 'bookmark-outline');
 registerIcon('bookmark-filled', Ionicons, 'bookmark');
+registerIcon('thumbs-up', Ionicons, 'thumbs-up-outline');
+registerIcon('thumbs-up-filled', Ionicons, 'thumbs-up');
+registerIcon('thumbs-down', Ionicons, 'thumbs-down-outline');
+registerIcon('thumbs-down-filled', Ionicons, 'thumbs-down');
+registerIcon('camera', Ionicons, 'camera-outline');
+registerIcon('happy', Ionicons, 'happy-outline');
+registerIcon('sparkles', Ionicons, 'sparkles-outline');
 
 // --- Soạn bài ---
 registerIcon('image', Ionicons, 'image-outline');
@@ -72,3 +81,8 @@ registerIcon('person', Ionicons, 'person-outline');
 registerIcon('hashtag', Feather, 'hash');
 registerIcon('globe', Ionicons, 'globe-outline');
 registerIcon('followers', Ionicons, 'people-outline');
+registerIcon('video', Ionicons, 'videocam-outline');
+registerIcon('play', Ionicons, 'play');
+registerIcon('pause', Ionicons, 'pause');
+registerIcon('volume-mute', Ionicons, 'volume-mute-outline');
+registerIcon('volume-high', Ionicons, 'volume-high-outline');

@@ -1,5 +1,5 @@
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme/tokens';
 import { AppHeader, BottomTabBar, SubHeader } from '../ui-kit';
 import { CollapsibleHeaderContext } from './collapsible-header-context';
@@ -9,9 +9,12 @@ import { useCollapsibleHeader } from './use-collapsible-header';
 
 /** Dựng một màn hình từ `ScreenConfig`: header, thanh phụ, các section theo registry, tab bar. */
 export function ScreenRenderer({ config, onTabPress, overlay }: ScreenRendererProps) {
+  const insets = useSafeAreaInsets();
   const visibleSections = config.sections.filter((section) => section.visible !== false);
   const hasHeader = Boolean(config.header || config.subHeader);
   const isCollapsible = config.collapsibleHeader !== false && hasHeader;
+
+  const initialTopHeight = (config.subHeader ? 104 : 38) + insets.top;
 
   const {
     headerTranslateY,
@@ -22,11 +25,11 @@ export function ScreenRenderer({ config, onTabPress, overlay }: ScreenRendererPr
     onHeaderLayout,
   } = useCollapsibleHeader({
     enabled: isCollapsible,
-    initialHeaderHeight: config.subHeader ? 104 : 56,
+    initialHeaderHeight: initialTopHeight,
   });
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.root} edges={['left', 'right']}>
       <View style={styles.container}>
         {hasHeader ? (
           <Animated.View
@@ -35,6 +38,7 @@ export function ScreenRenderer({ config, onTabPress, overlay }: ScreenRendererPr
             pointerEvents={isHeaderVisible ? 'auto' : 'none'}
             style={[
               styles.top,
+              { paddingTop: insets.top },
               isCollapsible && [
                 styles.collapsibleTop,
                 {
@@ -76,10 +80,7 @@ export function ScreenRenderer({ config, onTabPress, overlay }: ScreenRendererPr
           <ScrollView
             testID="screen-scroll-view"
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[
-              styles.content,
-              isCollapsible && { paddingTop: headerHeight },
-            ]}
+            contentContainerStyle={[styles.content, isCollapsible && { paddingTop: headerHeight }]}
             style={styles.scroll}
             onScroll={isCollapsible ? onScroll : undefined}
             scrollEventThrottle={16}

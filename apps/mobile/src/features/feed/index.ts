@@ -4,6 +4,10 @@ export {
   type PostDetailScreenProps,
 } from './screens/post-detail-screen';
 export {
+  CommentBottomSheet,
+  type CommentBottomSheetProps,
+} from './components/comment-bottom-sheet';
+export {
   PostImageViewer,
   type PostImageViewerProps,
 } from './components/post-image-viewer';
@@ -13,10 +17,12 @@ export {
   MIN_POST_ASPECT_RATIO,
   PostCard,
   PostImage,
+  PostMediaCarousel,
   PostMediaGrid,
   type PostCardAction,
   type PostCardProps,
   type PostImageProps,
+  type PostMediaCarouselProps,
   type PostMediaGridProps,
 } from './components/post-card';
 export { PostList, type PostListProps } from './components/post-list';
@@ -27,6 +33,8 @@ export {
   formatRelativeTimeVi,
   mapBaiVietDtoToFeedPost,
   type BaiVietDto,
+  type BinhLuanCreateDto,
+  type BinhLuanDto,
   type FeedPageResult,
   type FeedRepository,
   type KetQuaThichBaiVietDto,
@@ -38,4 +46,11 @@ export {
   useFeedPosts,
   useToggleLikeMutation,
 } from './hooks/use-feed-posts';
+export {
+  COMMENTS_QUERY_KEY,
+  useAddCommentMutation,
+  usePostComments,
+} from './hooks/use-post-comments';
+export { savedPostsStorage } from './storage/saved-posts-storage';
+export { useSavedPosts } from './hooks/use-saved-posts';
 export type { FeedPostData, PostActionTemplate } from './types';

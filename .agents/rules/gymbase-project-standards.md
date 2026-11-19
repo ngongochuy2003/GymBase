@@ -20,6 +20,7 @@ Nguồn đầy đủ: `docs/`. Khi có mâu thuẫn, ưu tiên: yêu cầu trự
 - Mẫu feature: `api/ components/ hooks/ schemas/ screens/ types/ __tests__/ index.ts`. Screen không gọi HTTP trực tiếp; dùng typed repository để thay được backend.
 - Alias `@/` cho import liên tầng; relative chỉ trong cùng feature.
 - Demo session chỉ trong memory, không token; API mode không cho vào demo. Không thêm Zustand khi chưa cần.
+- Quy chuẩn giao diện (UI tokens): Mọi màn hình phải sử dụng các thuộc tính giao diện (color, fontsize, font weight, padding, icon size, border radius) thống nhất giống với trang chủ (`FeedScreen`), tuân thủ theme tokens của dự án, tuyệt đối không tự ý thay đổi khi không được yêu cầu riêng.
 - Kiểm tra trước khi xong: `pnpm lint` (0 warning), `pnpm typecheck`, `pnpm test`, `pnpm format:check` trong `apps/mobile`.
 
 ## Backend (`docs/api`)

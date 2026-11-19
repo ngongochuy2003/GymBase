@@ -6,3 +6,4 @@ export * from './app-header';
 export * from './sub-header';
 export * from './bottom-tab-bar';
 export * from './toast';
+export * from './post-video-player';
