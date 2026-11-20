@@ -9,9 +9,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { isVideoUrl } from '@/shared/file';
 import { Icon } from '@/shared/icons';
 import { theme } from '@/shared/theme/tokens';
 import { RemoteImage } from '@/shared/ui-kit';
+import { PostVideoPlayer } from './post-video-player';
 
 export interface PostImageViewerProps {
   visible: boolean;
@@ -181,12 +183,22 @@ export const PostImageViewer = memo(function PostImageViewer({
                   },
                 ]}
               >
-                <RemoteImage
-                  uri={currentUri}
-                  accessibilityLabel={`Ảnh chi tiết ${currentIndex + 1}`}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
+                {isVideoUrl(currentUri) ? (
+                  <PostVideoPlayer
+                    uri={currentUri}
+                    style={styles.image}
+                    aspectRatio={undefined}
+                    autoPlay
+                    accessibilityLabel={`Video chi tiết ${currentIndex + 1}`}
+                  />
+                ) : (
+                  <RemoteImage
+                    uri={currentUri}
+                    accessibilityLabel={`Ảnh chi tiết ${currentIndex + 1}`}
+                    style={styles.image}
+                    resizeMode="contain"
+                  />
+                )}
               </View>
             ) : null}
           </ScrollView>

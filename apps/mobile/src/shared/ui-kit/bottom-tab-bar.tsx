@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../icons';
 import { theme } from '../theme/tokens';
 
@@ -24,8 +25,20 @@ export interface BottomTabBarProps {
 }
 
 export function BottomTabBar({ tabs, activeId, onChange, renderIcon }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom;
+
   return (
-    <View style={styles.bar} accessibilityRole="tablist">
+    <View
+      style={[
+        styles.bar,
+        bottomInset > 0 && {
+          paddingBottom: 8 + bottomInset,
+          height: 64 + bottomInset,
+        },
+      ]}
+      accessibilityRole="tablist"
+    >
       {tabs.map((tab) => {
         const active = tab.id === activeId;
         const color = tab.isCenter
@@ -48,7 +61,7 @@ export function BottomTabBar({ tabs, activeId, onChange, renderIcon }: BottomTab
                 {renderIcon ? (
                   renderIcon(tab, active, color)
                 ) : (
-                  <Icon name={iconName} size={21} color={color} />
+                  <Icon name={iconName} size={22} color={color} />
                 )}
               </View>
             ) : (
@@ -57,7 +70,7 @@ export function BottomTabBar({ tabs, activeId, onChange, renderIcon }: BottomTab
                   {renderIcon ? (
                     renderIcon(tab, active, color)
                   ) : (
-                    <Icon name={iconName} size={theme.iconSize.sm} color={color} />
+                    <Icon name={iconName} size={24} color={color} />
                   )}
                   {tab.badge ? <View style={styles.badge} /> : null}
                 </View>
@@ -73,28 +86,29 @@ export function BottomTabBar({ tabs, activeId, onChange, renderIcon }: BottomTab
 
 const styles = StyleSheet.create({
   bar: {
+    height: 64,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-around',
     backgroundColor: theme.colors.card,
-    paddingBottom: theme.spacing.sm-3,
-    paddingHorizontal: theme.spacing.xs,
+    paddingTop: 7,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: -3 },
     elevation: 8,
   },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4, minHeight: 42 },
-  label: { fontSize: theme.font.size.xs, fontWeight: theme.font.weight.medium },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  label: { fontSize: 11.5, fontWeight: theme.font.weight.medium },
   center: {
     width: 42,
-    height: 28,
-    borderRadius: 5,
-    backgroundColor: theme.colors.primary,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#455442',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.sm-2,
   },
   badge: {
     position: 'absolute',
@@ -103,6 +117,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#E5484D',
   },
 });

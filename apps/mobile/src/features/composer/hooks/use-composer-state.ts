@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import { isVideoUrl } from '@/shared/file';
 import type { ComposerPayload, MediaItem } from '../types';
 
 export const MAX_MEDIA = 10;
@@ -55,9 +56,15 @@ export function useComposerState({
 
     const newItems: MediaItem[] = result.assets.map((asset) => {
       const n = counter.current++;
+      const isVideo =
+        asset.type === 'video' ||
+        isVideoUrl(asset.uri) ||
+        asset.mimeType?.startsWith('video/');
       return {
         id: `media-${Date.now()}-${n}`,
         uri: asset.uri,
+        type: isVideo ? 'video' : 'image',
+        mimeType: asset.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg'),
       };
     });
 
@@ -72,7 +79,13 @@ export function useComposerState({
   const appendText = useCallback((value: string) => setText((prev) => prev + value), []);
 
   const payload = useMemo<ComposerPayload>(
-    () => ({ content: text.trim(), mediaUris: media.map((m) => m.uri), topicIds, visibilityId }),
+    () => ({
+      content: text.trim(),
+      mediaUris: media.map((m) => m.uri),
+      mediaItems: media,
+      topicIds,
+      visibilityId,
+    }),
     [text, media, topicIds, visibilityId],
   );
 

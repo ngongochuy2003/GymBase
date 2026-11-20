@@ -110,6 +110,8 @@ describe('Feed Pagination & Lazy Loading', () => {
       getFeedPosts: jest.fn(),
       getPostById: jest.fn(),
       toggleLike: jest.fn(),
+      getComments: jest.fn(),
+      addComment: jest.fn(),
       getPaginatedFeed: jest.fn().mockImplementation((_tab, page) => {
         if (page === 1) {
           return Promise.resolve({

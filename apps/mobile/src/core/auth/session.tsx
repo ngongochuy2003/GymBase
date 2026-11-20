@@ -149,3 +149,7 @@ export function useSession() {
   if (!session) throw new Error('useSession requires SessionProvider');
   return session;
 }
+
+export function useOptionalSession() {
+  return useContext(SessionContext);
+}

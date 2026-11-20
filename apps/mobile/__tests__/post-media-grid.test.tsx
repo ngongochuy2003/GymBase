@@ -128,10 +128,35 @@ describe('PostMediaGrid & Multi-Image Layouts', () => {
           'https://cdn.gymbase.vn/img7.webp',
         ]}
         actions={[]}
+        imageLayout="grid"
       />,
     );
 
     expect(screen.getByTestId('post-media-grid-4')).toBeTruthy();
     expect(screen.getByText('+3')).toBeTruthy();
+  });
+
+  it('PostCard hiển thị Carousel vuốt ngang theo thiết kế mới khi mặc định', async () => {
+    const handlePressImage = jest.fn();
+    await render(
+      <PostCard
+        author={{ name: 'Minh Lê' }}
+        timeLabel="Vừa xong"
+        content="Album 3 ảnh cuộn ngang"
+        imageUris={[
+          'https://cdn.gymbase.vn/img1.webp',
+          'https://cdn.gymbase.vn/img2.webp',
+          'https://cdn.gymbase.vn/img3.webp',
+        ]}
+        actions={[]}
+        onPressImage={handlePressImage}
+      />,
+    );
+
+    const carousel = screen.getByTestId('post-media-carousel');
+    expect(carousel).toBeTruthy();
+    expect(screen.getByTestId('post-image-pressable-0')).toBeTruthy();
+    expect(screen.getByTestId('post-image-pressable-1')).toBeTruthy();
+    expect(screen.getByTestId('post-image-pressable-2')).toBeTruthy();
   });
 });

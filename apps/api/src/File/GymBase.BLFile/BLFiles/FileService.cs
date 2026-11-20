@@ -63,24 +63,13 @@ public sealed class FileService : IFileService
 
         var userId = await GetUserIdAsync(user, ct);
 
-        await using var rawStream = file.OpenReadStream();
-        _imageProcessor.ValidateMagicBytes(rawStream, file.ContentType);
-
-        var processed = await _imageProcessor.ProcessVariantsAsync(rawStream, normalizedPurpose, ct);
-        var primaryVariant = normalizedPurpose == "avatar"
-            ? (processed.Variants.FirstOrDefault(v => v.VariantName == "medium") ?? processed.Variants.First())
-            : (processed.Variants.FirstOrDefault(v => v.VariantName == "large")
-               ?? processed.Variants.FirstOrDefault(v => v.VariantName == "medium")
-               ?? processed.Variants.First());
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var isVideo = ext is ".mp4" or ".mov" or ".webm" or ".avi" or ".mkv" ||
+                      (file.ContentType?.StartsWith("video/", StringComparison.OrdinalIgnoreCase) == true);
 
         var fileId = Guid.NewGuid();
-        // Đổi tên ảnh thành mã ngẫu nhiên theo mục đích (avatar_20261114_..., post_20261114_...)
-        // và phân loại theo từng folder riêng trên MinIO / S3 (avatar/, post/, ...)
         var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
         var randomCode = Guid.NewGuid().ToString("N")[..8];
-        var fileName = $"{normalizedPurpose}_{timestamp}_{randomCode}.webp";
-        var storageKey = $"{normalizedPurpose}/{fileName}";
-
         var provider = _storageResolver.GetDefault();
         var bucketName = string.Equals(provider.ProviderName, "LOCAL", StringComparison.OrdinalIgnoreCase)
             ? "LOCAL"
@@ -92,6 +81,87 @@ public sealed class FileService : IFileService
             "post" => LoaiDoiTuongTepTin.bai_viet,
             _ => (LoaiDoiTuongTepTin?)null
         };
+
+        if (isVideo)
+        {
+            var videoExt = string.IsNullOrEmpty(ext) ? ".mp4" : ext;
+            var videoFileName = $"{normalizedPurpose}_{timestamp}_{randomCode}{videoExt}";
+            var videoStorageKey = $"{normalizedPurpose}/{videoFileName}";
+            var videoMime = videoExt switch
+            {
+                ".mp4" => "video/mp4",
+                ".mov" => "video/quicktime",
+                ".webm" => "video/webm",
+                _ => string.IsNullOrWhiteSpace(file.ContentType) ? "video/mp4" : file.ContentType
+            };
+
+            var videoEntity = new tep_tin
+            {
+                Id = fileId,
+                nguoi_tai_len_id = userId,
+                ten_tep_goc = Path.GetFileName(file.FileName),
+                s3_key = videoStorageKey,
+                s3_bucket = bucketName,
+                loai_mime = videoMime,
+                kich_thuoc_byte = file.Length,
+                muc_dich = normalizedPurpose.Length > 32 ? normalizedPurpose[..32] : normalizedPurpose,
+                loai_doi_tuong = targetType,
+                trang_thai = TrangThaiTepTin.cho_tai_len,
+                che_do_truy_cap = accessMode,
+                ngay_tao = DateTime.UtcNow
+            };
+
+            await _tepTinRepository.DLInsertAsync(videoEntity, ct);
+
+            try
+            {
+                await using var videoStream = file.OpenReadStream();
+                await provider.SaveAsync(videoStorageKey, videoStream, videoMime, ct);
+
+                videoEntity.trang_thai = TrangThaiTepTin.da_tai_len;
+                videoEntity.ngay_xac_nhan = DateTime.UtcNow;
+                await _tepTinRepository.DLUpdateAsync(videoEntity, ct);
+
+                _logger.LogInformation("Upload video thành công: Id={FileId}, Bucket={Bucket}, Key={Key}",
+                    fileId, videoEntity.s3_bucket, videoStorageKey);
+
+                return new FileUploadResultDto(
+                    FileId: videoEntity.Id,
+                    OriginalName: videoEntity.ten_tep_goc ?? file.FileName,
+                    ContentType: videoEntity.loai_mime,
+                    Size: videoEntity.kich_thuoc_byte,
+                    Purpose: videoEntity.muc_dich ?? normalizedPurpose,
+                    Provider: provider.ProviderName,
+                    Blurhash: null,
+                    ContentUrl: $"/api/v1/mob/files/{videoEntity.Id}/content"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lưu video {FileId} xuống storage {Provider}.", fileId, provider.ProviderName);
+
+                videoEntity.trang_thai = TrangThaiTepTin.loi;
+                videoEntity.ngay_xac_nhan = DateTime.UtcNow;
+                try { await _tepTinRepository.DLUpdateAsync(videoEntity, ct); } catch { }
+                try { await provider.DeleteAsync(videoStorageKey, ct); } catch { }
+                throw;
+            }
+        }
+
+        await using var rawStream = file.OpenReadStream();
+        _imageProcessor.ValidateMagicBytes(rawStream, file.ContentType ?? "image/jpeg");
+
+        var processed = await _imageProcessor.ProcessVariantsAsync(rawStream, normalizedPurpose, ct);
+        var primaryVariant = normalizedPurpose == "avatar"
+            ? (processed.Variants.FirstOrDefault(v => v.VariantName == "medium") ?? processed.Variants.First())
+            : (processed.Variants.FirstOrDefault(v => v.VariantName == "large")
+               ?? processed.Variants.FirstOrDefault(v => v.VariantName == "medium")
+               ?? processed.Variants.First());
+
+        // Đổi tên ảnh thành mã ngẫu nhiên theo mục đích (avatar_20261114_..., post_20261114_...)
+        // và phân loại theo từng folder riêng trên MinIO / S3 (avatar/, post/, ...)
+        var fileName = $"{normalizedPurpose}_{timestamp}_{randomCode}.webp";
+        var storageKey = $"{normalizedPurpose}/{fileName}";
 
         var entity = new tep_tin
         {

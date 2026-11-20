@@ -28,6 +28,29 @@ export function setCustomManipulator(manipulator: ManipulatorAdapter) {
 }
 
 /**
+ * Kiểm tra một URI hoặc URL có phải là định dạng video hay không.
+ */
+export function isVideoUrl(urlOrPath?: string | null): boolean {
+  if (!urlOrPath) return false;
+  const cleanPart = urlOrPath.split('?')[0] ?? '';
+  const clean = (cleanPart.split('#')[0] ?? '').toLowerCase();
+  return (
+    clean.endsWith('.mp4') ||
+    clean.endsWith('.mov') ||
+    clean.endsWith('.webm') ||
+    clean.endsWith('.m4v') ||
+    clean.endsWith('.avi') ||
+    clean.endsWith('.mkv') ||
+    clean.includes('.mp4') ||
+    clean.includes('.mov') ||
+    clean.includes('.webm') ||
+    clean.includes('video/') ||
+    urlOrPath.includes('video/mp4') ||
+    urlOrPath.includes('type=video')
+  );
+}
+
+/**
  * 1. Nén và chuẩn hóa ảnh phía Mobile bằng expo-image-manipulator.
  * - Cạnh dài tối đa 2048px (giữ nguyên tỷ lệ chuẩn).
  * - Nén chất lượng 0.90 JPEG để đảm bảo độ nét cao không bị vỡ/bóp méo.
@@ -90,8 +113,54 @@ export async function uploadMultipartFile(
     authHeaders.Authorization = `Bearer ${token}`;
   }
 
-  // Bước 1: Nén ảnh giữ độ nét cao
-  const compressed = await compressImageOnDevice(localUri);
+  let isVideo = isVideoUrl(localUri) || Boolean(options?.contentType?.startsWith('video/'));
+  let fileType = options?.contentType || (isVideo ? 'video/mp4' : 'image/jpeg');
+  let blobData: Blob | null = null;
+
+  // Nếu trên Web (blob: URL) hoặc có fetch, đọc MIME type trực tiếp từ Blob
+  if (typeof fetch !== 'undefined' && localUri.startsWith('blob:')) {
+    try {
+      const blobRes = await fetch(localUri);
+      blobData = await blobRes.blob();
+      if (blobData.type) {
+        fileType = blobData.type;
+        if (blobData.type.startsWith('video/')) {
+          isVideo = true;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  let fileUri = localUri;
+  let fileName = localUri.split('/').pop() || (isVideo ? `video_${Date.now()}.mp4` : `upload_${Date.now()}.jpg`);
+  if (isVideo && !fileName.endsWith('.mp4') && !fileName.endsWith('.mov') && !fileName.endsWith('.webm')) {
+    fileName = `${fileName}.mp4`;
+  }
+
+  if (!isVideo) {
+    try {
+      // Bước 1: Nén ảnh giữ độ nét cao bằng expo-image-manipulator
+      const compressed = await compressImageOnDevice(localUri);
+      fileUri = compressed.uri;
+      fileType = compressed.contentType;
+      fileName = compressed.uri.split('/').pop() || `upload_${Date.now()}.jpg`;
+    } catch {
+      // Fallback nếu không nén được (ví dụ video bị lọt vào nhánh ảnh hoặc file đặc biệt)
+      fileUri = localUri;
+    }
+  } else {
+    // Với video, giữ nguyên dữ liệu gốc và chỉ định đúng MIME type
+    const lower = fileUri.toLowerCase();
+    if (lower.endsWith('.mov')) {
+      fileType = 'video/quicktime';
+    } else if (lower.endsWith('.webm')) {
+      fileType = 'video/webm';
+    } else if (!fileType.startsWith('video/')) {
+      fileType = 'video/mp4';
+    }
+  }
 
   if (options?.signal?.aborted) {
     throw new Error('Upload cancelled by user');
@@ -101,26 +170,26 @@ export async function uploadMultipartFile(
   const formData = new FormData();
   formData.append('purpose', purpose);
 
-  const fileName = compressed.uri.split('/').pop() || `upload_${Date.now()}.jpg`;
-
-  if (typeof Blob !== 'undefined' && !compressed.uri.startsWith('file://')) {
+  if (blobData) {
+    formData.append('file', blobData, fileName);
+  } else if (typeof Blob !== 'undefined' && !fileUri.startsWith('file://')) {
     try {
-      const blobRes = await fetch(compressed.uri);
+      const blobRes = await fetch(fileUri);
       const blob = await blobRes.blob();
       formData.append('file', blob, fileName);
     } catch {
       // @ts-ignore
       formData.append('file', {
-        uri: compressed.uri,
-        type: compressed.contentType,
+        uri: fileUri,
+        type: fileType,
         name: fileName,
       });
     }
   } else {
     // @ts-ignore
     formData.append('file', {
-      uri: compressed.uri,
-      type: compressed.contentType,
+      uri: fileUri,
+      type: fileType,
       name: fileName,
     });
   }

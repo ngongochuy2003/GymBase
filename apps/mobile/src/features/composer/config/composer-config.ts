@@ -27,7 +27,7 @@ export const visibilityOptions: VisibilityOption[] = [
 
 /** Cấu hình thanh công cụ (không kèm hành vi; hành vi gắn theo id ở màn hình). */
 export const toolbarDefinitions: Omit<ToolbarAction, 'onPress'>[] = [
-  { id: 'add-media', label: 'Thêm ảnh', icon: 'image' },
+  { id: 'add-media', label: 'Ảnh/Video', icon: 'image' },
   { id: 'tag-trainer', label: 'Gắn PT', icon: 'person' },
   { id: 'add-hashtag', label: 'Thêm hashtag', icon: 'hashtag' },
 ];

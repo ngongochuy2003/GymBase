@@ -4,19 +4,16 @@ import { AppHeader, SubHeader } from '@/shared/ui-kit';
 import { ScreenRenderer, type ScreenConfig } from '@/shared/screen-config';
 
 describe('Header and SubHeader CSS & Padding Separation', () => {
-  it('AppHeader có padding riêng và giữ nguyên paddingTop mặc định (5px)', async () => {
+  it('AppHeader có padding riêng và giữ nguyên paddingTop mặc định (4px)', async () => {
     await render(<AppHeader />);
 
     const brandText = screen.getByText('GymBase');
     const headerContainer = brandText.parent?.parent;
     expect(headerContainer).toBeTruthy();
 
-    const flatStyle = Object.assign(
-      {},
-      ...[headerContainer?.props.style].flat().filter(Boolean),
-    );
-    expect(flatStyle.paddingTop).toBe(theme.spacing.sm - 3); // 5px
-    expect(flatStyle.paddingHorizontal).toBe(theme.spacing.lg - 2); // 14px
+    const flatStyle = Object.assign({}, ...[headerContainer?.props.style].flat().filter(Boolean));
+    expect(flatStyle.paddingTop).toBe(4); // 4px theo chuẩn ultra-compact
+    expect(flatStyle.paddingHorizontal).toBe(16); // 16px theo chuẩn ultra-compact
   });
 
   it('SubHeader có style riêng và có paddingTop (16px) lớn hơn paddingTop của AppHeader', async () => {
@@ -32,7 +29,7 @@ describe('Header and SubHeader CSS & Padding Separation', () => {
     );
     // paddingTop của SubHeader đã được tăng riêng lên 16px (theme.spacing.md + 4)
     expect(flatStyle.paddingTop).toBe(theme.spacing.md + 4);
-    expect(flatStyle.paddingTop).toBeGreaterThan(theme.spacing.sm - 3);
+    expect(flatStyle.paddingTop).toBeGreaterThan(4);
   });
 
   it('cho phép tùy biến style riêng (ví dụ tăng paddingTop) qua prop style', async () => {
@@ -40,10 +37,7 @@ describe('Header and SubHeader CSS & Padding Separation', () => {
     await render(<AppHeader style={{ paddingTop: 10, backgroundColor: '#ffffff' }} />);
     const brand = screen.getByText('GymBase');
     const headerContainer = brand.parent?.parent;
-    const headerStyle = Object.assign(
-      {},
-      ...[headerContainer?.props.style].flat().filter(Boolean),
-    );
+    const headerStyle = Object.assign({}, ...[headerContainer?.props.style].flat().filter(Boolean));
     expect(headerStyle.paddingTop).toBe(10);
     expect(headerStyle.backgroundColor).toBe('#ffffff');
 

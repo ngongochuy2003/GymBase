@@ -35,6 +35,7 @@ export type UploadState = 'idle' | 'compressing' | 'uploading' | 'confirming' | 
 export interface UploadOptions {
   apiBaseUrl?: string;
   authToken?: string;
+  contentType?: string;
   onProgress?: (percent: number) => void;
   signal?: AbortSignal;
   maxRetries?: number;
