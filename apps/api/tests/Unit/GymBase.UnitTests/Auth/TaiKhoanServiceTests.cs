@@ -3,6 +3,7 @@ using GymBase.Base.Paging;
 using GymBase.BLAuth;
 using GymBase.TestDoubles;
 using GymBase.BLAuth.BLTaiKhoan;
+using GymBase.BLAuth.BLXacThuc;
 using GymBase.DLAuth.MySql.DLTaiKhoan;
 using GymBase.Entities.Auth;
 
@@ -18,6 +19,7 @@ public class TaiKhoanServiceTests
     private static readonly DateTime Now = new(2026, 11, 20, 8, 30, 0, DateTimeKind.Utc);
 
     private readonly InMemoryStore<tai_khoan> _store = new();
+    private readonly InMemoryStore<phien_dang_nhap> _sessionStore = new();
 
     private readonly TaiKhoanService _service;
 
@@ -32,7 +34,9 @@ public class TaiKhoanServiceTests
         currentUser,
         new TaiKhoanCreateValidator(),
         new TaiKhoanUpdateValidator(),
-        AuthTestHelpers.FastHasher);
+        AuthTestHelpers.FastHasher,
+        new InMemoryPhienDangNhapRepository(_sessionStore),
+        new PhienHieuLucCache());
 
     [Fact]
     public async Task Invalid_body_is_rejected_before_touching_data()
@@ -62,6 +66,69 @@ public class TaiKhoanServiceTests
         var update = new TaiKhoanUpdateDto { ho_ten = "Tên mới", email = "admin@gymbase.local", vai_tro = "User" };
         await _service.BLUpdateAsync(AdminId, update, CancellationToken.None);
         Assert.Equal("nv.thu", _store.Find(AdminId)!.nguoi_chinh_sua);
+    }
+
+    private TaiKhoanUpdateDto UpdateOf(Guid id, string? role = null, bool? active = null, string? name = null)
+    {
+        var current = _store.Find(id)!;
+        return new TaiKhoanUpdateDto
+        {
+            ho_ten = name ?? current.ho_ten,
+            email = current.email!,
+            vai_tro = role ?? current.vai_tro,
+            dang_hoat_dong = active ?? current.dang_hoat_dong,
+        };
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Admin_cannot_lock_or_change_the_role_of_themselves(bool lockInstead)
+    {
+        var service = CreateService(new FakeCurrentUser("admin", AdminId));
+        var dto = lockInstead ? UpdateOf(AdminId, active: false) : UpdateOf(AdminId, role: "User");
+
+        var error = await Assert.ThrowsAsync<BusinessRuleException>(() => service.BLUpdateAsync(AdminId, dto, CancellationToken.None));
+
+        Assert.Equal(AuthErrorCodes.UserSelfLockout, error.Code);
+        Assert.True(_store.Find(AdminId)!.dang_hoat_dong);
+    }
+
+    [Fact]
+    public async Task Admin_can_still_edit_other_fields_of_themselves()
+    {
+        var service = CreateService(new FakeCurrentUser("admin", AdminId));
+        var dto = UpdateOf(AdminId, name: "Tên mới");
+
+        var result = await service.BLUpdateAsync(AdminId, dto, CancellationToken.None);
+
+        Assert.Equal("Tên mới", result.ho_ten);
+    }
+
+    [Fact]
+    public async Task Locking_another_user_revokes_all_their_sessions()
+    {
+        var target = _store.All().First(u => u.Id != AdminId && u.dang_hoat_dong);
+        var session = new phien_dang_nhap { tai_khoan_id = target.Id, ngay_het_han = Now.AddDays(1), ngay_het_han_toi_da = Now.AddDays(1) };
+        _sessionStore.TryAdd(session);
+        var service = CreateService(new FakeCurrentUser("admin", AdminId));
+
+        await service.BLUpdateAsync(target.Id, UpdateOf(target.Id, active: false), CancellationToken.None);
+
+        Assert.NotNull(_sessionStore.Find(session.Id)!.ngay_thu_hoi);
+    }
+
+    [Fact]
+    public async Task Updating_another_user_without_locking_keeps_their_sessions()
+    {
+        var target = _store.All().First(u => u.Id != AdminId && u.dang_hoat_dong);
+        var session = new phien_dang_nhap { tai_khoan_id = target.Id, ngay_het_han = Now.AddDays(1), ngay_het_han_toi_da = Now.AddDays(1) };
+        _sessionStore.TryAdd(session);
+        var service = CreateService(new FakeCurrentUser("admin", AdminId));
+
+        await service.BLUpdateAsync(target.Id, UpdateOf(target.Id), CancellationToken.None);
+
+        Assert.Null(_sessionStore.Find(session.Id)!.ngay_thu_hoi);
     }
 
     [Fact]
