@@ -186,7 +186,9 @@ export function TextField({
       {hideLabel ? null : <FieldLabel label={label} />}
       <View
         className={cn(
-          'h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
+          'flex-row gap-3 rounded-xl border bg-card px-4',
+          // Ô nhiều dòng (giới thiệu bản thân...) cao hơn và chữ bắt đầu từ trên; ô một dòng cố định 52px, chữ căn giữa.
+          props.multiline ? 'min-h-[132px] items-start py-3' : 'h-[52px] items-center',
           error ? 'border-destructive' : 'border-input',
         )}
       >
