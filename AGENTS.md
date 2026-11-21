@@ -5,7 +5,7 @@ Tài liệu và comment viết tiếng Việt có dấu. Commit `type(scope): m�
 `apps/mobile/package-lock.json` nằm ngoài commit. Tạo PR thì nhánh đích (base) là `develop`.
 
 Backend: quy tắc ở [apps/api/AGENTS.md](apps/api/AGENTS.md). Mobile: chạy `pnpm mobile:check` trước khi báo xong.
-Quy chuẩn giao diện (UI tokens): Mọi màn hình phải sử dụng các thuộc tính giao diện (color, fontsize, font weight, padding, icon size, border radius) thống nhất giống với trang chủ (`FeedScreen`), tuân thủ theme tokens của dự án, tuyệt đối không tự ý thay đổi khi không được yêu cầu riêng.
+Quy chuẩn giao diện (UI tokens): dùng NativeWind (`className`) và token trong `apps/mobile/global.css`; màu chuẩn lấy từ `Tài liệu dự án/GymBase_Color_Palette.html`, đổi màu thì sửa file HTML rồi đồng bộ `global.css` và `shared/theme/palette.ts`. Code mới không viết `StyleSheet`, không hardcode màu hex, không dùng `shared/theme/tokens.ts` và `theme.tsx` (hệ cũ đang được thay, xem `design-audit.md`). Không tự ý đổi thuộc tính giao diện (màu, cỡ chữ, padding, bo góc, icon) khi không được yêu cầu riêng.
 Code tạm (mock, bỏ qua một kiểm tra) luôn kèm `// TODO(CHỦ_ĐỀ): ...` ngay tại chỗ.
 
 ## Tài liệu: mở khi
