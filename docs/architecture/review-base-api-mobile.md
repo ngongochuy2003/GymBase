@@ -1,6 +1,6 @@
 # Review base API và Mobile
 
-> **Ngày viết:** 21/11/2026 · **Cập nhật:** 21/11/2026 (đã sửa S9, S10, S12, S13, S15, B17, B18, B19, M4, M10; sửa một phần M5) · **Trạng thái:** đã triển khai (review code đang chạy; S9, S10, S12, S13, S15, B17, B18, B19 đã sửa, M4, M10 đã sửa, M5 sửa một phần; các mục còn lại chưa sửa) · **Đối chiếu code:** 53a6cbb
+> **Ngày viết:** 21/11/2026 · **Cập nhật:** 21/11/2026 (đã sửa S9, S10, S12, S13, S15, B17, B18, B19, M4, M10, M14; sửa một phần M5) · **Trạng thái:** đã triển khai (review code đang chạy; S9, S10, S12, S13, S15, B17, B18, B19 đã sửa, M4, M10, M14 đã sửa, M5 sửa một phần; các mục còn lại chưa sửa) · **Đối chiếu code:** 824e407
 
 Tài liệu ghi lại kết quả review phần base của `apps/api` và `apps/mobile` trên nhánh `quantv_code-review`, sau khi merge `origin/develop` (6 commit mới của đồng nghiệp, gồm upload video, lưu bài, bình luận).
 Mục tiêu: chỉ ra phần nào ổn, phần nào chưa ổn, phần nào lạ so với thông thường, về cách đặt file, tên file, logic bên trong và cách các file gọi nhau.
@@ -126,7 +126,7 @@ Sửa các mục này trước. Dòng nào ghi `Đọc code` (S7, S14, S15) nên
 | M11 | Thấp | [post-card.tsx](../../apps/mobile/src/features/feed/components/post-card.tsx) (821 dòng), [comment-bottom-sheet.tsx](../../apps/mobile/src/features/feed/components/comment-bottom-sheet.tsx) (763) | Một file chứa 4 component (`PostImage`, `PostMediaCarousel`, `PostMediaGrid`, `PostCard`); file bình luận cũng rất dài | Tách theo component, mỗi file một việc |
 | M12 | Thấp | [shared/screen-config/](../../apps/mobile/src/shared/screen-config) | Registry section chỉ đăng ký 1 loại (`filterChips`, dòng 18), 2 màn dùng. Có vẻ thiết kế dư so với nhu cầu hiện tại | Giữ nếu có kế hoạch mở rộng; nếu không thì bỏ cho đơn giản |
 | M13 | Thấp | [app/_layout.tsx:23](../../apps/mobile/src/app/_layout.tsx), [notification-service.ts](../../apps/mobile/src/shared/notifications/notification-service.ts) | Xin quyền thông báo ngay khi mở app, trước cả đăng nhập; mọi channel đều `IMPORTANCE_MAX`; chưa có luồng gửi device token lên backend (bảng `thiet_bi` chỉ có entity và configuration, không service hay repository nào dùng, đã grep) | Xin quyền đúng lúc (sau onboarding), giảm mức channel không khẩn |
-| M14 | Thấp | [core/auth/types.ts:4](../../apps/mobile/src/core/auth/types.ts) | `AuthUser.ten_dang_nhap` vẫn còn dù email là định danh (đi cùng B18) | Bỏ khi backend bỏ |
+| M14 | Thấp | [core/auth/types.ts:4](../../apps/mobile/src/core/auth/types.ts) | `AuthUser.ten_dang_nhap` vẫn còn dù email là định danh (đi cùng B18) | Bỏ khi backend bỏ <br>**Đã sửa (21/11/2026):** bỏ `ten_dang_nhap` khỏi `AuthUser` (backend vẫn trả trường này, mobile bỏ qua) và xóa các so sánh `ten_dang_nhap` ở `feed-screen` và `composer-screen`; giữ nguyên phần kiểm tra email và id. Ghi nhận: khối gán ảnh đại diện cố định cho một tài khoản cụ thể ở hai màn này là mã thử nghiệm của đồng nghiệp, giữ lại; cần thay bằng ảnh đại diện của chính chủ trả từ API (`/me` hoặc `/ho-so`) trước khi phát hành. |
 
 ## 6. Đặt tên, đặt file, cấu trúc lạ so với thông thường và so với quy ước
 
