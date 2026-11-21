@@ -16,9 +16,6 @@ public static class AuthErrorCodes
     /// <summary>422: Admin tự khóa hoặc tự đổi vai trò của chính mình (tránh mất quyền quản trị).</summary>
     public const string UserSelfLockout = "USER_SELF_LOCKOUT";
 
-    /// <summary>403: chức năng cần hồ sơ (nhóm người dùng) mà tài khoản chưa có; app dẫn người dùng tới bước thiết lập hồ sơ.</summary>
-    public const string ProfileRequired = "PROFILE_REQUIRED";
-
     /// <summary>409: đăng nhập Google mà email đã thuộc một tài khoản có mật khẩu (không tự liên kết theo email, ADR-0001).</summary>
     public const string EmailUsedPassword = "AUTH_EMAIL_USED_PASSWORD";
 

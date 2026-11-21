@@ -53,6 +53,7 @@ namespace GymBase.IntegrationTests
             builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(BaiVietService).Assembly)
                 .AddApplicationPart(typeof(TestApp).Assembly)
                 .AddApplicationPart(typeof(GymBase.API.Controllers.AuthController).Assembly);
+            builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, GymBase.API.ProfileRequiredResultHandler>();
             builder.Services.AddAuthBusiness();
             builder.Services.AddBizBusiness();
             builder.Services.Configure<PasswordHasherOptions>(options => options.IterationCount = 1_000);

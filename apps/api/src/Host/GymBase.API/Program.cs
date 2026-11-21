@@ -1,3 +1,4 @@
+using GymBase.API;
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
@@ -7,6 +8,7 @@ using GymBase.BLBiz.BaiViet;
 using GymBase.BLDI;
 using GymBase.BLFile;
 using GymBase.BLFile.BLFiles;
+using Microsoft.AspNetCore.Authorization;
 using GymBase.DLAuth.MySql;
 using GymBase.DLBiz.MySql;
 using GymBase.DLDI.MySql;
@@ -19,6 +21,9 @@ var builder = WebApplication.CreateBuilder(args);
 // controller trong Mob/Controllers/ có tiền tố /api/v1/mob.
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
 builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(BaiVietService).Assembly);
+
+// Policy RequireProfile không đạt thì trả mã PROFILE_REQUIRED (mã của nhóm Biz nên đặt ở host).
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProfileRequiredResultHandler>();
 
 // Log kỹ thuật ra console và file, cấu hình ở mục "Serilog" của appsettings.
 builder.Services.AddAppLogging(builder.Configuration);
