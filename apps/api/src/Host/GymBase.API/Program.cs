@@ -1,32 +1,16 @@
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
+using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLBiz;
 using GymBase.BLBiz.BaiViet;
+using GymBase.BLDI;
 using GymBase.BLFile;
 using GymBase.BLFile.BLFiles;
-using GymBase.DLAuth.Contract;
 using GymBase.DLAuth.MySql;
-using GymBase.DLBiz.Contract;
 using GymBase.DLBiz.MySql;
-using GymBase.DLFile.Contract;
+using GymBase.DLDI.MySql;
 using GymBase.DLFile.MySql;
-using GymBase.BLAuth.BLTaiKhoan;
-using GymBase.BLDI;
-using GymBase.DLAuth.Contract.DLDangNhapNgoai;
-using GymBase.DLAuth.Contract.DLPhienDangNhap;
-using GymBase.DLAuth.Contract.DLTaiKhoan;
-using GymBase.DLAuth.MySql.DLDangNhapNgoai;
-using GymBase.DLAuth.MySql.DLPhienDangNhap;
-using GymBase.DLAuth.MySql.DLTaiKhoan;
-using GymBase.DLBiz.Contract.DLChiSoCoThe;
-using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
-using GymBase.DLBiz.Contract.DLKetNoiPt;
-using GymBase.DLBiz.MySql.DLChiSoCoThe;
-using GymBase.DLBiz.MySql.DLHoSoNguoiDung;
-using GymBase.DLBiz.MySql.DLKetNoiPt;
-using GymBase.DLDI.Contract.DLDanhMuc;
-using GymBase.DLDI.MySql.DLDanhMuc;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,29 +26,25 @@ builder.Services.AddAppLogging(builder.Configuration);
 // Một AppDbContext cho cả DB.
 builder.Services.AddAppPersistence(builder.Configuration);
 
+// Mỗi nhóm đăng ký hai phần: nghiệp vụ (AddXxxBusiness, ở BL) và repository MySQL (AddXxxData, ở DL.MySql).
+// BL không tham chiếu DL.MySql nên hai phần phải gọi riêng ở host.
+
 // Auth: người dùng, đăng nhập
 builder.Services.AddAuthBusiness();
-builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
-builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
-builder.Services.AddScoped<IDangNhapNgoaiRepository, DangNhapNgoaiRepository>();
+builder.Services.AddAuthData();
 
-// BIZ: mạng xã hội (bài viết, tương tác thích/bình luận)
+// Biz: mạng xã hội (bài viết, tương tác thích/bình luận), hồ sơ, quyền theo hồ sơ và quyền trên dữ liệu học viên
+// (phân quyền: docs/api/phan-quyen.md)
 builder.Services.AddBizBusiness();
-builder.Services.AddScoped<IBaiVietRepository, BaiVietRepository>();
-builder.Services.AddScoped<ITuongTacBaiVietRepository, TuongTacBaiVietRepository>();
+builder.Services.AddBizData();
 
 // File: lưu trữ tệp tin (Local/S3) và push notification
 builder.Services.AddFileBusiness(builder.Configuration);
-builder.Services.AddScoped<ITepTinRepository, TepTinRepository>();
+builder.Services.AddFileData();
+
 // DI (Danh mục): dữ liệu tham chiếu cho dropdown (docs/api/danh-muc.md)
 builder.Services.AddDIBusiness();
-builder.Services.AddScoped<IDanhMucRepository, DanhMucRepository>();
-
-// Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
-builder.Services.AddBizBusiness();
-builder.Services.AddScoped<IHoSoNguoiDungRepository, HoSoNguoiDungRepository>();
-builder.Services.AddScoped<IChiSoCoTheRepository, ChiSoCoTheRepository>();
-builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
+builder.Services.AddDIData();
 
 var app = builder.Build();
 

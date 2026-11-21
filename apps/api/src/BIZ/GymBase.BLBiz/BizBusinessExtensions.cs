@@ -10,7 +10,7 @@ namespace GymBase.BLBiz;
 /// <summary>Đăng ký các dịch vụ nghiệp vụ nhóm BIZ vào DI container.</summary>
 public static class BizBusinessExtensions
 {
-    /// <summary>Đăng ký nghiệp vụ của nhóm Biz. Repository của DL.Biz.MySql đăng ký riêng ở <c>Program.cs</c>.</summary>
+    /// <summary>Đăng ký nghiệp vụ của nhóm Biz. Repository của DL.Biz.MySql đăng ký bằng <c>AddBizData</c>.</summary>
     public static IServiceCollection AddBizBusiness(this IServiceCollection services)
     {
         services.AddScoped<BaiVietService>();
