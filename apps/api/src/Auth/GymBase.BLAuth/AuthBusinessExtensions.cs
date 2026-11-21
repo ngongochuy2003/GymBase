@@ -18,6 +18,8 @@ public static class AuthBusinessExtensions
         services.Configure<PasswordHasherOptions>(options => options.IterationCount = PasswordHashIterations);
         services.AddSingleton<IPasswordHasher<tai_khoan>, PasswordHasher<tai_khoan>>();
         services.AddSingleton<LoginThrottle>();
+        services.AddSingleton<PhienHieuLucCache>();
+        services.AddScoped<IPhienHieuLucProvider, PhienHieuLucService>();
         services.AddScoped<TaiKhoanService>();
         services.AddScoped<XacThucService>();
         services.AddScoped<ITaiKhoanTrangThaiProvider, TaiKhoanTrangThaiService>();

@@ -19,6 +19,24 @@ public static class AuthenticationExtensions
     private const int AuthRequestsPerMinute = 20;
 
     /// <summary>
+    /// Chữ ký và hạn của token đã đúng; còn phải kiểm tra phiên của token chưa bị thu hồi và tài khoản chưa bị khóa,
+    /// nếu không token cũ vẫn dùng được tới khi hết hạn (15 phút) sau đăng xuất hoặc khóa tài khoản.
+    /// </summary>
+    private static async Task ValidateSessionAsync(TokenValidatedContext context)
+    {
+        var principal = context.Principal;
+        var valid = Guid.TryParse(principal?.FindFirst(JwtClaimNames.Subject)?.Value, out var userId)
+            && Guid.TryParse(principal.FindFirst(JwtClaimNames.Session)?.Value, out var sessionId)
+            && await context.HttpContext.RequestServices.GetRequiredService<IPhienHieuLucProvider>()
+                .BLKiemTraConHieuLucAsync(sessionId, userId, context.HttpContext.RequestAborted);
+
+        if (!valid)
+        {
+            context.Fail("Phiên đăng nhập không còn hiệu lực.");
+        }
+    }
+
+    /// <summary>
     /// Kiểm tra JWT, đặt mặc định mọi endpoint phải đăng nhập, đăng ký cấp token và giới hạn số lần gọi.
     /// Endpoint công khai phải ghi rõ <c>[AllowAnonymous]</c>.
     /// </summary>
@@ -50,6 +68,7 @@ public static class AuthenticationExtensions
                 NameClaimType = JwtClaimNames.UserName,
                 RoleClaimType = JwtClaimNames.Role,
             };
+            options.Events = new JwtBearerEvents { OnTokenValidated = ValidateSessionAsync };
         });
 
         // Policy theo hồ sơ cần IQuyenHanProvider (BLBiz đăng ký); chỉ được gọi khi endpoint dùng policy đó.

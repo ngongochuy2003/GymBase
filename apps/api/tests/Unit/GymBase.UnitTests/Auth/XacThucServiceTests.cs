@@ -67,6 +67,7 @@ public class XacThucServiceTests
         AuthTestHelpers.FastHasher,
         _issuer,
         _throttle,
+        new PhienHieuLucCache(),
         currentUser ?? new FakeCurrentUser(),
         _clock,
         new DangNhapValidator(),
@@ -390,7 +391,7 @@ public class XacThucServiceTests
     {
         var stronger = new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
         var service = new XacThucService(
-            new InMemoryTaiKhoanRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle,
+            new InMemoryTaiKhoanRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle, new PhienHieuLucCache(),
             new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator(),
         new DangKyValidator(),
         new DangNhapGoogleValidator(),

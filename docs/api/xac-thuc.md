@@ -10,7 +10,7 @@
 | Cách xác thực | JWT access token + refresh token do `BLAuth` tự cấp | Một host, chỉ phục vụ app của mình. Không dùng Duende vì cần license |
 | Mặc định | Mọi endpoint phải đăng nhập (`FallbackPolicy`), endpoint công khai ghi rõ `[AllowAnonymous]` | Quên gắn attribute thì endpoint vẫn được bảo vệ |
 | Ký token | HS256, khóa ngẫu nhiên ít nhất 256 bit trong user-secrets hoặc biến môi trường | Chỉ một host vừa ký vừa kiểm tra |
-| Access token | Sống 15 phút | Không thu hồi được từng token, nên giữ ngắn |
+| Access token | Sống 15 phút, kèm kiểm tra phiên (`sid`) mỗi request | Token tự nó không thu hồi được, nên `OnTokenValidated` hỏi `IPhienHieuLucProvider` phiên còn hiệu lực không (cache 20 giây) |
 | Refresh token | Xoay vòng mỗi lần dùng, hết hạn sau 30 ngày không dùng, tối đa 90 ngày | RFC 9700 yêu cầu với client như app mobile |
 | Băm mật khẩu | `PasswordHasher` của ASP.NET, 600.000 vòng | Có sẵn, tự nâng cấp hash cũ. Mặc định chỉ 100.000 vòng nên phải đặt lại |
 | Mật khẩu | Tối thiểu **8 ký tự** | Chốt 08/11, xem mục 5 |
@@ -113,8 +113,14 @@ Màn hình cần thông tin người dùng thì đọc từ `user` lúc đăng n
 **Khi kiểm tra token phải:** chỉ chấp nhận đúng HS256; kiểm tra chữ ký, `iss`, `aud`, `exp`, `typ`; tắt
 `MapInboundClaims` để giữ nguyên tên claim; đặt `RoleClaimType = "role"`. Không đọc claim từ token chưa xác minh.
 
-**Giới hạn đã chấp nhận:** access token còn dùng được tối đa 15 phút sau khi đăng xuất, đổi quyền hoặc bị khóa.
-Đổi `vai_tro` cũng chỉ có hiệu lực ở lần refresh kế tiếp. Nếu cần tức thì, kiểm tra `sid` trong DB ở mỗi request.
+**Thu hồi access token:** sau `OnTokenValidated` kiểm tra chữ ký và hạn, `PhienHieuLucService` (BLAuth, qua `IPhienHieuLucProvider` ở Base)
+kiểm tra phiên của `sid` thuộc đúng `sub`, chưa thu hồi và tài khoản còn `dang_hoat_dong`; không thì trả 401. Kết quả đúng được nhớ
+20 giây trong `PhienHieuLucCache` (bộ nhớ, singleton). Đăng xuất, đổi mật khẩu, đặt lại mật khẩu và phát hiện dùng lại refresh token
+xóa cache nên có hiệu lực ngay; admin khóa tài khoản có hiệu lực sau tối đa 20 giây. V1 chỉ có một host; chạy nhiều host thì mỗi
+host có thể trễ tối đa 20 giây với thu hồi xảy ra ở host khác. Mỗi request có xác thực tốn thêm tối đa hai truy vấn theo khóa chính
+khi cache trượt.
+
+**Giới hạn đã chấp nhận:** đổi `vai_tro` chỉ có hiệu lực ở lần refresh kế tiếp (role nằm trong token).
 
 ## 4. Refresh token và phiên
 

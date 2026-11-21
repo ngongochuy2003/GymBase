@@ -139,12 +139,12 @@ public sealed class PhanQuyenTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Locked_account_loses_pt_capability_with_the_same_token()
+    public async Task Locked_account_token_is_rejected_at_once()
     {
         GivenHoSo(TaiKhoanBiKhoa, LoaiNguoiDung.pt, TrangThaiXacMinh.da_xac_minh);
         using var client = Client(TaiKhoanBiKhoa);
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"{Prefix}/pt-xac-minh")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync($"{Prefix}/pt-xac-minh")).StatusCode);
     }
 
     [Fact]

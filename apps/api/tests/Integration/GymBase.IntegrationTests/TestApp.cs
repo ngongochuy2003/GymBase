@@ -17,6 +17,7 @@ using GymBase.DLBiz.Contract.DLChiSoCoThe;
 using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
 using GymBase.DLBiz.Contract.DLKetNoiPt;
 using GymBase.DLDI.Contract.DLDanhMuc;
+using GymBase.Entities.Auth;
 using GymBase.Entities.Biz.Enums;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Authorization;
@@ -82,11 +83,33 @@ namespace GymBase.IntegrationTests
             return app;
         }
 
+        /// <summary>
+        /// Access token chỉ dùng được khi phiên của nó còn hiệu lực và tài khoản còn hoạt động, nên token dựng tay phải có
+        /// phiên và tài khoản trong store. Tài khoản đã có (tạo qua API hoặc dữ liệu mẫu) thì giữ nguyên.
+        /// </summary>
+        public static Guid SeedSession(WebApplication app, Guid userId, string role)
+        {
+            var users = app.Services.GetRequiredService<InMemoryStore<tai_khoan>>();
+            if (users.Find(userId) is null)
+            {
+                users.TryAdd(new tai_khoan { Id = userId, ten_dang_nhap = "test.user", ho_ten = "Test", vai_tro = role });
+            }
+
+            var session = new phien_dang_nhap
+            {
+                tai_khoan_id = userId,
+                ngay_het_han = DateTime.UtcNow.AddDays(1),
+                ngay_het_han_toi_da = DateTime.UtcNow.AddDays(1),
+            };
+            app.Services.GetRequiredService<InMemoryStore<phien_dang_nhap>>().TryAdd(session);
+            return session.Id;
+        }
+
         /// <summary>Client mang access token thật của đúng tài khoản <paramref name="userId"/>, để thử quyền theo dữ liệu trong DB.</summary>
         public static HttpClient ClientFor(WebApplication app, Guid userId, string role)
         {
             var token = app.Services.GetRequiredService<ITokenIssuer>()
-                .CreateAccessToken(new AccessTokenRequest(userId, "test.user", role, Guid.CreateVersion7()));
+                .CreateAccessToken(new AccessTokenRequest(userId, "test.user", role, SeedSession(app, userId, role)));
             var client = app.GetTestClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
             return client;
@@ -95,8 +118,9 @@ namespace GymBase.IntegrationTests
         /// <summary>Client mang access token thật do app cấp, với vai trò cho trước.</summary>
         public static HttpClient ClientWithRole(WebApplication app, string role)
         {
+            var userId = Guid.CreateVersion7();
             var token = app.Services.GetRequiredService<ITokenIssuer>()
-                .CreateAccessToken(new AccessTokenRequest(Guid.CreateVersion7(), "test.user", role, Guid.CreateVersion7()));
+                .CreateAccessToken(new AccessTokenRequest(userId, "test.user", role, SeedSession(app, userId, role)));
             var client = app.GetTestClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
             return client;

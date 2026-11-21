@@ -25,6 +25,7 @@ public sealed class XacThucService(
     IPasswordHasher<tai_khoan> passwordHasher,
     ITokenIssuer tokenIssuer,
     LoginThrottle throttle,
+    PhienHieuLucCache sessionCache,
     ICurrentUser currentUser,
     TimeProvider timeProvider,
     IValidator<DangNhapDto> loginValidator,
@@ -229,6 +230,7 @@ public sealed class XacThucService(
         if (isPreviousToken && now - session.ngay_xoay_vong > RotationGrace)
         {
             await sessions.DLRevokeAsync(session.Id, now, cancellationToken);
+            sessionCache.Invalidate(session.Id);
             throw new UnauthorizedException();
         }
 
@@ -236,6 +238,7 @@ public sealed class XacThucService(
         if (user is not { dang_hoat_dong: true })
         {
             await sessions.DLRevokeAsync(session.Id, now, cancellationToken);
+            sessionCache.Invalidate(session.Id);
             throw new UnauthorizedException();
         }
 
@@ -265,6 +268,7 @@ public sealed class XacThucService(
         if (currentUser.SessionId is { } sessionId)
         {
             await sessions.DLRevokeAsync(sessionId, UtcNow, cancellationToken);
+            sessionCache.Invalidate(sessionId);
         }
     }
 
@@ -304,6 +308,7 @@ public sealed class XacThucService(
 
         await SetPasswordAsync(user, dto.mat_khau_moi, cancellationToken);
         await sessions.DLRevokeAllOfUserAsync(user.Id, currentUser.SessionId, UtcNow, cancellationToken);
+        sessionCache.InvalidateUser(user.Id);
     }
 
     /// <summary>Admin đặt lại mật khẩu cho người dùng và thu hồi mọi phiên của người đó.</summary>
@@ -317,6 +322,7 @@ public sealed class XacThucService(
 
         await SetPasswordAsync(user, dto.mat_khau_moi, cancellationToken);
         await sessions.DLRevokeAllOfUserAsync(user.Id, null, UtcNow, cancellationToken);
+        sessionCache.InvalidateUser(user.Id);
     }
 
     private async Task SetPasswordAsync(tai_khoan user, string password, CancellationToken cancellationToken)
