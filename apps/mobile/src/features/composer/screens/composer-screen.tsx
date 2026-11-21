@@ -47,7 +47,6 @@ export function ComposerScreen() {
 
   const avatarUri = useMemo(() => {
     if (
-      user?.ten_dang_nhap === 'minhle' ||
       user?.email?.toLowerCase().includes('tuanminh30042005') ||
       user?.id === '01a1d5ef-6706-74df-bfc8-0f150d22cad2'
     ) {

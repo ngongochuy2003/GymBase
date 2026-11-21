@@ -17,7 +17,6 @@ import type { AuthResult, AuthUser } from '@/core/auth/types';
 
 const user: AuthUser = {
   id: '0193f0a0-0000-7000-8000-000000000009',
-  ten_dang_nhap: null,
   ho_ten: 'Minh Anh',
   email: 'minh.anh@gymbase.local',
   so_dien_thoai: '0912345678',

@@ -18,7 +18,6 @@ import type { AuthResult, AuthUser } from '@/core/auth/types';
 
 const user: AuthUser = {
   id: '0193f0a0-0000-7000-8000-000000000020',
-  ten_dang_nhap: null,
   ho_ten: 'Người Google',
   email: 'nguoi.google@gmail.test',
   so_dien_thoai: null,

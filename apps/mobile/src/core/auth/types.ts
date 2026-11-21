@@ -1,7 +1,6 @@
 /** Người dùng do API trả ra (`TaiKhoanDto`); không bao giờ chứa mật khẩu. */
 export type AuthUser = {
   id: string;
-  ten_dang_nhap: string | null;
   ho_ten: string;
   email: string | null;
   so_dien_thoai: string | null;
