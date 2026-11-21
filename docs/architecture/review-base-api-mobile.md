@@ -1,6 +1,6 @@
 # Review base API và Mobile
 
-> **Ngày viết:** 21/11/2026 · **Cập nhật:** 21/11/2026 (đã sửa S9, S10, S12, S13, S15, B17, B18, B19, M4, M10, M14, N16, N17; sửa một phần M5) · **Trạng thái:** đã triển khai (review code đang chạy; S9, S10, S12, S13, S15, B17, B18, B19 đã sửa, M4, M10, M14, N16, N17 đã sửa, M5 sửa một phần; các mục còn lại chưa sửa) · **Đối chiếu code:** 481539c
+> **Ngày viết:** 21/11/2026 · **Cập nhật:** 21/11/2026 (đã sửa D1–D5, D7, D10, D11, S9, S10, S12, S13, S15, B17, B18, B19, M4, M10, M14, N16, N17; sửa một phần M5) · **Trạng thái:** đã triển khai (review code đang chạy; S9, S10, S12, S13, S15, B17, B18, B19 đã sửa, M4, M10, M14, N16, N17 đã sửa, M5 sửa một phần; các mục còn lại chưa sửa) · **Đối chiếu code:** 481539c
 
 Tài liệu ghi lại kết quả review phần base của `apps/api` và `apps/mobile` trên nhánh `quantv_code-review`, sau khi merge `origin/develop` (6 commit mới của đồng nghiệp, gồm upload video, lưu bài, bình luận).
 Mục tiêu: chỉ ra phần nào ổn, phần nào chưa ổn, phần nào lạ so với thông thường, về cách đặt file, tên file, logic bên trong và cách các file gọi nhau.
@@ -156,16 +156,16 @@ Các mục này không gây lỗi ngay nhưng làm code khó đọc và khó gi�
 
 | Mã | Vị trí | Nội dung | Đề xuất |
 | --- | --- | --- | --- |
-| D1 | [tai_khoan.cs:7,16](../../apps/api/src/Data/GymBase.Entities/Auth/tai_khoan.cs) | Ghi "Đăng nhập được bằng tên đăng nhập kèm mật khẩu" và "Email để hiển thị… Không dùng làm định danh", ngược với ADR-0001 | Sửa theo ADR-0001 |
-| D2 | [PagingRequest.cs:5](../../apps/api/src/Base/GymBase.Base/Paging/PagingRequest.cs) | Ghi "Đặt ở DL.Contract", thực tế ở `GymBase.Base` | Sửa comment |
-| D3 | [EntityAuditExtensions.cs:5](../../apps/api/src/Base/GymBase.Base/Entities/EntityAuditExtensions.cs) | Ghi "Tầng DL gọi các hàm này", thực tế `BaseService` (BL) gọi | Sửa comment |
-| D4 | [ITaiKhoanRepository.cs:12-27](../../apps/api/src/Auth/GymBase.DLAuth.Contract/DLTaiKhoan/ITaiKhoanRepository.cs) | Doc nói "còn hiệu lực (chưa xóa)" dù không có xóa mềm | Sửa comment |
-| D5 | [ITaiKhoanRepository.cs:27](../../apps/api/src/Auth/GymBase.DLAuth.Contract/DLTaiKhoan/ITaiKhoanRepository.cs), [TaiKhoanRepository.cs](../../apps/api/src/Auth/GymBase.DLAuth.MySql/DLTaiKhoan/TaiKhoanRepository.cs) | `DLFindByTenDangNhapAsync` không có nơi gọi | Xóa cùng B18 |
+| D1 | [tai_khoan.cs:7,16](../../apps/api/src/Data/GymBase.Entities/Auth/tai_khoan.cs) | Ghi "Đăng nhập được bằng tên đăng nhập kèm mật khẩu" và "Email để hiển thị… Không dùng làm định danh", ngược với ADR-0001 | Sửa theo ADR-0001 <br>**Đã sửa (21/11/2026).** |
+| D2 | [PagingRequest.cs:5](../../apps/api/src/Base/GymBase.Base/Paging/PagingRequest.cs) | Ghi "Đặt ở DL.Contract", thực tế ở `GymBase.Base` | Sửa comment <br>**Đã sửa (21/11/2026).** |
+| D3 | [EntityAuditExtensions.cs:5](../../apps/api/src/Base/GymBase.Base/Entities/EntityAuditExtensions.cs) | Ghi "Tầng DL gọi các hàm này", thực tế `BaseService` (BL) gọi | Sửa comment <br>**Đã sửa (21/11/2026).** |
+| D4 | [ITaiKhoanRepository.cs:12-27](../../apps/api/src/Auth/GymBase.DLAuth.Contract/DLTaiKhoan/ITaiKhoanRepository.cs) | Doc nói "còn hiệu lực (chưa xóa)" dù không có xóa mềm | Sửa comment <br>**Đã sửa (21/11/2026).** |
+| D5 | [ITaiKhoanRepository.cs:27](../../apps/api/src/Auth/GymBase.DLAuth.Contract/DLTaiKhoan/ITaiKhoanRepository.cs), [TaiKhoanRepository.cs](../../apps/api/src/Auth/GymBase.DLAuth.MySql/DLTaiKhoan/TaiKhoanRepository.cs) | `DLFindByTenDangNhapAsync` không có nơi gọi | Xóa cùng B18 <br>**Đã xóa, cả bản test double (21/11/2026).** |
 | D6 | [BusinessExceptions.cs](../../apps/api/src/Base/GymBase.Base/Exceptions/BusinessExceptions.cs), [ErrorCodes.cs](../../apps/api/src/Base/GymBase.Base/Exceptions/ErrorCodes.cs) | `ConcurrencyException` và `ConcurrencyConflict` không nơi nào dùng (không có cột phiên bản/`RowVersion`) | Giữ nếu có kế hoạch chống ghi đè đồng thời; nếu không, xóa |
 | D7 | [QuyenHanService.cs](../../apps/api/src/BIZ/GymBase.BLBiz/BLQuyenHan/QuyenHanService.cs), [TruyCapService.cs](../../apps/api/src/BIZ/GymBase.BLBiz/BLTruyCap/TruyCapService.cs) | `TruyCapService` chưa có nơi gọi nghiệp vụ (chuẩn bị cho tính năng PT quản lý học viên) | Ghi `// TODO(PT)` tại chỗ để khỏi bị coi là mã chết |
 | D8 | [Controllers/NotificationsController.cs](../../apps/api/src/Host/GymBase.API/Controllers/NotificationsController.cs) | Hai controller thông báo mới chỉ là khung thử nghiệm | Ghi `// TODO(PUSH)`, hạn chế quyền (S2) |
 | D9 | [mobile-client.ts:7](../../apps/mobile/src/core/api/mobile-client.ts) | `DEFAULT_LOCAL_API_URL` không bao giờ được dùng (xem M4) | Xóa cùng M4 <br>**Đã xóa cùng M4 (21/11/2026).** |
-| D10 | [docs/api/viec-con-lai-base.md](viec-con-lai-base.md) | Mục 8 ghi "DTO không dùng DataAnnotations" nhưng `HoSoLuuDto` dùng `[Required]`; mục 12 còn ghi "Còn lại: nối app mobile vào endpoint thật" dù mobile đã nối | Cập nhật khi sửa B19 và rà lại mục 12 |
+| D10 | [docs/api/viec-con-lai-base.md](viec-con-lai-base.md) | Mục 8 ghi "DTO không dùng DataAnnotations" nhưng `HoSoLuuDto` dùng `[Required]`; mục 12 còn ghi "Còn lại: nối app mobile vào endpoint thật" dù mobile đã nối | Cập nhật khi sửa B19 và rà lại mục 12 <br>**Đã sửa mục 12; phần DataAnnotations đã đúng sau B19 (21/11/2026).** |
 | D11 | `apps/mobile/package-lock.json` (chưa track) | Dự án dùng pnpm; file này nằm ngoài commit theo quy ước nhưng vẫn xuất hiện trong thư mục | Xóa file hoặc thêm vào `.gitignore` |
 | D12 | [optimized-image.tsx](../../apps/mobile/src/shared/file/optimized-image.tsx), [variant-selector.ts](../../apps/mobile/src/shared/file/variant-selector.ts) (`selectImageVariant`) | Component `OptimizedImage` không có chỗ dùng trong `src/` (chỉ có test của `selectImageVariant`); backend cũng không lưu biến thể để chọn (xem B14) | Xóa cùng B14 hoặc dùng thật |
 
