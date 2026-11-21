@@ -3,7 +3,7 @@ import { createAuthTransport } from '../auth/auth-transport';
 import type { AuthResult, AuthUser } from '../auth/types';
 import { tokenStorage } from '../storage/token-storage';
 import { createApiClient } from './client';
-import { resolveMobApiBaseUrl } from './mobile-client';
+import { resolveMobApiBaseUrl } from './mob-base-url';
 
 const baseURL = resolveMobApiBaseUrl();
 
