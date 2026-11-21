@@ -37,7 +37,7 @@ export interface PostListProps {
 interface PostListItemProps {
   post: FeedPostData;
   actionTemplates: PostActionTemplate[];
-  activeOverride?: boolean;
+  overrides: Record<string, boolean>;
   onToggleAction: (key: string, nextActive: boolean) => void;
   onActionPress?(postId: string, actionId: string): void;
   renderAction?: PostCardProps['renderAction'];
@@ -48,7 +48,7 @@ interface PostListItemProps {
 const PostListItem = memo(function PostListItem({
   post,
   actionTemplates,
-  activeOverride,
+  overrides,
   onToggleAction,
   onActionPress,
   renderAction,
@@ -58,6 +58,7 @@ const PostListItem = memo(function PostListItem({
   const actions: PostCardAction[] = actionTemplates.map((template) => {
     const key = `${post.id}:${template.id}`;
     const initial = post.initialActive?.[template.id] ?? false;
+    const activeOverride = overrides[key];
     const active = template.toggle
       ? activeOverride !== undefined
         ? activeOverride
@@ -144,13 +145,12 @@ export function PostList({
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<FeedPostData>) => {
-      const likeKey = `${item.id}:like`;
       return (
         <View style={isFaded && styles.fadedItem}>
           <PostListItem
             post={item}
             actionTemplates={actionTemplates}
-            activeOverride={overrides[likeKey]}
+            overrides={overrides}
             onToggleAction={handleToggleAction}
             onActionPress={onActionPress}
             renderAction={renderAction}

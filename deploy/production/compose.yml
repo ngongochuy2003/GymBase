@@ -1,6 +1,6 @@
 # MÔI TRƯỜNG PRODUCTION (một VPS): nginx (HTTPS) -> API -> MySQL. Tách hẳn khỏi ../development (project, `.env`, volume riêng).
-# Chạy trong thư mục này (xem README.md):
-#   docker compose --env-file .env up -d
+# API và migrate build từ mã nguồn ngay trên máy chủ (git pull rồi build). Chạy trong thư mục này (xem README.md):
+#   docker compose --env-file .env up -d --build
 # Chỉ nginx mở cổng ra ngoài; API và MySQL chỉ thấy nhau trong mạng nội bộ Docker.
 name: gymbase-prod
 
@@ -63,7 +63,10 @@ services:
       start_period: 30s
 
   api:
-    image: ${IMAGE_PREFIX:?đặt IMAGE_PREFIX trong .env}-api:${IMAGE_TAG:?đặt IMAGE_TAG trong .env}
+    build:
+      context: ../../apps/api
+      dockerfile: ../../infrastructure/docker/Dockerfile.api
+      target: runtime
     restart: unless-stopped
     logging: *logging
     environment: &api-env
@@ -104,7 +107,10 @@ services:
   # Áp EF migration: chạy tay, không tự chạy khi `up`.
   #   docker compose --env-file .env --profile tools run --rm migrate
   migrate:
-    image: ${IMAGE_PREFIX}-migrator:${IMAGE_TAG}
+    build:
+      context: ../../apps/api
+      dockerfile: ../../infrastructure/docker/Dockerfile.api
+      target: migrator
     profiles: ["tools"]
     logging: *logging
     environment: *api-env

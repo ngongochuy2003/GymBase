@@ -45,6 +45,22 @@ export interface KetQuaThichBaiVietDto {
   so_luot_thich: number;
 }
 
+export interface BinhLuanDto {
+  id: string;
+  bai_viet_id: string;
+  tai_khoan_id: string;
+  ten_nguoi_dung: string;
+  anh_dai_dien_url: string | null;
+  noi_dung: string;
+  tuong_tac_cha_id: string | null;
+  ngay_tao: string;
+}
+
+export interface BinhLuanCreateDto {
+  noi_dung: string;
+  tuong_tac_cha_id?: string | null;
+}
+
 
 
 export function formatRelativeTimeVi(isoDate: string | null | undefined, now = new Date()): string {
@@ -107,6 +123,8 @@ export interface FeedRepository {
   getPaginatedFeed(tab: string, page?: number, pageSize?: number): Promise<FeedPageResult>;
   getPostById(postId: string): Promise<FeedPostData | null>;
   toggleLike(postId: string): Promise<KetQuaThichBaiVietDto>;
+  getComments(postId: string): Promise<BinhLuanDto[]>;
+  addComment(postId: string, dto: BinhLuanCreateDto): Promise<BinhLuanDto>;
 }
 
 export function createFeedRepository(
@@ -162,6 +180,20 @@ export function createFeedRepository(
 
     async toggleLike(postId: string): Promise<KetQuaThichBaiVietDto> {
       const response = await client.post<KetQuaThichBaiVietDto>(`/baiviet/${postId}/thich`);
+      return response.data;
+    },
+
+    async getComments(postId: string): Promise<BinhLuanDto[]> {
+      try {
+        const response = await client.get<BinhLuanDto[]>(`/baiviet/${postId}/binh-luan`);
+        return response.data ?? [];
+      } catch {
+        return [];
+      }
+    },
+
+    async addComment(postId: string, dto: BinhLuanCreateDto): Promise<BinhLuanDto> {
+      const response = await client.post<BinhLuanDto>(`/baiviet/${postId}/binh-luan`, dto);
       return response.data;
     },
   };

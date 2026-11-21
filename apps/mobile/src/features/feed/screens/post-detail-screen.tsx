@@ -15,7 +15,9 @@ import { SubHeader } from '@/shared/ui-kit';
 import { feedRepository, type FeedPageResult } from '../api/feed-api';
 import { postActionTemplates } from '../config/feed-config';
 import { FEED_QUERY_KEY, useToggleLikeMutation } from '../hooks/use-feed-posts';
+import { useSavedPosts } from '../hooks/use-saved-posts';
 import type { FeedPostData } from '../types';
+import { CommentBottomSheet } from '../components/comment-bottom-sheet';
 import { PostCard, type PostCardAction } from '../components/post-card';
 import { PostImageViewer } from '../components/post-image-viewer';
 
@@ -88,6 +90,10 @@ export function PostDetailScreen({
   // State quản lý tương tác like
   const [isLikedOverride, setIsLikedOverride] = useState<boolean | undefined>(undefined);
   const { mutate: toggleLike } = useToggleLikeMutation();
+  const { isSaved, toggleSave } = useSavedPosts();
+
+  // State quản lý bình luận
+  const [isCommentVisible, setIsCommentVisible] = useState(false);
 
   // State quản lý trình xem chi tiết ảnh
   const [isViewerVisible, setIsViewerVisible] = useState(false);
@@ -154,10 +160,14 @@ export function PostDetailScreen({
     return postActionTemplates.map((template) => {
       const initial = post.initialActive?.[template.id] ?? false;
       const isLikeAction = template.id === 'like';
+      const isSaveAction = template.id === 'save';
+
       const active = isLikeAction
         ? isLikedOverride !== undefined
           ? isLikedOverride
           : initial
+        : isSaveAction
+        ? isSaved(post.id)
         : initial;
 
       const base = post.counts?.[template.id];
@@ -176,11 +186,15 @@ export function PostDetailScreen({
         onPress: () => {
           if (isLikeAction) {
             handleToggleLike();
+          } else if (isSaveAction) {
+            void toggleSave(post.id);
+          } else if (template.id === 'comment') {
+            setIsCommentVisible(true);
           }
         },
       };
     });
-  }, [handleToggleLike, isLikedOverride, post]);
+  }, [handleToggleLike, isLikedOverride, isSaved, post, toggleSave]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right', 'bottom']}>
@@ -210,7 +224,7 @@ export function PostDetailScreen({
               imageUris={images}
               actions={actions}
               truncateContent={false} // Hiển thị toàn bộ nội dung, không cắt 100 ký tự
-              imageLayout="stack" // Xếp dọc lần lượt từng ảnh từ trên xuống
+              imageLayout="stack" // Xếp dọc lần lượt từng ảnh từ trên xuống trong chi tiết bài viết
               onPressImage={handleImagePress}
             />
           </ScrollView>
@@ -231,6 +245,13 @@ export function PostDetailScreen({
           images={images}
           initialIndex={selectedImageIndex}
           onClose={() => setIsViewerVisible(false)}
+        />
+
+        {/* Modal bình luận dạng BottomSheet */}
+        <CommentBottomSheet
+          visible={isCommentVisible}
+          post={post}
+          onClose={() => setIsCommentVisible(false)}
         />
       </View>
     </SafeAreaView>

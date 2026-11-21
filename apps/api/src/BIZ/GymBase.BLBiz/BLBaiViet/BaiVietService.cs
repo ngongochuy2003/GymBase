@@ -394,12 +394,18 @@ public sealed class BaiVietService
         }
 
         if (key.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-            || key.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            || key.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || key.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
         {
             return key;
         }
 
-        return $"/api/v1/mob/files/{file.Id}/content";
+        var isVideo = file.loai_mime.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
+                      || file.ten_tep_goc?.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) == true;
+
+        return isVideo
+            ? $"/api/v1/mob/files/{file.Id}/content.mp4"
+            : $"/api/v1/mob/files/{file.Id}/content";
     }
 
     private static CheDoHienThi ParseVisibility(string raw) =>

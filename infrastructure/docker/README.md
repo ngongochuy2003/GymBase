@@ -9,8 +9,8 @@
 | `publish` | | Bản publish, dùng chung cho hai target trên |
 
 Dockerfile này dùng chung cho cả hai môi trường: dev build từ mã nguồn ([deploy/development](../../deploy/development/README.md)),
-production kéo image do CI build và đẩy lên GHCR (`.github/workflows/api-image.yml`,
-[deploy/production](../../deploy/production/README.md)). Build thử ở local:
+production cũng build từ mã nguồn ngay trên máy chủ
+([deploy/production](../../deploy/production/README.md)). Build thử ở local:
 
 ```bash
 docker build -f infrastructure/docker/Dockerfile.api --target runtime -t gymbase-api apps/api

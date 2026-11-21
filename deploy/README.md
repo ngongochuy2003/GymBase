@@ -4,7 +4,7 @@ Hai môi trường tách bạch, mỗi môi trường có `compose.yml`, `.env.e
 không dùng chung):
 
 - `development/`: MySQL + API build từ mã nguồn trên máy dev, migration tự chạy, HTTP.
-- `production/`: một VPS với nginx (HTTPS), API kéo từ GHCR, MySQL, migration chạy tay, sao lưu và rollback.
+- `production/`: một VPS với nginx (HTTPS), API build từ mã nguồn trên VPS, MySQL, migration chạy tay, sao lưu và rollback.
 
 Chưa có `staging/`: chỉ tạo khi nhóm có môi trường thật và người quản lý.
 

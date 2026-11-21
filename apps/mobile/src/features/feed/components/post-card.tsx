@@ -2,14 +2,18 @@ import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 
 import {
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
   type ImageLoadEvent,
 } from 'react-native';
 import { Icon } from '@/shared/icons';
+import { isVideoUrl } from '@/shared/file';
 import { theme } from '@/shared/theme/tokens';
 import { RemoteImage, Surface, resolveRemoteImageUri } from '@/shared/ui-kit';
+import { PostVideoPlayer } from './post-video-player';
 
 export const MIN_POST_ASPECT_RATIO = 4 / 5; // Tối đa độ dọc (0.8) để ảnh không choán hết màn hình
 export const MAX_POST_ASPECT_RATIO = 16 / 9; // Tối đa độ ngang (1.777) để ảnh không quá dẹt
@@ -94,12 +98,108 @@ export function PostImage({ uri }: PostImageProps) {
   );
 }
 
+export interface PostMediaCarouselProps {
+  images: string[];
+  onImagePress?(index: number): void;
+}
+
+/**
+ * Hiển thị ảnh bài viết dạng Carousel cuộn ngang theo thiết kế mới:
+ * - 1 ảnh: Chiếm trọn khung bài viết với tỷ lệ dọc 4:5 và bo góc tròn mềm mại.
+ * - Từ 2 ảnh trở lên: Cho phép người dùng vuốt ngang lướt xem các ảnh tiếp theo,
+ *   ảnh kế tiếp nhô sang một phần để trực quan nhận biết được.
+ */
+export function PostMediaCarousel({ images, onImagePress }: PostMediaCarouselProps) {
+  const { width: windowWidth } = useWindowDimensions();
+  if (!images || images.length === 0) return null;
+
+  // 1 media: Chiếm 100% chiều ngang cột nội dung
+  if (images.length === 1) {
+    const singleUri = images[0]!;
+    if (isVideoUrl(singleUri)) {
+      return (
+        <View testID="post-video-container-0" style={styles.singleCarouselWrapper}>
+          <PostVideoPlayer
+            uri={singleUri}
+            onPress={() => onImagePress?.(0)}
+            accessibilityLabel="Video bài viết"
+          />
+        </View>
+      );
+    }
+    return (
+      <Pressable
+        testID="post-image-pressable-0"
+        accessibilityRole="button"
+        accessibilityLabel="Xem ảnh bài viết"
+        onPress={() => onImagePress?.(0)}
+        disabled={!onImagePress}
+        style={styles.singleCarouselWrapper}
+      >
+        <PostImage uri={singleUri} />
+      </Pressable>
+    );
+  }
+
+  // Từ 2 media trở lên: Vuốt ngang (horizontal ScrollView)
+  // Mỗi media rộng khoảng 76% chiều rộng cột để media sau lấp ló bên phải
+  const safeWidth = windowWidth > 0 ? windowWidth : 375;
+  const itemWidth = Math.max(210, Math.min(290, Math.round((safeWidth - 72) * 0.76)));
+
+  return (
+    <ScrollView
+      testID="post-media-carousel"
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      nestedScrollEnabled
+      contentContainerStyle={styles.carouselScrollContent}
+    >
+      {images.map((uri, index) => {
+        const isVideo = isVideoUrl(uri);
+        if (isVideo) {
+          return (
+            <View
+              key={`${uri}-${index}`}
+              testID={`post-video-container-${index}`}
+              style={[styles.carouselItemWrapper, { width: itemWidth }]}
+            >
+              <PostVideoPlayer
+                uri={uri}
+                onPress={() => onImagePress?.(index)}
+                accessibilityLabel={`Video bài viết ${index + 1}`}
+              />
+            </View>
+          );
+        }
+        return (
+          <Pressable
+            key={`${uri}-${index}`}
+            testID={`post-image-pressable-${index}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Xem ảnh bài viết ${index + 1}`}
+            onPress={() => onImagePress?.(index)}
+            disabled={!onImagePress}
+            style={[styles.carouselItemWrapper, { width: itemWidth }]}
+          >
+            <RemoteImage
+              uri={uri}
+              accessibilityLabel={`Ảnh bài viết ${index + 1}`}
+              style={styles.carouselImage}
+              resizeMode="cover"
+            />
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
 export interface PostMediaGridProps {
   images: string[];
   onImagePress?(index: number): void;
 }
 
-/** Hiển thị lưới ảnh/video bài viết: 1 ảnh, 2 ảnh chia đôi dọc, 3 ảnh, từ 4 ảnh chia lưới 2x2 (+n). */
+/** Hiển thị lưới ảnh/video bài viết (chế độ grid). */
 export function PostMediaGrid({ images, onImagePress }: PostMediaGridProps) {
   if (!images || images.length === 0) return null;
 
@@ -141,7 +241,7 @@ export function PostMediaGrid({ images, onImagePress }: PostMediaGridProps) {
     );
   }
 
-  // 3 ảnh: ảnh đầu to hơn 2 ảnh sau (ảnh 1 chiếm nửa trái, nửa phải chia 2 ảnh xếp dọc)
+  // 3 ảnh: ảnh đầu to hơn 2 ảnh sau
   if (images.length === 3) {
     return (
       <View testID="post-media-grid-3" style={styles.grid3Container}>
@@ -175,7 +275,7 @@ export function PostMediaGrid({ images, onImagePress }: PostMediaGridProps) {
     );
   }
 
-  // Từ 4 ảnh trở lên: chia khung làm 4 phần (lưới 2x2: top-left, top-right, bottom-left, bottom-right)
+  // Từ 4 ảnh trở lên: chia khung làm 4 phần (lưới 2x2)
   const remainingCount = images.length - 4;
   return (
     <View testID="post-media-grid-4" style={styles.grid4Container}>
@@ -253,8 +353,11 @@ export interface PostCardProps {
   onPressContent?(): void;
   /** Bấm vào ảnh bài viết */
   onPressImage?(index: number): void;
-  /** Bố cục ảnh: 'grid' (lưới chia ô như feed) hoặc 'stack' (xếp dọc từ trên xuống như detail). Mặc định 'grid'. */
-  imageLayout?: 'grid' | 'stack';
+  /** Bố cục ảnh: 'carousel' (vuốt ngang theo mockup), 'grid' (lưới chia ô), 'stack' (xếp dọc). Mặc định 'carousel'. */
+  imageLayout?: 'carousel' | 'grid' | 'stack';
+  /** Có hiển thị badge dấu cộng trên avatar không (mặc định: true). */
+  showAvatarBadge?: boolean;
+  onAvatarBadgePress?(): void;
 }
 
 function formatCount(value: number): string {
@@ -262,10 +365,19 @@ function formatCount(value: number): string {
 }
 
 function DefaultAction({ action }: { action: PostCardAction }) {
+  const isLike = action.id === 'like';
+  const isSave = action.id === 'save';
   const name = action.active && action.activeIcon ? action.activeIcon : action.icon;
-  const color = action.active && action.id === 'like' ? theme.colors.like : theme.colors.text;
+  const color = action.active
+    ? isLike
+      ? theme.colors.like
+      : isSave
+      ? theme.colors.primary
+      : theme.colors.text
+    : theme.colors.text;
   return (
     <Pressable
+      testID={`post-action-${action.id}`}
       accessibilityRole="button"
       accessibilityLabel={action.label ?? action.id}
       accessibilityState={{ selected: action.active }}
@@ -273,10 +385,16 @@ function DefaultAction({ action }: { action: PostCardAction }) {
       hitSlop={8}
       style={styles.action}
     >
-      {/* Giảm kích thước action đi 2px theo yêu cầu (từ 26px xuống 24px) */}
-      <Icon name={name} size={theme.iconSize.lg - 4} color={color} />
+      <Icon name={name} size={theme.iconSize.sm + 2} color={color} />
       {action.count !== undefined ? (
-        <Text style={styles.count}>{formatCount(action.count)}</Text>
+        <Text
+          style={[
+            styles.count,
+            action.active && isLike ? { color: theme.colors.like } : undefined,
+          ]}
+        >
+          {formatCount(action.count)}
+        </Text>
       ) : null}
     </Pressable>
   );
@@ -295,7 +413,9 @@ export const PostCard = memo(function PostCard({
   maxContentLength = 100,
   onPressContent,
   onPressImage,
-  imageLayout = 'grid',
+  imageLayout = 'carousel',
+  showAvatarBadge = true,
+  onAvatarBadgePress,
 }: PostCardProps) {
   const images = useMemo(() => {
     if (imageUris && imageUris.length > 0) {
@@ -318,73 +438,129 @@ export const PostCard = memo(function PostCard({
     ? content.slice(0, maxContentLength).trimEnd()
     : content;
 
+  const handleMediaPress = useCallback(
+    (index: number) => {
+      if (onPressImage) {
+        onPressImage(index);
+      } else if (onPressContent) {
+        onPressContent();
+      }
+    },
+    [onPressContent, onPressImage],
+  );
+
   return (
     <Surface style={styles.card}>
-      {/* 1. Header (Avatar, Tên, Thời gian, Nút tùy chọn): căn padding riêng 4-8px */}
-      <View style={styles.head}>
-        <RemoteImage uri={author.avatarUri} circle style={styles.avatar} />
-        <View style={styles.meta}>
-          <Text style={styles.name}>{author.name}</Text>
-          <Text style={styles.time}>{timeLabel}</Text>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Tùy chọn"
-          onPress={onMorePress}
-          hitSlop={8}
-        >
-          <Icon name="more" size={theme.iconSize.md} />
-        </Pressable>
-      </View>
-
-      {/* 2. Nội dung Text bài viết: căn padding riêng 4-8px, rút gọn >100 ký tự và hiện ...đọc thêm làm mờ */}
-      {content ? (
-        <Pressable
-          testID="post-content-pressable"
-          accessibilityRole="button"
-          accessibilityLabel="Nội dung bài viết"
-          onPress={onPressContent}
-          disabled={!onPressContent}
-          style={styles.contentWrapper}
-        >
-          <Text style={styles.content}>
-            {displayContent}
-            {shouldTruncate ? (
-              <Text testID="post-read-more" style={styles.readMoreText}>
-                ...đọc thêm
-              </Text>
-            ) : null}
-          </Text>
-        </Pressable>
-      ) : null}
-
-      {/* 3. Ảnh bài viết: dạng grid (trang chủ) hoặc stack xếp dọc từ trên xuống (chi tiết) */}
-      {images.length > 0 ? (
-        imageLayout === 'stack' ? (
-          <View testID="post-media-stack" style={styles.mediaStack}>
-            {images.map((uri, index) => (
+      <View style={styles.cardRow}>
+        {/* Cột trái: Avatar tròn + Badge dấu cộng + */}
+        <View style={styles.avatarColumn}>
+          <View style={styles.avatarWrapper}>
+            <RemoteImage uri={author.avatarUri} circle style={styles.avatar} />
+            {showAvatarBadge ? (
               <Pressable
-                key={`${uri}-${index}`}
-                testID={`post-stack-image-${index}`}
+                testID="avatar-plus-badge"
                 accessibilityRole="button"
-                accessibilityLabel={`Xem ảnh ${index + 1}`}
-                onPress={() => onPressImage?.(index)}
-                disabled={!onPressImage}
-                style={styles.stackImageWrapper}
+                accessibilityLabel="Theo dõi tác giả"
+                onPress={onAvatarBadgePress}
+                hitSlop={4}
+                style={styles.avatarBadge}
               >
-                <PostImage uri={uri} />
+                <Icon name="plus" size={9} color="#FFFFFF" />
               </Pressable>
-            ))}
+            ) : null}
           </View>
-        ) : (
-          <PostMediaGrid images={images} onImagePress={onPressImage} />
-        )
-      ) : null}
+        </View>
 
-      {/* 4. Hàng nút Action (tim, comment, share, lưu): căn padding riêng 4-8px */}
-      <View style={styles.actions}>
-        <View style={styles.group}>{actions.filter((a) => a.align !== 'end').map(draw)}</View>
-        <View style={styles.group}>{actions.filter((a) => a.align === 'end').map(draw)}</View>
+        {/* Cột phải: Toàn bộ nội dung bài viết theo thiết kế */}
+        <View style={styles.contentColumn}>
+          {/* 1. Header: Tên tác giả + Thời gian đăng + Nút tùy chọn (...) */}
+          <View style={styles.authorRow}>
+            <View style={styles.authorMeta}>
+              <Text style={styles.name}>{author.name}</Text>
+              <Text style={styles.time}>{timeLabel}</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Tùy chọn"
+              onPress={onMorePress}
+              hitSlop={8}
+              style={styles.moreButton}
+            >
+              <Icon name="more" size={theme.iconSize.sm + 2} color={theme.colors.muted} />
+            </Pressable>
+          </View>
+
+          {/* 2. Nội dung Text: Nhấn vào văn bản chuyển sang xem chi tiết */}
+          {content ? (
+            <Pressable
+              testID="post-content-pressable"
+              accessibilityRole="button"
+              accessibilityLabel="Nội dung bài viết"
+              onPress={onPressContent}
+              disabled={!onPressContent}
+              style={styles.contentWrapper}
+            >
+              <Text style={styles.content}>
+                {displayContent}
+                {shouldTruncate ? (
+                  <Text testID="post-read-more" style={styles.readMoreText}>
+                    ...đọc thêm
+                  </Text>
+                ) : null}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* 3. Ảnh bài viết: Carousel vuốt ngang / Grid / Stack */}
+          {images.length > 0 ? (
+            <View style={styles.mediaContainer}>
+              {imageLayout === 'stack' ? (
+                <View testID="post-media-stack" style={styles.mediaStack}>
+                  {images.map((uri, index) => {
+                    const isVideo = isVideoUrl(uri);
+                    if (isVideo) {
+                      return (
+                        <View
+                          key={`${uri}-${index}`}
+                          testID={`post-stack-video-${index}`}
+                          style={styles.stackImageWrapper}
+                        >
+                          <PostVideoPlayer
+                            uri={uri}
+                            onPress={() => handleMediaPress(index)}
+                            accessibilityLabel={`Video ${index + 1}`}
+                          />
+                        </View>
+                      );
+                    }
+                    return (
+                      <Pressable
+                        key={`${uri}-${index}`}
+                        testID={`post-stack-image-${index}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Xem ảnh ${index + 1}`}
+                        onPress={() => handleMediaPress(index)}
+                        style={styles.stackImageWrapper}
+                      >
+                        <PostImage uri={uri} />
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : imageLayout === 'grid' ? (
+                <PostMediaGrid images={images} onImagePress={handleMediaPress} />
+              ) : (
+                <PostMediaCarousel images={images} onImagePress={handleMediaPress} />
+              )}
+            </View>
+          ) : null}
+
+          {/* 4. Hàng nút Action: Like, Comment, Share, Repost, Save */}
+          <View style={styles.actions}>
+            <View style={styles.group}>{actions.filter((a) => a.align !== 'end').map(draw)}</View>
+            <View style={styles.group}>{actions.filter((a) => a.align === 'end').map(draw)}</View>
+          </View>
+        </View>
       </View>
     </Surface>
   );
@@ -396,54 +572,132 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     borderLeftWidth: 0,
     borderRightWidth: 0,
-    // Dòng gạch ngang ngăn cách giữa các card bài viết 2px
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    paddingHorizontal: 0,
-    paddingTop: theme.spacing.xs,
-    paddingBottom: theme.spacing.sm - 3,
-    gap: theme.spacing.xs,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 12,
     borderRadius: 0,
     shadowOpacity: 0,
     elevation: 0,
   },
-  head: {
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  avatarColumn: {
+    width: 40,
+    alignItems: 'center',
+    paddingTop: 2,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#1E1E1E',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contentColumn: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
-    paddingHorizontal: theme.spacing.sm, // Căn lề riêng 8px
-    paddingTop: theme.spacing.xs,
+    justifyContent: 'space-between',
+    minHeight: 24,
   },
-  avatar: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden' },
-  meta: { flex: 1 },
+  authorMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
   name: {
-    fontSize: theme.font.size.md,
+    fontSize: 15,
     fontWeight: theme.font.weight.bold,
     color: theme.colors.text,
   },
-  time: { fontSize: theme.font.size.xs, color: theme.colors.muted },
-  content: {
-    fontSize: theme.font.size.md,
-    lineHeight: 22,
-    color: theme.colors.text,
-    paddingHorizontal: theme.spacing.sm, // Căn lề riêng 8px
-    paddingVertical: 2,
+  time: {
+    fontSize: 13,
+    color: theme.colors.muted,
+  },
+  moreButton: {
+    padding: 2,
+    marginLeft: 'auto',
   },
   contentWrapper: {
     width: '100%',
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  content: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: theme.colors.text,
   },
   readMoreText: {
-    fontSize: theme.font.size.sm,
+    fontSize: 14,
     color: theme.colors.muted,
-    opacity: 0.65,
+    opacity: 0.7,
     fontWeight: '400',
   },
+  mediaContainer: {
+    width: '100%',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  // Carousel cuộn ngang tỷ lệ 4:5 bo góc tròn 16px
+  carouselScrollContent: {
+    gap: 10,
+    paddingRight: 16,
+  },
+  singleCarouselWrapper: {
+    width: '100%',
+  },
+  singleCarouselImageContainer: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  carouselItemWrapper: {
+    aspectRatio: 4 / 5,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  carouselImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  // Grid truyền thống
   singleImagePressable: {
     width: '100%',
   },
   mediaStack: {
     width: '100%',
-    gap: theme.spacing.xs - 2,
+    gap: theme.spacing.xs,
   },
   stackImageWrapper: {
     width: '100%',
@@ -454,13 +708,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    borderRadius: 16,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 0,
+    borderRadius: 16,
   },
-  // Grid 2 ảnh: chia dọc khung làm 2
   grid2Container: {
     width: '100%',
     aspectRatio: 1,
@@ -468,13 +722,13 @@ const styles = StyleSheet.create({
     gap: 2,
     backgroundColor: '#0a0a0a',
     overflow: 'hidden',
+    borderRadius: 16,
   },
   grid2Col: {
     flex: 1,
     height: '100%',
     overflow: 'hidden',
   },
-  // Grid 3 ảnh: ảnh 1 to bên trái, 2 ảnh xếp dọc bên phải
   grid3Container: {
     width: '100%',
     aspectRatio: 1,
@@ -482,6 +736,7 @@ const styles = StyleSheet.create({
     gap: 2,
     backgroundColor: '#0a0a0a',
     overflow: 'hidden',
+    borderRadius: 16,
   },
   grid3LeftCol: {
     flex: 1,
@@ -500,7 +755,6 @@ const styles = StyleSheet.create({
     width: '100%',
     overflow: 'hidden',
   },
-  // Grid từ 4 ảnh trở lên: lưới 2x2
   grid4Container: {
     width: '100%',
     aspectRatio: 1,
@@ -508,6 +762,7 @@ const styles = StyleSheet.create({
     gap: 2,
     backgroundColor: '#0a0a0a',
     overflow: 'hidden',
+    borderRadius: 16,
   },
   grid4Row: {
     flex: 1,
@@ -546,11 +801,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.sm + 3, // Căn lề riêng 8px
-    paddingTop: theme.spacing.xs,
-    paddingBottom: 1,
+    paddingTop: 4,
+    paddingBottom: 2,
   },
-  group: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
-  action: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs + 4 },
-  count: { fontSize: theme.font.size.sm, color: theme.colors.text },
+  group: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  count: {
+    fontSize: 13,
+    color: theme.colors.text,
+  },
 });

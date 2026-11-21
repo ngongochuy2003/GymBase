@@ -12,5 +12,6 @@ export const postActionTemplates: PostActionTemplate[] = [
   { id: 'like', icon: 'heart', activeIcon: 'heart-filled', toggle: true, showCount: true },
   { id: 'comment', icon: 'comment', showCount: true },
   { id: 'share', icon: 'send' },
+  { id: 'repost', icon: 'repeat' },
   { id: 'save', icon: 'bookmark', activeIcon: 'bookmark-filled', toggle: true, align: 'end' },
 ];

@@ -1,11 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/core/auth/session';
 import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
 import { resolveMediaUrl } from '../api/feed-api';
+import { CommentBottomSheet } from '../components/comment-bottom-sheet';
 import { PostList } from '../components/post-list';
 import { useFeedPosts, useToggleLikeMutation } from '../hooks/use-feed-posts';
+import { useSavedPosts } from '../hooks/use-saved-posts';
 import { feedFilters, postActionTemplates } from '../config/feed-config';
 import { feedTabs } from '../config/tabs';
 import type { FeedPostData } from '../types';
@@ -20,14 +23,34 @@ export function FeedScreen() {
   const feed = useFeedPosts(activeFilter);
   const posts = feed.posts;
   const { mutate: toggleLike } = useToggleLikeMutation();
+  const { isSaved, toggleSave } = useSavedPosts();
+
+  const [activeCommentPost, setActiveCommentPost] = useState<FeedPostData | null>(null);
+
+  const postsWithSaved = useMemo(() => {
+    return posts.map((post) => ({
+      ...post,
+      initialActive: {
+        ...post.initialActive,
+        save: isSaved(post.id),
+      },
+    }));
+  }, [isSaved, posts]);
 
   const handleActionPress = useCallback(
     (postId: string, actionId: string) => {
       if (actionId === 'like') {
         toggleLike(postId);
+      } else if (actionId === 'save') {
+        void toggleSave(postId);
+      } else if (actionId === 'comment') {
+        const targetPost = postsWithSaved.find((p) => p.id === postId);
+        if (targetPost) {
+          setActiveCommentPost(targetPost);
+        }
       }
     },
-    [toggleLike],
+    [postsWithSaved, toggleLike, toggleSave],
   );
 
   const handleEndReached = useCallback(() => {
@@ -84,15 +107,13 @@ export function FeedScreen() {
       scrollable: false, // Dùng FlatList ảo hóa trong PostList làm scroll view chính
       header: {
         rightActions: DEFAULT_HEADER_ACTIONS,
-        avatarUri,
-        onAvatarPress: () => router.navigate('/profile'),
       },
       sections: [
         {
           id: 'posts',
           type: 'postList',
           props: {
-            posts,
+            posts: postsWithSaved,
             actionTemplates: postActionTemplates,
             onActionPress: handleActionPress,
             filterChipsProps: {
@@ -118,7 +139,6 @@ export function FeedScreen() {
     }),
     [
       activeFilter,
-      avatarUri,
       feed.hasNextPage,
       feed.isError,
       feed.isFetchingNextPage,
@@ -129,10 +149,19 @@ export function FeedScreen() {
       handleRefresh,
       handleRetry,
       isLoading,
-      posts,
-      router,
+      postsWithSaved,
     ],
   );
 
-  return <ScreenRenderer config={config} onTabPress={onTabPress} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <ScreenRenderer config={config} onTabPress={onTabPress} />
+      <CommentBottomSheet
+        visible={Boolean(activeCommentPost)}
+        post={activeCommentPost}
+        onClose={() => setActiveCommentPost(null)}
+        currentUserAvatar={avatarUri}
+      />
+    </View>
+  );
 }
