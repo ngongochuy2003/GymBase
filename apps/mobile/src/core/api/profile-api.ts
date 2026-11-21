@@ -1,5 +1,4 @@
-import type { AxiosInstance } from 'axios';
-import { createMobHttpClient } from './mobile-client';
+import { getMobClient } from './mobile-client';
 
 /**
  * Body của `PUT /api/v1/mob/ho-so` (docs/api/ho-so.md). Khối nào có tùy vai trò: `hoc_vien` gửi khối học viên, `pt` gửi khối
@@ -43,19 +42,15 @@ export type HoSo = {
   } | null;
 };
 
-let sharedClient: AxiosInstance | undefined;
-
 /** Endpoint `/api/v1/mob/ho-so`: một lần lưu ghi cả hồ sơ lẫn chỉ số cơ thể trong một transaction. */
 export const profileApi = {
   /** Hồ sơ hiện tại; chưa thiết lập thì lỗi `PROFILE_NOT_FOUND` (404). */
   async get(): Promise<HoSo> {
-    sharedClient ??= createMobHttpClient();
-    const { data } = await sharedClient.get<HoSo>('/ho-so');
+    const { data } = await getMobClient().get<HoSo>('/ho-so');
     return data;
   },
   async save(input: HoSoLuuInput): Promise<HoSo> {
-    sharedClient ??= createMobHttpClient();
-    const { data } = await sharedClient.put<HoSo>('/ho-so', input);
+    const { data } = await getMobClient().put<HoSo>('/ho-so', input);
     return data;
   },
 };

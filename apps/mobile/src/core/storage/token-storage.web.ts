@@ -1,8 +1,6 @@
 export type Tokens = { accessToken: string; refreshToken: string };
 
 const KEY = 'gymbase.session.tokens';
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
 
 let memoryCache: Tokens | null = null;
 
@@ -32,12 +30,6 @@ export const tokenStorage = {
         }
       }
 
-      const at = storage.getItem(ACCESS_TOKEN_KEY);
-      const rt = storage.getItem(REFRESH_TOKEN_KEY);
-      if (at && rt) {
-        memoryCache = { accessToken: at, refreshToken: rt };
-        return { ...memoryCache };
-      }
     } catch {
       // Bỏ qua lỗi cú pháp JSON
     }
@@ -52,8 +44,6 @@ export const tokenStorage = {
 
     try {
       storage.setItem(KEY, JSON.stringify(tokens));
-      storage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-      storage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
     } catch {
       // Bỏ qua lỗi hạn mức lưu trữ
     }
@@ -66,8 +56,6 @@ export const tokenStorage = {
 
     try {
       storage.removeItem(KEY);
-      storage.removeItem(ACCESS_TOKEN_KEY);
-      storage.removeItem(REFRESH_TOKEN_KEY);
     } catch {
       // ignore
     }

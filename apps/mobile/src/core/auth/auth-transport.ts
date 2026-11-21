@@ -28,8 +28,8 @@ export function createAuthTransport({ storage, refresh }: Deps) {
     return cache;
   };
   const save = async (tokens: Tokens) => {
-    cache = tokens;
     await storage.write(tokens);
+    cache = tokens;
   };
   const clear = async () => {
     cache = null;

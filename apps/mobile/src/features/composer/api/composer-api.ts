@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import { createMobHttpClient, DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
+import { getMobClient, DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
 import { env } from '@/core/config/env';
 import { uploadMultipartFile, isVideoUrl } from '@/shared/file/file-uploader';
 import type { ComposerPayload } from '../types';
@@ -50,7 +50,7 @@ export interface ComposerRepository {
 }
 
 export function createComposerRepository(
-  client: AxiosInstance = createMobHttpClient(),
+  client: AxiosInstance = getMobClient(),
 ): ComposerRepository {
   return {
     async createPost(payload: ComposerPayload): Promise<BaiVietCreatedResponseDto> {

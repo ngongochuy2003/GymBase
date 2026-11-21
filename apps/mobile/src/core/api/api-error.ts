@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-/** Lỗi theo từng trường, khóa là tên trường JSON (ví dụ `ten_dang_nhap`). */
+/** Lỗi theo từng trường, khóa là tên trường JSON (ví dụ `email`). */
 export type FieldErrors = Record<string, string[]>;
 
 /**
@@ -31,7 +31,7 @@ interface ProblemDetails {
 /** Câu dự phòng khi response không có ProblemDetails, hoặc lỗi 5xx (không hiện nội dung từ server). */
 const FALLBACK_MESSAGES: Record<number, string> = {
   400: 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.',
-  401: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.',
+  401: 'Bạn chưa được xác thực. Vui lòng đăng nhập lại.',
   403: 'Bạn chưa có quyền thực hiện thao tác này.',
   404: 'Không tìm thấy dữ liệu.',
   409: 'Dữ liệu bị trùng hoặc đã thay đổi. Vui lòng tải lại.',
