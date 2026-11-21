@@ -10,7 +10,7 @@
 | Cách xác thực | JWT access token + refresh token do `BLAuth` tự cấp | Một host, chỉ phục vụ app của mình. Không dùng Duende vì cần license |
 | Mặc định | Mọi endpoint phải đăng nhập (`FallbackPolicy`), endpoint công khai ghi rõ `[AllowAnonymous]` | Quên gắn attribute thì endpoint vẫn được bảo vệ |
 | Ký token | HS256, khóa ngẫu nhiên ít nhất 256 bit trong user-secrets hoặc biến môi trường | Chỉ một host vừa ký vừa kiểm tra |
-| Access token | Sống 15 phút | Không thu hồi được từng token, nên giữ ngắn |
+| Access token | Sống 15 phút, kèm kiểm tra phiên (`sid`) mỗi request | Token tự nó không thu hồi được, nên `OnTokenValidated` hỏi `IPhienHieuLucProvider` phiên còn hiệu lực không (cache 20 giây) |
 | Refresh token | Xoay vòng mỗi lần dùng, hết hạn sau 30 ngày không dùng, tối đa 90 ngày | RFC 9700 yêu cầu với client như app mobile |
 | Băm mật khẩu | `PasswordHasher` của ASP.NET, 600.000 vòng | Có sẵn, tự nâng cấp hash cũ. Mặc định chỉ 100.000 vòng nên phải đặt lại |
 | Mật khẩu | Tối thiểu **8 ký tự** | Chốt 08/11, xem mục 5 |
@@ -22,12 +22,12 @@ Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các ti�
 
 ## 2. Endpoint
 
-Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucService`.
+Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung các service `DangNhapService`, `PhienService`, `MatKhauService` và `TaiKhoanHienTaiService` (`GymBase.BLAuth/BLXacThuc`).
 
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
 | `POST /login` | Không | Body `{ email, mat_khau }`. 200: token kèm thông tin người dùng. 401 `AUTH_INVALID_CREDENTIALS`. Email không đúng định dạng: 400 |
-| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: thông tin tài khoản vừa tạo (`is_dang_nhap_lan_dau: true`), **không có token và không có phiên**. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
+| `POST /register` | Không | Body `{ ho_ten, email, so_dien_thoai?, mat_khau, dong_y_dieu_khoan, ma_gioi_thieu? }`. 200: thông tin tài khoản vừa tạo (`is_dang_nhap_lan_dau: true`), **không có token và không có phiên**. 409 `USER_EMAIL_TAKEN`, 400 nếu dữ liệu sai hoặc chưa đồng ý điều khoản |
 | `POST /google` | Không | Body `{ id_token, ten_thiet_bi? }`. 200: như `login`; tài khoản tạo mới có `user.is_dang_nhap_lan_dau: true`. 401 `AUTH_GOOGLE_TOKEN_INVALID` hoặc `AUTH_GOOGLE_EMAIL_UNVERIFIED`, 409 `AUTH_EMAIL_USED_PASSWORD` hoặc `USER_EMAIL_TAKEN` (mục 8) |
 | `POST /refresh` | Không | 200: cặp token mới. 401 `UNAUTHORIZED` |
 | `POST /logout` | Có | 204: thu hồi phiên hiện tại |
@@ -49,12 +49,12 @@ hiện onboarding, nên thoát app giữa chừng thì lần sau vẫn hiện. T
 | --- | --- |
 | `ho_ten` | Bắt buộc, tối đa 100 ký tự |
 | `email` | Bắt buộc, đúng định dạng, duy nhất không phân biệt hoa thường (ADR-0001), lưu chữ thường. Trùng: 409 `USER_EMAIL_TAKEN` |
-| `so_dien_thoai` | Bắt buộc, số **di động** Việt Nam (đầu 03, 05, 07, 08, 09; nhận `0…`, `+84…`, `84…`, bỏ khoảng trắng, chấm, gạch), lưu dạng `0xxxxxxxxx`. Không duy nhất, không xác minh |
-| `mat_khau` | Quy tắc mục 5, và không chứa phần trước `@` của email |
-| `dong_y_dieu_khoan` | Phải là `true`; lưu lúc đồng ý vào `tai_khoan.ngay_dong_y_dieu_khoan` (UTC) |
+| `so_dien_thoai` | Không bắt buộc; có thì phải là số **di động** Việt Nam (đầu 03, 05, 07, 08, 09; nhận `0…`, `+84…`, `84…`, bỏ khoảng trắng, chấm, gạch), lưu dạng `0xxxxxxxxx`. Bỏ trống hoặc `null` thì lưu `null`. Không duy nhất, không xác minh |
+| `mat_khau` | Quy tắc mục 5 |
+| `dong_y_dieu_khoan` | Phải là `true`; chỉ kiểm tra lúc đăng ký, không lưu mốc thời gian |
 | `ma_gioi_thieu` | Nhận nhưng bỏ qua (`TODO(REFERRAL)`) |
 
-Tài khoản tạo ra có `vai_tro = User`, chưa có hồ sơ (app đưa người dùng tới bước chọn nhóm). Email và số điện thoại chưa xác minh (`TODO(VERIFY)`).
+Tài khoản tạo ra có `vai_tro = User`, chưa có hồ sơ (app đưa người dùng tới bước chọn nhóm). Email (và số điện thoại nếu có) chưa xác minh (`TODO(VERIFY)`).
 `/register` dùng chung giới hạn 20 lần mỗi phút theo IP với `/login`.
 
 Admin đặt lại mật khẩu cho người khác qua `POST /api/v1/web/users/{id}/reset-password`, mọi phiên của người đó bị thu hồi.
@@ -103,7 +103,7 @@ JWT chỉ được **ký, không mã hóa**: ai có token đều đọc được
 | `sub` | `Id` của người dùng trong bảng `tai_khoan` | `ICurrentUser.UserId`. Giữ nguyên dù đăng nhập bằng cách nào |
 | `sid` | `Id` của phiên trong `phien_dang_nhap` | Biết token thuộc phiên nào, để sau này thu hồi tức thì |
 | `jti` | Mã riêng của token | Truy vết trong log |
-| `preferred_username` | `ten_dang_nhap`, không có thì `email` | `ICurrentUser.UserName`, ghi `nguoi_tao`, `nguoi_chinh_sua` |
+| `preferred_username` | `ten_dang_nhap`, không có thì `id` (không đưa email vào token) | `ICurrentUser.UserName`, ghi `nguoi_tao`, `nguoi_chinh_sua` |
 | `role` | `vai_tro` | `[Authorize(Roles = "...")]` |
 | `iat`, `nbf`, `exp` | Thời điểm cấp, bắt đầu có hiệu lực, hết hạn | Kiểm tra thời hạn |
 
@@ -113,8 +113,14 @@ Màn hình cần thông tin người dùng thì đọc từ `user` lúc đăng n
 **Khi kiểm tra token phải:** chỉ chấp nhận đúng HS256; kiểm tra chữ ký, `iss`, `aud`, `exp`, `typ`; tắt
 `MapInboundClaims` để giữ nguyên tên claim; đặt `RoleClaimType = "role"`. Không đọc claim từ token chưa xác minh.
 
-**Giới hạn đã chấp nhận:** access token còn dùng được tối đa 15 phút sau khi đăng xuất, đổi quyền hoặc bị khóa.
-Đổi `vai_tro` cũng chỉ có hiệu lực ở lần refresh kế tiếp. Nếu cần tức thì, kiểm tra `sid` trong DB ở mỗi request.
+**Thu hồi access token:** sau `OnTokenValidated` kiểm tra chữ ký và hạn, `PhienHieuLucService` (BLAuth, qua `IPhienHieuLucProvider` ở Base)
+kiểm tra phiên của `sid` thuộc đúng `sub`, chưa thu hồi và tài khoản còn `dang_hoat_dong`; không thì trả 401. Kết quả đúng được nhớ
+20 giây trong `PhienHieuLucCache` (bộ nhớ, singleton). Đăng xuất, đổi mật khẩu, đặt lại mật khẩu và phát hiện dùng lại refresh token
+xóa cache nên có hiệu lực ngay; admin khóa tài khoản có hiệu lực sau tối đa 20 giây. V1 chỉ có một host; chạy nhiều host thì mỗi
+host có thể trễ tối đa 20 giây với thu hồi xảy ra ở host khác. Mỗi request có xác thực tốn thêm tối đa hai truy vấn theo khóa chính
+khi cache trượt.
+
+**Giới hạn đã chấp nhận:** đổi `vai_tro` chỉ có hiệu lực ở lần refresh kế tiếp (role nằm trong token).
 
 ## 4. Refresh token và phiên
 
@@ -141,6 +147,35 @@ Khi `POST /refresh`:
 Token được đổi bằng một lệnh `UPDATE` có điều kiện trên `token_hash`, nên hai request refresh cùng lúc chỉ một request
 thắng, request kia nhận 401 và phiên không bị thu hồi. Client phải gộp các lần refresh đồng thời thành một (`createApiClient`
 của mobile đã làm vậy).
+
+### 4.1. Cách lưu token theo nền tảng
+
+> **Ngày viết:** 21/11/2026 · **Trạng thái:** mobile đã triển khai; web thiết kế đã chốt, chưa làm (chưa có web client)
+
+Cả hai nền tảng dùng chung cặp access token và refresh token, xoay vòng và phát hiện dùng lại như mục 4. Chỉ khác chỗ lưu
+và cách gửi refresh token:
+
+| | Mobile (đã làm) | Web (thiết kế, chưa làm) |
+| --- | --- | --- |
+| Access token | Bộ nhớ của app, đọc lại từ SecureStore khi khởi động | **Chỉ trong bộ nhớ** (store không persist); tải lại trang thì gọi `POST /refresh` để lấy lại |
+| Refresh token | SecureStore (Keychain/Keystore); gửi trong body của `/refresh` | Cookie `HttpOnly; Secure; SameSite=Strict`; trình duyệt tự gửi, JavaScript không đọc được |
+| Response của `login`, `google`, `refresh` | Có `refresh_token` trong body | **Không có** `refresh_token` trong body (nếu có thì JavaScript đọc được và HttpOnly vô nghĩa); server đặt `Set-Cookie` |
+| `logout` | Thu hồi phiên, app xóa SecureStore | Thu hồi phiên, server xóa cookie |
+
+**Khi làm web, backend phải đổi (chỉ kênh `/api/v1/web/auth`, mobile giữ nguyên):**
+
+1. Cookie: `HttpOnly`, `Secure`, `SameSite=Strict` (web và API cùng site nên không cần `None`), `Path=/api/v1/web/auth` để chỉ
+   gửi kèm các endpoint xác thực, `Max-Age` khớp 30 ngày không dùng và 90 ngày tuyệt đối của phiên.
+2. `POST /refresh` đọc refresh token từ cookie; thiếu cookie thì 401.
+3. CSRF: cookie tự gửi theo request nên `refresh` và `logout` kiểm tra header `Origin` thuộc danh sách origin cho phép
+   (`Cors:AllowedOrigins`); không khớp thì 403. Kẻ tấn công không đọc được phản hồi nên không lấy được token, nhưng có thể
+   khiến token bị xoay, nên vẫn chặn.
+4. CORS: thêm `AllowCredentials()`. Danh sách origin đã tường minh (không dùng `*`) nên không vướng ràng buộc cấm kết hợp.
+5. Web phải gộp các lần `refresh` đồng thời giữa các tab và request; khoảng ân hạn 30 giây của mục 4 đỡ cho trường hợp hai
+   tab cùng gửi một cookie.
+
+Kiểm tra phiên mỗi request (mục 3, "Thu hồi access token") áp dụng cho cả hai nền tảng, nên đăng xuất và khóa tài khoản
+có hiệu lực ngay ở web như ở mobile. Không lưu token vào `localStorage` hay `sessionStorage` ở web: XSS đọc được.
 
 ## 5. Mật khẩu
 
@@ -241,8 +276,8 @@ làm phân quyền.
   thành 500, không báo nhầm là token sai.
 - Tài khoản tìm theo `sub` (bảng `dang_nhap_ngoai`), không theo email: đổi email Google không tạo tài khoản mới.
 - Lần đầu: cần email đã xác minh (`AUTH_GOOGLE_EMAIL_UNVERIFIED` nếu không có); tạo `tai_khoan` không mật khẩu, `ho_ten` lấy từ Google
-  (không có thì lấy phần trước `@`), `ngay_dong_y_dieu_khoan` ghi lúc tạo vì màn đăng nhập Google có dòng "bằng việc tiếp tục bạn
-  đồng ý…". Không tạo được liên kết thì xóa tài khoản vừa tạo để không để lại tài khoản mồ côi.
+  (không có thì lấy phần trước `@`). Màn đăng nhập Google có dòng "bằng việc tiếp tục bạn đồng ý…", nhưng không lưu mốc thời gian.
+  Không tạo được liên kết thì xóa tài khoản vừa tạo để không để lại tài khoản mồ côi.
 - Email đã thuộc tài khoản có mật khẩu: 409 `AUTH_EMAIL_USED_PASSWORD`; đã thuộc tài khoản khác không có mật khẩu: 409 `USER_EMAIL_TAKEN`.
 - Tài khoản đã liên kết bị khóa: 401 chung. Tài khoản chỉ dùng Google không đăng nhập được bằng mật khẩu.
 - Dùng chung giới hạn 20 lần mỗi phút theo IP với `/login`.
@@ -255,20 +290,8 @@ làm phân quyền.
 | Quên mật khẩu qua email | Trước mắt `Admin` đặt lại |
 | Xác thực nhiều lớp (TOTP) | Nên ưu tiên cho `Admin` |
 | Gắn token với thiết bị (DPoP) | RFC 9700 khuyến nghị, quá nặng cho V1 |
-| Cách lưu token cho web | Xem khi làm web (V2) |
+| Cách lưu token cho web | Đã chốt thiết kế ở mục 4.1 (refresh token qua cookie `HttpOnly`); làm cùng web client (V2) |
 | Đăng nhập bằng mật khẩu cho bên thứ ba | Không hỗ trợ. Có ứng dụng bên ngoài thì dùng Authorization Code + PKCE, vì RFC 9700 cấm Password Grant |
-
-## 10. Khác với dự án tham khảo (dev-HuyNgo)
-
-| Dự án tham khảo | GymBase |
-| --- | --- |
-| Duende IdentityServer, Password Grant | JWT tự cấp, không cần license |
-| MD5 kèm salt | PBKDF2 600.000 vòng |
-| Tắt kiểm tra issuer, audience, độ hợp lệ của khóa | Bật đủ |
-| Refresh token dùng lại nhiều lần | Xoay vòng, phát hiện dùng lại |
-| Đọc claim từ token chưa xác minh | Chỉ đọc request đã xác thực |
-
-Giữ lại từ dự án đó: response đăng nhập có kèm thông tin người dùng, `[Authorize(Roles = ...)]`, claim `ten_dang_nhap`.
 
 ## Nguồn
 

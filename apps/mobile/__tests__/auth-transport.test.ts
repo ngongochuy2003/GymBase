@@ -96,3 +96,12 @@ test('reload forgets the in-memory tokens and reads storage again', async () => 
 
   expect(storage.read).toHaveBeenCalledTimes(2);
 });
+
+test('concurrent refreshes share one call so the refresh token rotates once', async () => {
+  const { auth, refresh } = setup(tokens);
+
+  const results = await Promise.all([auth.transport.refresh(), auth.transport.refresh()]);
+
+  expect(results).toEqual(['access-2', 'access-2']);
+  expect(refresh).toHaveBeenCalledTimes(1);
+});

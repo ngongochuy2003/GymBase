@@ -1,3 +1,4 @@
+import axios, { AxiosError } from 'axios';
 import {
   compressImageOnDevice,
   selectImageVariant,
@@ -43,6 +44,10 @@ describe('File Module (Mobile)', () => {
   });
 
   describe('uploadMultipartFile', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     class MockFormData {
       _parts: [string, any][] = [];
       append(key: string, value: any) {
@@ -63,27 +68,18 @@ describe('File Module (Mobile)', () => {
     });
 
     it('gửi multipart/form-data tới API và nhận kết quả FileUploadResult', async () => {
-      globalThis.fetch = jest.fn((url: RequestInfo | URL, init?: RequestInit) => {
-        const urlStr = url.toString();
-        if (urlStr.includes('/api/v1/mob/files')) {
-          expect(init?.method).toBe('POST');
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () =>
-              Promise.resolve({
-                file_id: 'file-guid-12345',
-                original_name: 'avatar.jpg',
-                content_type: 'image/webp',
-                size: 8192,
-                purpose: 'avatar',
-                provider: 'LOCAL',
-                blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4',
-                content_url: '/api/files/file-guid-12345/content',
-              }),
-          } as unknown as Response);
-        }
-        return Promise.reject(new Error(`Unhandled URL: ${urlStr}`));
+      const post = jest.spyOn(axios, 'post').mockResolvedValue({
+        status: 200,
+        data: {
+          file_id: 'file-guid-12345',
+          original_name: 'avatar.jpg',
+          content_type: 'image/webp',
+          size: 8192,
+          purpose: 'avatar',
+          provider: 'LOCAL',
+          blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4',
+          content_url: '/api/files/file-guid-12345/content',
+        },
       });
 
       const res = await uploadMultipartFile('file:///original.jpg', 'avatar', {
@@ -91,6 +87,7 @@ describe('File Module (Mobile)', () => {
         authToken: 'test-token',
       });
 
+      expect(post.mock.calls[0]?.[0]).toBe('http://localhost:5020/api/v1/mob/files');
       expect(res.file_id).toBe('file-guid-12345');
       expect(res.provider).toBe('LOCAL');
       expect(res.content_type).toBe('image/webp');
@@ -98,12 +95,14 @@ describe('File Module (Mobile)', () => {
     });
 
     it('ném lỗi khi API trả về status 400', async () => {
-      globalThis.fetch = jest.fn(() =>
-        Promise.resolve({
-          ok: false,
+      jest.spyOn(axios, 'post').mockRejectedValue(
+        new AxiosError('Request failed', 'ERR_BAD_REQUEST', undefined, undefined, {
           status: 400,
-          text: () => Promise.resolve('{"error":"Tệp tin tải lên rỗng."}'),
-        } as unknown as Response),
+          data: { error: 'Tệp tin tải lên rỗng.' },
+          statusText: '',
+          headers: {},
+          config: {} as never,
+        }),
       );
 
       await expect(uploadMultipartFile('file:///empty.jpg', 'avatar')).rejects.toThrow(

@@ -1,5 +1,6 @@
 using GymBase.Base.Auth;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace GymBase.Base.Hosting.Auth;
 
@@ -22,7 +23,9 @@ public sealed class QuyenHanHandler(IQuyenHanProvider provider) : AuthorizationH
             return;
         }
 
-        var quyenHan = await provider.BLLayQuyenHanAsync(taiKhoanId, CancellationToken.None);
+        // Truy vấn quyền dừng khi client ngắt kết nối; ngoài request (không có HttpContext) thì không có gì để hủy.
+        var cancellationToken = (context.Resource as HttpContext)?.RequestAborted ?? CancellationToken.None;
+        var quyenHan = await provider.BLLayQuyenHanAsync(taiKhoanId, cancellationToken);
 
         var thoa = requirement.Policy switch
         {

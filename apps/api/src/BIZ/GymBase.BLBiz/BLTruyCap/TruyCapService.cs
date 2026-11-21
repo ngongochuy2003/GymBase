@@ -5,6 +5,7 @@ using GymBase.Entities.Biz.Enums;
 
 namespace GymBase.BLBiz.BLTruyCap;
 
+// TODO(PT): nối vào các endpoint PT quản lý học viên; hiện chưa có nơi gọi nghiệp vụ nào ngoài đăng ký DI.
 /// <summary>
 /// Quyền trên từng bản ghi: một PT chỉ được động tới dữ liệu của học viên có kết nối với mình, đúng lĩnh vực. Mọi hàm nhận
 /// id của người gọi và của học viên từ nơi tin được (token, bản ghi trong DB), không bao giờ từ body request.

@@ -54,7 +54,7 @@ export function SelectField({
         onPress={() => setOpen(true)}
         className={cn(
           'min-h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
-          error ? 'border-destructive' : 'border-border',
+          error ? 'border-destructive' : 'border-input',
           unavailable && 'opacity-60',
         )}
       >

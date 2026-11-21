@@ -5,9 +5,12 @@ using System.Text;
 using System.Text.Json;
 using GymBase.Base.Auth;
 using GymBase.Base.Hosting.Auth;
+using GymBase.Entities.Auth;
+using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GymBase.IntegrationTests;
 
@@ -219,6 +222,33 @@ public sealed class AuthFlowTests : IAsyncLifetime
 
         var refresh = await _client.PostAsJsonAsync($"{Auth}/refresh", new { refresh_token = login.GetProperty("refresh_token").GetString() });
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_stops_the_access_token_working_at_once()
+    {
+        var login = await LoginAs("hv.logout.at");
+        var accessToken = login.GetProperty("access_token").GetString()!;
+        Assert.Equal(HttpStatusCode.OK, (await GetWithToken($"{Auth}/me", accessToken)).StatusCode);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{Auth}/logout");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.SendAsync(request)).StatusCode);
+
+        await AssertProblem(await GetWithToken($"{Auth}/me", accessToken), HttpStatusCode.Unauthorized, "UNAUTHORIZED");
+    }
+
+    [Fact]
+    public async Task Access_token_of_a_locked_account_is_rejected()
+    {
+        var login = await LoginAs("hv.bikhoa");
+        var accessToken = login.GetProperty("access_token").GetString()!;
+        var users = _app.Services.GetRequiredService<InMemoryStore<tai_khoan>>();
+        var user = users.All().Single(u => u.ten_dang_nhap == "hv.bikhoa");
+        user.dang_hoat_dong = false;
+        users.TryReplace(user);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await GetWithToken($"{Auth}/me", accessToken)).StatusCode);
     }
 
     [Fact]

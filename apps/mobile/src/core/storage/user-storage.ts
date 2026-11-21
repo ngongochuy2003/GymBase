@@ -3,7 +3,6 @@ import * as SecureStore from 'expo-secure-store';
 import type { AuthUser } from '../auth/types';
 
 const USER_KEY = 'gymbase.session.user';
-const USER_KEY_SHORT = 'user';
 
 function isWeb(): boolean {
   return (
@@ -17,12 +16,23 @@ export const userStorage = {
     try {
       let raw: string | null = null;
       if (isWeb()) {
-        raw = window.localStorage.getItem(USER_KEY) || window.localStorage.getItem(USER_KEY_SHORT);
+        raw = window.localStorage.getItem(USER_KEY);
       } else {
         raw = await SecureStore.getItemAsync(USER_KEY);
       }
       if (!raw) return null;
-      return JSON.parse(raw) as AuthUser;
+      const value: unknown = JSON.parse(raw);
+      if (
+        typeof value === 'object' &&
+        value !== null &&
+        'id' in value &&
+        typeof value.id === 'string' &&
+        'ho_ten' in value &&
+        typeof value.ho_ten === 'string'
+      ) {
+        return value as AuthUser;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -33,16 +43,15 @@ export const userStorage = {
     if (isWeb()) {
       try {
         window.localStorage.setItem(USER_KEY, raw);
-        window.localStorage.setItem(USER_KEY_SHORT, raw);
       } catch {
-        /* ignore */
+        /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
       }
     }
 
     try {
       await SecureStore.setItemAsync(USER_KEY, raw);
     } catch {
-      /* ignore */
+      /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
     }
   },
 
@@ -50,16 +59,15 @@ export const userStorage = {
     if (isWeb()) {
       try {
         window.localStorage.removeItem(USER_KEY);
-        window.localStorage.removeItem(USER_KEY_SHORT);
       } catch {
-        /* ignore */
+        /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
       }
     }
 
     try {
       await SecureStore.deleteItemAsync(USER_KEY);
     } catch {
-      /* ignore */
+      /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
     }
   },
 };

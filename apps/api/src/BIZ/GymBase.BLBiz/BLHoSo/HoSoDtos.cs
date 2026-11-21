@@ -1,16 +1,15 @@
-using System.ComponentModel.DataAnnotations;
+using GymBase.ModuleContracts.TepTin;
 
 namespace GymBase.BLBiz.BLHoSo;
 
 /// <summary>
-/// Body của <c>PUT /ho-so</c>: một request chứa cả khối học viên và khối PT, ghi trong một transaction.
+/// Body của <c>PUT /ho-so</c> (quy tắc: <see cref="HoSoLuuValidator"/>): một request chứa cả khối học viên và khối PT, ghi trong một transaction.
 /// Khối nào bắt buộc tùy <see cref="loai_nguoi_dung"/>: <c>hoc_vien</c> cần khối học viên, <c>pt</c> cần khối PT,
 /// <c>ca_hai</c> cần cả hai. Khối không thuộc vai trò: học viên không được gửi thông tin PT, PT có thể bỏ khối học viên.
 /// </summary>
 public sealed class HoSoLuuDto
 {
     /// <summary><c>hoc_vien</c>, <c>pt</c> hoặc <c>ca_hai</c>.</summary>
-    [Required]
     public string loai_nguoi_dung { get; init; } = string.Empty;
 
     /// <summary>
@@ -47,6 +46,12 @@ public sealed class HoSoLuuDto
 
     /// <summary>Khối PT: giới thiệu bản thân, tùy chọn, tối đa 1000 ký tự.</summary>
     public string? gioi_thieu { get; init; }
+
+    /// <summary>
+    /// Khối PT: <c>file_id</c> của tệp chứng chỉ PDF đã tải lên (<c>POST /files</c>, <c>purpose = chung_chi_pt</c>), tùy chọn. Không gửi (null)
+    /// thì hồ sơ không có chứng chỉ: chứng chỉ đang có bị gỡ. Học viên không được gửi.
+    /// </summary>
+    public Guid? chung_chi_tep_tin_id { get; init; }
 }
 
 /// <summary>Chỉ số cơ thể mới nhất.</summary>
@@ -68,4 +73,5 @@ public sealed record HoSoDto(
     short? so_nam_kinh_nghiem,
     string? gioi_thieu,
     string trang_thai_xac_minh,
-    ChiSoCoTheDto? chi_so_co_the);
+    ChiSoCoTheDto? chi_so_co_the,
+    ChungChiPtDto? chung_chi);

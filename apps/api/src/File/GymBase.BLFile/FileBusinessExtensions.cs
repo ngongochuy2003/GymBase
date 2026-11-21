@@ -5,6 +5,7 @@ using GymBase.BLFile.BLFiles;
 using GymBase.BLFile.BLNotifications;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
+using GymBase.ModuleContracts.TepTin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -54,6 +55,7 @@ public static class FileBusinessExtensions
 
         // 4. File Services
         services.AddScoped<IFileService, FileService>();
+        services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
         services.AddScoped<IFileMigrationService, FileMigrationService>();
 
         // 5. Notification Services

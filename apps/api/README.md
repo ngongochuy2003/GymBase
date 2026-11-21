@@ -68,7 +68,7 @@ dotnet run --project src/Host/GymBase.API --launch-profile http
 Host nghe ở `http://localhost:5020`. Route web: `/api/v1/web/...`, route mobile:
 `/api/v1/mob/...`. Có `/health` và OpenAPI ở `/openapi/v1.json` (môi trường Development).
 Hướng dẫn chạy chi tiết: [`docs/api/cach-chay-api.md`](../../docs/api/cach-chay-api.md).
-Gọi thử API bằng collection Bruno ở `docs/api/bruno`.
+Gọi thử API bằng Postman: **Import** URL `http://localhost:5020/openapi/v1.json`.
 
 ## Tài liệu khác
 

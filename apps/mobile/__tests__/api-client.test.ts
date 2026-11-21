@@ -1,6 +1,6 @@
 import { AxiosError, AxiosHeaders, type AxiosAdapter } from 'axios';
 import { createApiClient, type AuthTransport } from '@/core/api/client';
-import { toApiError } from '@/core/api/api-error';
+import { ApiError, toApiError } from '@/core/api/api-error';
 
 test.each([401, 403, 409, 422, 500])('maps HTTP %s without leaking server details', (status) => {
   const error = new AxiosError('private server trace');
@@ -121,4 +121,27 @@ test('does not loop when the refreshed token is rejected', async () => {
   expect(requests).toBe(2);
   expect(auth.refresh).toHaveBeenCalledTimes(1);
   expect(auth.onUnauthorized).toHaveBeenCalled();
+});
+
+test('a refresh that fails for network reasons keeps the session and surfaces the error', async () => {
+  const auth: AuthTransport = {
+    getAccessToken: async () => 'old',
+    refresh: jest.fn(async () => {
+      throw new ApiError('Không thể kết nối.', undefined, 'NETWORK');
+    }),
+    onUnauthorized: jest.fn(async () => undefined),
+  };
+  const adapter: AxiosAdapter = async (config) => {
+    throw new AxiosError('expired', 'ERR_BAD_REQUEST', config, undefined, {
+      status: 401,
+      statusText: 'Unauthorized',
+      headers: {},
+      data: {},
+      config,
+    });
+  };
+  await expect(
+    createApiClient('https://example.test', auth, { adapter }).get('/private'),
+  ).rejects.toMatchObject({ code: 'NETWORK' });
+  expect(auth.onUnauthorized).not.toHaveBeenCalled();
 });

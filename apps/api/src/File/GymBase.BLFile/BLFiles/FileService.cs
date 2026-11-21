@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
+using GymBase.Base.Exceptions;
 using GymBase.DLFile.Contract;
 using GymBase.Entities.Biz;
 using GymBase.Entities.Biz.Enums;
+using GymBase.ModuleContracts.TepTin;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,7 +16,7 @@ public sealed class FileService : IFileService
 {
     private static readonly HashSet<string> AllowedPurposes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "avatar", "gym_photo", "progress", "post"
+        "avatar", "gym_photo", "progress", "post", IChungChiPtLienKet.MucDich
     };
 
     private static readonly Guid DevFallbackUserId = Guid.Parse("0193f0a0-0000-7000-8000-000000000001");
@@ -79,8 +81,14 @@ public sealed class FileService : IFileService
         {
             "avatar" => LoaiDoiTuongTepTin.ho_so_nguoi_dung,
             "post" => LoaiDoiTuongTepTin.bai_viet,
+            IChungChiPtLienKet.MucDich => LoaiDoiTuongTepTin.ho_so_nguoi_dung,
             _ => (LoaiDoiTuongTepTin?)null
         };
+
+        if (normalizedPurpose == IChungChiPtLienKet.MucDich)
+        {
+            return await UploadPdfAsync(userId, file, normalizedPurpose, provider, bucketName, targetType, accessMode, ct);
+        }
 
         if (isVideo)
         {
@@ -216,6 +224,82 @@ public sealed class FileService : IFileService
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// Tải tệp PDF (chứng chỉ PT) lên nguyên bản, không xử lý ảnh. Kiểm tra phần đầu tệp là <c>%PDF-</c>, không tin đuôi tệp hay
+    /// <c>Content-Type</c> do client gửi.
+    /// </summary>
+    /// <exception cref="ValidationFailedException">Tệp không phải PDF hợp lệ.</exception>
+    private async Task<FileUploadResultDto> UploadPdfAsync(
+        Guid userId,
+        IFormFile file,
+        string purpose,
+        IFileStorage provider,
+        string bucketName,
+        LoaiDoiTuongTepTin? targetType,
+        CheDoTruyCap accessMode,
+        CancellationToken ct)
+    {
+        const string PdfMime = "application/pdf";
+        byte[] header = new byte[5];
+        await using (var probe = file.OpenReadStream())
+        {
+            var read = await probe.ReadAsync(header.AsMemory(0, header.Length), ct);
+            if (read < header.Length || !header.AsSpan().SequenceEqual("%PDF-"u8))
+            {
+                throw new ValidationFailedException("file", "Tệp không phải PDF hợp lệ.");
+            }
+        }
+
+        var fileId = Guid.NewGuid();
+        var fileName = $"{purpose}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}.pdf";
+        var storageKey = $"{purpose}/{fileName}";
+        var entity = new tep_tin
+        {
+            Id = fileId,
+            nguoi_tai_len_id = userId,
+            ten_tep_goc = Path.GetFileName(file.FileName),
+            s3_key = storageKey,
+            s3_bucket = bucketName,
+            loai_mime = PdfMime,
+            kich_thuoc_byte = file.Length,
+            muc_dich = purpose,
+            loai_doi_tuong = targetType,
+            trang_thai = TrangThaiTepTin.cho_tai_len,
+            che_do_truy_cap = accessMode,
+            ngay_tao = DateTime.UtcNow,
+        };
+        await _tepTinRepository.DLInsertAsync(entity, ct);
+
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            await provider.SaveAsync(storageKey, stream, PdfMime, ct);
+
+            entity.trang_thai = TrangThaiTepTin.da_tai_len;
+            entity.ngay_xac_nhan = DateTime.UtcNow;
+            await _tepTinRepository.DLUpdateAsync(entity, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lưu tệp PDF {FileId} xuống storage {Provider}.", fileId, provider.ProviderName);
+            entity.trang_thai = TrangThaiTepTin.loi;
+            entity.ngay_xac_nhan = DateTime.UtcNow;
+            try { await _tepTinRepository.DLUpdateAsync(entity, ct); } catch { }
+            try { await provider.DeleteAsync(storageKey, ct); } catch { }
+            throw;
+        }
+
+        return new FileUploadResultDto(
+            FileId: entity.Id,
+            OriginalName: entity.ten_tep_goc ?? file.FileName,
+            ContentType: entity.loai_mime,
+            Size: entity.kich_thuoc_byte,
+            Purpose: purpose,
+            Provider: provider.ProviderName,
+            Blurhash: null,
+            ContentUrl: $"/api/v1/mob/files/{entity.Id}/content");
     }
 
     public async Task<FileContentStreamDto> BLOpenAuthorizedAsync(

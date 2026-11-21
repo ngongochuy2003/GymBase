@@ -80,7 +80,7 @@ public sealed class ErrorHandlingTests : IAsyncLifetime
         Assert.Equal(ErrorCodes.ValidationFailed, problem.GetProperty("code").GetString());
         Assert.Equal("Dữ liệu không hợp lệ", problem.GetProperty("title").GetString());
         Assert.Equal(ValidationFailedException.DefaultDetail, problem.GetProperty("detail").GetString());
-        Assert.True(problem.GetProperty("errors").TryGetProperty("ten_dang_nhap", out _));
+        Assert.True(problem.GetProperty("errors").TryGetProperty("mat_khau", out _));
         Assert.False(string.IsNullOrEmpty(problem.GetProperty("trace_id").GetString()));
         Assert.False(problem.TryGetProperty("traceId", out _));
     }

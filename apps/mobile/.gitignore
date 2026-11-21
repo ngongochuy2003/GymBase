@@ -4,3 +4,5 @@
 
 expo-env.d.ts
 # @end expo-cli
+# Dự án dùng pnpm
+package-lock.json

@@ -22,8 +22,8 @@ public sealed class DangKyDto
     /// <summary>Email đăng nhập, bắt buộc và duy nhất (ADR-0001).</summary>
     public string email { get; init; } = string.Empty;
 
-    /// <summary>Số di động Việt Nam; lưu dạng <c>0xxxxxxxxx</c>. Không xác minh.</summary>
-    public string so_dien_thoai { get; init; } = string.Empty;
+    /// <summary>Số di động Việt Nam; không bắt buộc. Có thì lưu dạng <c>0xxxxxxxxx</c>, không thì <c>null</c>. Không xác minh.</summary>
+    public string? so_dien_thoai { get; init; }
 
     public string mat_khau { get; init; } = string.Empty;
 

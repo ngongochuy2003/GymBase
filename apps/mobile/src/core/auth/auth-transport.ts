@@ -28,32 +28,41 @@ export function createAuthTransport({ storage, refresh }: Deps) {
     return cache;
   };
   const save = async (tokens: Tokens) => {
-    cache = tokens;
     await storage.write(tokens);
+    cache = tokens;
   };
   const clear = async () => {
     cache = null;
     await storage.clear();
   };
 
+  const doRefresh = async () => {
+    const current = await load();
+    if (!current) return null;
+    try {
+      const result = await refresh(current.refreshToken);
+      await save({ accessToken: result.access_token, refreshToken: result.refresh_token });
+      return result.access_token;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        await clear();
+        return null;
+      }
+      throw error;
+    }
+  };
+  // Mọi client dùng chung transport này, nên dedupe ở đây: refresh token bị xoay một lần dù nhiều request cùng 401.
+  let refreshTask: Promise<string | null> | undefined;
+
   const transport: AuthTransport = {
     async getAccessToken() {
       return (await load())?.accessToken ?? null;
     },
-    async refresh() {
-      const current = await load();
-      if (!current) return null;
-      try {
-        const result = await refresh(current.refreshToken);
-        await save({ accessToken: result.access_token, refreshToken: result.refresh_token });
-        return result.access_token;
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
-          await clear();
-          return null;
-        }
-        throw error;
-      }
+    refresh() {
+      refreshTask ??= doRefresh().finally(() => {
+        refreshTask = undefined;
+      });
+      return refreshTask;
     },
     async onUnauthorized() {
       await clear();

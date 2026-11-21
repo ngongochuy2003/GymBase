@@ -42,7 +42,7 @@ flowchart LR
 
     subgraph Backend["Backend (ASP.NET Core)"]
         CTRL["AuthControllerBase.Google"]
-        SVC["XacThucService.BLDangNhapGoogleAsync"]
+        SVC["DangNhapService.BLDangNhapGoogleAsync"]
         VER["GoogleIdTokenVerifier"]
         REPO["IDangNhapNgoaiRepository<br/>ITaiKhoanRepository<br/>IPhienDangNhapRepository"]
     end
@@ -67,11 +67,11 @@ flowchart LR
 | Mobile, API | [auth-api.ts](../../apps/mobile/src/core/api/auth-api.ts) | `POST /auth/google`, gửi kèm `ten_thiet_bi = Platform.OS` |
 | Mobile, cấu hình | [env.ts](../../apps/mobile/src/core/config/env.ts) | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` |
 | Backend, controller | [AuthControllerBase.cs](../../apps/api/src/Host/GymBase.API/Controllers/AuthControllerBase.cs) | `POST google`, `[AllowAnonymous]`, chung giới hạn 20 lần/phút/IP với `/login` |
-| Backend, nghiệp vụ | [XacThucService.cs](../../apps/api/src/Auth/GymBase.BLAuth/BLXacThuc/XacThucService.cs) | `BLDangNhapGoogleAsync`, `CreateGoogleAccountAsync` |
+| Backend, nghiệp vụ | [DangNhapService.cs](../../apps/api/src/Auth/GymBase.BLAuth/BLXacThuc/DangNhapService.cs) | `BLDangNhapGoogleAsync`, `CreateGoogleAccountAsync` |
 | Backend, xác minh | [GoogleIdTokenVerifier.cs](../../apps/api/src/Base/GymBase.Base.Hosting/Auth/GoogleIdTokenVerifier.cs) | Xác minh ID token bằng `Google.Apis.Auth` |
 | Backend, dữ liệu | [dang_nhap_ngoai.cs](../../apps/api/src/Data/GymBase.Entities/Auth/dang_nhap_ngoai.cs) | Bảng liên kết tài khoản với Google |
 
-Endpoint có ở cả `/api/v1/web/auth/google` và `/api/v1/mob/auth/google`, dùng chung `XacThucService`.
+Endpoint có ở cả `/api/v1/web/auth/google` và `/api/v1/mob/auth/google`, dùng chung `DangNhapService`.
 
 ## 3. Luồng đầy đủ
 
@@ -166,8 +166,8 @@ flowchart TD
 - **Không có giao dịch DB bao hai lần ghi.** `tai_khoan` được ghi trước, `dang_nhap_ngoai` sau; nếu lần sau lỗi thì
   xóa tài khoản vừa tạo để không để lại tài khoản mồ côi (nếu để lại, lần sau email này báo trùng mà không đăng nhập được).
 - **Tài khoản mới:** `vai_tro = User`, `mat_khau_hash` và `ten_dang_nhap` là NULL, `ho_ten` lấy từ Google (không có thì
-  lấy phần trước `@`, cắt còn 100 ký tự), `ngay_dong_y_dieu_khoan` ghi lúc tạo vì màn Google có dòng "bằng việc tiếp tục,
-  bạn đồng ý…", `is_dang_nhap_lan_dau = true`. Chưa có `ho_so_nguoi_dung`.
+  lấy phần trước `@`, cắt còn 100 ký tự), `is_dang_nhap_lan_dau = true`. Màn Google có dòng "bằng việc tiếp tục, bạn đồng ý…"
+  nhưng không lưu mốc thời gian. Chưa có `ho_so_nguoi_dung`.
 - **Tài khoản chỉ dùng Google không đăng nhập được bằng mật khẩu** (không có hash để so khớp).
 
 ## 5. Xác minh ID token
@@ -181,7 +181,7 @@ flowchart TD
 | `exp` | Chưa hết hạn |
 | `aud` | Phải nằm trong `Google:ClientIds` (mảng cấu hình) |
 
-Kết quả `GoogleIdentity(Subject, Email, EmailVerified, Name)` trả về cho `XacThucService`.
+Kết quả `GoogleIdentity(Subject, Email, EmailVerified, Name)` trả về cho `DangNhapService`.
 
 | Tình huống | Hành vi |
 | --- | --- |
@@ -231,7 +231,6 @@ erDiagram
         string vai_tro "User khi tạo từ Google"
         bool dang_hoat_dong
         bool is_dang_nhap_lan_dau
-        datetime ngay_dong_y_dieu_khoan
     }
     dang_nhap_ngoai {
         guid Id PK
@@ -326,8 +325,8 @@ Muốn nhận token cấp cho client ID khác (ví dụ khi sau này app lấy t
 | --- | --- |
 | [GoogleLoginTests.cs](../../apps/api/tests/Integration/GymBase.IntegrationTests/GoogleLoginTests.cs) | Tích hợp: tạo mới, đăng nhập lại, email trùng, token sai, tài khoản khóa. Dùng `FakeGoogleIdTokenVerifier` thay cho Google thật |
 | [GoogleIdTokenVerifierTests.cs](../../apps/api/tests/Integration/GymBase.IntegrationTests/GoogleIdTokenVerifierTests.cs) | Xác minh token, cấu hình `Google:ClientIds` |
-| [XacThucServiceTests.cs](../../apps/api/tests/Unit/GymBase.UnitTests/Auth/XacThucServiceTests.cs) | Unit test nghiệp vụ đăng nhập |
+| [XacThucFlowTests.cs](../../apps/api/tests/Unit/GymBase.UnitTests/Auth/XacThucFlowTests.cs) | Unit test nghiệp vụ đăng nhập |
 | [google-sign-in.test.ts](../../apps/mobile/__tests__/google-sign-in.test.ts), [google-flow.test.tsx](../../apps/mobile/__tests__/google-flow.test.tsx) | Mobile: bọc thư viện Google và luồng nút |
 
-Tay: thử bằng Bruno ở `docs/api/bruno/{mobile,web}/xac-thuc/dang-nhap-google-sai.bru` (trường hợp token sai). Trường hợp
+Tay: trường hợp token sai thử bằng curl hoặc Postman, gửi `POST /api/v1/mob/auth/google` với `id_token` bất kỳ, kỳ vọng 401 `AUTH_GOOGLE_TOKEN_INVALID`. Trường hợp
 thành công cần ID token thật nên chỉ thử được qua app dev build.

@@ -1,25 +1,26 @@
 import { render, screen } from '@testing-library/react-native';
 import { theme } from '@/shared/theme/tokens';
-import { RemoteImage, resolveRemoteImageUri } from '@/shared/ui-kit/remote-image';
+import { resolveMediaUrl } from '@/core/config/api-origin';
+import { RemoteImage } from '@/shared/ui-kit/remote-image';
 
-describe('resolveRemoteImageUri', () => {
+describe('resolveMediaUrl', () => {
   it('giữ nguyên URL tuyệt đối (http, https, file, data, blob)', () => {
-    expect(resolveRemoteImageUri('https://cdn.gymbase.vn/cat.webp')).toBe('https://cdn.gymbase.vn/cat.webp');
-    expect(resolveRemoteImageUri('http://localhost:5020/cat.webp')).toBe('http://localhost:5020/cat.webp');
-    expect(resolveRemoteImageUri('file:///local/photo.jpg')).toBe('file:///local/photo.jpg');
-    expect(resolveRemoteImageUri('data:image/webp;base64,abc')).toBe('data:image/webp;base64,abc');
+    expect(resolveMediaUrl('https://cdn.gymbase.vn/cat.webp')).toBe('https://cdn.gymbase.vn/cat.webp');
+    expect(resolveMediaUrl('http://localhost:5020/cat.webp')).toBe('http://localhost:5020/cat.webp');
+    expect(resolveMediaUrl('file:///local/photo.jpg')).toBe('file:///local/photo.jpg');
+    expect(resolveMediaUrl('data:image/webp;base64,abc')).toBe('data:image/webp;base64,abc');
   });
 
   it('ghép host base khi là relative path', () => {
-    const res = resolveRemoteImageUri('/api/v1/mob/files/123/content');
+    const res = resolveMediaUrl('/api/v1/mob/files/123/content');
     expect(res).toBeDefined();
     expect(res).toContain('/api/v1/mob/files/123/content');
   });
 
   it('trả về undefined khi uri rỗng hoặc null', () => {
-    expect(resolveRemoteImageUri(undefined)).toBeUndefined();
-    expect(resolveRemoteImageUri('')).toBeUndefined();
-    expect(resolveRemoteImageUri('   ')).toBeUndefined();
+    expect(resolveMediaUrl(undefined)).toBeUndefined();
+    expect(resolveMediaUrl('')).toBeUndefined();
+    expect(resolveMediaUrl('   ')).toBeUndefined();
   });
 });
 

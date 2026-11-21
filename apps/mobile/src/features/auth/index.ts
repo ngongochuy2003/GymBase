@@ -3,3 +3,4 @@ export { RegisterScreen } from './screens/register-screen';
 export { OnboardingScreen } from './screens/onboarding-screen';
 export { WelcomeScreen } from './screens/welcome-screen';
 export { AuthHeader } from './components/auth-header';
+export { SuccessBadge } from './components/success-badge';

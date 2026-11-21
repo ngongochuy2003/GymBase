@@ -12,7 +12,7 @@ suốt: **PT xác nhận một buổi tập và trừ 1 buổi của gói**.
 | | CRUD | API nghiệp vụ |
 | --- | --- | --- |
 | Tên API | Danh từ: thêm, sửa, xóa một bản ghi | Động từ: một việc (`xac-nhan`, `huy`, `gia-han`) |
-| Service | Kế thừa `BaseService`, có sẵn 5 hàm | Lớp riêng như `XacThucService`, mỗi việc một hàm `BL...` |
+| Service | Kế thừa `BaseService`, có sẵn 5 hàm | Lớp riêng như `PhienService`, mỗi việc một hàm `BL...` |
 | Quy tắc | Gần như không có | Nằm hết trong hàm BL |
 | Dữ liệu | Một bảng | Nhiều bảng, thường cần giao dịch |
 
@@ -187,8 +187,8 @@ và `Mob/Controllers/`).
 
 ### Bước 6: Đăng ký
 
-Thêm `services.AddScoped<BuoiTapService>()` vào extension của nhóm (như `AuthBusinessExtensions`) và các repository vào
-`Program.cs`. Quên bước này thì ứng dụng báo không tạo được service (lỗi lúc khởi động, hoặc 500 khi gọi).
+Thêm `services.AddScoped<BuoiTapService>()` vào extension BL của nhóm (như `AuthBusinessExtensions`) và các repository vào
+extension DL.MySql của nhóm (như `AuthDataExtensions`). Quên bước này thì ứng dụng báo không tạo được service (lỗi lúc khởi động, hoặc 500 khi gọi).
 
 ### Bước 7: Test
 
@@ -204,7 +204,6 @@ Mỗi dòng của bảng quy tắc là một test BL, dùng DL giả `InMemory*`
 | Gọi hai lần | Chỉ một dòng `-1` |
 
 Chạy cùng lúc hai request thật cần MySQL (unique index chặn), `InMemory*` không làm được. Ghi rõ test nào chưa phủ được.
-Rồi thêm một request vào `docs/api/bruno` như các API hiện có.
 
 ## 6. Lỗi thường gặp
 

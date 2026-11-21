@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GymBase.Base.Exceptions;
 using GymBase.BLFile.BLFiles;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
@@ -100,6 +101,57 @@ public class FileServiceTests : IDisposable
 
         await Assert.ThrowsAsync<InvalidDataException>(() =>
             _service.BLUploadAsync(user, formFile, "avatar"));
+    }
+
+    [Fact]
+    public async Task BLUploadAsync_ChungChiPdf_ShouldStorePrivatelyAndKeepOriginalBytes()
+    {
+        var pdf = "%PDF-1.4\n1 0 obj\n<< >>\nendobj\ntrailer\n<< >>\n%%EOF"u8.ToArray();
+        var formFile = CreateFormFile(pdf, "PT_Level1_FI.pdf", "application/pdf");
+        var userId = Guid.NewGuid();
+
+        var result = await _service.BLUploadAsync(CreateUser(userId), formFile, "chung_chi_pt");
+
+        Assert.Equal("application/pdf", result.ContentType);
+        Assert.Equal("chung_chi_pt", result.Purpose);
+        Assert.Equal(pdf.Length, result.Size);
+        Assert.Null(result.Blurhash);
+        var entity = await _repository.DLGetByIdAsync(result.FileId, CancellationToken.None);
+        Assert.NotNull(entity);
+        Assert.Equal(TrangThaiTepTin.da_tai_len, entity.trang_thai);
+        Assert.Equal(CheDoTruyCap.rieng_tu, entity.che_do_truy_cap);
+        Assert.Equal(LoaiDoiTuongTepTin.ho_so_nguoi_dung, entity.loai_doi_tuong);
+        Assert.Equal(userId, entity.nguoi_tai_len_id);
+        Assert.Equal("PT_Level1_FI.pdf", entity.ten_tep_goc);
+        Assert.StartsWith("chung_chi_pt/chung_chi_pt_", entity.s3_key);
+        Assert.EndsWith(".pdf", entity.s3_key);
+    }
+
+    [Fact]
+    public async Task BLUploadAsync_ChungChiPdf_OwnerCanOpenAndModeIsPrivate()
+    {
+        var pdf = "%PDF-1.4\n%%EOF"u8.ToArray();
+        var ownerId = Guid.NewGuid();
+        var result = await _service.BLUploadAsync(CreateUser(ownerId), CreateFormFile(pdf, "cc.pdf", "application/pdf"), "chung_chi_pt");
+
+        await using var stream = (await _service.BLOpenAuthorizedAsync(CreateUser(ownerId), result.FileId)).Stream;
+        Assert.True(stream.Length > 0);
+
+        var entity = await _repository.DLGetByIdAsync(result.FileId, CancellationToken.None);
+        Assert.Equal(CheDoTruyCap.rieng_tu, entity!.che_do_truy_cap);
+    }
+
+    [Theory]
+    [InlineData("khong phai pdf")]
+    [InlineData("%PD")]
+    public async Task BLUploadAsync_ChungChiNotPdfContent_ShouldThrowValidationEvenWithPdfName(string content)
+    {
+        var formFile = CreateFormFile(System.Text.Encoding.UTF8.GetBytes(content), "gia-mao.pdf", "application/pdf");
+
+        var error = await Assert.ThrowsAsync<ValidationFailedException>(() =>
+            _service.BLUploadAsync(CreateUser(Guid.NewGuid()), formFile, "chung_chi_pt"));
+
+        Assert.Contains("file", error.Errors!.Keys);
     }
 
     [Fact]

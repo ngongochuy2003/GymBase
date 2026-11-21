@@ -12,7 +12,8 @@ import {
 import { Icon } from '@/shared/icons';
 import { isVideoUrl } from '@/shared/file';
 import { theme } from '@/shared/theme/tokens';
-import { RemoteImage, Surface, resolveRemoteImageUri } from '@/shared/ui-kit';
+import { resolveMediaUrl } from '@/core/config/api-origin';
+import { RemoteImage, Surface } from '@/shared/ui-kit';
 import { PostVideoPlayer } from './post-video-player';
 
 export const MIN_POST_ASPECT_RATIO = 4 / 5; // Tối đa độ dọc (0.8) để ảnh không choán hết màn hình
@@ -40,7 +41,7 @@ export function PostImage({ uri }: PostImageProps) {
 
   useEffect(() => {
     let active = true;
-    const resolvedUri = resolveRemoteImageUri(uri);
+    const resolvedUri = resolveMediaUrl(uri);
     if (!resolvedUri) return;
 
     try {

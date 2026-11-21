@@ -28,10 +28,12 @@ docker compose down               # giữ dữ liệu
 docker compose down -v            # xóa cả dữ liệu (reset DB sạch)
 ```
 
-Tạo tài khoản Admin đầu tiên (mật khẩu lấy từ biến môi trường để không nằm trong lịch sử lệnh):
+Chưa có script seed Admin. Đăng ký tài khoản thường (app hoặc `POST /auth/register`) rồi cấp quyền trong DB:
 
 ```bash
-GYMBASE_ADMIN_PASSWORD='<mật khẩu>' docker compose run --rm -e GYMBASE_ADMIN_PASSWORD api create-admin admin@gymbase.local
+docker compose exec -T mysql sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' <<'SQL'
+UPDATE tai_khoan SET vai_tro = 'Admin' WHERE email = '<email-vừa-đăng-ký>';
+SQL
 ```
 
 Thêm migration mới thì chạy lại `docker compose up --build -d`: `migrate` build lại bundle và áp phần còn thiếu.

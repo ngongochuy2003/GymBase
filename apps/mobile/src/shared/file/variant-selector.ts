@@ -1,23 +1,7 @@
-import { DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
-import { env } from '@/core/config/env';
+import { resolveMediaUrl } from '@/core/config/api-origin';
 import { ImageVariantUrls } from './file.types';
 
-export function resolveMediaUrl(url?: string | null): string | undefined {
-  if (!url) return undefined;
-  const trimmed = url.trim();
-  if (!trimmed) return undefined;
-  if (
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('data:')
-  ) {
-    return trimmed;
-  }
-  const apiHostBase = (env.apiUrl || DEFAULT_LOCAL_API_URL)
-    .replace(/\/api\/v1\/mob\/?$/, '')
-    .replace(/\/+$/, '');
-  return `${apiHostBase}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
-}
+export { resolveMediaUrl };
 
 /**
  * Chọn biến thể ảnh phù hợp nhất với chiều rộng hiển thị (display width dp)

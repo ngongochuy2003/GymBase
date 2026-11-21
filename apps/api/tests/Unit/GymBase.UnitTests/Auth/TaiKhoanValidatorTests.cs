@@ -8,7 +8,7 @@ public class TaiKhoanValidatorTests
     private static readonly TaiKhoanCreateValidator Validator = new();
 
     private static TaiKhoanCreateDto Valid(
-        string tenDangNhap = "hv.moi", string hoTen = "Học viên", string email = "a@gymbase.local", string? phone = "0912 345 678", string vaiTro = "User") => new()
+        string? tenDangNhap = "hv.moi", string hoTen = "Học viên", string email = "a@gymbase.local", string? phone = "0912 345 678", string vaiTro = "User") => new()
     {
         ten_dang_nhap = tenDangNhap,
         mat_khau = AuthTestHelpers.ValidPassword,
@@ -24,8 +24,11 @@ public class TaiKhoanValidatorTests
     [Fact]
     public void Accepts_valid_body() => Assert.Empty(ErrorFields(Valid()));
 
-    [Fact]
-    public void Phone_may_be_null() => Assert.Empty(ErrorFields(Valid(phone: null)));
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("+84 912 345 678")]
+    public void Phone_is_optional_and_accepts_vietnamese_mobile(string? value) => Assert.Empty(ErrorFields(Valid(phone: value)));
 
     [Theory]
     [InlineData("")]
@@ -33,11 +36,15 @@ public class TaiKhoanValidatorTests
     public void Rejects_missing_or_malformed_email(string value) => Assert.Equal(["email"], ErrorFields(Valid(email: value)));
 
     [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
     [InlineData("ab")]
     [InlineData("  ab  ")] // đủ 3 ký tự chỉ nhờ khoảng trắng
     public void Rejects_short_username(string value) => Assert.Equal(["ten_dang_nhap"], ErrorFields(Valid(tenDangNhap: value)));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Username_is_optional(string? value) => Assert.Empty(ErrorFields(Valid(tenDangNhap: value)));
 
     [Fact]
     public void Rejects_too_long_username() => Assert.Equal(["ten_dang_nhap"], ErrorFields(Valid(tenDangNhap: new string('a', 51))));
@@ -50,13 +57,13 @@ public class TaiKhoanValidatorTests
     [Theory]
     [InlineData("abc")]
     [InlineData("123")]
-    [InlineData("")]
+    [InlineData("+1 202 555 0100")]
     public void Rejects_bad_phone(string value) => Assert.Equal(["so_dien_thoai"], ErrorFields(Valid(phone: value)));
 
     [Fact]
     public void Each_field_reports_only_its_first_error()
     {
-        var errors = Validator.Validate(Valid(tenDangNhap: "")).Errors;
+        var errors = Validator.Validate(Valid(tenDangNhap: "ab")).Errors;
 
         Assert.Single(errors);
     }

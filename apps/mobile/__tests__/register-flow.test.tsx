@@ -21,7 +21,6 @@ import type { AuthResult, AuthUser } from '@/core/auth/types';
 
 const user: AuthUser = {
   id: '0193f0a0-0000-7000-8000-000000000010',
-  ten_dang_nhap: null,
   ho_ten: 'Minh Anh',
   email: 'minh.anh@gymbase.local',
   so_dien_thoai: '0912345678',
@@ -81,7 +80,7 @@ async function fillForm(
   };
   await fireEvent.changeText(screen.getByLabelText('Họ và tên'), values.name);
   await fireEvent.changeText(screen.getByLabelText('Email'), values.email);
-  await fireEvent.changeText(screen.getByLabelText('Số điện thoại'), values.phone);
+  await fireEvent.changeText(screen.getByLabelText(/^Số điện thoại/), values.phone);
   await fireEvent.changeText(screen.getByLabelText('Mật khẩu'), values.password);
   await fireEvent.changeText(screen.getByLabelText('Xác nhận mật khẩu'), values.confirm);
   if (values.referral) {
@@ -115,7 +114,6 @@ test('an empty form shows an error for every required field and does not call th
 
   expect(await screen.findByText('Vui lòng nhập họ và tên.')).toBeTruthy();
   expect(screen.getByText('Vui lòng nhập email.')).toBeTruthy();
-  expect(screen.getByText('Vui lòng nhập số điện thoại.')).toBeTruthy();
   expect(screen.getByText('Vui lòng nhập mật khẩu.')).toBeTruthy();
   expect(screen.getByText('Vui lòng nhập lại mật khẩu.')).toBeTruthy();
   expect(screen.getByText(TERMS_ERROR)).toBeTruthy();
@@ -200,6 +198,17 @@ test('an empty referral code is not sent', async () => {
 
   await waitFor(() => expect(register).toHaveBeenCalled());
   expect(register.mock.calls[0]?.[0]).not.toHaveProperty('ma_gioi_thieu');
+});
+
+test('a blank phone number is not required and is not sent', async () => {
+  const register = jest.spyOn(authApi, 'register').mockResolvedValue(created);
+  await openRegister();
+  await fillForm({ phone: '   ' });
+
+  await agreeAndSubmit();
+
+  await waitFor(() => expect(screen).toHavePathname('/login'));
+  expect(register.mock.calls[0]?.[0]).not.toHaveProperty('so_dien_thoai');
 });
 
 /** Đăng ký rồi đăng nhập ngay trên màn đăng nhập được điền sẵn email; kết thúc ở màn onboarding. */

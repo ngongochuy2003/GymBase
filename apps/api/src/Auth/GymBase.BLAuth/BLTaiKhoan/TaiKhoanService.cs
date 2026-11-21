@@ -2,6 +2,8 @@ using GymBase.Base.Auth;
 using GymBase.Base.Crud;
 using GymBase.Base.Exceptions;
 using FluentValidation;
+using GymBase.BLAuth.BLXacThuc;
+using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
 using GymBase.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -19,7 +21,9 @@ public sealed class TaiKhoanService(
     ICurrentUser currentUser,
     IValidator<TaiKhoanCreateDto> createValidator,
     IValidator<TaiKhoanUpdateDto> updateValidator,
-    IPasswordHasher<tai_khoan> passwordHasher)
+    IPasswordHasher<tai_khoan> passwordHasher,
+    IPhienDangNhapRepository sessions,
+    PhienHieuLucCache sessionCache)
     : BaseService<tai_khoan, TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(
         userRepository, timeProvider, currentUser, createValidator, updateValidator)
 {
@@ -31,8 +35,8 @@ public sealed class TaiKhoanService(
     /// </exception>
     protected override async Task BLBeforeCreateAsync(TaiKhoanCreateDto dto, CancellationToken cancellationToken)
     {
-        var tenDangNhap = dto.ten_dang_nhap.Trim();
-        if (await userRepository.DLExistsByTenDangNhapAsync(tenDangNhap, cancellationToken))
+        var tenDangNhap = NormalizeUserName(dto.ten_dang_nhap);
+        if (tenDangNhap is not null && await userRepository.DLExistsByTenDangNhapAsync(tenDangNhap, cancellationToken))
         {
             throw new ConflictException(
                 nameof(TaiKhoanCreateDto.ten_dang_nhap),
@@ -44,8 +48,33 @@ public sealed class TaiKhoanService(
     }
 
     /// <exception cref="ConflictException"><see cref="AuthErrorCodes.UserEmailTaken"/>: email đã thuộc người dùng khác.</exception>
-    protected override Task BLBeforeUpdateAsync(Guid id, TaiKhoanUpdateDto dto, CancellationToken cancellationToken) =>
-        EnsureEmailFreeAsync(EmailRules.Normalize(dto.email), id, nameof(TaiKhoanUpdateDto.email), cancellationToken);
+    /// <exception cref="BusinessRuleException"><see cref="AuthErrorCodes.UserSelfLockout"/>: tự khóa hoặc tự đổi vai trò của mình.</exception>
+    protected override async Task BLBeforeUpdateAsync(Guid id, TaiKhoanUpdateDto dto, CancellationToken cancellationToken)
+    {
+        await EnsureEmailFreeAsync(EmailRules.Normalize(dto.email), id, nameof(TaiKhoanUpdateDto.email), cancellationToken);
+
+        // Không có bản ghi thì để bước cập nhật báo 404.
+        if (CurrentUser.UserId == id
+            && await userRepository.DLGetByIdAsync(id, cancellationToken) is { } current
+            && (!dto.dang_hoat_dong || dto.vai_tro != current.vai_tro))
+        {
+            throw new BusinessRuleException(
+                "Không thể tự khóa hoặc tự đổi vai trò của chính mình.", AuthErrorCodes.UserSelfLockout);
+        }
+    }
+
+    /// <summary>Tài khoản bị khóa thì thu hồi mọi phiên, để refresh token và access token đều hết dùng được ngay.</summary>
+    public override async Task<TaiKhoanDto> BLUpdateAsync(Guid id, TaiKhoanUpdateDto dto, CancellationToken cancellationToken)
+    {
+        var result = await base.BLUpdateAsync(id, dto, cancellationToken);
+        if (!result.dang_hoat_dong)
+        {
+            await sessions.DLRevokeAllOfUserAsync(id, null, TimeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+            sessionCache.InvalidateUser(id);
+        }
+
+        return result;
+    }
 
     private async Task EnsureEmailFreeAsync(string email, Guid? exceptId, string field, CancellationToken cancellationToken)
     {
@@ -55,26 +84,18 @@ public sealed class TaiKhoanService(
         }
     }
 
-    protected override TaiKhoanDto BLToDto(tai_khoan entity) => new(
-        entity.Id,
-        entity.ten_dang_nhap,
-        entity.ho_ten,
-        entity.email,
-        entity.so_dien_thoai,
-        entity.vai_tro,
-        entity.dang_hoat_dong,
-        entity.ngay_tao,
-        entity.ngay_chinh_sua,
-        entity.is_dang_nhap_lan_dau);
+    protected override TaiKhoanDto BLToDto(tai_khoan entity) => TaiKhoanMapper.ToDto(entity);
+
+    private static string? NormalizeUserName(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     protected override tai_khoan BLCreateEntity(TaiKhoanCreateDto dto)
     {
         var user = new tai_khoan
         {
-            ten_dang_nhap = dto.ten_dang_nhap.Trim(),
+            ten_dang_nhap = NormalizeUserName(dto.ten_dang_nhap),
             ho_ten = dto.ho_ten.Trim(),
             email = EmailRules.Normalize(dto.email),
-            so_dien_thoai = dto.so_dien_thoai?.Trim(),
+            so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai),
             vai_tro = dto.vai_tro,
         };
         user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
@@ -85,7 +106,7 @@ public sealed class TaiKhoanService(
     {
         entity.ho_ten = dto.ho_ten.Trim();
         entity.email = EmailRules.Normalize(dto.email);
-        entity.so_dien_thoai = dto.so_dien_thoai?.Trim();
+        entity.so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai);
         entity.vai_tro = dto.vai_tro;
         entity.dang_hoat_dong = dto.dang_hoat_dong;
     }

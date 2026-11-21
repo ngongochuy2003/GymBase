@@ -72,9 +72,6 @@ await axios.get(`${baseUrl}/users`, {
 });
 ```
 
-Các request mẫu trong Bruno: `sap-xep.bru`, `loc.bru`, `sap-xep-sai-cot.bru`
-(thư mục `docs/api/bruno/web/nguoi-dung` và `docs/api/bruno/mobile/nguoi-dung`).
-
 ## 4. Khi sai
 
 Trả 400 `VALIDATION_FAILED`, `errors` có khóa `sort` hoặc `filter`. `detail` hiển thị được ngay cho

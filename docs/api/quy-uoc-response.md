@@ -108,7 +108,7 @@ Response:
 | `meta.page`, `meta.page_size` | Giá trị **sau khi** đã đưa về hợp lệ, có thể khác giá trị client gửi |
 | `meta.total` | Tổng số bản ghi thỏa điều kiện, tính trên mọi trang |
 | `meta.total_page` | Tổng số trang; 0 khi không có bản ghi |
-| `meta.ranger` | Thứ tự bản ghi đầu và cuối của trang này (đếm từ 1), dùng để hiện "21–40 trên 57". Là `0`–`0` khi không có bản ghi hoặc `page` vượt quá `total_page` |
+| `meta.ranger` | Thứ tự bản ghi đầu và cuối của trang này (đếm từ 1), dùng để hiện "21–40 trên 57". Là `0`–`0` khi không có bản ghi hoặc `page` vượt quá `total_page`. Tên `ranger` (không phải `range`) và `total_page` (số ít) là **cố ý**, giữ theo dạng của dự án tham khảo đã chốt ngày 08/11, nên không đổi |
 
 Trang vượt quá số trang **không phải lỗi**: trả 200, `data` rỗng.
 
@@ -163,7 +163,7 @@ của framework. Client không nên hiện `errors` của các lỗi này cho ng
 
 | HTTP | `code` | `title` | Khi nào dùng | Ví dụ |
 | --- | --- | --- | --- | --- |
-| 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ten_dang_nhap`, email sai định dạng |
+| 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ho_ten`, email sai định dạng |
 | 401 | `UNAUTHORIZED` | Chưa xác thực | Chưa đăng nhập, token sai hoặc hết hạn, sai tên đăng nhập hoặc mật khẩu | Gọi API không kèm token |
 | 403 | `FORBIDDEN` | Không có quyền | Đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa | Học viên gọi API quản trị |
 | 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id | `GET /users/{id}` với id không tồn tại |
@@ -201,10 +201,11 @@ HTTP của mã chung tương ứng**.
 | --- | --- | --- | --- | --- |
 | 409 | `USER_USERNAME_TAKEN` | `AuthErrorCodes.UserUsernameTaken` | Thêm người dùng trùng `ten_dang_nhap` với người dùng khác (không phân biệt hoa thường). `errors` có `ten_dang_nhap` | Đang dùng |
 | 409 | `USER_EMAIL_TAKEN` | `AuthErrorCodes.UserEmailTaken` | Thêm, sửa hoặc tự đăng ký (`/auth/register`) trùng `email` với người dùng khác (không phân biệt hoa thường). `errors` có `email` | Đang dùng |
+| 422 | `USER_SELF_LOCKOUT` | `AuthErrorCodes.UserSelfLockout` | Admin sửa chính mình với `dang_hoat_dong = false` hoặc đổi `vai_tro` | Đang dùng |
 | 409 | `AUTH_EMAIL_USED_PASSWORD` | `AuthErrorCodes.EmailUsedPassword` | Đăng nhập Google mà email đã thuộc tài khoản có mật khẩu (không tự liên kết). `errors` có `email` | Đang dùng |
 | 401 | `AUTH_GOOGLE_TOKEN_INVALID` | `AuthErrorCodes.GoogleTokenInvalid` | ID token của Google sai chữ ký, `aud`, `iss`, hết hạn, hoặc chưa cấu hình `Google:ClientIds` | Đang dùng |
 | 401 | `AUTH_GOOGLE_EMAIL_UNVERIFIED` | `AuthErrorCodes.GoogleEmailUnverified` | Tài khoản Google mới không có email đã xác minh nên không tạo được tài khoản | Đang dùng |
-| 403 | `PROFILE_REQUIRED` | `AuthErrorCodes.ProfileRequired` | Chức năng cần hồ sơ (nhóm người dùng) mà tài khoản chưa có; app dẫn tới bước thiết lập hồ sơ | Đã định nghĩa, chưa chức năng nào dùng |
+| 403 | `PROFILE_REQUIRED` | `BizErrorCodes.ProfileRequired` | Endpoint dùng policy `RequireProfile` mà tài khoản chưa thiết lập hồ sơ (nhóm người dùng); app dẫn tới bước thiết lập hồ sơ. Do `ProfileRequiredResultHandler` ở host trả | Đang dùng |
 | 401 | `AUTH_INVALID_CREDENTIALS` | | Đăng nhập không thành công: sai email, sai mật khẩu, hoặc tài khoản bị khóa (dùng chung một mã để không lộ trạng thái tài khoản, xem [xac-thuc.md](xac-thuc.md)) | Đang dùng |
 | 403 | `PT_NOT_VERIFIED` | `BizErrorCodes.PtNotVerified` | PT chưa được xác minh (hoặc tài khoản bị khóa) mà quản lý học viên | Đang dùng |
 | 403 | `CONNECTION_NOT_ACTIVE` | `BizErrorCodes.ConnectionNotActive` | Không có kết nối PT đang hoạt động với học viên | Đang dùng |

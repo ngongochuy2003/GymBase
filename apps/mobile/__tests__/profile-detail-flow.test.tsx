@@ -11,17 +11,19 @@ import ProfileRoute from '@/app/(protected)/profile';
 import ProfileSetupRoute from '@/app/(protected)/profile-setup';
 import PersonalInfoRoute from '@/app/(protected)/profile-setup/ca-nhan';
 import ProfileDetailRoute from '@/app/(protected)/profile-setup/chi-tiet';
+import ProfileDoneRoute from '@/app/(protected)/profile-setup/hoan-tat';
 import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
 import { authApi } from '@/core/api/auth-api';
-import { danhMucApi, type DanhMucNhom } from '@/core/api/danh-muc-api';
-import { profileApi, type HoSo } from '@/core/api/profile-api';
+import { danhMucApi, type DanhMucNhom } from '@/shared/api/danh-muc-api';
+import * as DocumentPicker from 'expo-document-picker';
+import { profileApi, type HoSo } from '@/features/profile/api/profile-api';
+import * as uploader from '@/shared/file/file-uploader';
 import type { AuthUser } from '@/core/auth/types';
 
 const user: AuthUser = {
   id: '0193f0a0-0000-7000-8000-000000000013',
-  ten_dang_nhap: null,
   ho_ten: 'Minh Anh',
   email: 'minh.anh@gymbase.local',
   so_dien_thoai: '0912345678',
@@ -72,6 +74,7 @@ const saved: HoSo = {
   gioi_thieu: null,
   trang_thai_xac_minh: 'chua_xac_minh',
   chi_so_co_the: { ngay_do: '2026-11-16T00:00:00Z', chieu_cao_cm: 175, can_nang_kg: 70 },
+  chung_chi: null,
 };
 
 const routes = {
@@ -86,6 +89,7 @@ const routes = {
   '(protected)/profile-setup/index': ProfileSetupRoute,
   '(protected)/profile-setup/ca-nhan': PersonalInfoRoute,
   '(protected)/profile-setup/chi-tiet': ProfileDetailRoute,
+  '(protected)/profile-setup/hoan-tat': ProfileDoneRoute,
   '(protected)/onboarding': OnboardingRoute,
   '+not-found': NotFound,
 };
@@ -249,7 +253,7 @@ test('a learner saving sends one request with the personal and learner data, the
 
   await fireEvent.press(screen.getByRole('button', SAVE));
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
   expect(save).toHaveBeenCalledTimes(1);
   expect(save).toHaveBeenCalledWith({
     loai_nguoi_dung: 'hoc_vien',
@@ -333,7 +337,7 @@ test('a network error keeps the data and Retry sends it again', async () => {
 
   await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
   expect(save).toHaveBeenCalledTimes(2);
 });
 
@@ -363,7 +367,7 @@ test('a PT saving sends the PT block only, with no learner fields', async () => 
 
   await fireEvent.press(screen.getByRole('button', SAVE));
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
   expect(save).toHaveBeenCalledTimes(1);
   expect(save).toHaveBeenCalledWith({
     loai_nguoi_dung: 'pt',
@@ -412,7 +416,7 @@ test('a PT with zero years of experience and no introduction can save', async ()
 
   await fireEvent.press(screen.getByRole('button', SAVE));
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
   expect(save).toHaveBeenCalledWith(
     expect.objectContaining({
       chuyen_mon: ['giam_mo'],
@@ -448,7 +452,7 @@ test('choosing both roles saves both blocks in one request', async () => {
 
   await fireEvent.press(screen.getByRole('button', SAVE));
 
-  await waitFor(() => expect(screen).toHavePathname('/home'));
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
   expect(save).toHaveBeenCalledTimes(1);
   expect(save).toHaveBeenCalledWith({
     loai_nguoi_dung: 'ca_hai',
@@ -495,4 +499,187 @@ test('a server error on a PT field shows under it, in the PT tab', async () => {
 
   expect(await screen.findByText('Mã chuyên môn PT không hợp lệ.')).toBeTruthy();
   expect(screen.getByRole('tab', { name: 'Hồ sơ PT' })).toBeSelected();
+});
+
+const PDF = { uri: 'file:///cache/PT_Level1_FI.pdf', name: 'PT_Level1_FI.pdf', size: 2048 };
+
+function pickPdfOnce(asset: { uri: string; name: string; size?: number } = PDF) {
+  jest
+    .mocked(DocumentPicker.getDocumentAsync)
+    .mockResolvedValueOnce({ canceled: false, assets: [asset] } as never);
+}
+
+function uploadResult(
+  overrides: Partial<{ file_id: string; original_name: string; size: number }> = {},
+) {
+  return {
+    file_id: '0193f0a0-0000-7000-8000-0000000000f1',
+    original_name: 'PT_Level1_FI.pdf',
+    content_type: 'application/pdf',
+    size: 2048,
+    purpose: 'chung_chi_pt',
+    provider: 'LOCAL',
+    content_url: '/api/v1/mob/files/f1/content',
+    ...overrides,
+  };
+}
+
+test('the PT block has an optional certificate field under years of experience', async () => {
+  await openDetail('pt');
+
+  expect(await screen.findByText('Chứng chỉ (nếu có)')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Chọn tệp PDF chứng chỉ' })).toBeTruthy();
+  expect(screen.getByText('Chỉ nhận tệp PDF, tối đa 10,0 MB. Tệp được lưu riêng tư.')).toBeTruthy();
+});
+
+test('a learner has no certificate field', async () => {
+  await openDetail('hoc_vien');
+
+  await screen.findByText('Thông tin học viên');
+  expect(screen.queryByText('Chứng chỉ (nếu có)')).toBeNull();
+});
+
+test('picking a PDF uploads it as a private certificate and saving sends its file id', async () => {
+  const upload = jest.spyOn(uploader, 'uploadMultipartFile').mockResolvedValue(uploadResult());
+  const save = jest
+    .spyOn(profileApi, 'save')
+    .mockResolvedValue({ ...saved, loai_nguoi_dung: 'pt' });
+  await openDetail('pt');
+  await fillPt();
+  pickPdfOnce();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+
+  expect(await screen.findByText('PT_Level1_FI.pdf')).toBeTruthy();
+  expect(screen.getByText('PDF · 2 KB')).toBeTruthy();
+  expect(upload).toHaveBeenCalledWith(PDF.uri, 'chung_chi_pt', {
+    contentType: 'application/pdf',
+    fileName: 'PT_Level1_FI.pdf',
+  });
+
+  await fireEvent.press(screen.getByRole('button', SAVE));
+
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
+  expect(save).toHaveBeenCalledWith(
+    expect.objectContaining({ chung_chi_tep_tin_id: '0193f0a0-0000-7000-8000-0000000000f1' }),
+  );
+});
+
+test('removing the certificate with the cross sends no file id', async () => {
+  jest.spyOn(uploader, 'uploadMultipartFile').mockResolvedValue(uploadResult());
+  const save = jest
+    .spyOn(profileApi, 'save')
+    .mockResolvedValue({ ...saved, loai_nguoi_dung: 'pt' });
+  await openDetail('pt');
+  await fillPt();
+  pickPdfOnce();
+  await fireEvent.press(screen.getByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+  await fireEvent.press(await screen.findByRole('button', { name: 'Xóa chứng chỉ' }));
+
+  expect(screen.queryByText('PT_Level1_FI.pdf')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', SAVE));
+
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/hoan-tat'));
+  expect(save.mock.calls[0]?.[0].chung_chi_tep_tin_id).toBeUndefined();
+});
+
+test('cancelling the file picker changes nothing', async () => {
+  const upload = jest.spyOn(uploader, 'uploadMultipartFile');
+  await openDetail('pt');
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+
+  expect(upload).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Chọn tệp PDF chứng chỉ' })).toBeTruthy();
+});
+
+test('a PDF over 10 MB is rejected before uploading', async () => {
+  const upload = jest.spyOn(uploader, 'uploadMultipartFile');
+  await openDetail('pt');
+  pickPdfOnce({ ...PDF, size: 11 * 1024 * 1024 });
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+
+  expect(await screen.findByText('Tệp quá lớn. Tối đa 10,0 MB.')).toBeTruthy();
+  expect(upload).not.toHaveBeenCalled();
+});
+
+test('a failed upload shows an error and keeps the field empty so it can be retried', async () => {
+  jest.spyOn(uploader, 'uploadMultipartFile').mockRejectedValue(new Error('Upload thất bại'));
+  await openDetail('pt');
+  pickPdfOnce();
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+
+  expect(
+    await screen.findByText(/^Không tải được tệp lên. Kiểm tra mạng và thử lại./),
+  ).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Chọn tệp PDF chứng chỉ' })).toBeTruthy();
+});
+
+test('an upload rejected by the server explains the cause by HTTP status', async () => {
+  jest
+    .spyOn(uploader, 'uploadMultipartFile')
+    .mockRejectedValue(new uploader.UploadError('Upload file multipart thất bại (401): {}', 401));
+  await openDetail('pt');
+  pickPdfOnce();
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+
+  expect(
+    await screen.findByText('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'),
+  ).toBeTruthy();
+});
+
+test('a server error on the certificate shows under the field, in the PT tab', async () => {
+  jest.spyOn(uploader, 'uploadMultipartFile').mockResolvedValue(uploadResult());
+  jest.spyOn(profileApi, 'save').mockRejectedValue(
+    new ApiError('Thông tin chưa hợp lệ.', 400, 'VALIDATION_FAILED', {
+      chung_chi_tep_tin_id: [
+        'Tệp chứng chỉ không hợp lệ hoặc đã hết hạn. Vui lòng chọn lại tệp PDF.',
+      ],
+    }),
+  );
+  await openDetail('pt');
+  await fillPt();
+  pickPdfOnce();
+  await fireEvent.press(screen.getByRole('button', { name: 'Chọn tệp PDF chứng chỉ' }));
+  await screen.findByText('PT_Level1_FI.pdf');
+
+  await fireEvent.press(screen.getByRole('button', SAVE));
+
+  expect(
+    await screen.findByText(
+      'Tệp chứng chỉ không hợp lệ hoặc đã hết hạn. Vui lòng chọn lại tệp PDF.',
+    ),
+  ).toBeTruthy();
+  expect(screen).toHavePathname('/profile-setup/chi-tiet');
+});
+
+test('after saving a PT profile the done screen says it is waiting for verification', async () => {
+  jest.spyOn(profileApi, 'save').mockResolvedValue({ ...saved, loai_nguoi_dung: 'pt' });
+  await openDetail('pt');
+  await fillPt();
+
+  await fireEvent.press(screen.getByRole('button', SAVE));
+
+  expect(await screen.findByText('Đã gửi hồ sơ PT!')).toBeTruthy();
+  expect(screen.getByText('Chờ xác minh')).toBeTruthy();
+  expect(screen.getByText(/đang chờ đội ngũ GymBase xác minh/)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: 'Về Trang chủ' }));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
+});
+
+test('after saving a learner profile the done screen welcomes the user to GymBase', async () => {
+  jest.spyOn(profileApi, 'save').mockResolvedValue(saved);
+  await openDetail('hoc_vien');
+  await fillValid();
+
+  await fireEvent.press(screen.getByRole('button', SAVE));
+
+  expect(await screen.findByText('Chào mừng Anh đến với GymBase!')).toBeTruthy();
+  expect(screen.getByText('Bảng tin cộng đồng')).toBeTruthy();
+  expect(screen.queryByText('Chờ xác minh')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: 'Bắt đầu khám phá' }));
+  await waitFor(() => expect(screen).toHavePathname('/home'));
 });

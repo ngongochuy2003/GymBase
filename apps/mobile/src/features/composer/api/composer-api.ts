@@ -1,6 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import { createMobHttpClient, DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
-import { env } from '@/core/config/env';
+import { getMobClient } from '@/core/api/mobile-client';
 import { uploadMultipartFile, isVideoUrl } from '@/shared/file/file-uploader';
 import type { ComposerPayload } from '../types';
 
@@ -50,7 +49,7 @@ export interface ComposerRepository {
 }
 
 export function createComposerRepository(
-  client: AxiosInstance = createMobHttpClient(),
+  client: AxiosInstance = getMobClient(),
 ): ComposerRepository {
   return {
     async createPost(payload: ComposerPayload): Promise<BaiVietCreatedResponseDto> {
@@ -58,10 +57,6 @@ export function createComposerRepository(
 
 
       // Tự động upload các ảnh từ thiết bị (blob: hoặc file://) lên backend
-      const apiHostBase = (env.apiUrl || DEFAULT_LOCAL_API_URL)
-        .replace(/\/api\/v1\/mob\/?$/, '')
-        .replace(/\/+$/, '');
-
       const itemsToUpload =
         payload.mediaItems && payload.mediaItems.length > 0
           ? payload.mediaItems
@@ -80,7 +75,6 @@ export function createComposerRepository(
         } else {
           const isVideo = item.type === 'video' || isVideoUrl(uri);
           const uploadResult = await uploadMultipartFile(uri, 'post', {
-            apiBaseUrl: apiHostBase,
             contentType: isVideo ? (item.mimeType || 'video/mp4') : undefined,
           });
           const resultUrl = uploadResult?.content_url;

@@ -12,14 +12,14 @@ namespace GymBase.API.Controllers;
 /// <see cref="BaseCrudController{TDto,TCreateDto,TUpdateDto}"/>: GET danh sách, GET {id}, POST, PUT {id}, DELETE {id} (xóa hẳn).
 /// </summary>
 [Authorize(Roles = AppRoles.Admin)]
-public sealed class UsersController(TaiKhoanService userService, XacThucService authService)
+public sealed class UsersController(TaiKhoanService userService, MatKhauService passwordService)
     : BaseCrudController<TaiKhoanDto, TaiKhoanCreateDto, TaiKhoanUpdateDto>(userService)
 {
     /// <summary>Đặt lại mật khẩu cho người dùng; mọi phiên của người đó bị thu hồi.</summary>
     [HttpPost("{id:guid}/reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id, DatLaiMatKhauDto dto, CancellationToken cancellationToken)
     {
-        await authService.BLDatLaiMatKhauAsync(id, dto, cancellationToken);
+        await passwordService.BLDatLaiMatKhauAsync(id, dto, cancellationToken);
         return NoContent();
     }
 }

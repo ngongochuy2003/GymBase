@@ -1,34 +1,18 @@
-using GymBase.Base.Exceptions;
+using GymBase.API;
 using GymBase.Base.Hosting;
 using GymBase.Base.Hosting.Logging;
 using GymBase.BLAuth;
+using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLBiz;
 using GymBase.BLBiz.BaiViet;
+using GymBase.BLDI;
 using GymBase.BLFile;
 using GymBase.BLFile.BLFiles;
-using GymBase.DLAuth.Contract;
+using Microsoft.AspNetCore.Authorization;
 using GymBase.DLAuth.MySql;
-using GymBase.DLBiz.Contract;
 using GymBase.DLBiz.MySql;
-using GymBase.DLFile.Contract;
+using GymBase.DLDI.MySql;
 using GymBase.DLFile.MySql;
-using GymBase.BLAuth.BLTaiKhoan;
-using GymBase.BLAuth.BLXacThuc;
-using GymBase.BLDI;
-using GymBase.DLAuth.Contract.DLDangNhapNgoai;
-using GymBase.DLAuth.Contract.DLPhienDangNhap;
-using GymBase.DLAuth.Contract.DLTaiKhoan;
-using GymBase.DLAuth.MySql.DLDangNhapNgoai;
-using GymBase.DLAuth.MySql.DLPhienDangNhap;
-using GymBase.DLAuth.MySql.DLTaiKhoan;
-using GymBase.DLBiz.Contract.DLChiSoCoThe;
-using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
-using GymBase.DLBiz.Contract.DLKetNoiPt;
-using GymBase.DLBiz.MySql.DLChiSoCoThe;
-using GymBase.DLBiz.MySql.DLHoSoNguoiDung;
-using GymBase.DLBiz.MySql.DLKetNoiPt;
-using GymBase.DLDI.Contract.DLDanhMuc;
-using GymBase.DLDI.MySql.DLDanhMuc;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,63 +22,36 @@ var builder = WebApplication.CreateBuilder(args);
 // Mỗi BL có validator thì thêm assembly của nó vào đây.
 builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(BaiVietService).Assembly);
 
+// Policy RequireProfile không đạt thì trả mã PROFILE_REQUIRED (mã của nhóm Biz nên đặt ở host).
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProfileRequiredResultHandler>();
+
 // Log kỹ thuật ra console và file, cấu hình ở mục "Serilog" của appsettings.
 builder.Services.AddAppLogging(builder.Configuration);
 
 // Một AppDbContext cho cả DB.
 builder.Services.AddAppPersistence(builder.Configuration);
 
+// Mỗi nhóm đăng ký hai phần: nghiệp vụ (AddXxxBusiness, ở BL) và repository MySQL (AddXxxData, ở DL.MySql).
+// BL không tham chiếu DL.MySql nên hai phần phải gọi riêng ở host.
+
 // Auth: người dùng, đăng nhập
 builder.Services.AddAuthBusiness();
-builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
-builder.Services.AddScoped<IPhienDangNhapRepository, PhienDangNhapRepository>();
-builder.Services.AddScoped<IDangNhapNgoaiRepository, DangNhapNgoaiRepository>();
+builder.Services.AddAuthData();
 
-// BIZ: mạng xã hội (bài viết, tương tác thích/bình luận)
+// Biz: mạng xã hội (bài viết, tương tác thích/bình luận), hồ sơ, quyền theo hồ sơ và quyền trên dữ liệu học viên
+// (phân quyền: docs/api/phan-quyen.md)
 builder.Services.AddBizBusiness();
-builder.Services.AddScoped<IBaiVietRepository, BaiVietRepository>();
-builder.Services.AddScoped<ITuongTacBaiVietRepository, TuongTacBaiVietRepository>();
+builder.Services.AddBizData();
 
 // File: lưu trữ tệp tin (Local/S3) và push notification
 builder.Services.AddFileBusiness(builder.Configuration);
-builder.Services.AddScoped<ITepTinRepository, TepTinRepository>();
+builder.Services.AddFileData();
+
 // DI (Danh mục): dữ liệu tham chiếu cho dropdown (docs/api/danh-muc.md)
 builder.Services.AddDIBusiness();
-builder.Services.AddScoped<IDanhMucRepository, DanhMucRepository>();
-
-// Biz: quyền theo hồ sơ và quyền trên dữ liệu học viên (phân quyền: docs/api/phan-quyen.md)
-builder.Services.AddBizBusiness();
-builder.Services.AddScoped<IHoSoNguoiDungRepository, HoSoNguoiDungRepository>();
-builder.Services.AddScoped<IChiSoCoTheRepository, ChiSoCoTheRepository>();
-builder.Services.AddScoped<IKetNoiPtRepository, KetNoiPtRepository>();
+builder.Services.AddDIData();
 
 var app = builder.Build();
-
-// Tạo tài khoản Admin đầu tiên: dotnet run --project src/Host/GymBase.API -- create-admin <email>
-// Mật khẩu lấy từ biến môi trường để không nằm trong lịch sử dòng lệnh.
-if (args is ["create-admin", var adminEmail])
-{
-    var password = Environment.GetEnvironmentVariable("GYMBASE_ADMIN_PASSWORD");
-    if (string.IsNullOrEmpty(password))
-    {
-        Console.Error.WriteLine("Chưa đặt biến môi trường GYMBASE_ADMIN_PASSWORD.");
-        return 1;
-    }
-
-    await using var scope = app.Services.CreateAsyncScope();
-    try
-    {
-        await scope.ServiceProvider.GetRequiredService<XacThucService>().BLTaoHoacDatLaiAdminAsync(adminEmail, password, CancellationToken.None);
-    }
-    catch (ValidationFailedException ex)
-    {
-        Console.Error.WriteLine(string.Join(Environment.NewLine, ex.Errors!.Values.SelectMany(messages => messages)));
-        return 1;
-    }
-
-    Console.WriteLine($"Đã tạo hoặc đặt lại tài khoản Admin '{adminEmail}'.");
-    return 0;
-}
 
 app.UseAppApi();
 

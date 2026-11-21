@@ -2,7 +2,7 @@ namespace GymBase.Base.Entities;
 
 /// <summary>
 /// Cách duy nhất để ghi các trường audit. Các hàm audit bắt buộc thời gian là UTC,
-/// để một giá trị giờ địa phương không lọt vào DB. Tầng DL gọi các hàm này trước khi insert/update/delete.
+/// để một giá trị giờ địa phương không lọt vào DB. BaseService (tầng BL) gọi các hàm này trước khi insert/update/delete.
 /// </summary>
 public static class EntityAuditExtensions
 {

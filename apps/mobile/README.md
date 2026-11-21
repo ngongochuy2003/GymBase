@@ -6,7 +6,7 @@ Base Expo/React Native theo kiến trúc feature-first. Đăng nhập và bảng
 ## Cấu hình và chạy
 
 1. Khởi động MySQL 8.4, áp dụng migration và cấu hình JWT theo [hướng dẫn chạy API](../../docs/api/cach-chay-api.md).
-2. Tạo tài khoản Admin bằng lệnh `create-admin` trong tài liệu API, hoặc dùng một tài khoản đã có trong DB.
+2. Đăng ký tài khoản thường, rồi đổi `vai_tro` thành `Admin` trong DB nếu cần thử quyền quản trị (xem [hướng dẫn chạy API](../../docs/api/cach-chay-api.md)).
 3. Sao chép `.env.example` thành `.env`. Máy tính chạy API dùng `http://localhost:5020`; thiết bị thật cần dùng IP LAN của máy chạy API.
 4. Từ repository root chạy `pnpm mobile`. Expo Go mở ứng dụng trên thiết bị/emulator.
 
@@ -29,9 +29,9 @@ npx --yes pnpm@10.34.9 --filter @gymbase/mobile ios
 Cần backend đang chạy ([cách chạy API](../../docs/api/cach-chay-api.md)) và `EXPO_PUBLIC_API_URL` trong `.env`
 (sao chép từ `.env.example`; emulator Android dùng `http://10.0.2.2:5020`).
 
-Màn hình mở đầu: **Chào mừng** → **Đăng nhập** bằng email và mật khẩu (tài khoản tạo bằng `create-admin` hoặc seed dev).
+Màn hình mở đầu: **Chào mừng** → **Đăng nhập** bằng email và mật khẩu (tài khoản đã đăng ký, có thể được cấp `Admin` trong DB).
 Phiên được lưu bằng SecureStore, mở lại app tự khôi phục; token tự gia hạn, hết phiên thì về màn chào mừng.
-**Đăng ký tài khoản** (họ tên, email, số điện thoại di động Việt Nam, mật khẩu, tick điều khoản) không có phiên: app về màn đăng nhập
+**Đăng ký tài khoản** (họ tên, email, mật khẩu, tick điều khoản; số điện thoại di động Việt Nam là tùy chọn) không có phiên: app về màn đăng nhập
 với email điền sẵn. Lần đăng nhập đầu tiên hiện màn onboarding cho tới khi bấm "Thiết lập hồ sơ ngay" hoặc
 "Bỏ qua, vào Trang chủ" (cờ `is_dang_nhap_lan_dau` lưu ở server). "Thiết lập hồ sơ ngay" đi qua chọn vai trò, thông tin
 cá nhân và thông tin theo vai trò; lưu xong vào Trang chủ.

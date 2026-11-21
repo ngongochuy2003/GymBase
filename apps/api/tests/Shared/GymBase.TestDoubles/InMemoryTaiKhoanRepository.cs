@@ -30,10 +30,6 @@ public sealed class InMemoryTaiKhoanRepository : InMemoryBaseRepository<tai_khoa
         Task.FromResult(Store.All().FirstOrDefault(user =>
             string.Equals(user.email, email, StringComparison.OrdinalIgnoreCase)));
 
-    public Task<tai_khoan?> DLFindByTenDangNhapAsync(string tenDangNhap, CancellationToken cancellationToken) =>
-        Task.FromResult(Store.All().FirstOrDefault(user =>
-            string.Equals(user.ten_dang_nhap, tenDangNhap, StringComparison.OrdinalIgnoreCase)));
-
     private static IEnumerable<tai_khoan> CreateMockUsers() =>
     [
         CreateMock("0193f0a0-0000-7000-8000-000000000001", "admin", "Quản trị viên", "admin@gymbase.local", "0900000001", "Admin", true, 1),

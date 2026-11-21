@@ -1,40 +1,18 @@
-import { Platform } from 'react-native';
-import axios, { type AxiosInstance } from 'axios';
+import type { AxiosInstance } from 'axios';
+import { authRuntime } from './auth-api';
 import { createApiClient } from './client';
-import { env } from '../config/env';
-import { tokenStorage } from '../storage/token-storage';
+import { resolveMobApiBaseUrl } from './mob-base-url';
 
-export const DEFAULT_LOCAL_API_URL = 'http://localhost:5020';
+export { resolveMobApiBaseUrl } from './mob-base-url';
 
-export function resolveMobApiBaseUrl(overrideUrl?: string): string {
-  if (
-    !overrideUrl &&
-    Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
-    window.location?.hostname === 'localhost'
-  ) {
-    return 'http://localhost:5020/api/v1/mob';
-  }
-  const raw = (overrideUrl || env.apiUrl || DEFAULT_LOCAL_API_URL).trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1/mob') ? raw : `${raw}/api/v1/mob`;
-}
+let shared: AxiosInstance | undefined;
 
-export function createMobHttpClient(overrideUrl?: string): AxiosInstance {
-  const baseURL = resolveMobApiBaseUrl(overrideUrl);
-  return createApiClient(baseURL, {
-    getAccessToken: async () => (await tokenStorage.read())?.accessToken ?? null,
-    refresh: async () => {
-      const current = await tokenStorage.read();
-      if (!current) return null;
-      const response = await axios.post<{ access_token: string; refresh_token: string }>(
-        `${baseURL}/auth/refresh`,
-        { refresh_token: current.refreshToken },
-        { timeout: 15_000 },
-      );
-      const next = { accessToken: response.data.access_token, refreshToken: response.data.refresh_token };
-      await tokenStorage.write(next);
-      return next.accessToken;
-    },
-    onUnauthorized: async () => { await tokenStorage.clear(); },
-  });
+/**
+ * Client có xác thực dùng chung cho các module (profile, danh mục, feed, composer).
+ * Dùng chung `authRuntime.transport` với `authApi`, nên mọi nơi thấy cùng một token,
+ * refresh chỉ chạy một nơi và phiên được báo khi hết hạn.
+ */
+export function getMobClient(): AxiosInstance {
+  shared ??= createApiClient(resolveMobApiBaseUrl(), authRuntime.transport);
+  return shared;
 }

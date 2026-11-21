@@ -83,11 +83,10 @@ GET /api/v1/mob/danh-muc → Mob/Controllers/DanhMucController
     → IDanhMucRepository.DLFindDangDungAsync → MySQL (GymBase.DLDI.MySql/DLDanhMuc)
 ```
 
-Đăng ký ở `Program.cs`: `AddDIBusiness()` (BL) và `IDanhMucRepository → DanhMucRepository` (DL). Mobile chỉ cần kênh
+Đăng ký: `AddDIBusiness()` (BL) và `AddDIData()` (DL.MySql, đăng ký `IDanhMucRepository → DanhMucRepository`), cả hai được gọi ở `Program.cs`. Mobile chỉ cần kênh
 `mob`; chưa có màn quản trị danh mục trên web.
 
 ## 5. Test
 
 - `dotnet test GymBase.slnx` tại `apps/api` — `DanhMucTests` phủ: trả đủ các loại đang dùng, lọc theo `ma_dinh_danh`,
   bỏ mục `tinh_trang = 0`, 401 khi chưa đăng nhập.
-- Bruno: `docs/api/bruno/mobile/danh-muc/` (gọi thành công và trường hợp 401).

@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import { createMobHttpClient } from '@/core/api/mobile-client';
+import { getMobClient } from '@/core/api/mobile-client';
 import { resolveMediaUrl } from '@/shared/file';
 import type { FeedPostData } from '../types';
 
@@ -128,7 +128,7 @@ export interface FeedRepository {
 }
 
 export function createFeedRepository(
-  client: AxiosInstance = createMobHttpClient(),
+  client: AxiosInstance = getMobClient(),
 ): FeedRepository {
   async function getPaginatedFeed(
     tab: string,

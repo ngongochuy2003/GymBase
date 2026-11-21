@@ -82,15 +82,12 @@ export function FeedScreen() {
 
   const avatarUri = useMemo(() => {
     if (user) {
-      const userPost = posts.find(
-        (p) => p.author.name === user.ho_ten || p.author.name === user.ten_dang_nhap,
-      );
+      const userPost = posts.find((p) => p.author.name === user.ho_ten);
       if (userPost?.author.avatarUri) {
         return userPost.author.avatarUri;
       }
     }
     if (
-      user?.ten_dang_nhap === 'minhle' ||
       user?.email?.toLowerCase().includes('tuanminh30042005') ||
       user?.id === '01a1d5ef-6706-74df-bfc8-0f150d22cad2'
     ) {

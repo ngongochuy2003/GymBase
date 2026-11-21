@@ -559,4 +559,164 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync(HoSo)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Luu(client, BodyHocVien())).StatusCode);
     }
+
+    // ---- Chứng chỉ PT (tệp PDF gắn vào hồ sơ qua tep_tin)
+
+    private InMemoryStore<tep_tin> TepTinStore => _app.Services.GetRequiredService<InMemoryStore<tep_tin>>();
+
+    private FakeFileStorage Storage => _app.Services.GetRequiredService<FakeFileStorage>();
+
+    /// <summary>Tệp PDF chứng chỉ vừa tải lên (<c>da_tai_len</c>), chưa gắn vào hồ sơ.</summary>
+    private Guid GivenChungChiDaTaiLen(Guid chuSoHuu, string mime = "application/pdf", string mucDich = "chung_chi_pt")
+    {
+        var file = new tep_tin
+        {
+            nguoi_tai_len_id = chuSoHuu,
+            loai_doi_tuong = LoaiDoiTuongTepTin.ho_so_nguoi_dung,
+            muc_dich = mucDich,
+            s3_bucket = "FAKE",
+            s3_key = $"chung_chi_pt/{Guid.NewGuid():N}.pdf",
+            ten_tep_goc = "PT_Level1_FI.pdf",
+            loai_mime = mime,
+            kich_thuoc_byte = 2048,
+            che_do_truy_cap = CheDoTruyCap.rieng_tu,
+            trang_thai = TrangThaiTepTin.da_tai_len,
+            ngay_tao = DateTime.UtcNow,
+        };
+        TepTinStore.TryAdd(file);
+        return file.Id;
+    }
+
+    [Fact]
+    public async Task Pt_gui_chung_chi_hop_le_duoc_gan_va_doc_lai()
+    {
+        var fileId = GivenChungChiDaTaiLen(Pt);
+        var body = BodyPt();
+        body["chung_chi_tep_tin_id"] = fileId;
+        using var client = Client(Pt);
+
+        var response = await Luu(client, body);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var chungChi = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("chung_chi");
+        Assert.Equal(fileId, chungChi.GetProperty("file_id").GetGuid());
+        Assert.Equal("PT_Level1_FI.pdf", chungChi.GetProperty("ten_tep").GetString());
+        Assert.Equal(2048, chungChi.GetProperty("kich_thuoc_byte").GetInt64());
+        var luu = TepTinStore.Find(fileId)!;
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, luu.trang_thai);
+        Assert.Equal(Pt, luu.doi_tuong_id);
+
+        var doc = await (await client.GetAsync(HoSo)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(fileId, doc.GetProperty("chung_chi").GetProperty("file_id").GetGuid());
+    }
+
+    [Fact]
+    public async Task Chung_chi_la_tuy_chon_va_ho_so_khong_co_thi_tra_null()
+    {
+        using var client = Client(Pt);
+
+        var response = await Luu(client, BodyPt());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("chung_chi").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("application/pdf", "avatar")]
+    [InlineData("image/webp", "chung_chi_pt")]
+    public async Task Chung_chi_sai_muc_dich_hoac_sai_kieu_tra_400(string mime, string mucDich)
+    {
+        var body = BodyPt();
+        body["chung_chi_tep_tin_id"] = GivenChungChiDaTaiLen(Pt, mime, mucDich);
+
+        await AssertLoiTruongAsync(await Luu(Client(Pt), body), "chung_chi_tep_tin_id");
+    }
+
+    [Fact]
+    public async Task Chung_chi_cua_nguoi_khac_tra_400_va_khong_bi_gan()
+    {
+        var cuaNguoiKhac = GivenChungChiDaTaiLen(HocVien);
+        var body = BodyPt();
+        body["chung_chi_tep_tin_id"] = cuaNguoiKhac;
+
+        await AssertLoiTruongAsync(await Luu(Client(Pt), body), "chung_chi_tep_tin_id");
+
+        Assert.Equal(TrangThaiTepTin.da_tai_len, TepTinStore.Find(cuaNguoiKhac)!.trang_thai);
+    }
+
+    [Fact]
+    public async Task Chung_chi_khong_ton_tai_tra_400()
+    {
+        var body = BodyPt();
+        body["chung_chi_tep_tin_id"] = Guid.NewGuid();
+
+        await AssertLoiTruongAsync(await Luu(Client(Pt), body), "chung_chi_tep_tin_id");
+    }
+
+    [Fact]
+    public async Task Hoc_vien_gui_chung_chi_tra_400_ROLE_INVALID()
+    {
+        var body = ToDictionary(BodyHocVien());
+        body["chung_chi_tep_tin_id"] = GivenChungChiDaTaiLen(HocVien);
+
+        var response = await Luu(Client(HocVien), body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("ROLE_INVALID", await CodeOf(response));
+    }
+
+    [Fact]
+    public async Task Thay_chung_chi_moi_thi_chung_chi_cu_bi_go_va_xoa_khoi_kho()
+    {
+        using var client = Client(Pt);
+        var cu = GivenChungChiDaTaiLen(Pt);
+        var bodyCu = BodyPt();
+        bodyCu["chung_chi_tep_tin_id"] = cu;
+        await Luu(client, bodyCu);
+        var moi = GivenChungChiDaTaiLen(Pt);
+        var bodyMoi = BodyPt();
+        bodyMoi["chung_chi_tep_tin_id"] = moi;
+
+        var response = await Luu(client, bodyMoi);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TrangThaiTepTin.da_xoa, TepTinStore.Find(cu)!.trang_thai);
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(moi)!.trang_thai);
+        Assert.Contains(TepTinStore.Find(cu)!.s3_key, Storage.Deleted);
+    }
+
+    [Fact]
+    public async Task Luu_khong_gui_chung_chi_thi_go_chung_chi_dang_co()
+    {
+        using var client = Client(Pt);
+        var fileId = GivenChungChiDaTaiLen(Pt);
+        var body = BodyPt();
+        body["chung_chi_tep_tin_id"] = fileId;
+        await Luu(client, body);
+
+        var response = await Luu(client, BodyPt());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("chung_chi").ValueKind);
+        Assert.Equal(TrangThaiTepTin.da_xoa, TepTinStore.Find(fileId)!.trang_thai);
+    }
+
+    [Fact]
+    public async Task Gui_lai_cung_chung_chi_thi_giu_nguyen_khong_xoa()
+    {
+        using var client = Client(Pt);
+        var fileId = GivenChungChiDaTaiLen(Pt);
+        var body = BodyPt();
+        body["chung_chi_tep_tin_id"] = fileId;
+        await Luu(client, body);
+
+        var response = await Luu(client, body);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(fileId)!.trang_thai);
+        Assert.Empty(Storage.Deleted);
+    }
+
+    private static Dictionary<string, object?> ToDictionary(object body) =>
+        System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(System.Text.Json.JsonSerializer.Serialize(body))!;
 }

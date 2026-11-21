@@ -11,7 +11,9 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace GymBase.API.Controllers;
 
 /// <summary>Các endpoint đăng nhập, dùng chung cho web và mobile; kênh do lớp con quyết định theo namespace.</summary>
-public abstract class AuthControllerBase(XacThucService authService, IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
+public abstract class AuthControllerBase(
+    DangNhapService loginService, PhienService sessionService, MatKhauService passwordService, TaiKhoanHienTaiService meService,
+    IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
     : BaseApiController
 {
     /// <summary>Đăng nhập; 401 nếu không thành công, không nói rõ lý do.</summary>
@@ -19,14 +21,14 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<ActionResult<KetQuaDangNhapDto>> Login(DangNhapDto dto, CancellationToken cancellationToken) =>
-        Ok(await authService.BLDangNhapAsync(dto, cancellationToken));
+        Ok(await loginService.BLDangNhapAsync(dto, cancellationToken));
 
-    /// <summary>Người mới tự đăng ký bằng mật khẩu; không có phiên, app đưa về màn đăng nhập. 409 nếu email đã dùng.</summary>
+    /// <summary>Người mới tự đăng ký bằng mật khẩu. 409 nếu email đã dùng.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<ActionResult<TaiKhoanDto>> Register(DangKyDto dto, CancellationToken cancellationToken) =>
-        Ok(await authService.BLDangKyAsync(dto, cancellationToken));
+        Ok(await loginService.BLDangKyAsync(dto, cancellationToken));
 
     /// <summary>
     /// Đăng nhập hoặc đăng ký bằng Google bằng ID token; lần đầu thì tạo tài khoản (<c>is_dang_nhap_lan_dau = true</c>).
@@ -36,32 +38,32 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<ActionResult<KetQuaDangNhapDto>> Google(DangNhapGoogleDto dto, CancellationToken cancellationToken) =>
-        Ok(await authService.BLDangNhapGoogleAsync(dto, cancellationToken));
+        Ok(await loginService.BLDangNhapGoogleAsync(dto, cancellationToken));
 
     /// <summary>Đổi refresh token lấy cặp token mới; refresh token cũ không dùng lại được.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<ActionResult<KetQuaDangNhapDto>> Refresh(LamMoiTokenDto dto, CancellationToken cancellationToken) =>
-        Ok(await authService.BLLamMoiTokenAsync(dto, cancellationToken));
+        Ok(await sessionService.BLLamMoiTokenAsync(dto, cancellationToken));
 
     /// <summary>Đăng xuất khỏi phiên hiện tại.</summary>
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        await authService.BLDangXuatAsync(cancellationToken);
+        await sessionService.BLDangXuatAsync(cancellationToken);
         return NoContent();
     }
 
     /// <summary>Thông tin của người đang đăng nhập.</summary>
     [HttpGet("me")]
     public async Task<ActionResult<TaiKhoanDto>> Me(CancellationToken cancellationToken) =>
-        Ok(await authService.BLLayTaiKhoanHienTaiAsync(cancellationToken));
+        Ok(await meService.BLLayTaiKhoanHienTaiAsync(cancellationToken));
 
     /// <summary>Người dùng đã bấm một trong hai nút của màn onboarding; trả tài khoản với <c>is_dang_nhap_lan_dau = false</c>.</summary>
     [HttpPost("hoan-tat-dang-nhap-lan-dau")]
     public async Task<ActionResult<TaiKhoanDto>> HoanTatDangNhapLanDau(CancellationToken cancellationToken) =>
-        Ok(await authService.BLHoanTatDangNhapLanDauAsync(cancellationToken));
+        Ok(await meService.BLHoanTatDangNhapLanDauAsync(cancellationToken));
 
     /// <summary>
     /// Quyền theo hồ sơ của người đang đăng nhập (nhóm, trạng thái xác minh PT, năng lực), tính từ database mỗi lần gọi.
@@ -76,11 +78,13 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
     public async Task<IActionResult> ChangePassword(DoiMatKhauDto dto, CancellationToken cancellationToken)
     {
-        await authService.BLDoiMatKhauAsync(dto, cancellationToken);
+        await passwordService.BLDoiMatKhauAsync(dto, cancellationToken);
         return NoContent();
     }
 }
 
 /// <summary>Đăng nhập cho web: /api/v1/web/auth.</summary>
-public sealed class AuthController(XacThucService authService, IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
-    : AuthControllerBase(authService, quyenHanProvider, currentUser);
+public sealed class AuthController(
+    DangNhapService loginService, PhienService sessionService, MatKhauService passwordService, TaiKhoanHienTaiService meService,
+    IQuyenHanProvider quyenHanProvider, ICurrentUser currentUser)
+    : AuthControllerBase(loginService, sessionService, passwordService, meService, quyenHanProvider, currentUser);

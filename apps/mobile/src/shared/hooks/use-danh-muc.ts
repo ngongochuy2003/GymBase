@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { danhMucApi, type DanhMucItem } from '@/core/api/danh-muc-api';
+import { danhMucApi, type DanhMucItem } from '@/shared/api/danh-muc-api';
 
 /**
  * Danh mục cho dropdown, nhóm theo `ma_dinh_danh`. Loại chưa có mục nào đang dùng không xuất hiện trong kết quả nên

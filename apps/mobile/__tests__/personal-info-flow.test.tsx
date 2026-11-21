@@ -15,12 +15,11 @@ import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
 import { authApi } from '@/core/api/auth-api';
-import { danhMucApi, type DanhMucNhom } from '@/core/api/danh-muc-api';
+import { danhMucApi, type DanhMucNhom } from '@/shared/api/danh-muc-api';
 import type { AuthUser } from '@/core/auth/types';
 
 const user: AuthUser = {
   id: '0193f0a0-0000-7000-8000-000000000012',
-  ten_dang_nhap: null,
   ho_ten: 'Minh Anh',
   email: 'minh.anh@gymbase.local',
   so_dien_thoai: '0912345678',

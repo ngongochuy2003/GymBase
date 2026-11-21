@@ -55,6 +55,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
               await userStorage.write(current);
             }
           } catch (err: unknown) {
+            // Client thường đã tự xử lý 401 (refresh, rồi xóa phiên); giữ nhánh này làm lớp bảo vệ.
             if (err instanceof ApiError && err.status === 401) {
               await authRuntime.clear();
               await userStorage.clear();
@@ -83,6 +84,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       refreshToken: result.refresh_token,
     });
     setUser(result.user);
+    await userStorage.write(result.user);
     return result;
   }, []);
 
@@ -98,7 +100,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         ...input,
         ho_ten: input.ho_ten.trim(),
         email: input.email.trim().toLowerCase(),
-        so_dien_thoai: input.so_dien_thoai.trim(),
+        ...(input.so_dien_thoai ? { so_dien_thoai: input.so_dien_thoai.trim() } : {}),
       }),
     [],
   );
@@ -110,7 +112,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const completeOnboarding = useCallback(async () => {
     try {
-      setUser(await authApi.hoanTatDangNhapLanDau());
+      const updated = await authApi.hoanTatDangNhapLanDau();
+      setUser(updated);
+      await userStorage.write(updated);
     } catch {
       // Không chặn người dùng khi mất mạng: vào app bình thường, lần mở sau server vẫn báo lần đầu nên onboarding hiện lại.
       setUser((current) => (current ? { ...current, is_dang_nhap_lan_dau: false } : current));

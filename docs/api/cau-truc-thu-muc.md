@@ -62,7 +62,7 @@ apps/api/
 ```
 
 Ngoài `apps/api`: `database/` (seed, backup, script phụ trợ), `deploy/` (compose, Nginx, CI/CD),
-`docs/` (tài liệu, ADR, collection Bruno ở `docs/api/bruno`).
+`docs/` (tài liệu, ADR).
 
 Mỗi thư mục `GymBase.*` trong `src` là một project có `.csproj` riêng. Thư mục bên trong project
 (`BLTaiKhoan/`, `Paging/`…) **không** có `.csproj`. Không tạo project mới chỉ vì có
@@ -82,7 +82,7 @@ nhóm phải nhớ.
 
 **Tên theo danh từ nghiệp vụ** (chốt 11/11): tên lớp và file là danh từ nghiệp vụ tiếng Việt viết hoa từng chữ cộng hậu tố
 vai trò tiếng Anh, và cùng một danh từ lặp ở mọi tầng: `tai_khoan` (entity), `TaiKhoanConfiguration`, `TaiKhoanDtos`,
-`TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập là `XacThucService`.
+`TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập tách thành `DangNhapService`, `PhienService`, `MatKhauService` và `TaiKhoanHienTaiService` (cùng thư mục `BLXacThuc`).
 Mỗi Service và Repository nằm trong file cùng tên (test kiểm tra). Controller giữ tên theo URL (`UsersController` ứng
 với `/users`), vì URL là hợp đồng với mobile.
 
@@ -323,7 +323,7 @@ Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [huong-dan-t
 | 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapValidators.cs`, `GoiTap/GoiTapService.cs` | DTO và validator; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |
 | 5 | `GymBase.API` | `Controllers/GoiTapController.cs` | Web: kế thừa `BaseCrudController<...>` là đủ 5 endpoint |
 | 6 | `GymBase.API` | `Mob/Controllers/GoiTapController.cs` | Mobile (nếu app cần): như trên, gọi lại `GoiTapService` |
-| 7 | `GymBase.API` | `Program.cs` | Đăng ký `IGoiTapRepository → GoiTapRepository`, `GoiTapService` |
+| 7 | `GymBase.BLDI`, `GymBase.DLDI.MySql` | `DIBusinessExtensions`, `DIDataExtensions` | Đăng ký `GoiTapService` và `IGoiTapRepository → GoiTapRepository` |
 | 8 | `GymBase.UnitTests` | `DI/GoiTapServiceTests.cs` | Test BL trên DL giả (`GymBase.TestDoubles`), mỗi test một `InMemoryStore` riêng |
 
 ### Thêm một nhóm mới
