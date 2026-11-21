@@ -76,6 +76,7 @@ sequenceDiagram
 - Index đề xuất: `UNIQUE(s3_key)`, `(loai_doi_tuong, doi_tuong_id)`, `(nguoi_tai_len_id, ngay_tao DESC)`.
 - `s3_key` cần collation phân biệt hoa thường trên MySQL, vì S3 phân biệt còn collation mặc định thì không.
 - Job nền dọn file `cho_tai_len` quá hạn và file mồ côi.
+- `muc_dich = chung_chi_pt` (**đã dùng 21/11/2026**): chứng chỉ PT dạng PDF, riêng tư, gắn `loai_doi_tuong = ho_so_nguoi_dung`, `doi_tuong_id = tai_khoan_id`; mỗi hồ sơ tối đa một tệp `da_lien_ket`. Xem [ho-so.md](../../docs/api/ho-so.md).
 - `muc_dich` là **đề xuất thêm so với tài liệu thiết kế**. Hồ sơ có thể có nhiều loại file (ảnh đại diện, chứng chỉ PT) cùng
   gắn vào một `doi_tuong_id`, cặp `(loai_doi_tuong, doi_tuong_id)` không đủ để phân biệt. Danh sách giá trị chưa chốt.
 - Ảnh đại diện có hai liên kết: FK `ho_so_nguoi_dung.anh_dai_dien_tep_tin_id` để đọc nhanh, và

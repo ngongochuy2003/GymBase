@@ -148,7 +148,7 @@ flowchart TD
   được nhưng phải qua xác minh lại.
 - `ngay_xac_minh`, `nguoi_xac_minh_id`, `ly_do_tu_choi` là **đề xuất thêm so với tài liệu thiết kế**: không có chúng thì
   không biết ai duyệt PT, khi nào, vì sao từ chối. Cột `ly_do_tu_choi` chỉ có giá trị khi `tu_choi`.
-- Chưa chốt: V1 xác minh PT bằng gì (chứng chỉ, ảnh giấy tờ). Nếu có file thì gắn qua `tep_tin` với
+- V1 hiện nhận **một chứng chỉ PDF tùy chọn** khi gửi hồ sơ PT (21/11/2026); chưa chốt bằng chứng bắt buộc để xác minh (ảnh giấy tờ…). File gắn qua `tep_tin` với
   `loai_doi_tuong = ho_so_nguoi_dung` và `muc_dich` khác ảnh đại diện, xem [02-tep-tin.md](02-tep-tin.md).
 - `phien_dang_nhap.thiet_bi_id` (đề xuất, cho phép NULL, `ON DELETE SET NULL`): khi đăng xuất hoặc thu hồi phiên, tắt
   `dang_hoat_dong` của `thiet_bi` tương ứng. Phiên đăng nhập từ web không có thiết bị nên để NULL.

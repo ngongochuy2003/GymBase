@@ -8,6 +8,7 @@ using GymBase.DLBiz.Contract.DLHoSoNguoiDung;
 using GymBase.Entities.Biz;
 using GymBase.Entities.Biz.Enums;
 using GymBase.ModuleContracts.DanhMuc;
+using GymBase.ModuleContracts.TepTin;
 
 namespace GymBase.BLBiz.BLHoSo;
 
@@ -22,7 +23,8 @@ public sealed class HoSoService(
     ITaiKhoanHoTenProvider hoTenProvider,
     ICurrentUser currentUser,
     TimeProvider timeProvider,
-    IValidator<HoSoLuuDto> validator)
+    IValidator<HoSoLuuDto> validator,
+    IChungChiPtLienKet chungChiLienKet)
 {
     private const string MucTieuTapLuyen = "muc_tieu_tap_luyen";
     private const string KhuVuc = "khu_vuc";
@@ -39,7 +41,8 @@ public sealed class HoSoService(
             ?? throw new NotFoundException(
                 "Bạn chưa thiết lập hồ sơ. Hãy thiết lập hồ sơ trước.", BizErrorCodes.ProfileNotFound);
         var chiSo = await chiSoRepository.DLFindMoiNhatAsync(taiKhoanId, cancellationToken);
-        return ToDto(hoSo, chiSo);
+        var chungChi = await chungChiLienKet.BLLayChungChiAsync(taiKhoanId, cancellationToken);
+        return ToDto(hoSo, chiSo, chungChi);
     }
 
     /// <summary>
@@ -118,8 +121,13 @@ public sealed class HoSoService(
             }
         }
 
+        // Chứng chỉ chỉ có ở khối PT: gửi file_id thì gắn tệp, không gửi hoặc đổi sang học viên thì gỡ chứng chỉ đang có.
+        var laPt = loaiNguoiDung is LoaiNguoiDung.pt or LoaiNguoiDung.ca_hai;
+        var chungChi = await chungChiLienKet.BLDatChungChiAsync(
+            taiKhoanId, laPt ? dto.chung_chi_tep_tin_id : null, cancellationToken);
+
         await hoSoRepository.DLUpsertAsync(hoSo, chiSoMoi, cancellationToken);
-        return ToDto(hoSo, chiSoMoi ?? moiNhat);
+        return ToDto(hoSo, chiSoMoi ?? moiNhat, chungChi);
     }
 
     private Guid TaiKhoanIdHienTai() => currentUser.UserId ?? throw new UnauthorizedException();
@@ -184,7 +192,7 @@ public sealed class HoSoService(
     private static string? ChuanHoaChuoi(string? giaTri) =>
         string.IsNullOrWhiteSpace(giaTri) ? null : giaTri.Trim();
 
-    private static HoSoDto ToDto(ho_so_nguoi_dung hoSo, chi_so_co_the? chiSo) =>
+    private static HoSoDto ToDto(ho_so_nguoi_dung hoSo, chi_so_co_the? chiSo, ChungChiPtDto? chungChi) =>
         new(
             hoSo.loai_nguoi_dung.ToString(),
             hoSo.ten_hien_thi,
@@ -197,5 +205,6 @@ public sealed class HoSoService(
             hoSo.so_nam_kinh_nghiem,
             hoSo.gioi_thieu,
             hoSo.trang_thai_xac_minh.ToString(),
-            chiSo is null ? null : new ChiSoCoTheDto(chiSo.ngay_do, chiSo.chieu_cao_cm, chiSo.can_nang_kg));
+            chiSo is null ? null : new ChiSoCoTheDto(chiSo.ngay_do, chiSo.chieu_cao_cm, chiSo.can_nang_kg),
+            chungChi);
 }

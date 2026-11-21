@@ -45,7 +45,8 @@ Hồ sơ hiện tại kèm chỉ số cơ thể mới nhất. Chưa thiết lậ
   "khu_vuc_hoat_dong": "ha_noi",
   "chuyen_mon": null,
   "so_nam_kinh_nghiem": null,
-  "gioi_thieu": null
+  "gioi_thieu": null,
+  "chung_chi_tep_tin_id": null
 }
 ```
 
@@ -64,11 +65,34 @@ Trả `200` cùng DTO hồ sơ vừa lưu:
   "so_nam_kinh_nghiem": null,
   "gioi_thieu": null,
   "trang_thai_xac_minh": "chua_xac_minh",
-  "chi_so_co_the": { "ngay_do": "2026-11-15T00:00:00Z", "chieu_cao_cm": 172.5, "can_nang_kg": 68.4 }
+  "chi_so_co_the": { "ngay_do": "2026-11-15T00:00:00Z", "chieu_cao_cm": 172.5, "can_nang_kg": 68.4 },
+  "chung_chi": null
 }
 ```
 
 Dùng `PUT` vì mỗi tài khoản chỉ có một hồ sơ; lần lưu đầu tạo mới, các lần sau cập nhật.
+
+### Chứng chỉ PT (tệp PDF)
+
+Khối PT có một chứng chỉ tùy chọn (nhãn trên app: "Chứng chỉ (nếu có)"), lưu dưới dạng tệp PDF theo hai bước:
+
+1. App tải tệp lên bằng `POST /api/v1/mob/files` với `purpose = chung_chi_pt`. Tệp phải là PDF thật (backend kiểm tra phần đầu tệp là
+   `%PDF-`, không tin đuôi tệp), tối đa `Storage:MaxUploadBytes` (mặc định 10 MB). Tệp ở chế độ **riêng tư**: chỉ người tải lên đọc được qua
+   `GET /files/{id}/content`. Kết quả có `file_id`.
+2. App gửi `file_id` đó ở `chung_chi_tep_tin_id` của `PUT /ho-so`. Backend kiểm tra tệp là của chính chủ, `muc_dich = chung_chi_pt`, kiểu PDF
+   và chưa bị gỡ, rồi gắn vào hồ sơ: `tep_tin.loai_doi_tuong = ho_so_nguoi_dung`, `doi_tuong_id = tai_khoan_id`, `trang_thai = da_lien_ket`
+   (theo thiết kế ở [02-tep-tin.md](../../database/diagrams/02-tep-tin.md), không thêm cột hay bảng).
+
+Kết quả trả ở `chung_chi`: `{ "file_id", "ten_tep", "kich_thuoc_byte" }` hoặc `null`. `PUT` thay thế toàn bộ: không gửi `chung_chi_tep_tin_id` (hoặc đổi
+sang `hoc_vien`) thì chứng chỉ đang có bị gỡ, tệp đánh dấu `da_xoa` và xóa khỏi kho lưu trữ. Gửi tệp khác thì tệp cũ bị gỡ như trên. Tệp không hợp lệ:
+`400 VALIDATION_FAILED` ở `chung_chi_tep_tin_id`; `hoc_vien` gửi trường này: `400 ROLE_INVALID`.
+
+Phía mobile: tab PT của màn thiết lập có ô "Chứng chỉ (nếu có)" ngay dưới số năm kinh nghiệm (chọn PDF bằng `expo-document-picker`, tải lên ngay,
+bấm × để bỏ). Tệp đã tải lên mà không gắn vào hồ sơ nằm lại ở `da_tai_len`; chưa có job dọn file nên các tệp này tồn tại tới khi có job.
+Lưu xong, app mở `/profile-setup/hoan-tat?loai=...`: `pt` và `ca_hai` thấy "Đã gửi hồ sơ PT!" kèm trạng thái "Chờ xác minh" (Storyboard 3, bước 6),
+`hoc_vien` thấy màn chào mừng đến GymBase.
+
+Chưa có màn quản trị để xem chứng chỉ khi xác minh PT; `ChungChiPtDto` cố ý không có đường dẫn tệp.
 
 ## 3. Quy tắc
 
@@ -76,7 +100,7 @@ Dùng `PUT` vì mỗi tài khoản chỉ có một hồ sơ; lần lưu đầu t
 | --- | --- | --- |
 | Vai trò | `loai_nguoi_dung` là `hoc_vien`, `pt` hoặc `ca_hai` | `400 ROLE_INVALID` |
 | Khối học viên | Bắt buộc với `hoc_vien`/`ca_hai`: `muc_tieu_tap_luyen`, `trinh_do_tap`, `chieu_cao_cm`, `can_nang_kg`. `pt` có thể bỏ khối này; nếu gửi một trong hai số đo thì phải gửi cả hai | `400 VALIDATION_FAILED` |
-| Khối PT | Bắt buộc với `pt`/`ca_hai`: `chuyen_mon` (ít nhất 1) và `so_nam_kinh_nghiem`; `gioi_thieu` tùy chọn. `hoc_vien` không được gửi khối này | `400 VALIDATION_FAILED`; `hoc_vien` gửi thì `400 ROLE_INVALID` |
+| Khối PT | Bắt buộc với `pt`/`ca_hai`: `chuyen_mon` (ít nhất 1) và `so_nam_kinh_nghiem`; `gioi_thieu` và `chung_chi_tep_tin_id` tùy chọn. `hoc_vien` không được gửi khối này | `400 VALIDATION_FAILED`; `hoc_vien` gửi thì `400 ROLE_INVALID` |
 | Tên hiển thị | Tùy chọn. Có gửi thì ghi sau khi cắt khoảng trắng (1–100 ký tự); không gửi thì tạo mới lấy `tai_khoan.ho_ten`, cập nhật giữ nguyên | `400 VALIDATION_FAILED` |
 | Ngày sinh | Tùy chọn; không gửi thì lưu `null`. Có gửi thì `yyyy-MM-dd`, không ở tương lai, tuổi 13–100 | `400 VALIDATION_FAILED` |
 | Giới tính | Tùy chọn; không gửi thì lưu `null`. Có gửi thì một trong `nam`, `nu`, `khac`, `khong_muon_noi` (danh sách cố định trong code, **không** đọc từ `danh_muc`; app cũng để cố định). Lưu ở `ho_so_nguoi_dung.gioi_tinh` | `400 VALIDATION_FAILED` |
@@ -109,7 +133,7 @@ cho bảng tin, chi tiết bài viết và bình luận; thêm DTO công khai m�
 GET/PUT /api/v1/mob/ho-so → Mob/Controllers/HoSoController
     → HoSoService.BLXemHoSoAsync / BLLuuHoSoAsync     (GymBase.BLBiz/BLHoSo)
     → IHoSoNguoiDungRepository / IChiSoCoTheRepository → MySQL (GymBase.DLBiz.MySql)
-    → IDanhMucTraCuu (BLDI) · ITaiKhoanHoTenProvider (BLAuth)
+    → IDanhMucTraCuu (BLDI) · ITaiKhoanHoTenProvider (BLAuth) · IChungChiPtLienKet (BLFile, ModuleContracts)
 ```
 
 `IHoSoNguoiDungRepository.DLUpsertAsync` nhận cả `chi_so_co_the?` và mở transaction, để một lần bấm "Lưu" không ghi
@@ -120,4 +144,6 @@ nửa chừng. Đăng ký: `AddBizBusiness()` (BL) và `AddBizData()` (DL.MySql,
 - `dotnet test GymBase.slnx` tại `apps/api` — `HoSoTests` phủ: lưu lần đầu tạo hồ sơ + chỉ số; lưu lại cùng số đo không
   thêm dòng; đổi số đo thêm đúng một dòng; giữ `ten_hien_thi`/trạng thái xác minh; PT gửi chuyên môn hợp lệ; mã danh mục
   sai; chiều cao ngoài khoảng; thiếu hoặc ngoài khoảng ngày sinh, giới tính ngoài danh sách cố định, mã trình độ sai; gửi hoặc bỏ `ten_hien_thi`;
-  hồ sơ cũ trả `null` cho trường mới; học viên gửi thông tin PT; vai trò sai; `GET` khi chưa có hồ sơ; 401 khi chưa đăng nhập.
+  hồ sơ cũ trả `null` cho trường mới; học viên gửi thông tin PT; vai trò sai; `GET` khi chưa có hồ sơ; 401 khi chưa đăng nhập; chứng chỉ PT
+  (gắn và đọc lại, tệp của người khác hoặc sai mục đích hoặc kiểu bị từ chối, thay và gỡ chứng chỉ, học viên gửi chứng chỉ). `FileServiceTests`
+  phủ upload PDF (riêng tư, giữ nguyên nội dung, từ chối tệp giả PDF).

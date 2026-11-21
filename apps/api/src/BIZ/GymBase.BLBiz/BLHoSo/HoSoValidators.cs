@@ -132,7 +132,8 @@ public sealed class HoSoLuuValidator : AppValidator<HoSoLuuDto>
     private static bool CoSoDo(HoSoLuuDto dto) => LaHocVien(dto) || dto.chieu_cao_cm is not null || dto.can_nang_kg is not null;
 
     private static bool CoThongTinPt(HoSoLuuDto dto) =>
-        dto.chuyen_mon is { Count: > 0 } || dto.so_nam_kinh_nghiem is not null || !string.IsNullOrWhiteSpace(dto.gioi_thieu);
+        dto.chuyen_mon is { Count: > 0 } || dto.so_nam_kinh_nghiem is not null || !string.IsNullOrWhiteSpace(dto.gioi_thieu)
+        || dto.chung_chi_tep_tin_id is not null;
 
     private static bool TuoiHopLe(DateOnly ngaySinh, DateOnly homNay)
     {

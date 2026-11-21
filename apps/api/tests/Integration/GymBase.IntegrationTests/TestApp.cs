@@ -10,6 +10,10 @@ using GymBase.BLBiz.BaiViet;
 using GymBase.DLBiz.Contract;
 using GymBase.BLBiz.BLTruyCap;
 using GymBase.BLDI;
+using GymBase.BLFile.BLFiles;
+using GymBase.BLFile.BLStorage;
+using GymBase.DLFile.Contract;
+using GymBase.ModuleContracts.TepTin;
 using GymBase.DLAuth.Contract.DLDangNhapNgoai;
 using GymBase.DLAuth.Contract.DLPhienDangNhap;
 using GymBase.DLAuth.Contract.DLTaiKhoan;
@@ -62,6 +66,11 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<IAuditLogWriter>(services => services.GetRequiredService<RecordingAuditLogWriter>());
             builder.Services.AddScoped<ITaiKhoanRepository, InMemoryTaiKhoanRepository>();
             builder.Services.AddScoped<IPhienDangNhapRepository, InMemoryPhienDangNhapRepository>();
+            // Chứng chỉ PT: dùng ChungChiPtService thật trên tep_tin trong bộ nhớ và kho lưu trữ giả.
+            builder.Services.AddScoped<ITepTinRepository, InMemoryTepTinRepository>();
+            builder.Services.AddSingleton<FakeFileStorage>();
+            builder.Services.AddSingleton<IStorageResolver>(services => new FakeStorageResolver(services.GetRequiredService<FakeFileStorage>()));
+            builder.Services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
             builder.Services.AddScoped<IBaiVietRepository, InMemoryBaiVietRepository>();
             builder.Services.AddScoped<ITuongTacBaiVietRepository, InMemoryTuongTacBaiVietRepository>();
 

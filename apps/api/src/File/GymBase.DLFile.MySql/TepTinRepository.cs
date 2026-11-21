@@ -23,4 +23,12 @@ public sealed class TepTinRepository(AppDbContext db) : BaseRepository<tep_tin>(
             .Take(limit)
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<tep_tin>> DLFindLinkedAsync(
+        LoaiDoiTuongTepTin loaiDoiTuong, Guid doiTuongId, string mucDich, CancellationToken ct = default) =>
+        await Set
+            .Where(t => t.loai_doi_tuong == loaiDoiTuong && t.doi_tuong_id == doiTuongId && t.muc_dich == mucDich
+                && t.trang_thai == TrangThaiTepTin.da_lien_ket)
+            .OrderByDescending(t => t.ngay_tao)
+            .ToListAsync(ct);
 }
