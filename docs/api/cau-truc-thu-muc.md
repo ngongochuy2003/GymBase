@@ -323,7 +323,7 @@ Làm theo mẫu người dùng đang có. Hướng dẫn kèm code: [huong-dan-t
 | 4 | `GymBase.BLDI` | `GoiTap/GoiTapDtos.cs`, `GoiTap/GoiTapValidators.cs`, `GoiTap/GoiTapService.cs` | DTO và validator; `GoiTapService : BaseService<...>` viết 3 hàm map, quy tắc riêng thì override |
 | 5 | `GymBase.API` | `Controllers/GoiTapController.cs` | Web: kế thừa `BaseCrudController<...>` là đủ 5 endpoint |
 | 6 | `GymBase.API` | `Mob/Controllers/GoiTapController.cs` | Mobile (nếu app cần): như trên, gọi lại `GoiTapService` |
-| 7 | `GymBase.API` | `Program.cs` | Đăng ký `IGoiTapRepository → GoiTapRepository`, `GoiTapService` |
+| 7 | `GymBase.BLDI`, `GymBase.DLDI.MySql` | `DIBusinessExtensions`, `DIDataExtensions` | Đăng ký `GoiTapService` và `IGoiTapRepository → GoiTapRepository` |
 | 8 | `GymBase.UnitTests` | `DI/GoiTapServiceTests.cs` | Test BL trên DL giả (`GymBase.TestDoubles`), mỗi test một `InMemoryStore` riêng |
 
 ### Thêm một nhóm mới

@@ -187,8 +187,8 @@ và `Mob/Controllers/`).
 
 ### Bước 6: Đăng ký
 
-Thêm `services.AddScoped<BuoiTapService>()` vào extension của nhóm (như `AuthBusinessExtensions`) và các repository vào
-`Program.cs`. Quên bước này thì ứng dụng báo không tạo được service (lỗi lúc khởi động, hoặc 500 khi gọi).
+Thêm `services.AddScoped<BuoiTapService>()` vào extension BL của nhóm (như `AuthBusinessExtensions`) và các repository vào
+extension DL.MySql của nhóm (như `AuthDataExtensions`). Quên bước này thì ứng dụng báo không tạo được service (lỗi lúc khởi động, hoặc 500 khi gọi).
 
 ### Bước 7: Test
 

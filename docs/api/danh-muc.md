@@ -83,7 +83,7 @@ GET /api/v1/mob/danh-muc → Mob/Controllers/DanhMucController
     → IDanhMucRepository.DLFindDangDungAsync → MySQL (GymBase.DLDI.MySql/DLDanhMuc)
 ```
 
-Đăng ký ở `Program.cs`: `AddDIBusiness()` (BL) và `IDanhMucRepository → DanhMucRepository` (DL). Mobile chỉ cần kênh
+Đăng ký: `AddDIBusiness()` (BL) và `AddDIData()` (DL.MySql, đăng ký `IDanhMucRepository → DanhMucRepository`), cả hai được gọi ở `Program.cs`. Mobile chỉ cần kênh
 `mob`; chưa có màn quản trị danh mục trên web.
 
 ## 5. Test

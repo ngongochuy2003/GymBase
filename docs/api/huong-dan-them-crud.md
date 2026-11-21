@@ -47,7 +47,7 @@ Bạn cũng cần xác định bảng thuộc **nhóm** nào, vì nhóm quyết 
 | **Validator** | Luật kiểm tra dữ liệu gửi lên, ví dụ giá không được âm | `GoiTapCreateValidator` |
 | **Service** | Nơi đặt nghiệp vụ, nằm giữa controller và repository | `GoiTapService` |
 | **Controller** | Lớp nhận yêu cầu HTTP, gọi service rồi trả kết quả | `GoiTapController` |
-| **Đăng ký dịch vụ** | Khai báo trong `Program.cs` để ứng dụng biết cần tạo lớp nào | Bước 7 |
+| **Đăng ký dịch vụ** | Khai báo trong extension của nhóm (`AddXxxBusiness`, `AddXxxData`) để ứng dụng biết cần tạo lớp nào | Bước 7 |
 
 Một yêu cầu đi qua các lớp theo thứ tự này:
 
@@ -74,7 +74,7 @@ MySQL        bảng goi_tap
 | 4 | DTO `GoiTapDtos.cs` | thư mục `BLGoiTap/` trong `GymBase.BLDI` |
 | 5 | Validator `GoiTapValidators.cs` và service `GoiTapService.cs` | thư mục `BLGoiTap/` trong `GymBase.BLDI` |
 | 6 | Controller `GoiTapController.cs` | `GymBase.API` |
-| 7 | Đăng ký trong `Program.cs` | `GymBase.API` |
+| 7 | Đăng ký trong extension của nhóm | `GymBase.BLDI`, `GymBase.DLDI.MySql` |
 | 8 | Chạy thử | |
 | 9 | Viết test | `GymBase.UnitTests` |
 
@@ -330,30 +330,30 @@ public sealed class GoiTapController(GoiTapService goiTapService)
 App mobile cần API này thì tạo thêm một file tương tự trong `src/Host/GymBase.API/Mob/Controllers/`, với
 `namespace GymBase.API.Mob.Controllers`. Chưa cần thì bỏ qua.
 
-### Bước 7: Đăng ký trong `Program.cs`
+### Bước 7: Đăng ký
 
-Mở `src/Host/GymBase.API/Program.cs` và sửa 3 chỗ.
+Mỗi nhóm đăng ký hai phần, vì BL không được tham chiếu DL.MySql: service ở extension của BL (`AddXxxBusiness`), repository
+ở extension của DL.MySql (`AddXxxData`). `Program.cs` chỉ gọi hai extension đó, nên thêm bảng mới vào nhóm có sẵn thì
+không phải sửa `Program.cs`.
 
-**Thêm `using` ở đầu file:**
+**Service** (project `GymBase.BLDI`), trong `DIBusinessExtensions.AddDIBusiness`:
 
 ```csharp
-using GymBase.BLDI.BLGoiTap;
-using GymBase.DLDI.Contract.DLGoiTap;
-using GymBase.DLDI.MySql.DLGoiTap;
+services.AddScoped<GoiTapService>();
 ```
 
-**Thêm assembly của BLDI vào `AddAppApi`**, để ứng dụng tìm thấy validator. Mỗi BL chỉ cần làm một lần:
+**Repository** (project `GymBase.DLDI.MySql`), trong `DIDataExtensions.AddDIData`:
+
+```csharp
+services.AddScoped<IGoiTapRepository, GoiTapRepository>();
+```
+
+**Chỉ khi tạo nhóm mới** (chưa có `AddXxxBusiness` và `AddXxxData`): tạo hai extension tương ứng rồi gọi chúng trong
+`src/Host/GymBase.API/Program.cs`, đồng thời thêm assembly của BL vào `AddAppApi` để ứng dụng tìm thấy validator
+(mỗi BL chỉ cần làm một lần):
 
 ```csharp
 builder.Services.AddAppApi(builder.Configuration, typeof(TaiKhoanService).Assembly, typeof(GoiTapService).Assembly);
-```
-
-**Đăng ký repository và service**, đặt sau các dòng đăng ký của Auth:
-
-```csharp
-// Danh mục: gói tập
-builder.Services.AddScoped<IGoiTapRepository, GoiTapRepository>();
-builder.Services.AddScoped<GoiTapService>();
 ```
 
 ### Bước 8: Chạy thử
@@ -517,7 +517,7 @@ override, ví dụ để đặt quyền riêng cho `GET`. Mẫu thêm action: `R
 | Hiện tượng | Nguyên nhân và cách xử lý |
 | --- | --- |
 | Khi khởi động hoặc khi gọi API báo `Unable to resolve service for type 'FluentValidation.IValidator...'` | Chưa thêm assembly của BL vào `AddAppApi` (bước 7) |
-| Khi khởi động hoặc khi gọi API báo `Unable to resolve service for type '...GoiTapService'` hoặc `IGoiTapRepository` | Thiếu dòng `AddScoped` trong `Program.cs` (bước 7) |
+| Khi khởi động hoặc khi gọi API báo `Unable to resolve service for type '...GoiTapService'` hoặc `IGoiTapRepository` | Thiếu dòng `AddScoped` trong `AddXxxBusiness` hoặc `AddXxxData` (bước 7) |
 | Gọi API báo 500, log có `Table 'gymbase.goi_tap' doesn't exist` | Chưa chạy `dotnet ef database update` (bước 2) |
 | `dotnet ef migrations add` tạo migration rỗng | Thiếu lớp cấu hình bảng ở bước 2, hoặc chưa lưu file |
 | 404 khi gọi API | Sai tiền tố `/api/v1/web` hoặc `/api/v1/mob`, hoặc sai tên controller |
@@ -531,7 +531,7 @@ override, ví dụ để đặt quyền riêng cho `GET`. Mẫu thêm action: `R
 - [ ] Entity, cấu hình bảng và các file migration đều đã được thêm.
 - [ ] `MaximumLength` trong validator khớp độ dài cột.
 - [ ] Controller đã khai báo đúng quyền truy cập.
-- [ ] `Program.cs` đã có assembly của BL và 2 dòng `AddScoped`.
+- [ ] Service đã có trong `AddXxxBusiness`, repository đã có trong `AddXxxData`; nhóm mới thì `Program.cs` đã gọi hai extension và có assembly của BL.
 - [ ] `dotnet test GymBase.slnx` chạy qua hết.
 
 Muốn hiểu sâu hơn về các lớp nền, đọc [crud-dung-chung.md](crud-dung-chung.md).

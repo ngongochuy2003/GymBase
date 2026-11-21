@@ -113,7 +113,7 @@ GET/PUT /api/v1/mob/ho-so → Mob/Controllers/HoSoController
 ```
 
 `IHoSoNguoiDungRepository.DLUpsertAsync` nhận cả `chi_so_co_the?` và mở transaction, để một lần bấm "Lưu" không ghi
-nửa chừng. Đăng ký ở `Program.cs`: `AddBizBusiness()` (BL) và hai repository (DL).
+nửa chừng. Đăng ký: `AddBizBusiness()` (BL) và `AddBizData()` (DL.MySql, gồm các repository của hồ sơ và chỉ số cơ thể), cả hai được gọi ở `Program.cs`.
 
 ## 5. Test
 
