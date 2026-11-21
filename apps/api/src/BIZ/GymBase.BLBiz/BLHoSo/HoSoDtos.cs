@@ -1,16 +1,13 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace GymBase.BLBiz.BLHoSo;
 
 /// <summary>
-/// Body của <c>PUT /ho-so</c>: một request chứa cả khối học viên và khối PT, ghi trong một transaction.
+/// Body của <c>PUT /ho-so</c> (quy tắc: <see cref="HoSoLuuValidator"/>): một request chứa cả khối học viên và khối PT, ghi trong một transaction.
 /// Khối nào bắt buộc tùy <see cref="loai_nguoi_dung"/>: <c>hoc_vien</c> cần khối học viên, <c>pt</c> cần khối PT,
 /// <c>ca_hai</c> cần cả hai. Khối không thuộc vai trò: học viên không được gửi thông tin PT, PT có thể bỏ khối học viên.
 /// </summary>
 public sealed class HoSoLuuDto
 {
     /// <summary><c>hoc_vien</c>, <c>pt</c> hoặc <c>ca_hai</c>.</summary>
-    [Required]
     public string loai_nguoi_dung { get; init; } = string.Empty;
 
     /// <summary>
