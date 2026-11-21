@@ -125,9 +125,9 @@ export function Button({
       disabled={inactive}
       onPress={onPress}
       className={cn(
-        'min-h-[50px] items-center justify-center border border-border px-5 py-3.5',
+        'min-h-[50px] items-center justify-center border px-5 py-3.5',
         pill ? 'rounded-full' : 'rounded-[14px]',
-        secondary ? 'bg-card' : 'bg-primary',
+        secondary ? 'border-input bg-card' : 'border-primary bg-primary',
         inactive ? 'opacity-50' : 'active:opacity-75',
       )}
     >
@@ -187,7 +187,7 @@ export function TextField({
       <View
         className={cn(
           'h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
-          error ? 'border-destructive' : 'border-border',
+          error ? 'border-destructive' : 'border-input',
         )}
       >
         {icon ? <Ionicons name={icon} size={20} color={colors.muted} /> : null}
@@ -256,7 +256,7 @@ export function Checkbox({
           onPress={() => onChange(!checked)}
           className={cn(
             'mt-0.5 size-6 items-center justify-center rounded-md border',
-            checked ? 'border-primary bg-primary' : error ? 'border-destructive' : 'border-border',
+            checked ? 'border-primary bg-primary' : error ? 'border-destructive' : 'border-input',
           )}
         >
           {checked ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}

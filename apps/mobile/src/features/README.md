@@ -10,7 +10,7 @@
 2. Đăng ký bằng `registerSection('type', Component)`.
 3. Thêm `{ id, type, props }` vào cấu hình màn hình.
 
-Design tokens ở `shared/theme/tokens.ts`, icon ở `shared/icons`. Route chỉ gọi public exports của feature. Dùng alias `@/` cho import liên tầng; không import vòng hoặc deep-import feature khác.
+Màu và token ở `global.css` (dùng qua `className`), `shared/theme/palette.ts` chỉ cho prop không nhận class; `shared/theme/tokens.ts` là hệ cũ đang được thay, không dùng cho code mới. Icon ở `shared/icons`. Route chỉ gọi public exports của feature. Dùng alias `@/` cho import liên tầng; không import vòng hoặc deep-import feature khác.
 
 Mẫu feature mới:
 

@@ -48,7 +48,7 @@ export function MultiSelectChips({
               onPress={() => toggle(option.ma)}
               className={cn(
                 'min-h-11 justify-center rounded-full border px-4',
-                checked ? 'border-primary bg-primary' : 'border-border bg-card',
+                checked ? 'border-primary bg-primary' : 'border-input bg-card',
               )}
             >
               <Text
