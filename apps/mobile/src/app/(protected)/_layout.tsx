@@ -41,6 +41,7 @@ export default function ProtectedLayout() {
         <Stack.Screen name="profile-setup/index" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="profile-setup/ca-nhan" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="profile-setup/chi-tiet" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="profile-setup/hoan-tat" options={{ animation: 'fade' }} />
       </Stack>
     </ProfileDraftProvider>
   );

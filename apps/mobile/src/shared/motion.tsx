@@ -1,5 +1,5 @@
 import { useEffect, type PropsWithChildren } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -48,6 +48,31 @@ export function Rise({ delay = 0, style, children }: MotionProps) {
     opacity: progress.value,
     transform: [{ translateY: (1 - progress.value) * 16 }],
   }));
+  return <Animated.View style={[style, animated]}>{children}</Animated.View>;
+}
+
+/**
+ * Trượt 24px từ một bên vào và hiện dần, dùng cho nội dung của tab: đặt `key` theo tab để mỗi lần đổi tab chạy lại, và
+ * `from` là phía của tab vừa chọn. `enabled = false` thì chỉ bọc View, không chuyển động.
+ */
+export function Slide({
+  from,
+  enabled = true,
+  style,
+  children,
+}: MotionProps & { from: 'left' | 'right'; enabled?: boolean }) {
+  const progress = useSharedValue(enabled ? 0 : 1);
+  useEffect(() => {
+    if (enabled) {
+      progress.value = withTiming(1, { duration: 260, reduceMotion: reduceMotion() });
+    }
+  }, [enabled, progress]);
+  const sign = from === 'right' ? 1 : -1;
+  const animated = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ translateX: (1 - progress.value) * 24 * sign }],
+  }));
+  if (!enabled) return <View style={style}>{children}</View>;
   return <Animated.View style={[style, animated]}>{children}</Animated.View>;
 }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ChungChiPt } from '../api/profile-api';
 import type { VaiTro } from '../types/vai-tro';
 
 /** Khớp luật của backend (`HoSoService`). */
@@ -54,6 +55,8 @@ export function createProfileDetailSchema(vaiTro: VaiTro) {
       chuyen_mon: z.array(z.string()),
       so_nam_kinh_nghiem: z.string(),
       gioi_thieu: z.string(),
+      /** Tệp đã tải lên thành công mới vào đây, nên không cần kiểm tra thêm ở form. */
+      chung_chi: z.custom<ChungChiPt | null>(),
     })
     .superRefine((form, ctx) => {
       const fail = (path: string, message: string) =>
@@ -101,4 +104,4 @@ export const HOC_VIEN_FIELDS = [
   'chieu_cao_cm',
   'can_nang_kg',
 ] as const;
-export const PT_FIELDS = ['chuyen_mon', 'so_nam_kinh_nghiem', 'gioi_thieu'] as const;
+export const PT_FIELDS = ['chuyen_mon', 'so_nam_kinh_nghiem', 'gioi_thieu', 'chung_chi'] as const;

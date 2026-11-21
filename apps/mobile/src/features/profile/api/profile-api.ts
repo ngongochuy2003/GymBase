@@ -20,6 +20,15 @@ export type HoSoLuuInput = {
   chuyen_mon?: string[];
   so_nam_kinh_nghiem?: number;
   gioi_thieu?: string;
+  /** `file_id` của chứng chỉ PDF đã tải lên; bỏ trống thì hồ sơ không có chứng chỉ (chứng chỉ đang có bị gỡ). */
+  chung_chi_tep_tin_id?: string;
+};
+
+/** Chứng chỉ PT (tệp PDF riêng tư) đang gắn vào hồ sơ. */
+export type ChungChiPt = {
+  file_id: string;
+  ten_tep: string;
+  kich_thuoc_byte: number;
 };
 
 /** Hồ sơ của chính chủ do API trả về. */
@@ -40,6 +49,7 @@ export type HoSo = {
     chieu_cao_cm: number | null;
     can_nang_kg: number | null;
   } | null;
+  chung_chi: ChungChiPt | null;
 };
 
 /** Endpoint `/api/v1/mob/ho-so`: một lần lưu ghi cả hồ sơ lẫn chỉ số cơ thể trong một transaction. */

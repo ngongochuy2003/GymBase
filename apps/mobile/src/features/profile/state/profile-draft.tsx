@@ -6,6 +6,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
+import type { ChungChiPt } from '../api/profile-api';
 
 /**
  * Bản nháp thiết lập hồ sơ: gom dữ liệu các bước (thông tin cá nhân, rồi thông tin theo vai trò) để gửi
@@ -26,6 +27,8 @@ export type ProfileDraft = {
   chuyen_mon: string[];
   so_nam_kinh_nghiem: string;
   gioi_thieu: string;
+  /** Chứng chỉ PDF đã tải lên (tùy chọn). */
+  chung_chi: ChungChiPt | null;
 };
 
 const EMPTY: ProfileDraft = {
@@ -40,6 +43,7 @@ const EMPTY: ProfileDraft = {
   chuyen_mon: [],
   so_nam_kinh_nghiem: '',
   gioi_thieu: '',
+  chung_chi: null,
 };
 
 type ProfileDraftContext = {
