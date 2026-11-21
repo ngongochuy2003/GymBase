@@ -2,6 +2,7 @@ using GymBase.Base.Auth;
 using GymBase.Base.Entities;
 using GymBase.Base.Exceptions;
 using GymBase.BLAuth;
+using GymBase.BLAuth.BLTaiKhoan;
 using GymBase.BLAuth.BLXacThuc;
 using GymBase.Entities.Auth;
 using GymBase.TestDoubles;
@@ -20,7 +21,7 @@ internal static class AuthTestHelpers
 }
 
 /// <summary>Luồng đăng nhập, xoay vòng refresh token, khóa khi sai nhiều, đổi mật khẩu.</summary>
-public class XacThucServiceTests
+public class XacThucFlowTests
 {
     private const string UserName = "hv.dangnhap";
     private const string Email = "hv.dangnhap@gymbase.local";
@@ -51,7 +52,7 @@ public class XacThucServiceTests
     private readonly LoginThrottle _throttle;
     private readonly tai_khoan _user;
 
-    public XacThucServiceTests()
+    public XacThucFlowTests()
     {
         _throttle = new LoginThrottle(_clock);
         _ = new InMemoryTaiKhoanRepository(_userStore); // nạp dữ liệu mẫu
@@ -61,23 +62,49 @@ public class XacThucServiceTests
         _userStore.TryAdd(_user);
     }
 
-    private XacThucService Service(FakeCurrentUser? currentUser = null) => new(
-        new InMemoryTaiKhoanRepository(_userStore),
-        new InMemoryPhienDangNhapRepository(_sessionStore),
-        AuthTestHelpers.FastHasher,
-        _issuer,
-        _throttle,
-        new PhienHieuLucCache(),
-        currentUser ?? new FakeCurrentUser(),
-        _clock,
-        new DangNhapValidator(),
-        new LamMoiTokenValidator(),
-        new DoiMatKhauValidator(),
-        new DatLaiMatKhauValidator(),
-            new DangKyValidator(),
-        new DangNhapGoogleValidator(),
-        new FakeGoogleIdTokenVerifier(),
-        new InMemoryDangNhapNgoaiRepository(new InMemoryStore<dang_nhap_ngoai>()));
+    /// <summary>Gom bốn service xác thực để mỗi test gọi như trước khi tách.</summary>
+    private sealed record AuthFacade(DangNhapService Login, PhienService Session, MatKhauService Password, TaiKhoanHienTaiService Me)
+    {
+        public Task<KetQuaDangNhapDto> BLDangNhapAsync(DangNhapDto dto, CancellationToken ct) => Login.BLDangNhapAsync(dto, ct);
+
+        public Task<TaiKhoanDto> BLDangKyAsync(DangKyDto dto, CancellationToken ct) => Login.BLDangKyAsync(dto, ct);
+
+        public Task<KetQuaDangNhapDto> BLDangNhapGoogleAsync(DangNhapGoogleDto dto, CancellationToken ct) => Login.BLDangNhapGoogleAsync(dto, ct);
+
+        public Task<KetQuaDangNhapDto> BLLamMoiTokenAsync(LamMoiTokenDto dto, CancellationToken ct) => Session.BLLamMoiTokenAsync(dto, ct);
+
+        public Task BLDangXuatAsync(CancellationToken ct) => Session.BLDangXuatAsync(ct);
+
+        public Task BLDoiMatKhauAsync(DoiMatKhauDto dto, CancellationToken ct) => Password.BLDoiMatKhauAsync(dto, ct);
+
+        public Task BLDatLaiMatKhauAsync(Guid id, DatLaiMatKhauDto dto, CancellationToken ct) => Password.BLDatLaiMatKhauAsync(id, dto, ct);
+
+        public Task<TaiKhoanDto> BLLayTaiKhoanHienTaiAsync(CancellationToken ct) => Me.BLLayTaiKhoanHienTaiAsync(ct);
+
+        public Task<TaiKhoanDto> BLHoanTatDangNhapLanDauAsync(CancellationToken ct) => Me.BLHoanTatDangNhapLanDauAsync(ct);
+    }
+
+    private AuthFacade Create(IPasswordHasher<tai_khoan> hasher, FakeCurrentUser? currentUser = null)
+    {
+        var users = new InMemoryTaiKhoanRepository(_userStore);
+        var sessions = new InMemoryPhienDangNhapRepository(_sessionStore);
+        var cache = new PhienHieuLucCache();
+        var current = currentUser ?? new FakeCurrentUser();
+        var issuer = new PhienIssuer(sessions, _issuer, _clock);
+        var verifier = new MatKhauVerifier(hasher);
+
+        return new AuthFacade(
+            new DangNhapService(
+                users, hasher, verifier, issuer, _throttle, _clock, new DangNhapValidator(), new DangKyValidator(),
+                new DangNhapGoogleValidator(), new FakeGoogleIdTokenVerifier(),
+                new InMemoryDangNhapNgoaiRepository(new InMemoryStore<dang_nhap_ngoai>())),
+            new PhienService(users, sessions, cache, issuer, current, _clock, new LamMoiTokenValidator()),
+            new MatKhauService(
+                users, sessions, cache, hasher, verifier, current, _clock, new DoiMatKhauValidator(), new DatLaiMatKhauValidator()),
+            new TaiKhoanHienTaiService(users, current, _clock));
+    }
+
+    private AuthFacade Service(FakeCurrentUser? currentUser = null) => Create(AuthTestHelpers.FastHasher, currentUser);
 
     private Task<KetQuaDangNhapDto> Login(string email = Email, string password = Password) =>
         Service().BLDangNhapAsync(new DangNhapDto { email = email, mat_khau = password }, CancellationToken.None);
@@ -390,13 +417,7 @@ public class XacThucServiceTests
     public async Task Hash_with_fewer_iterations_is_upgraded_on_login()
     {
         var stronger = new PasswordHasher<tai_khoan>(Options.Create(new PasswordHasherOptions { IterationCount = 2_000 }));
-        var service = new XacThucService(
-            new InMemoryTaiKhoanRepository(_userStore), new InMemoryPhienDangNhapRepository(_sessionStore), stronger, _issuer, _throttle, new PhienHieuLucCache(),
-            new FakeCurrentUser(), _clock, new DangNhapValidator(), new LamMoiTokenValidator(), new DoiMatKhauValidator(), new DatLaiMatKhauValidator(),
-        new DangKyValidator(),
-        new DangNhapGoogleValidator(),
-        new FakeGoogleIdTokenVerifier(),
-        new InMemoryDangNhapNgoaiRepository(new InMemoryStore<dang_nhap_ngoai>()));
+        var service = Create(stronger);
         var before = _userStore.Find(_user.Id)!.mat_khau_hash;
 
         await service.BLDangNhapAsync(new DangNhapDto { email = Email, mat_khau = Password }, CancellationToken.None);

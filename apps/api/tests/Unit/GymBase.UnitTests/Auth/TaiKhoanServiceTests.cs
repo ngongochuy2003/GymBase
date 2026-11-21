@@ -46,7 +46,7 @@ public class TaiKhoanServiceTests
         var error = await Assert.ThrowsAsync<ValidationFailedException>(
             () => _service.BLCreateAsync(new TaiKhoanCreateDto { ten_dang_nhap = null!, ho_ten = "", email = "a@gymbase.local", vai_tro = "User" }, CancellationToken.None));
 
-        Assert.Equal(["ho_ten", "mat_khau", "ten_dang_nhap"], error.Errors!.Keys.Order());
+        Assert.Equal(["ho_ten", "mat_khau"], error.Errors!.Keys.Order());
         Assert.Equal(before, _store.All().Count);
     }
 

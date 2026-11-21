@@ -18,7 +18,8 @@ public sealed record TaiKhoanDto(
 /// <summary>Body khi thêm người dùng. Id, ngày tạo không nhận từ client. Quy tắc: <see cref="TaiKhoanCreateValidator"/>.</summary>
 public sealed class TaiKhoanCreateDto
 {
-    public string ten_dang_nhap { get; init; } = string.Empty;
+    /// <summary>Tên hiển thị phụ, không dùng để đăng nhập (ADR-0001); bỏ trống thì để null.</summary>
+    public string? ten_dang_nhap { get; init; }
 
     /// <summary>Mật khẩu ban đầu do Admin đặt; chỉ lưu bản đã băm.</summary>
     public string mat_khau { get; init; } = string.Empty;

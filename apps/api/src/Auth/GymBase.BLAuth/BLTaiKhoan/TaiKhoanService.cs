@@ -35,8 +35,8 @@ public sealed class TaiKhoanService(
     /// </exception>
     protected override async Task BLBeforeCreateAsync(TaiKhoanCreateDto dto, CancellationToken cancellationToken)
     {
-        var tenDangNhap = dto.ten_dang_nhap.Trim();
-        if (await userRepository.DLExistsByTenDangNhapAsync(tenDangNhap, cancellationToken))
+        var tenDangNhap = NormalizeUserName(dto.ten_dang_nhap);
+        if (tenDangNhap is not null && await userRepository.DLExistsByTenDangNhapAsync(tenDangNhap, cancellationToken))
         {
             throw new ConflictException(
                 nameof(TaiKhoanCreateDto.ten_dang_nhap),
@@ -84,26 +84,18 @@ public sealed class TaiKhoanService(
         }
     }
 
-    protected override TaiKhoanDto BLToDto(tai_khoan entity) => new(
-        entity.Id,
-        entity.ten_dang_nhap,
-        entity.ho_ten,
-        entity.email,
-        entity.so_dien_thoai,
-        entity.vai_tro,
-        entity.dang_hoat_dong,
-        entity.ngay_tao,
-        entity.ngay_chinh_sua,
-        entity.is_dang_nhap_lan_dau);
+    protected override TaiKhoanDto BLToDto(tai_khoan entity) => TaiKhoanMapper.ToDto(entity);
+
+    private static string? NormalizeUserName(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     protected override tai_khoan BLCreateEntity(TaiKhoanCreateDto dto)
     {
         var user = new tai_khoan
         {
-            ten_dang_nhap = dto.ten_dang_nhap.Trim(),
+            ten_dang_nhap = NormalizeUserName(dto.ten_dang_nhap),
             ho_ten = dto.ho_ten.Trim(),
             email = EmailRules.Normalize(dto.email),
-            so_dien_thoai = dto.so_dien_thoai?.Trim(),
+            so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai),
             vai_tro = dto.vai_tro,
         };
         user.mat_khau_hash = passwordHasher.HashPassword(user, dto.mat_khau);
@@ -114,7 +106,7 @@ public sealed class TaiKhoanService(
     {
         entity.ho_ten = dto.ho_ten.Trim();
         entity.email = EmailRules.Normalize(dto.email);
-        entity.so_dien_thoai = dto.so_dien_thoai?.Trim();
+        entity.so_dien_thoai = PhoneRules.NormalizeMobile(dto.so_dien_thoai);
         entity.vai_tro = dto.vai_tro;
         entity.dang_hoat_dong = dto.dang_hoat_dong;
     }

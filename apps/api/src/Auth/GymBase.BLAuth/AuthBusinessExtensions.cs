@@ -21,7 +21,12 @@ public static class AuthBusinessExtensions
         services.AddSingleton<PhienHieuLucCache>();
         services.AddScoped<IPhienHieuLucProvider, PhienHieuLucService>();
         services.AddScoped<TaiKhoanService>();
-        services.AddScoped<XacThucService>();
+        services.AddSingleton<MatKhauVerifier>();
+        services.AddScoped<PhienIssuer>();
+        services.AddScoped<DangNhapService>();
+        services.AddScoped<PhienService>();
+        services.AddScoped<MatKhauService>();
+        services.AddScoped<TaiKhoanHienTaiService>();
         services.AddScoped<ITaiKhoanTrangThaiProvider, TaiKhoanTrangThaiService>();
         services.AddScoped<ITaiKhoanHoTenProvider, TaiKhoanHoTenService>();
         return services;
