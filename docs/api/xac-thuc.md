@@ -148,6 +148,35 @@ Token được đổi bằng một lệnh `UPDATE` có điều kiện trên `tok
 thắng, request kia nhận 401 và phiên không bị thu hồi. Client phải gộp các lần refresh đồng thời thành một (`createApiClient`
 của mobile đã làm vậy).
 
+### 4.1. Cách lưu token theo nền tảng
+
+> **Ngày viết:** 21/11/2026 · **Trạng thái:** mobile đã triển khai; web thiết kế đã chốt, chưa làm (chưa có web client)
+
+Cả hai nền tảng dùng chung cặp access token và refresh token, xoay vòng và phát hiện dùng lại như mục 4. Chỉ khác chỗ lưu
+và cách gửi refresh token:
+
+| | Mobile (đã làm) | Web (thiết kế, chưa làm) |
+| --- | --- | --- |
+| Access token | Bộ nhớ của app, đọc lại từ SecureStore khi khởi động | **Chỉ trong bộ nhớ** (store không persist); tải lại trang thì gọi `POST /refresh` để lấy lại |
+| Refresh token | SecureStore (Keychain/Keystore); gửi trong body của `/refresh` | Cookie `HttpOnly; Secure; SameSite=Strict`; trình duyệt tự gửi, JavaScript không đọc được |
+| Response của `login`, `google`, `refresh` | Có `refresh_token` trong body | **Không có** `refresh_token` trong body (nếu có thì JavaScript đọc được và HttpOnly vô nghĩa); server đặt `Set-Cookie` |
+| `logout` | Thu hồi phiên, app xóa SecureStore | Thu hồi phiên, server xóa cookie |
+
+**Khi làm web, backend phải đổi (chỉ kênh `/api/v1/web/auth`, mobile giữ nguyên):**
+
+1. Cookie: `HttpOnly`, `Secure`, `SameSite=Strict` (web và API cùng site nên không cần `None`), `Path=/api/v1/web/auth` để chỉ
+   gửi kèm các endpoint xác thực, `Max-Age` khớp 30 ngày không dùng và 90 ngày tuyệt đối của phiên.
+2. `POST /refresh` đọc refresh token từ cookie; thiếu cookie thì 401.
+3. CSRF: cookie tự gửi theo request nên `refresh` và `logout` kiểm tra header `Origin` thuộc danh sách origin cho phép
+   (`Cors:AllowedOrigins`); không khớp thì 403. Kẻ tấn công không đọc được phản hồi nên không lấy được token, nhưng có thể
+   khiến token bị xoay, nên vẫn chặn.
+4. CORS: thêm `AllowCredentials()`. Danh sách origin đã tường minh (không dùng `*`) nên không vướng ràng buộc cấm kết hợp.
+5. Web phải gộp các lần `refresh` đồng thời giữa các tab và request; khoảng ân hạn 30 giây của mục 4 đỡ cho trường hợp hai
+   tab cùng gửi một cookie.
+
+Kiểm tra phiên mỗi request (mục 3, "Thu hồi access token") áp dụng cho cả hai nền tảng, nên đăng xuất và khóa tài khoản
+có hiệu lực ngay ở web như ở mobile. Không lưu token vào `localStorage` hay `sessionStorage` ở web: XSS đọc được.
+
 ## 5. Mật khẩu
 
 | Quy tắc | Giá trị |
@@ -261,7 +290,7 @@ làm phân quyền.
 | Quên mật khẩu qua email | Trước mắt `Admin` đặt lại |
 | Xác thực nhiều lớp (TOTP) | Nên ưu tiên cho `Admin` |
 | Gắn token với thiết bị (DPoP) | RFC 9700 khuyến nghị, quá nặng cho V1 |
-| Cách lưu token cho web | Xem khi làm web (V2) |
+| Cách lưu token cho web | Đã chốt thiết kế ở mục 4.1 (refresh token qua cookie `HttpOnly`); làm cùng web client (V2) |
 | Đăng nhập bằng mật khẩu cho bên thứ ba | Không hỗ trợ. Có ứng dụng bên ngoài thì dùng Authorization Code + PKCE, vì RFC 9700 cấm Password Grant |
 
 ## Nguồn
