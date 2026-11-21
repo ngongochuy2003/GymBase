@@ -46,14 +46,17 @@ export function createApiClient(
           refreshTask ??= auth.refresh().finally(() => {
             refreshTask = undefined;
           });
+          let token: string | null;
           try {
-            const token = await refreshTask;
-            if (token) {
-              config.headers.set('Authorization', `Bearer ${token}`);
-              return client.request(config);
-            }
-          } catch {
-            // Never expose tokens or backend exception details.
+            token = await refreshTask;
+          } catch (refreshError) {
+            // Refresh lỗi vì mất mạng hay server (không phải bị từ chối): giữ phiên, báo lỗi đó lên.
+            // Transport tự xóa phiên khi refresh token bị từ chối, nên không gọi onUnauthorized ở đây.
+            return Promise.reject(toApiError(refreshError));
+          }
+          if (token) {
+            config.headers.set('Authorization', `Bearer ${token}`);
+            return client.request(config);
           }
         }
         await auth.onUnauthorized();
