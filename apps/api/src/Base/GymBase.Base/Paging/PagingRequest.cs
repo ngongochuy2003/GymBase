@@ -2,7 +2,7 @@ namespace GymBase.Base.Paging;
 
 /// <summary>
 /// Tham số lấy danh sách có phân trang, nhận từ query string (?page=1&amp;page_size=20&amp;search=...).
-/// Tên property snake_case để trùng tên tham số (quy ước Q2). Đặt ở DL.Contract để cả BL và DL dùng chung.
+/// Tên property snake_case để trùng tên tham số (quy ước Q2). Đặt ở GymBase.Base để cả BL và DL dùng chung.
 /// </summary>
 public sealed class PagingRequest
 {

@@ -4,16 +4,16 @@ namespace GymBase.Entities.Auth;
 
 /// <summary>
 /// Tài khoản hệ thống. Tên class trùng tên bảng <c>tai_khoan</c>, property trùng tên cột.
-/// Đăng nhập được bằng tên đăng nhập kèm mật khẩu, hoặc bằng Google (bảng <c>dang_nhap_ngoai</c>).
+/// Đăng nhập được bằng email kèm mật khẩu, hoặc bằng Google (bảng <c>dang_nhap_ngoai</c>). Email là định danh (ADR-0001).
 /// </summary>
 public sealed class tai_khoan : BaseAuditableEntity
 {
-    /// <summary>Tên đăng nhập, duy nhất trong số tài khoản còn hiệu lực. Null với tài khoản chỉ dùng Google.</summary>
+    /// <summary>Tên đăng nhập (không bắt buộc), duy nhất. Null với tài khoản tự đăng ký hoặc chỉ dùng Google.</summary>
     public string? ten_dang_nhap { get; set; }
 
     public string ho_ten { get; set; } = string.Empty;
 
-    /// <summary>Email để hiển thị; với tài khoản Google thì lấy từ Google. Không dùng làm định danh.</summary>
+    /// <summary>Email đăng nhập, định danh của tài khoản (ADR-0001); với tài khoản Google thì lấy từ Google.</summary>
     public string? email { get; set; }
 
     public string? so_dien_thoai { get; set; }
