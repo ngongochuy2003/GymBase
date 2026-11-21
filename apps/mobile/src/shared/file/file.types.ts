@@ -1,4 +1,4 @@
-export type FilePurpose = 'avatar' | 'gym_photo' | 'progress' | 'post';
+export type FilePurpose = 'avatar' | 'gym_photo' | 'progress' | 'post' | 'chung_chi_pt';
 
 export type MediaPurpose = FilePurpose;
 
@@ -36,6 +36,8 @@ export interface UploadOptions {
   apiBaseUrl?: string;
   authToken?: string;
   contentType?: string;
+  /** Tên tệp gửi lên; tệp tài liệu (PDF) dùng tên người dùng đã chọn thay vì tên trong bộ nhớ đệm. */
+  fileName?: string;
   onProgress?: (percent: number) => void;
   signal?: AbortSignal;
   maxRetries?: number;

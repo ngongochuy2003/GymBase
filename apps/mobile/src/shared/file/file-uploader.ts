@@ -1,6 +1,23 @@
+import axios, { isAxiosError } from 'axios';
+import { Platform } from 'react-native';
 import { resolveApiOrigin } from '@/core/config/api-origin';
+import { authRuntime } from '@/core/api/auth-api';
 import { tokenStorage } from '@/core/storage/token-storage';
 import { FilePurpose, FileUploadResult, UploadOptions } from './file.types';
+
+/** Thời gian chờ tối đa cho một lần tải tệp lên (ms); tệp lớn trên mạng yếu cần lâu hơn các lệnh API thường. */
+const UPLOAD_TIMEOUT_MS = 120_000;
+
+/** Upload thất bại do server trả mã lỗi; `status` để giao diện nói đúng nguyên nhân (401 hết phiên, 400 tệp không hợp lệ...). */
+export class UploadError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'UploadError';
+  }
+}
 
 export interface ManipulatorAdapter {
   manipulateAsync(
@@ -102,7 +119,11 @@ export async function uploadMultipartFile(
   const baseUrl = resolveApiOrigin(options?.apiBaseUrl);
   const authHeaders: Record<string, string> = {};
 
-  let token = options?.authToken || (await tokenStorage.read())?.accessToken;
+  // Access token chỉ sống 15 phút: lấy qua phiên hiện tại để có thể làm mới khi server trả 401 (xem bên dưới).
+  let token =
+    options?.authToken ||
+    (await authRuntime.transport.getAccessToken()) ||
+    (await tokenStorage.read())?.accessToken;
   if (!token && typeof window !== 'undefined' && window.localStorage) {
     token = window.localStorage.getItem('access_token') || undefined;
   }
@@ -111,8 +132,12 @@ export async function uploadMultipartFile(
     authHeaders.Authorization = `Bearer ${token}`;
   }
 
-  let isVideo = isVideoUrl(localUri) || Boolean(options?.contentType?.startsWith('video/'));
-  let fileType = options?.contentType || (isVideo ? 'video/mp4' : 'image/jpeg');
+  // Chứng chỉ PT là tài liệu PDF: gửi nguyên bản, không nén ảnh và không coi là video.
+  const isDocument = purpose === 'chung_chi_pt';
+  let isVideo =
+    !isDocument && (isVideoUrl(localUri) || Boolean(options?.contentType?.startsWith('video/')));
+  let fileType =
+    options?.contentType || (isDocument ? 'application/pdf' : isVideo ? 'video/mp4' : 'image/jpeg');
   let blobData: Blob | null = null;
 
   // Nếu trên Web (blob: URL) hoặc có fetch, đọc MIME type trực tiếp từ Blob
@@ -132,12 +157,26 @@ export async function uploadMultipartFile(
   }
 
   let fileUri = localUri;
-  let fileName = localUri.split('/').pop() || (isVideo ? `video_${Date.now()}.mp4` : `upload_${Date.now()}.jpg`);
-  if (isVideo && !fileName.endsWith('.mp4') && !fileName.endsWith('.mov') && !fileName.endsWith('.webm')) {
+  let fileName =
+    options?.fileName ||
+    localUri.split('/').pop() ||
+    (isDocument
+      ? `tai-lieu_${Date.now()}.pdf`
+      : isVideo
+        ? `video_${Date.now()}.mp4`
+        : `upload_${Date.now()}.jpg`);
+  if (
+    isVideo &&
+    !fileName.endsWith('.mp4') &&
+    !fileName.endsWith('.mov') &&
+    !fileName.endsWith('.webm')
+  ) {
     fileName = `${fileName}.mp4`;
   }
 
-  if (!isVideo) {
+  if (isDocument) {
+    // Giữ nguyên tệp gốc.
+  } else if (!isVideo) {
     try {
       // Bước 1: Nén ảnh giữ độ nét cao bằng expo-image-manipulator
       const compressed = await compressImageOnDevice(localUri);
@@ -170,7 +209,13 @@ export async function uploadMultipartFile(
 
   if (blobData) {
     formData.append('file', blobData, fileName);
-  } else if (typeof Blob !== 'undefined' && !fileUri.startsWith('file://')) {
+  } else if (
+    Platform.OS === 'web' &&
+    typeof Blob !== 'undefined' &&
+    !fileUri.startsWith('file://')
+  ) {
+    // Chỉ web đọc được tệp thành Blob để gửi. Trên điện thoại, FormData của React Native không nhận Blob (báo
+    // 'Unsupported FormDataPart implementation'): phải gửi dạng { uri, type, name } cho phần native tự đọc, kể cả uri content://.
     try {
       const blobRes = await fetch(fileUri);
       const blob = await blobRes.blob();
@@ -194,17 +239,47 @@ export async function uploadMultipartFile(
 
   // Bước 3: Gửi lên Backend (Kênh mobile /api/v1/mob/files)
   const endpoint = `${baseUrl}/api/v1/mob/files`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: authHeaders,
-    body: formData,
-    signal: options?.signal,
-  });
+  // Gửi bằng axios (XMLHttpRequest của React Native), không dùng `fetch` toàn cục: runtime Expo thay `fetch` bằng bản
+  // `expo/fetch`, bản đó không nhận phần tệp dạng { uri, type, name } ('Unsupported FormDataPart implementation'),
+  // còn XMLHttpRequest thì đọc tệp theo uri (file:// lẫn content://) ở phía native.
+  const send = async (headers: Record<string, string>) => {
+    try {
+      const response = await axios.post<FileUploadResult>(endpoint, formData, {
+        // Trên điện thoại cần khai báo multipart để phần native tự thêm boundary; web để trình duyệt tự đặt.
+        headers:
+          Platform.OS === 'web' ? headers : { ...headers, 'Content-Type': 'multipart/form-data' },
+        signal: options?.signal,
+        timeout: UPLOAD_TIMEOUT_MS,
+      });
+      return { status: response.status, data: response.data as unknown };
+    } catch (error) {
+      // Server trả mã lỗi thì giữ lại để xử lý (làm mới token khi 401); không có phản hồi (mất mạng...) thì ném tiếp.
+      if (isAxiosError(error) && error.response) {
+        return { status: error.response.status, data: error.response.data as unknown };
+      }
+      throw error;
+    }
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Upload file multipart thất bại (${response.status}): ${errorText}`);
+  let result = await send(authHeaders);
+
+  // Access token hết hạn: làm mới một lần rồi gửi lại. Không làm khi người gọi tự truyền `authToken`.
+  if (result.status === 401 && !options?.authToken) {
+    const refreshed = await authRuntime.transport.refresh().catch(() => null);
+    if (refreshed) {
+      result = await send({ ...authHeaders, Authorization: `Bearer ${refreshed}` });
+    } else {
+      await authRuntime.transport.onUnauthorized();
+    }
   }
 
-  return (await response.json()) as FileUploadResult;
+  if (result.status < 200 || result.status >= 300) {
+    const errorText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
+    throw new UploadError(
+      `Upload file multipart thất bại (${result.status}): ${errorText}`,
+      result.status,
+    );
+  }
+
+  return result.data as FileUploadResult;
 }
