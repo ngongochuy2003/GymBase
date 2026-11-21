@@ -82,7 +82,7 @@ nhóm phải nhớ.
 
 **Tên theo danh từ nghiệp vụ** (chốt 11/11): tên lớp và file là danh từ nghiệp vụ tiếng Việt viết hoa từng chữ cộng hậu tố
 vai trò tiếng Anh, và cùng một danh từ lặp ở mọi tầng: `tai_khoan` (entity), `TaiKhoanConfiguration`, `TaiKhoanDtos`,
-`TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập là `XacThucService`.
+`TaiKhoanValidators`, `TaiKhoanService` (BL), `ITaiKhoanRepository` / `TaiKhoanRepository` (DL). Đăng nhập tách thành `DangNhapService`, `PhienService`, `MatKhauService` và `TaiKhoanHienTaiService` (cùng thư mục `BLXacThuc`).
 Mỗi Service và Repository nằm trong file cùng tên (test kiểm tra). Controller giữ tên theo URL (`UsersController` ứng
 với `/users`), vì URL là hợp đồng với mobile.
 

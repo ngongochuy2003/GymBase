@@ -163,7 +163,7 @@ của framework. Client không nên hiện `errors` của các lỗi này cho ng
 
 | HTTP | `code` | `title` | Khi nào dùng | Ví dụ |
 | --- | --- | --- | --- | --- |
-| 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ten_dang_nhap`, email sai định dạng |
+| 400 | `VALIDATION_FAILED` | Dữ liệu không hợp lệ | Nhập sai hoặc thiếu trường, sai định dạng, cột sort/filter không được phép. **Có `errors`** | Thiếu `ho_ten`, email sai định dạng |
 | 401 | `UNAUTHORIZED` | Chưa xác thực | Chưa đăng nhập, token sai hoặc hết hạn, sai tên đăng nhập hoặc mật khẩu | Gọi API không kèm token |
 | 403 | `FORBIDDEN` | Không có quyền | Đã đăng nhập nhưng không đủ quyền, tài khoản bị khóa | Học viên gọi API quản trị |
 | 404 | `NOT_FOUND` | Không tìm thấy | Không có bản ghi theo id | `GET /users/{id}` với id không tồn tại |

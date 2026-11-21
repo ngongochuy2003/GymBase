@@ -22,7 +22,7 @@ Các số 15 phút, 30 ngày, 90 ngày là lựa chọn của dự án, các ti�
 
 ## 2. Endpoint
 
-Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung `XacThucService`.
+Có ở cả `/api/v1/web/auth` và `/api/v1/mob/auth`, dùng chung các service `DangNhapService`, `PhienService`, `MatKhauService` và `TaiKhoanHienTaiService` (`GymBase.BLAuth/BLXacThuc`).
 
 | Request | Đăng nhập? | Kết quả |
 | --- | --- | --- |
@@ -103,7 +103,7 @@ JWT chỉ được **ký, không mã hóa**: ai có token đều đọc được
 | `sub` | `Id` của người dùng trong bảng `tai_khoan` | `ICurrentUser.UserId`. Giữ nguyên dù đăng nhập bằng cách nào |
 | `sid` | `Id` của phiên trong `phien_dang_nhap` | Biết token thuộc phiên nào, để sau này thu hồi tức thì |
 | `jti` | Mã riêng của token | Truy vết trong log |
-| `preferred_username` | `ten_dang_nhap`, không có thì `email` | `ICurrentUser.UserName`, ghi `nguoi_tao`, `nguoi_chinh_sua` |
+| `preferred_username` | `ten_dang_nhap`, không có thì `id` (không đưa email vào token) | `ICurrentUser.UserName`, ghi `nguoi_tao`, `nguoi_chinh_sua` |
 | `role` | `vai_tro` | `[Authorize(Roles = "...")]` |
 | `iat`, `nbf`, `exp` | Thời điểm cấp, bắt đầu có hiệu lực, hết hạn | Kiểm tra thời hạn |
 

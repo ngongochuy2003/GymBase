@@ -12,7 +12,7 @@ suốt: **PT xác nhận một buổi tập và trừ 1 buổi của gói**.
 | | CRUD | API nghiệp vụ |
 | --- | --- | --- |
 | Tên API | Danh từ: thêm, sửa, xóa một bản ghi | Động từ: một việc (`xac-nhan`, `huy`, `gia-han`) |
-| Service | Kế thừa `BaseService`, có sẵn 5 hàm | Lớp riêng như `XacThucService`, mỗi việc một hàm `BL...` |
+| Service | Kế thừa `BaseService`, có sẵn 5 hàm | Lớp riêng như `PhienService`, mỗi việc một hàm `BL...` |
 | Quy tắc | Gần như không có | Nằm hết trong hàm BL |
 | Dữ liệu | Một bảng | Nhiều bảng, thường cần giao dịch |
 
