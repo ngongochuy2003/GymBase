@@ -57,7 +57,7 @@ export const tokenStorage = {
     try {
       storage.removeItem(KEY);
     } catch {
-      // ignore
+      // Không có gì để xóa hoặc không xóa được: bỏ qua.
     }
   },
 };

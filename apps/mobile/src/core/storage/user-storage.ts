@@ -44,14 +44,14 @@ export const userStorage = {
       try {
         window.localStorage.setItem(USER_KEY, raw);
       } catch {
-        /* ignore */
+        /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
       }
     }
 
     try {
       await SecureStore.setItemAsync(USER_KEY, raw);
     } catch {
-      /* ignore */
+      /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
     }
   },
 
@@ -60,14 +60,14 @@ export const userStorage = {
       try {
         window.localStorage.removeItem(USER_KEY);
       } catch {
-        /* ignore */
+        /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
       }
     }
 
     try {
       await SecureStore.deleteItemAsync(USER_KEY);
     } catch {
-      /* ignore */
+      /* Lỗi lưu trữ: bỏ qua, người dùng vẫn dùng được trong phiên này. */
     }
   },
 };

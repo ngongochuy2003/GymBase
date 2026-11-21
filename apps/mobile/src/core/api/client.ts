@@ -8,7 +8,7 @@ import { toApiError } from './api-error';
 
 export interface AuthTransport {
   getAccessToken(): Promise<string | null>;
-  // The backend integration owns rotation, storage and revocation.
+  // Phía tích hợp với backend lo việc xoay vòng, lưu trữ và thu hồi token.
   refresh(): Promise<string | null>;
   onUnauthorized(): Promise<void>;
 }
