@@ -21,7 +21,7 @@ public abstract class AuthControllerBase(XacThucService authService, IQuyenHanPr
     public async Task<ActionResult<KetQuaDangNhapDto>> Login(DangNhapDto dto, CancellationToken cancellationToken) =>
         Ok(await authService.BLDangNhapAsync(dto, cancellationToken));
 
-    /// <summary>Người mới tự đăng ký bằng mật khẩu; không có phiên, app đưa về màn đăng nhập. 409 nếu email đã dùng.</summary>
+    /// <summary>Người mới tự đăng ký bằng mật khẩu. 409 nếu email đã dùng.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     [EnableRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy)]
