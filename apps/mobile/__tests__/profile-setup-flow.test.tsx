@@ -14,7 +14,7 @@ import ProfileDetailRoute from '@/app/(protected)/profile-setup/chi-tiet';
 import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { authApi } from '@/core/api/auth-api';
-import { danhMucApi } from '@/core/api/danh-muc-api';
+import { danhMucApi } from '@/shared/api/danh-muc-api';
 import type { AuthUser } from '@/core/auth/types';
 
 const firstTimeUser: AuthUser = {

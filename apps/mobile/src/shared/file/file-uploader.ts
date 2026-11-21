@@ -1,5 +1,4 @@
-import { DEFAULT_LOCAL_API_URL } from '@/core/api/mobile-client';
-import { env } from '@/core/config/env';
+import { resolveApiOrigin } from '@/core/config/api-origin';
 import { tokenStorage } from '@/core/storage/token-storage';
 import { FilePurpose, FileUploadResult, UploadOptions } from './file.types';
 
@@ -100,8 +99,7 @@ export async function uploadMultipartFile(
   purpose: FilePurpose = 'avatar',
   options?: UploadOptions,
 ): Promise<FileUploadResult> {
-  const rawBase = options?.apiBaseUrl || env.apiUrl || DEFAULT_LOCAL_API_URL;
-  const baseUrl = rawBase.replace(/\/api\/v1\/mob\/?$/, '').replace(/\/+$/, '');
+  const baseUrl = resolveApiOrigin(options?.apiBaseUrl);
   const authHeaders: Record<string, string> = {};
 
   let token = options?.authToken || (await tokenStorage.read())?.accessToken;

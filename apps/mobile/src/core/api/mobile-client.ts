@@ -3,7 +3,7 @@ import { authRuntime } from './auth-api';
 import { createApiClient } from './client';
 import { resolveMobApiBaseUrl } from './mob-base-url';
 
-export { DEFAULT_LOCAL_API_URL, resolveMobApiBaseUrl } from './mob-base-url';
+export { resolveMobApiBaseUrl } from './mob-base-url';
 
 let shared: AxiosInstance | undefined;
 

@@ -9,7 +9,7 @@ import {
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Icon } from '@/shared/icons';
 import { theme } from '@/shared/theme/tokens';
-import { resolveRemoteImageUri } from './remote-image';
+import { resolveMediaUrl } from '@/core/config/api-origin';
 
 export interface PostVideoPlayerProps {
   uri: string;
@@ -35,7 +35,7 @@ export function PostVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const resolvedUri = useMemo(() => resolveRemoteImageUri(uri) ?? uri, [uri]);
+  const resolvedUri = useMemo(() => resolveMediaUrl(uri) ?? uri, [uri]);
 
   const player = useVideoPlayer(resolvedUri, (p) => {
     p.loop = loop;

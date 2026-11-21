@@ -15,8 +15,8 @@ import OnboardingRoute from '@/app/(protected)/onboarding';
 import NotFound from '@/app/+not-found';
 import { ApiError } from '@/core/api/api-error';
 import { authApi } from '@/core/api/auth-api';
-import { danhMucApi, type DanhMucNhom } from '@/core/api/danh-muc-api';
-import { profileApi, type HoSo } from '@/core/api/profile-api';
+import { danhMucApi, type DanhMucNhom } from '@/shared/api/danh-muc-api';
+import { profileApi, type HoSo } from '@/features/profile/api/profile-api';
 import type { AuthUser } from '@/core/auth/types';
 
 const user: AuthUser = {

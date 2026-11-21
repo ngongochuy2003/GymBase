@@ -1,4 +1,4 @@
-import { getMobClient } from './mobile-client';
+import { getMobClient } from '@/core/api/mobile-client';
 
 /** Một mục danh mục: app hiển thị `ten`, gửi lại `ma` (docs/api/danh-muc.md). */
 export type DanhMucItem = {

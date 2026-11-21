@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { AuthHeader } from '@/features/auth';
 import { ApiError } from '@/core/api/api-error';
-import { profileApi, type HoSoLuuInput } from '@/core/api/profile-api';
+import { profileApi, type HoSoLuuInput } from '../api/profile-api';
 import { MultiSelectChips } from '@/shared/components/multi-select-chips';
 import { SelectField } from '@/shared/components/select-field';
 import { Button, Screen, TextField } from '@/shared/components/ui';

@@ -1,4 +1,4 @@
-import { getMobClient } from './mobile-client';
+import { getMobClient } from '@/core/api/mobile-client';
 
 /**
  * Body của `PUT /api/v1/mob/ho-so` (docs/api/ho-so.md). Khối nào có tùy vai trò: `hoc_vien` gửi khối học viên, `pt` gửi khối

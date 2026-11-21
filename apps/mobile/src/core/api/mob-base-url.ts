@@ -1,16 +1,6 @@
-import { Platform } from 'react-native';
-import { env } from '../config/env';
+import { resolveApiOrigin } from '../config/api-origin';
 
-export const DEFAULT_LOCAL_API_URL = 'http://localhost:5020';
-
+/** Địa chỉ gốc của API mobile: `<origin>/api/v1/mob`. */
 export function resolveMobApiBaseUrl(): string {
-  if (
-    Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
-    window.location?.hostname === 'localhost'
-  ) {
-    return 'http://localhost:5020/api/v1/mob';
-  }
-  const raw = env.apiUrl.trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1/mob') ? raw : `${raw}/api/v1/mob`;
+  return `${resolveApiOrigin()}/api/v1/mob`;
 }
