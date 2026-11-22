@@ -20,8 +20,14 @@ import { KeHoachDinhDuong } from '../components/form/ke-hoach-dinh-duong';
 import { KeHoachTapLuyen } from '../components/form/ke-hoach-tap-luyen';
 import { HangForm, KhoiForm } from '../components/form/thanh-phan-form';
 import { TheoDoiDinhKy, type MucTheoDoi } from '../components/form/theo-doi-dinh-ky';
+import {
+  datBuaAn,
+  datLaiBanNhap,
+  datLichTap,
+  useBanNhapLoTrinh,
+} from '../data/ban-nhap-lo-trinh-store';
 import { taoBanBeMau } from '../data/seed';
-import type { BuaAnKeHoach, LichTapTheoTuan, NguoiLoTrinh } from '../types';
+import type { NguoiLoTrinh } from '../types';
 
 const SO_KY_TU_GHI_CHU = 300;
 
@@ -43,21 +49,6 @@ const THOI_GIAN: readonly SelectOption[] = [
   { ma: '24', ten: '6 tháng (24 tuần)' },
 ];
 
-/** Giá trị điền sẵn cho form, để xem đủ giao diện. */
-// TODO(ROUTE): form bắt đầu trống hoặc nạp bản nháp của PT (adr.md, N22); bỏ giá trị điền sẵn này.
-const BUA_AN_MAU: BuaAnKeHoach[] = [
-  { id: 'sang', ten: 'Bữa sáng', gio: '07:00', bat: true },
-  { id: 'trua', ten: 'Bữa trưa', gio: '12:00', bat: true },
-  { id: 'toi', ten: 'Bữa tối', gio: '19:00', bat: true },
-];
-const LICH_TAP_MAU: LichTapTheoTuan = {
-  chung: [
-    { thu: 1, ten: 'Upper A', gio: '17:30' },
-    { thu: 3, ten: 'Lower A', gio: '17:30' },
-    { thu: 5, ten: 'Upper B', gio: '17:30' },
-  ],
-  rieng: {},
-};
 const GHI_CHU_MAU =
   'Tập trung tăng khối lượng cơ và kiểm soát mỡ. Duy trì ăn đủ 3 bữa, đúng giờ check-in và hoàn thành buổi tập hằng ngày. Ngủ 7–8 giờ/đêm và uống đủ nước (2,5–3 lít/ngày).';
 
@@ -79,8 +70,8 @@ export function TaoLoTrinhScreen() {
   const [mucTieu, setMucTieu] = useState<string | null>('tang_can');
   const [thoiGian, setThoiGian] = useState<string | null>('12');
   const [hocVien, setHocVien] = useState<NguoiLoTrinh[]>(() => banBe.slice(0, 1));
-  const [buaAn, setBuaAn] = useState<BuaAnKeHoach[]>(BUA_AN_MAU);
-  const [lichTap, setLichTap] = useState<LichTapTheoTuan>(LICH_TAP_MAU);
+  // Bữa ăn và lịch tập nằm trong bản nháp dùng chung để hai màn con PT-02a, PT-02b cùng sửa được.
+  const { buaAn, lichTap } = useBanNhapLoTrinh();
   const [tuanDangSua, setTuanDangSua] = useState(1);
   const [canNang, setCanNang] = useState<MucTheoDoi>({ bat: true, tanSuat: '2' });
   const [anhCoThe, setAnhCoThe] = useState<MucTheoDoi>({ bat: true, tanSuat: '2' });
@@ -102,6 +93,7 @@ export function TaoLoTrinhScreen() {
     setLoi(ketQua);
     if (Object.values(ketQua).some(Boolean)) return;
     // TODO(ROUTE): gọi API tạo lộ trình, rồi vào PT-03 của lộ trình vừa tạo (adr.md, N23 lời mời, N24 đơn hoặc nhóm).
+    datLaiBanNhap();
     router.back();
   };
 
@@ -195,14 +187,24 @@ export function TaoLoTrinhScreen() {
           </HangForm>
         </KhoiForm>
 
-        <KeHoachDinhDuong buaAn={buaAn} onDoi={setBuaAn} />
+        <KeHoachDinhDuong
+          buaAn={buaAn}
+          onDoi={datBuaAn}
+          onMoChiTiet={(buaId) => router.push({ pathname: '/dat-bua-an', params: { buaId } })}
+        />
 
         <KeHoachTapLuyen
           lich={lichTap}
           soTuan={soTuan}
           tuanDangSua={tuanHienThi}
           onDoiTuan={setTuanDangSua}
-          onDoiLich={setLichTap}
+          onDoiLich={datLichTap}
+          onMoChiTiet={(thu) =>
+            router.push({
+              pathname: '/dat-buoi-tap',
+              params: { tuan: String(tuanHienThi), thu: String(thu) },
+            })
+          }
         />
 
         <TheoDoiDinhKy

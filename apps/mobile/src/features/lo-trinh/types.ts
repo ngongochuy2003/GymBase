@@ -79,6 +79,12 @@ export interface BuaAnKeHoach {
   /** `HH:mm`. */
   gio: string;
   bat: boolean;
+  /** Món ăn và ghi chú món ưu tiên PT đặt cho bữa này (PT-02a). */
+  moTa?: string;
+  /** Năng lượng PT nhập tay, đơn vị kcal (N30). */
+  kcal?: number;
+  /** Ảnh minh họa món, tùy chọn. */
+  anh?: string;
 }
 
 /** Một buổi tập trong tuần. `thu` từ 1 (Thứ 2) đến 7 (Chủ nhật). */
@@ -87,6 +93,10 @@ export interface BuoiTapTuan {
   ten: string;
   /** `HH:mm`. */
   gio: string;
+  /** Nhóm cơ tập trong buổi, ví dụ "Ngực, vai, tay sau" (PT-02b). */
+  nhomCo?: string;
+  thoiLuongPhut?: number;
+  baiTap?: BaiTap[];
 }
 
 /**

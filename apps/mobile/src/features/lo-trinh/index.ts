@@ -1,5 +1,7 @@
 export { LoTrinhScreen } from './screens/lo-trinh-screen';
 export { TaoLoTrinhScreen } from './screens/tao-lo-trinh-screen';
+export { DatBuaAnScreen } from './screens/dat-bua-an-screen';
+export { DatBuoiTapScreen } from './screens/dat-buoi-tap-screen';
 export { ChiTietLoTrinhScreen } from './screens/chi-tiet-lo-trinh-screen';
 export { CheckInBuaAnScreen } from './screens/check-in-bua-an-screen';
 export { ChiTietCheckInBuaAnScreen } from './screens/chi-tiet-check-in-bua-an-screen';

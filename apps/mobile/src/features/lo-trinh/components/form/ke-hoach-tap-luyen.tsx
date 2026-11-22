@@ -5,16 +5,12 @@ import { cn } from '@/lib/utils';
 import { Icon } from '@/shared/icons';
 import { useTheme } from '@/shared/theme/theme';
 import type { BuoiTapTuan, LichTapTheoTuan } from '../../types';
+import { buoiTapCuaTuan, ghiBuoiTapCuaTuan } from '../../utils/lich-tap';
 import { ChonGio } from './chon-gio';
 import { KhoiForm } from './thanh-phan-form';
 
 const THU_NGAN = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const THU_DAY_DU = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
-
-/** Danh sách buổi tập hiệu lực của một tuần: tuần 1 là bản chung, tuần sau theo bản chung trừ tuần đã sửa riêng. */
-export function buoiTapCuaTuan(lich: LichTapTheoTuan, tuan: number): BuoiTapTuan[] {
-  return tuan === 1 ? lich.chung : (lich.rieng[tuan] ?? lich.chung);
-}
 
 export interface KeHoachTapLuyenProps {
   lich: LichTapTheoTuan;
@@ -22,6 +18,8 @@ export interface KeHoachTapLuyenProps {
   tuanDangSua: number;
   onDoiTuan(tuan: number): void;
   onDoiLich(lich: LichTapTheoTuan): void;
+  /** Mở PT-02b để đặt bài tập của buổi rơi vào thứ `thu` (trong tuần đang sửa). */
+  onMoChiTiet(thu: number): void;
 }
 
 /**
@@ -34,21 +32,19 @@ export function KeHoachTapLuyen({
   tuanDangSua,
   onDoiTuan,
   onDoiLich,
+  onMoChiTiet,
 }: KeHoachTapLuyenProps) {
   const { colors } = useTheme();
   const danhSach = [...buoiTapCuaTuan(lich, tuanDangSua)].sort((a, b) => a.thu - b.thu);
   const daSuaRieng = tuanDangSua > 1 && lich.rieng[tuanDangSua] !== undefined;
 
-  const ghiTuan = (moi: BuoiTapTuan[]) => {
-    if (tuanDangSua === 1) onDoiLich({ ...lich, chung: moi });
-    else onDoiLich({ ...lich, rieng: { ...lich.rieng, [tuanDangSua]: moi } });
-  };
+  const ghiTuan = (moi: BuoiTapTuan[]) => onDoiLich(ghiBuoiTapCuaTuan(lich, tuanDangSua, moi));
   const batThu = (thu: number) => {
     const co = danhSach.some((b) => b.thu === thu);
     ghiTuan(
       co
         ? danhSach.filter((b) => b.thu !== thu)
-        : [...danhSach, { thu, ten: 'Buổi tập', gio: '17:30' }],
+        : [...danhSach, { thu, ten: 'Buổi tập', gio: '17:30', baiTap: [] }],
     );
   };
   const suaBuoi = (thu: number, phan: Partial<BuoiTapTuan>) =>
@@ -161,41 +157,45 @@ export function KeHoachTapLuyen({
       ) : (
         <View>
           {danhSach.map((b, i) => (
-            <View
-              key={b.thu}
-              className={cn(
-                'flex-row items-center gap-2 py-2.5',
-                i > 0 && 'border-t border-border',
-              )}
-            >
-              <Text className="w-[62px] text-base font-medium text-foreground">
-                {THU_DAY_DU[b.thu - 1]}
-              </Text>
-              <View className="min-w-0 flex-1">
-                <TextField
-                  hideLabel
-                  label={`Tên buổi tập ${THU_DAY_DU[b.thu - 1]}`}
-                  value={b.ten}
-                  onChangeText={(ten) => suaBuoi(b.thu, { ten })}
-                  maxLength={60}
-                  placeholder="Tên buổi tập"
-                  containerClassName="h-10 px-3"
+            <View key={b.thu} className={cn('py-2.5', i > 0 && 'border-t border-border')}>
+              <View className="flex-row items-center gap-2">
+                <Text className="w-[62px] text-base font-medium text-foreground">
+                  {THU_DAY_DU[b.thu - 1]}
+                </Text>
+                <View className="min-w-0 flex-1">
+                  <TextField
+                    hideLabel
+                    label={`Tên buổi tập ${THU_DAY_DU[b.thu - 1]}`}
+                    value={b.ten}
+                    onChangeText={(ten) => suaBuoi(b.thu, { ten })}
+                    maxLength={60}
+                    placeholder="Tên buổi tập"
+                    containerClassName="h-10 px-3"
+                  />
+                </View>
+                <ChonGio
+                  gio={b.gio}
+                  tieuDe={`Giờ tập ${THU_DAY_DU[b.thu - 1]}`}
+                  onDoi={(gio) => suaBuoi(b.thu, { gio })}
                 />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Chi tiết buổi ${THU_DAY_DU[b.thu - 1]}`}
+                  hitSlop={8}
+                  onPress={() => onMoChiTiet(b.thu)}
+                >
+                  <Icon name="chevron-right" size={20} color={colors.muted} />
+                </Pressable>
               </View>
-              <ChonGio
-                gio={b.gio}
-                tieuDe={`Giờ tập ${THU_DAY_DU[b.thu - 1]}`}
-                onDoi={(gio) => suaBuoi(b.thu, { gio })}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Chi tiết buổi ${THU_DAY_DU[b.thu - 1]}`}
-                hitSlop={8}
-                // TODO(ROUTE): mở PT-02b (bài tập, video, ảnh minh họa của buổi) khi có màn (adr.md, N20, N29).
-                onPress={() => undefined}
-              >
-                <Icon name="chevron-right" size={20} color={colors.muted} />
-              </Pressable>
+              {b.baiTap && b.baiTap.length > 0 ? (
+                <Text className="pl-[70px] pt-1 text-xs text-muted-foreground" numberOfLines={1}>
+                  {b.baiTap.length} bài
+                  {b.thoiLuongPhut ? ` • ${b.thoiLuongPhut} phút` : ''}
+                  {b.nhomCo ? ` • ${b.nhomCo}` : ''}
+                </Text>
+              ) : (
+                <Text className="pl-[70px] pt-1 text-xs text-warning">Chưa đặt bài tập</Text>
+              )}
             </View>
           ))}
         </View>

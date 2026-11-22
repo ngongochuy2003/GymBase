@@ -10,10 +10,15 @@ import { HopKiem, KhoiForm } from './thanh-phan-form';
 export interface KeHoachDinhDuongProps {
   buaAn: readonly BuaAnKeHoach[];
   onDoi(buaAn: BuaAnKeHoach[]): void;
+  /** Mở PT-02a để đặt món, năng lượng, ảnh của một bữa. */
+  onMoChiTiet(id: string): void;
 }
 
-/** Khối "Kế hoạch dinh dưỡng": các bữa ăn trong ngày, bật tắt từng bữa và đặt giờ. */
-export function KeHoachDinhDuong({ buaAn, onDoi }: KeHoachDinhDuongProps) {
+/**
+ * Khối "Kế hoạch dinh dưỡng": các bữa ăn trong ngày, bật tắt từng bữa và đặt giờ. Dưới tên bữa là tóm tắt món đã đặt
+ * (hoặc nhắc chưa đặt); mũi tên mở PT-02a.
+ */
+export function KeHoachDinhDuong({ buaAn, onDoi, onMoChiTiet }: KeHoachDinhDuongProps) {
   const { colors } = useTheme();
   const sua = (id: string, phan: Partial<BuaAnKeHoach>) =>
     onDoi(buaAn.map((b) => (b.id === id ? { ...b, ...phan } : b)));
@@ -32,14 +37,22 @@ export function KeHoachDinhDuong({ buaAn, onDoi }: KeHoachDinhDuongProps) {
           >
             <HopKiem chon={b.bat} onDoi={(bat) => sua(b.id, { bat })} nhan={`Bật ${b.ten}`} />
             <Icon name="meal" size={22} color={colors.text} />
-            <Text className="flex-1 text-base text-foreground">{b.ten}</Text>
+            <View className="min-w-0 flex-1">
+              <Text className="text-base text-foreground">{b.ten}</Text>
+              {b.kcal ? (
+                <Text className="text-xs text-muted-foreground" numberOfLines={1}>
+                  ~{b.kcal} kcal{b.moTa ? ` • ${b.moTa}` : ''}
+                </Text>
+              ) : (
+                <Text className="text-xs text-warning">Chưa đặt món</Text>
+              )}
+            </View>
             <ChonGio gio={b.gio} tieuDe={`Giờ ${b.ten}`} onDoi={(gio) => sua(b.id, { gio })} />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Chi tiết ${b.ten}`}
               hitSlop={8}
-              // TODO(ROUTE): mở PT-02a (chi tiết bữa ăn: calo nhập tay, ghi chú món ưu tiên) khi có màn (adr.md, N21, N30).
-              onPress={() => undefined}
+              onPress={() => onMoChiTiet(b.id)}
             >
               <Icon name="chevron-right" size={20} color={colors.muted} />
             </Pressable>

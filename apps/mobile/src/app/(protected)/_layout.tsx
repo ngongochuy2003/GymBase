@@ -36,6 +36,8 @@ export default function ProtectedLayout() {
         <Stack.Screen name="home" />
         <Stack.Screen name="route" />
         <Stack.Screen name="tao-lo-trinh" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="dat-bua-an" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="dat-buoi-tap" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chi-tiet-lo-trinh" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chi-tiet-can-nang" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="anh-theo-moc" options={{ animation: 'slide_from_right' }} />
