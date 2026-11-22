@@ -28,6 +28,8 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 | `VERIFY` | Xác minh email, số điện thoại (OTP hoặc link) và quên mật khẩu qua email |
 | `PROFILE` | Màn thiết lập hồ sơ và chọn nhóm người dùng (hiện là màn giữ chỗ) |
 | `ASSET` | Logo, ảnh hero, carousel của màn chào mừng (hiện là khối màu giữ chỗ) |
+| `ROUTE` | Màn Lộ trình ở mobile đang dùng dữ liệu mẫu (`features/lo-trinh/data/seed.ts`) và các nút chưa có màn đích; thay bằng API và điều hướng thật |
+| `UI` | `AppHeader` và `BottomTabBar` trong ui-kit còn dùng token cũ (chỉ sáng); gộp `main-header.tsx`, `main-tab-bar.tsx` vào đó khi ui-kit chuyển sang NativeWind |
 | `LINK-GOOGLE` | Liên kết Google vào tài khoản mật khẩu có sẵn từ tab Cá nhân (backend và mobile) |
 | `IOS` | Đăng nhập Google trên iOS (plugin `iosUrlScheme`, client ID iOS) và Sign in with Apple |
 | `LEGAL` | Điều khoản sử dụng và Chính sách bảo mật thật (hiện là URL giữ chỗ) |
