@@ -307,6 +307,24 @@ Chi tiết giao diện chưa viết vào `luong-man-hinh.md`.
 - **Hệ quả:** lưu trong `muc_ke_hoach.chi_tiet` (JSON) theo từng tuần (K10); ảnh dùng `tep_tin` (K7). Học viên đọc lại đúng các giá
   trị này ở HV-04 và HV-06 (N31).
 
+### N38. PT-03: công việc hôm nay là của cả lộ trình, trạng thái là của cả nhóm
+
+- **Nguồn:** người dùng chốt ngày 22/11/2026 khi làm màn chi tiết lộ trình của PT: "phần công việc hôm nay là của chung cả nhóm,
+  không phải của cá nhân; trạng thái là của cả nhóm; thành viên nào check-in rồi thì ở task đó có avatar nhỏ".
+- **Chốt:**
+  - Danh sách "Công việc hôm nay" **chung** cho cả lộ trình; lộ trình nhóm không có danh sách riêng từng người.
+  - Trạng thái nhiệm vụ là của cả nhóm: **Đã hoàn thành** khi mọi thành viên *đang tham gia* đã check-in (lộ trình đơn là một
+    người); chưa thì theo mốc giờ: Chờ check-in (đến giờ), Sắp tới giờ, Ngày mai, Quá hạn.
+  - Thành viên đã check-in hiện bằng ảnh đại diện nhỏ xếp chồng ở dòng nhiệm vụ (tối đa 3, nhiều hơn thì "+n"), chỉ ở lộ trình
+    nhóm. Dòng phụ ghi "n/m đã check-in" khi mới có một phần.
+  - Người chưa chấp nhận lời mời (N23), đã từ chối hoặc đã rời **không chặn** việc hoàn thành và không được tính vào "m".
+  - Check-in chờ duyệt vẫn **từng người một** vì PT duyệt riêng từng bản (ghi tên học viên ở mỗi dòng). Tab Tiến độ có chọn thành
+    viên vì cân nặng và ảnh là của từng người.
+  - Đóng lộ trình: PT chọn Hoàn thành hoặc Thất bại và bắt buộc nhập lý do (N28; đề xuất cho M19, người dùng đồng ý).
+    Lộ trình đã đóng chỉ xem.
+- **Hệ quả:** hoàn thành của nhiệm vụ nhóm phải suy ra từ tập thành viên đang tham gia (bảng lượt tham gia, K9), không lưu
+  một cột trạng thái riêng cho nhiệm vụ nhóm. Ảnh cơ thể chỉ hiện cho PT khi học viên để chế độ "Cho PT xem" (N33).
+
 ## 2. Quyết định kỹ thuật
 
 Các mục này suy ra từ quyết định nghiệp vụ ở trên, chưa có câu hỏi riêng. Cần người dùng xác nhận trước khi thiết kế schema.

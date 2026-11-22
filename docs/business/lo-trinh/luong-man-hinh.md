@@ -286,18 +286,39 @@ Chưa có: video hướng dẫn (N29), danh sách bài tập có sẵn để ch�
 
 ### PT-03 Chi tiết lộ trình học viên
 
-Điểm vào: PT-01 "Xem chi tiết", PT-02 sau khi tạo, thông báo check-in. Nội dung: tên lộ trình, học viên và PT phụ trách, tuần x/12, %, bốn tab (Hôm nay, Kế hoạch, Tiến độ, Check-in), công việc hôm nay (mỗi dòng có nhãn trạng thái), khối "Check-in chờ duyệt (n)" (chỉ bữa ăn và buổi tập, N16), hoạt động gần đây, danh sách "Check-in gần đây" (Đã duyệt, Chờ duyệt).
+Điểm vào: PT-01 "Xem chi tiết", PT-02 sau khi tạo, thông báo check-in. Dùng chung cho **lộ trình đơn và nhóm** (M17). Nút `...` ở góc phải; bốn tab Hôm nay, Kế hoạch, Tiến độ, Check-in; thanh hành động dưới cùng.
 
-Thanh hành động dưới cùng: "Chỉnh sửa kế hoạch", "Nhắn tin", "Xem tiến độ".
+**Đầu màn:** tên lộ trình; học viên và PT phụ trách (lộ trình đơn: ảnh, tên học viên | ảnh, tên PT); "Tuần n / tổng" kèm thanh và phần trăm tiến độ. Lộ trình nhóm thay phần học viên bằng "Nhóm n người" (ảnh đại diện xếp chồng, "m đang tham gia"); bấm vào mở danh sách thành viên, mỗi người có nhãn tham gia: Đã tham gia, Chờ chấp nhận, Đã từ chối, Đã rời (K9, N23). Lộ trình đã đóng thêm nhãn trạng thái và dải thông báo "chỉ xem" kèm lý do đóng (N28).
+
+**Tab Hôm nay** (N38):
+
+| Khối | Nội dung |
+| --- | --- |
+| Công việc hôm nay | Danh sách **chung** cho cả lộ trình. Mỗi dòng: biểu tượng (đã xong thì dấu tick), tên, dòng phụ, nhãn trạng thái **của cả nhóm**. Lộ trình nhóm có thêm ảnh đại diện nhỏ của những người đã check-in |
+| Check-in chờ duyệt (n) | Chỉ bữa ăn và buổi tập (N16). Mỗi dòng: tên, thời điểm, nút "Xem"; lộ trình nhóm ghi thêm tên học viên. Ẩn khi không có bản nào |
+| Hoạt động gần đây | Các việc vừa xảy ra (học viên check-in, PT phản hồi) |
+| Check-in gần đây | Các bản đã xử lý: Đã duyệt, Cần bổ sung |
+
+**Tab Kế hoạch:** chỉ xem. Kế hoạch dinh dưỡng (các bữa đang bật: giờ, kcal, món) và lịch tập của tuần hiện tại (thứ, tên buổi, giờ, nhóm cơ, thời lượng, các bài với set và số lần). Sửa ở nút "Chỉnh sửa kế hoạch".
+
+**Tab Tiến độ:** cùng các khối với HV-07 tab Tổng quan (mục tiêu, biểu đồ cân nặng, ba chỉ số, ảnh cơ thể theo mốc) nhưng cho **một học viên**; lộ trình nhóm có hàng chip chọn thành viên (chỉ người đang tham gia). Chỉ ảnh học viên để "Cho PT xem" mới hiện; ảnh "Chỉ mình tôi" không hiện và có dòng ghi số ảnh bị ẩn (N33).
+
+**Tab Check-in:** mọi check-in bữa ăn và buổi tập của lộ trình, lọc Tất cả, Chờ duyệt, Đã duyệt, Cần bổ sung (kèm số lượng); lộ trình nhóm ghi tên học viên. Cân nặng và ảnh cơ thể không có ở đây (N16).
+
+**Nhãn trạng thái nhiệm vụ chung:** Đã hoàn thành (khi mọi thành viên đang tham gia đã check-in; người chưa chấp nhận, đã từ chối, đã rời không chặn), Chờ check-in (đến giờ mà chưa đủ người), Sắp tới HH:mm, Ngày mai, Quá hạn. Dòng phụ: mô tả khi chưa ai check-in, "n/m đã check-in" khi nhóm mới có một phần, "Cả nhóm đã check-in" hoặc "Đã check-in" khi xong.
 
 | Thao tác | Đích |
 | --- | --- |
-| Bấm khối "Check-in chờ duyệt" hoặc nút "Xem" từng mục | PT-04 |
-| Bấm check-in đã duyệt | PT-04 ở chế độ xem lại |
-| "Chỉnh sửa kế hoạch" | Form giống PT-02 với dữ liệu hiện có, thay đổi áp dụng từ hôm nay, check-in cũ giữ nguyên (N5); chưa có thiết kế |
-| "Nhắn tin" | Cuộc trò chuyện với học viên |
-| "Xem tiến độ" | Màn tiến độ của học viên (cùng bố cục HV-07, gồm cân nặng và ảnh cơ thể, chưa có thiết kế riêng) |
-| Menu `...` | Chưa có thiết kế (gợi ý: tạm dừng, kết thúc lộ trình) |
+| Bấm nút "Xem" của một check-in chờ duyệt, hoặc một dòng ở tab Check-in | PT-04 (chưa có màn) |
+| Bấm vào dòng "Nhóm n người" | Mở, đóng danh sách thành viên |
+| Chip thành viên ở tab Tiến độ | Đổi sang tiến độ của người đó |
+| "Chỉnh sửa kế hoạch" | Form giống PT-02 với dữ liệu hiện có, thay đổi áp dụng từ hôm nay, check-in cũ giữ nguyên (N5); chưa có thiết kế. Khóa khi lộ trình đã đóng |
+| "Nhắn tin" | Cuộc trò chuyện với học viên, hoặc với nhóm (chưa có màn) |
+| "Xem tiến độ" | Chuyển sang tab Tiến độ của chính màn này |
+| Menu `...` | "Đóng lộ trình" (chỉ khi lộ trình đang chạy), mở hộp xác nhận |
+| Hộp "Đóng lộ trình?" | PT chọn Hoàn thành hoặc Thất bại (đề xuất cho M19), **bắt buộc nhập lý do** tối đa 300 ký tự (N28). Xác nhận: lộ trình đóng, chỉ còn xem, học viên được thông báo; không có lý do thì không đóng được |
+
+Chưa có thiết kế gốc cho tab Kế hoạch, Tiến độ, Check-in, danh sách thành viên và hộp đóng lộ trình; app dựng theo đề xuất ở N38. Thiết kế gốc (phần 14 của tài liệu thiết kế) còn vẽ khối "Cập nhật cân nặng" trong check-in chờ duyệt; trái với N16 nên không làm.
 
 ### PT-04 Đánh giá check-in
 
@@ -317,7 +338,9 @@ Gom lại để thống nhất tên khi làm giao diện. Đây là chữ trên 
 
 | Đối tượng | Nhãn |
 | --- | --- |
-| Lộ trình | Đang thực hiện; Nháp (chỉ PT thấy). Các trạng thái khác (tạm dừng, kết thúc) chưa có thiết kế |
+| Lộ trình | Đang thực hiện; Hoàn thành; Thất bại (có lý do đóng); Nháp (chỉ PT thấy). Tạm dừng chưa có thiết kế |
+| Thành viên của lộ trình nhóm (PT) | Đã tham gia, Chờ chấp nhận, Đã từ chối, Đã rời |
+| Nhiệm vụ chung của lộ trình (PT) | Đã hoàn thành (cả nhóm), Chờ check-in, Sắp tới HH:mm, Ngày mai, Quá hạn |
 | Nhiệm vụ bữa ăn, buổi tập (học viên) | Sắp tới, Đến giờ check-in, Chờ check-in, Chưa tập, Đã gửi, Đã duyệt |
 | Nhiệm vụ cân nặng, ảnh cơ thể (học viên) | Tối nay, Ngày mai (tùy thời điểm), Đã ghi |
 | Check-in (học viên) | Chờ PT duyệt, Cần bổ sung, Đã duyệt |
@@ -358,6 +381,7 @@ Các mâu thuẫn tìm thấy khi đọc thiết kế, và cách chốt (chi ti�
 
 - HV-08 Ghi cân nặng và ảnh cơ thể (ghi nhận, không duyệt).
 - Tab Kế hoạch, tab Ảnh của HV-02; lọc theo Check-in của HV-07.
+- PT-03: tab Kế hoạch, Tiến độ, Check-in, danh sách thành viên nhóm và hộp "Đóng lộ trình" đã tự dựng ngày 22/11/2026 theo N38, chờ thiết kế chính thức.
 - HV-07a (Cân nặng) và HV-07b (Ảnh cơ thể theo mốc) đã tự thiết kế ở mục 3 để có màn cho "Chi tiết" và "Xem tất cả", chờ thiết kế chính thức. Tab Check-in của HV-07 vẫn chưa có.
 - Trạng thái "PT yêu cầu bổ sung" phía học viên, và check-in buổi tập đã được đánh giá (PT-04 cho buổi tập).
 - PT-02a và PT-02b đã tự thiết kế ngày 22/11/2026 theo N37 (mục 3, PT-02a và PT-02b), chờ thiết kế chính thức; chưa có video bài tập. "Chỉnh sửa kế hoạch" dùng lại các màn này.
