@@ -240,3 +240,66 @@ export interface GhiAnhCoThe {
   /** `HH:mm` lúc ghi. */
   gioGhi: string;
 }
+
+/** Trạng thái lượt tham gia của một học viên trong lộ trình (K9, N23). */
+export type TrangThaiThamGia = 'cho_chap_nhan' | 'tham_gia' | 'tu_choi' | 'da_roi';
+
+export interface ThanhVienLoTrinh extends NguoiLoTrinh {
+  thamGia: TrangThaiThamGia;
+}
+
+/** Mốc của một nhiệm vụ chung trong ngày, tính theo giờ: quá hạn, đến giờ chờ check-in, sắp tới, hoặc để mai. */
+export type MocNhiemVuNhom = 'qua_han' | 'cho_check_in' | 'sap_toi' | 'ngay_mai';
+
+/**
+ * Nhiệm vụ hôm nay ở góc nhìn PT. Nhiệm vụ là của cả lộ trình (nhóm cũng chung một danh sách); `daCheckIn` là id các thành
+ * viên đã check-in hoặc đã ghi. Trạng thái hoàn thành suy ra từ đó (xem `trangThaiNhiemVuNhom`).
+ */
+export interface NhiemVuNhom {
+  id: string;
+  loai: LoaiNhiemVu;
+  tieuDe: string;
+  moTa: string;
+  /** `HH:mm`. */
+  gio: string;
+  moc: MocNhiemVuNhom;
+  daCheckIn: string[];
+}
+
+/** Một check-in bữa ăn hoặc buổi tập ở góc nhìn PT (cân nặng và ảnh cơ thể không qua duyệt, N16). */
+export interface CheckInQuanLy {
+  id: string;
+  loai: 'bua_an' | 'buoi_tap';
+  tieuDe: string;
+  /** Đã định dạng để hiển thị, ví dụ `Hôm nay, 12:00`. */
+  thoiDiem: string;
+  hocVien: NguoiLoTrinh;
+  trangThai: TrangThaiDuyet;
+}
+
+export interface HoatDongGanDay {
+  id: string;
+  nguoi: NguoiLoTrinh;
+  noiDung: string;
+  /** Ví dụ `Vừa xong`. */
+  thoiDiem: string;
+}
+
+/** Kế hoạch ăn và lịch tập đã đặt cho lộ trình (PT-02, PT-02a, PT-02b). */
+export interface KeHoachLoTrinh {
+  buaAn: BuaAnKeHoach[];
+  lichTap: LichTapTheoTuan;
+}
+
+/** Chi tiết một lộ trình ở góc nhìn PT (PT-03): lộ trình đơn hay nhóm đều dùng chung cấu trúc này (adr.md, M17). */
+export interface ChiTietQuanLy {
+  loTrinh: LoTrinhQuanLy;
+  pt: NguoiLoTrinh;
+  tuanHienTai: number;
+  mucTieu: { tu: number; den: number; donVi: string };
+  thanhVien: ThanhVienLoTrinh[];
+  nhiemVuHomNay: NhiemVuNhom[];
+  checkIn: CheckInQuanLy[];
+  hoatDong: HoatDongGanDay[];
+  keHoach: KeHoachLoTrinh;
+}

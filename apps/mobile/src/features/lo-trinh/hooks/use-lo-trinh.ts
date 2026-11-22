@@ -5,7 +5,8 @@ import {
   useCheckInBuoiTapDaGui,
   useCheckInDaGui,
 } from '../data/check-in-store';
-import { taoDuLieuMau, taoTienDoMau } from '../data/seed';
+import { useLoTrinhDaDong } from '../data/dong-lo-trinh-store';
+import { taoChiTietQuanLyMau, taoDuLieuMau, taoTienDoMau } from '../data/seed';
 import type {
   CheckInBuaAn,
   CheckInBuoiTap,
@@ -62,6 +63,7 @@ export function useLoTrinh() {
   const daGuiBuoiTap = useCheckInBuoiTapDaGui();
   const canNangDaGhi = useCanNangDaGhi();
   const anhDaGhi = useAnhCoTheDaGhi();
+  const daDong = useLoTrinhDaDong();
   const goc = useMemo(() => {
     const homNay = new Date();
     return { homNay, ...taoDuLieuMau(homNay) };
@@ -81,8 +83,13 @@ export function useLoTrinh() {
           ),
         ),
       })),
+      // Lộ trình PT vừa đóng trong phiên: đổi trạng thái và ghi lý do (N28).
+      quanLy: goc.quanLy.map((lo) => {
+        const dong = daDong[lo.id];
+        return dong ? { ...lo, trangThai: dong.trangThai, lyDoDong: dong.lyDo } : lo;
+      }),
     }),
-    [goc, daGuiBuaAn, daGuiBuoiTap, canNangDaGhi, anhDaGhi],
+    [goc, daGuiBuaAn, daGuiBuoiTap, canNangDaGhi, anhDaGhi, daDong],
   );
 }
 
@@ -94,6 +101,16 @@ export function useChiTietLoTrinh(id: string | undefined) {
     const loTrinh = cuaToi.find((lo) => lo.id === id);
     return loTrinh ? { homNay, loTrinh, tienDo: taoTienDoMau(loTrinh) } : null;
   }, [homNay, cuaToi, id]);
+}
+
+/** Chi tiết một lộ trình ở góc nhìn PT (PT-03); trả `null` khi không có lộ trình mang id đó. */
+// TODO(ROUTE): chuyển sang useQuery gọi API chi tiết lộ trình của PT theo id; thêm isPending, isError.
+export function useChiTietQuanLy(id: string | undefined) {
+  const { homNay, quanLy } = useLoTrinh();
+  return useMemo(() => {
+    const lo = quanLy.find((l) => l.id === id);
+    return lo ? taoChiTietQuanLyMau(lo, homNay) : null;
+  }, [homNay, quanLy, id]);
 }
 
 /** Nhiệm vụ bữa ăn của một lộ trình (kế hoạch và check-in nếu có); `null` khi không tìm thấy hoặc không phải bữa ăn. */

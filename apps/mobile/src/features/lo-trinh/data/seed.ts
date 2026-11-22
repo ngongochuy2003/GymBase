@@ -1,5 +1,16 @@
-import type { AnhCoTheMoc, LoTrinhCuaToi, LoTrinhQuanLy, NguoiLoTrinh, TienDoLoTrinh } from '../types';
-import { layNgayLech } from '../utils/ngay';
+import type {
+  AnhCoTheMoc,
+  ChiTietQuanLy,
+  CheckInQuanLy,
+  KeHoachLoTrinh,
+  LoTrinhCuaToi,
+  LoTrinhQuanLy,
+  NguoiLoTrinh,
+  NhiemVuNhom,
+  ThanhVienLoTrinh,
+  TienDoLoTrinh,
+} from '../types';
+import { layNgayLech, tuanHienTaiCua } from '../utils/ngay';
 
 const anh = (n: number) => `https://i.pravatar.cc/200?img=${n}`;
 const bia = (ten: string) => `https://picsum.photos/seed/${ten}/400/520`;
@@ -335,7 +346,7 @@ const TI_LE_CAN_NANG = [
 ];
 
 /** Ảnh cơ thể chụp cách nhau 2 tuần, bắt đầu từ Tuần 1 và luôn có mốc của tuần hiện tại. Mốc đầu cho PT xem, các mốc sau riêng tư. */
-function taoMocAnhMau(lo: LoTrinhCuaToi): AnhCoTheMoc[] {
+function taoMocAnhMau(lo: Pick<LoTrinhCuaToi, 'id' | 'tuanHienTai'>): AnhCoTheMoc[] {
   const tuan: number[] = [];
   for (let t = 1; t < lo.tuanHienTai; t += 2) tuan.push(t);
   tuan.push(lo.tuanHienTai);
@@ -348,7 +359,9 @@ function taoMocAnhMau(lo: LoTrinhCuaToi): AnhCoTheMoc[] {
 
 /** Số liệu tiến độ mẫu cho màn chi tiết lộ trình, suy ra từ mục tiêu của lộ trình. */
 // TODO(ROUTE): thay bằng API tiến độ (cân nặng theo tuần, check-in đã duyệt, ảnh theo mốc, đánh giá mới nhất của PT).
-export function taoTienDoMau(lo: LoTrinhCuaToi): TienDoLoTrinh {
+export function taoTienDoMau(
+  lo: Pick<LoTrinhCuaToi, 'id' | 'mucTieu' | 'tuanHienTai' | 'tienDo' | 'pt'>,
+): TienDoLoTrinh {
   const quang = lo.mucTieu.den - lo.mucTieu.tu;
   return {
     canNang: TI_LE_CAN_NANG.map((tiLe, i) => ({
@@ -364,5 +377,209 @@ export function taoTienDoMau(lo: LoTrinhCuaToi): TienDoLoTrinh {
       noiDung: `Tiến độ rất tốt! Bạn đã đi được ${lo.tienDo}% chặng đường, bám sát lộ trình. Hãy tiếp tục duy trì lịch tập và ăn đủ lượng theo kế hoạch. Cố lên! 💪`,
       thoiDiem: 'Hôm nay',
     },
+  };
+}
+
+/** Kế hoạch ăn và lịch tập mẫu: điền sẵn cho form tạo lộ trình và là nội dung tab Kế hoạch ở chi tiết lộ trình của PT. */
+// TODO(ROUTE): form bắt đầu trống hoặc nạp bản nháp của PT (adr.md, N22); tab Kế hoạch đọc từ API (muc_ke_hoach, K10).
+export function taoKeHoachMau(): KeHoachLoTrinh {
+  return {
+    buaAn: [
+      {
+        id: 'sang',
+        ten: 'Bữa sáng',
+        gio: '07:00',
+        bat: true,
+        moTa: 'Yến mạch với sữa, 3 trứng luộc, 1 chuối',
+        kcal: 550,
+      },
+      {
+        id: 'trua',
+        ten: 'Bữa trưa',
+        gio: '12:00',
+        bat: true,
+        moTa: 'Cơm gạo lứt, ức gà áp chảo, rau xanh luộc',
+        kcal: 700,
+      },
+      {
+        id: 'toi',
+        ten: 'Bữa tối',
+        gio: '19:00',
+        bat: true,
+        moTa: 'Khoai lang, cá hồi nướng, salad',
+        kcal: 600,
+      },
+    ],
+    lichTap: {
+      chung: [
+        {
+          thu: 1,
+          ten: 'Upper A',
+          gio: '17:30',
+          nhomCo: 'Ngực, vai, tay sau',
+          thoiLuongPhut: 60,
+          baiTap: [
+            { id: 'ua-1', ten: 'Đẩy ngực với tạ đòn', soSet: 4, soLan: '8–10 rep' },
+            { id: 'ua-2', ten: 'Đẩy vai với tạ đơn', soSet: 3, soLan: '10 rep' },
+            { id: 'ua-3', ten: 'Đẩy tay sau với dây cáp', soSet: 3, soLan: '12 rep' },
+          ],
+        },
+        {
+          thu: 3,
+          ten: 'Lower A',
+          gio: '17:30',
+          nhomCo: 'Chân, mông',
+          thoiLuongPhut: 60,
+          baiTap: [
+            { id: 'la-1', ten: 'Squat với tạ đòn', soSet: 4, soLan: '8 rep' },
+            { id: 'la-2', ten: 'Romanian deadlift', soSet: 3, soLan: '10 rep' },
+            { id: 'la-3', ten: 'Đạp đùi trên máy', soSet: 3, soLan: '12 rep' },
+          ],
+        },
+        {
+          thu: 5,
+          ten: 'Upper B',
+          gio: '17:30',
+          nhomCo: 'Lưng, tay trước',
+          thoiLuongPhut: 60,
+          baiTap: [
+            { id: 'ub-1', ten: 'Kéo xà', soSet: 4, soLan: '6–8 rep' },
+            { id: 'ub-2', ten: 'Kéo cáp ngồi', soSet: 3, soLan: '10 rep' },
+            { id: 'ub-3', ten: 'Cuốn tạ đơn', soSet: 3, soLan: '12 rep' },
+          ],
+        },
+      ],
+      rieng: {},
+    },
+  };
+}
+
+const MUC_TIEU_QUAN_LY: Record<string, { tu: number; den: number; donVi: string }> = {
+  'ql-2': { tu: 70, den: 64, donVi: 'kg' },
+  'ql-3': { tu: 72, den: 68, donVi: 'kg' },
+};
+const MUC_TIEU_MAC_DINH = { tu: 60, den: 70, donVi: 'kg' };
+
+/** Lượt tham gia mẫu: lộ trình nhóm đang chạy có một người mới được mời, chưa chấp nhận (N23). */
+function taoThanhVienMau(lo: LoTrinhQuanLy): ThanhVienLoTrinh[] {
+  const coNguoiChoChapNhan = lo.loai === 'nhom' && lo.trangThai === 'dang_hoat_dong';
+  return lo.nguoiThamGia.map((n, i) => ({
+    ...n,
+    thamGia: coNguoiChoChapNhan && i === lo.nguoiThamGia.length - 1 ? 'cho_chap_nhan' : 'tham_gia',
+  }));
+}
+
+/** Nhiệm vụ hôm nay chung của lộ trình; nhóm thì một vài thành viên đã check-in nhiệm vụ chưa xong. */
+function taoNhiemVuNhomMau(thanhVien: readonly ThanhVienLoTrinh[]): NhiemVuNhom[] {
+  const dangThamGia = thanhVien.filter((t) => t.thamGia === 'tham_gia').map((t) => t.id);
+  return [
+    {
+      id: 'nvn-1',
+      loai: 'bua_an',
+      tieuDe: 'Bữa sáng',
+      moTa: 'Chờ học viên check-in',
+      gio: '07:00',
+      moc: 'cho_check_in',
+      daCheckIn: dangThamGia,
+    },
+    {
+      id: 'nvn-2',
+      loai: 'bua_an',
+      tieuDe: 'Bữa trưa',
+      moTa: 'Chờ học viên check-in',
+      gio: '12:00',
+      moc: 'cho_check_in',
+      daCheckIn: dangThamGia.slice(0, dangThamGia.length > 1 ? 2 : 0),
+    },
+    {
+      id: 'nvn-3',
+      loai: 'buoi_tap',
+      tieuDe: 'Buổi tập',
+      moTa: 'Upper A',
+      gio: '17:30',
+      moc: 'sap_toi',
+      daCheckIn: [],
+    },
+    {
+      id: 'nvn-4',
+      loai: 'can_nang',
+      tieuDe: 'Cân nặng',
+      moTa: 'Cập nhật định kỳ',
+      gio: '07:00',
+      moc: 'ngay_mai',
+      daCheckIn: [],
+    },
+  ];
+}
+
+/** Check-in mẫu: số bản chờ duyệt khớp \`soCheckInChoDuyet\` của thẻ, chia đều cho các thành viên, kèm vài bản đã xử lý. */
+function taoCheckInQuanLyMau(
+  lo: LoTrinhQuanLy,
+  thanhVien: readonly ThanhVienLoTrinh[],
+): CheckInQuanLy[] {
+  const dangThamGia = thanhVien.filter((t) => t.thamGia === 'tham_gia');
+  const dau = dangThamGia[0];
+  if (!dau) return [];
+  const choDuyet: CheckInQuanLy[] = Array.from({ length: lo.soCheckInChoDuyet }, (_, i) => ({
+    id: `ci-${lo.id}-${i + 1}`,
+    loai: i % 2 === 0 ? 'bua_an' : 'buoi_tap',
+    tieuDe: i % 2 === 0 ? 'Bữa trưa' : 'Buổi tập Upper A',
+    thoiDiem: i % 2 === 0 ? 'Hôm nay, 12:00' : 'Hôm nay, 06:30',
+    hocVien: dangThamGia[i % dangThamGia.length] ?? dau,
+    trangThai: 'cho_duyet',
+  }));
+  return [
+    ...choDuyet,
+    {
+      id: `ci-${lo.id}-da-1`,
+      loai: 'bua_an',
+      tieuDe: 'Bữa sáng',
+      thoiDiem: 'Hôm nay, 07:00',
+      hocVien: dau,
+      trangThai: 'da_duyet',
+    },
+    {
+      id: `ci-${lo.id}-da-2`,
+      loai: 'buoi_tap',
+      tieuDe: 'Buổi tập Cardio & Core',
+      thoiDiem: 'Hôm qua, 06:00',
+      hocVien: dau,
+      trangThai: 'can_bo_sung',
+    },
+  ];
+}
+
+/** Chi tiết lộ trình của PT (PT-03) dựng từ thẻ ở PT-01, dành cho cả lộ trình đơn lẫn nhóm. */
+// TODO(ROUTE): thay bằng API chi tiết lộ trình của PT (thành viên, nhiệm vụ hôm nay, check-in, hoạt động gần đây, kế hoạch).
+export function taoChiTietQuanLyMau(lo: LoTrinhQuanLy, homNay: Date): ChiTietQuanLy {
+  const thanhVien = taoThanhVienMau(lo);
+  const dangChay = lo.trangThai === 'dang_hoat_dong';
+  const dau = thanhVien[0];
+  return {
+    loTrinh: lo,
+    pt: ptTranDucAnh,
+    tuanHienTai: tuanHienTaiCua(lo.ngayBatDau, homNay, lo.tongTuan),
+    mucTieu: MUC_TIEU_QUAN_LY[lo.id] ?? MUC_TIEU_MAC_DINH,
+    thanhVien,
+    nhiemVuHomNay: dangChay ? taoNhiemVuNhomMau(thanhVien) : [],
+    checkIn: taoCheckInQuanLyMau(lo, thanhVien),
+    hoatDong:
+      dangChay && dau
+        ? [
+            {
+              id: 'hd-1',
+              nguoi: ptTranDucAnh,
+              noiDung: `PT vừa phản hồi bữa sáng của ${dau.ten}`,
+              thoiDiem: 'Vừa xong',
+            },
+            {
+              id: 'hd-2',
+              nguoi: dau,
+              noiDung: `${dau.ten} đã check-in bữa sáng`,
+              thoiDiem: '07:15',
+            },
+          ]
+        : [],
+    keHoach: taoKeHoachMau(),
   };
 }

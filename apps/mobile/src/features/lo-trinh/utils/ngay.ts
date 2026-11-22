@@ -75,3 +75,10 @@ export function nhanNgayDayDu(ngay: Date): string {
 export function gioHienTai(ngay: Date = new Date()): string {
   return `${String(ngay.getHours()).padStart(2, '0')}:${String(ngay.getMinutes()).padStart(2, '0')}`;
 }
+
+/** Tuần thứ mấy của lộ trình tại `homNay` (Tuần 1 là tuần bắt đầu), kẹp trong 1 đến `tongTuan`. */
+export function tuanHienTaiCua(ngayBatDau: string, homNay: Date, tongTuan: number): number {
+  const dau = new Date(homNay.getFullYear(), homNay.getMonth(), homNay.getDate()).getTime();
+  const soNgay = Math.round((dau - docNgayIso(ngayBatDau).getTime()) / MS_MOT_NGAY);
+  return Math.max(1, Math.min(tongTuan, Math.floor(soNgay / 7) + 1));
+}

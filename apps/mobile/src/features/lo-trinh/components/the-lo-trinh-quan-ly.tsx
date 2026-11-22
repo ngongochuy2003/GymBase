@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/shared/icons';
@@ -40,6 +41,7 @@ function NhomAvatar({ nguoi }: { nguoi: LoTrinhQuanLy['nguoiThamGia'] }) {
 /** Thẻ lộ trình ở sub-tab "Lộ trình tôi quản lý" (PT-01). */
 export function TheLoTrinhQuanLy({ loTrinh, homNay }: { loTrinh: LoTrinhQuanLy; homNay: Date }) {
   const { colors } = useTheme();
+  const router = useRouter();
   const conLai = soNgayConLai(loTrinh.ngayKetThuc, homNay);
   const dangChay = loTrinh.trangThai === 'dang_hoat_dong';
   const sapHet = dangChay && conLai >= 0 && conLai <= NGUONG_SAP_HET_NGAY;
@@ -128,8 +130,9 @@ export function TheLoTrinhQuanLy({ loTrinh, homNay }: { loTrinh: LoTrinhQuanLy; 
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Xem chi tiết ${loTrinh.ten}`}
-          // TODO(ROUTE): mở PT-03 (chi tiết lộ trình học viên) khi có màn.
-          onPress={() => undefined}
+          onPress={() =>
+            router.push({ pathname: '/chi-tiet-hoc-vien', params: { id: loTrinh.id } })
+          }
           className="flex-row items-center gap-1 rounded-xl border border-primary px-4 py-2"
         >
           <Text className="text-sm font-medium text-primary">Xem chi tiết</Text>

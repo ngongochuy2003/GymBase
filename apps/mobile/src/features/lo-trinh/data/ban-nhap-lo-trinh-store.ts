@@ -1,83 +1,16 @@
 import { useSyncExternalStore } from 'react';
 import type { BuaAnKeHoach, LichTapTheoTuan } from '../types';
+import { taoKeHoachMau } from './seed';
 
 interface BanNhap {
   buaAn: BuaAnKeHoach[];
   lichTap: LichTapTheoTuan;
 }
 
-/** Giá trị điền sẵn của form tạo lộ trình, để xem đủ giao diện. Mỗi lần gọi trả bản mới để không dùng chung tham chiếu. */
+/** Giá trị điền sẵn của form tạo lộ trình, để xem đủ giao diện. */
 // TODO(ROUTE): form bắt đầu trống hoặc nạp bản nháp của PT (adr.md, N22); bỏ giá trị điền sẵn này.
 function macDinh(): BanNhap {
-  return {
-    buaAn: [
-      {
-        id: 'sang',
-        ten: 'Bữa sáng',
-        gio: '07:00',
-        bat: true,
-        moTa: 'Yến mạch với sữa, 3 trứng luộc, 1 chuối',
-        kcal: 550,
-      },
-      {
-        id: 'trua',
-        ten: 'Bữa trưa',
-        gio: '12:00',
-        bat: true,
-        moTa: 'Cơm gạo lứt, ức gà áp chảo, rau xanh luộc',
-        kcal: 700,
-      },
-      {
-        id: 'toi',
-        ten: 'Bữa tối',
-        gio: '19:00',
-        bat: true,
-        moTa: 'Khoai lang, cá hồi nướng, salad',
-        kcal: 600,
-      },
-    ],
-    lichTap: {
-      chung: [
-        {
-          thu: 1,
-          ten: 'Upper A',
-          gio: '17:30',
-          nhomCo: 'Ngực, vai, tay sau',
-          thoiLuongPhut: 60,
-          baiTap: [
-            { id: 'ua-1', ten: 'Đẩy ngực với tạ đòn', soSet: 4, soLan: '8–10 rep' },
-            { id: 'ua-2', ten: 'Đẩy vai với tạ đơn', soSet: 3, soLan: '10 rep' },
-            { id: 'ua-3', ten: 'Đẩy tay sau với dây cáp', soSet: 3, soLan: '12 rep' },
-          ],
-        },
-        {
-          thu: 3,
-          ten: 'Lower A',
-          gio: '17:30',
-          nhomCo: 'Chân, mông',
-          thoiLuongPhut: 60,
-          baiTap: [
-            { id: 'la-1', ten: 'Squat với tạ đòn', soSet: 4, soLan: '8 rep' },
-            { id: 'la-2', ten: 'Romanian deadlift', soSet: 3, soLan: '10 rep' },
-            { id: 'la-3', ten: 'Đạp đùi trên máy', soSet: 3, soLan: '12 rep' },
-          ],
-        },
-        {
-          thu: 5,
-          ten: 'Upper B',
-          gio: '17:30',
-          nhomCo: 'Lưng, tay trước',
-          thoiLuongPhut: 60,
-          baiTap: [
-            { id: 'ub-1', ten: 'Kéo xà', soSet: 4, soLan: '6–8 rep' },
-            { id: 'ub-2', ten: 'Kéo cáp ngồi', soSet: 3, soLan: '10 rep' },
-            { id: 'ub-3', ten: 'Cuốn tạ đơn', soSet: 3, soLan: '12 rep' },
-          ],
-        },
-      ],
-      rieng: {},
-    },
-  };
+  return taoKeHoachMau();
 }
 
 let trangThai: BanNhap = macDinh();

@@ -1,5 +1,12 @@
 import type { BuoiTapTuan, LichTapTheoTuan } from '../types';
 
+const TEN_THU = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+
+/** Tên thứ trong tuần: 1 là Thứ 2 đến 7 là Chủ nhật. */
+export function tenThu(thu: number): string {
+  return TEN_THU[thu - 1] ?? '';
+}
+
 /** Danh sách buổi tập hiệu lực của một tuần: tuần 1 là bản chung, tuần sau theo bản chung trừ tuần đã sửa riêng. */
 export function buoiTapCuaTuan(lich: LichTapTheoTuan, tuan: number): BuoiTapTuan[] {
   return tuan === 1 ? lich.chung : (lich.rieng[tuan] ?? lich.chung);

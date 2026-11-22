@@ -43,7 +43,7 @@ export function KhoiMucTieu({
   canNangHienTai,
   homNay,
 }: {
-  loTrinh: LoTrinhCuaToi;
+  loTrinh: Pick<LoTrinhCuaToi, 'ten' | 'mucTieu' | 'ngayKetThuc'>;
   canNangHienTai: number;
   homNay: Date;
 }) {
@@ -90,14 +90,15 @@ export function KhoiCanNang({
 }: {
   diem: readonly DiemCanNang[];
   donVi: string;
-  onMoChiTiet(): void;
+  /** Có thì hiện liên kết "Chi tiết" cạnh tiêu đề; PT xem tiến độ thì không có màn này. */
+  onMoChiTiet?(): void;
 }) {
   const soTuan = diem.at(-1)?.tuan ?? 0;
   return (
     <KhungThe
       icon="trend"
       tieuDe={`Cân nặng ${soTuan} tuần`}
-      lienKet={{ nhan: 'Chi tiết', onPress: onMoChiTiet }}
+      lienKet={onMoChiTiet ? { nhan: 'Chi tiết', onPress: onMoChiTiet } : undefined}
     >
       <BieuDoCanNang diem={diem} donVi={donVi} />
     </KhungThe>
@@ -196,7 +197,8 @@ export function KhoiAnhMoc({
   onXemTatCa,
 }: {
   anh: readonly AnhCoTheMoc[];
-  onXemTatCa(): void;
+  /** Có thì hiện liên kết "Xem tất cả" cạnh tiêu đề. */
+  onXemTatCa?(): void;
 }) {
   const [dau, cuoi] = [anh[0], anh.at(-1)];
   const hai = dau && cuoi && dau !== cuoi ? [dau, cuoi] : dau ? [dau] : [];
@@ -204,7 +206,7 @@ export function KhoiAnhMoc({
     <KhungThe
       icon="images"
       tieuDe="Ảnh cơ thể theo mốc"
-      lienKet={{ nhan: 'Xem tất cả', onPress: onXemTatCa }}
+      lienKet={onXemTatCa ? { nhan: 'Xem tất cả', onPress: onXemTatCa } : undefined}
     >
       <View className="flex-row gap-3">
         {hai.map((a) => (
