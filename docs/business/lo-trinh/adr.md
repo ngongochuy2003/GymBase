@@ -4,7 +4,7 @@ status: in-progress
 
 # Lộ trình: các quyết định đã chốt và còn mở
 
-Ngày 21/11/2026. Ghi lại từng câu hỏi trong lúc chốt phạm vi và mâu thuẫn thiết kế của màn Lộ trình (xem
+Ngày 21/11/2026, cập nhật 22/11/2026 (thêm thông tin từ sếp, mục 1b). Ghi lại từng câu hỏi trong lúc chốt phạm vi và mâu thuẫn thiết kế của màn Lộ trình (xem
 [luong-man-hinh.md](luong-man-hinh.md)), cùng câu trả lời. Chia hai phần: quyết định nghiệp vụ (người dùng chốt) và
 quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). Mục nào do Claude suy ra, chưa được người dùng xác nhận, ghi rõ
 "chờ xác nhận".
@@ -29,6 +29,7 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
   - Chia sẻ lộ trình (làm sau) là sao chép lộ trình sang học viên khác, không dùng chung bản ghi. Vì vậy check-in và tiến độ tính riêng cho từng học viên mà không cần bảng nối.
   - Ô "Học viên tham gia" ở form tạo lộ trình: ban đầu hiểu là chọn được nhiều (tạo n lộ trình độc lập); sau đó người dùng chốt chỉ chọn **một** học viên (N18).
 - **Ghi chú:** lựa chọn này làm N2 gốc (lộ trình dùng chung) không còn đúng; ý "lộ trình là một cái riêng để chia sẻ sau" vẫn giữ, bằng sao chép.
+- **Sửa ngày 22/11/2026 (theo N24):** sếp yêu cầu **lộ trình nhóm** (một lộ trình, nhiều học viên). Phần "không có bảng lượt tham gia, mỗi học viên một lộ trình riêng" **không còn đúng** cho lộ trình nhóm; cần có lượt tham gia, tức quay lại cách hiểu ban đầu của N2. Xem N24 và K9.
 
 ### N3. Trạng thái check-in bữa ăn có 2 giá trị
 
@@ -90,6 +91,7 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
 - **Câu hỏi:** PT tạo lộ trình xong, học viên phải chấp nhận hay kích hoạt luôn? (SRS FR-PRG-02 để mở; thiết kế giao diện không có màn chấp nhận.)
 - **Chốt:** kích hoạt luôn. Học viên đã đồng ý khi kết nối PT nên không thêm bước; PT tạo xong là "đang thực hiện", học viên nhận thông báo.
 - **Hệ quả:** không có trạng thái "chờ học viên chấp nhận" và không có màn lời mời, từ chối. "Lưu nháp" (PT-02) vẫn giữ: nháp chỉ PT thấy, học viên không thấy. Cách lưu và mở lại: xem N22.
+- **Bị thay thế ngày 22/11/2026 (theo N23):** sếp yêu cầu học viên phải chấp nhận lời mời mới tham gia. Quyết định N12 (kích hoạt ngay) **bỏ**; "Lưu nháp" vẫn giữ.
 
 ### N13. Sửa check-in: sửa khi chưa duyệt, sau duyệt chỉ PT mở lại
 
@@ -128,6 +130,7 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
   - Nhiệm vụ cân nặng và ảnh ở HV-03 có trạng thái "đã ghi" thay cho "đã check-in, chờ PT".
   - Không có "Yêu cầu bổ sung" cho cân nặng và ảnh. PT muốn nhận xét thì nhắn tin.
   - Ảnh cơ thể gắn vào `chi_so_co_the` (xem K7).
+  - Bổ sung 22/11/2026 (N33): ảnh cơ thể có chế độ riêng tư, học viên chọn "chỉ mình tôi" hoặc cho PT xem.
 
 ### N17. PT không chọn thứ trong tuần cho cân nặng và ảnh
 
@@ -143,6 +146,7 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
   - Ô "Học viên tham gia" chỉ chứa một học viên; không còn trường hợp tạo nhiều lộ trình cùng lúc, nên tạo xong luôn vào PT-03 của lộ trình vừa tạo.
   - Muốn cùng nội dung cho học viên khác thì dùng chức năng chia sẻ (sao chép), làm sau.
   - Việc có chặn học viên đã có lộ trình đang chạy với cùng PT hay không chưa được trả lời (M12).
+- **Bị thay thế ngày 22/11/2026 (theo N24):** có lộ trình nhóm nên chọn được nhiều học viên; lộ trình đơn vẫn một học viên. Giới hạn số lộ trình đang hoạt động: xem N36 và M12.
 
 ### N19. "Đánh giá từ PT" ở tiến độ là nhận xét mới nhất
 
@@ -155,6 +159,7 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
 - **Đề xuất của người dùng (nguyên văn):** "nên có thêm 1 phần set là tập những cái gì nữa".
 - **Cách hiểu của Claude, chờ xác nhận:** form tạo lộ trình có thêm một khối **Lịch tập**, nơi PT đặt học viên tập những gì: danh sách buổi tập, mỗi buổi có tên, nhóm cơ, giờ, thời lượng và danh sách bài tập (tên bài, số hiệp x số lần), như nội dung học viên thấy ở HV-06. Khối này thay cho hàng "Buổi tập" cũ trong "Kế hoạch hằng ngày".
 - **Hệ quả:** mỗi buổi mở một màn con (PT-02b, `luong-man-hinh.md`). Buổi tập không lặp mỗi ngày như bữa ăn, nên PT phải chỉ ra buổi rơi vào thứ nào trong tuần (xem M14). Lưu vào `muc_ke_hoach` loại `buoi_tap`, danh sách bài tập trong `chi_tiet`.
+- **Bổ sung 22/11/2026 (N29):** sếp nói rõ lịch tập gồm khung thời gian trong tuần, giờ, bài tập, video hoặc ảnh minh họa, và lặp theo số tuần. M14 đã trả lời phần lớn; xem N29.
 
 ### N21. Mỗi bữa ăn mở một màn con đặt món
 
@@ -164,6 +169,7 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
   - Thời gian ăn ở PT-02a và giờ ở hàng bữa ăn của PT-02 là một giá trị, đổi một nơi thì cả hai cập nhật.
   - Dữ liệu lưu vào `muc_ke_hoach` loại `bua_an`: giờ ở `gio_du_kien`, món và tổng dinh dưỡng ở `chi_tiet`. HV-04 đọc lại để hiển thị kế hoạch bữa, kcal, P, C, F.
   - Chưa chốt: tổng dinh dưỡng là cộng từ dinh dưỡng từng món hay PT nhập tay (M13).
+  - Cập nhật 22/11/2026 (N30): sếp nói calo bữa ăn do PT **nhập tay**, không cần công thức tính; có thêm ghi chú món ưu tiên. M13 đã chốt.
 
 ### N22. Lưu nháp ở lại màn, nháp được nạp lại khi bấm "Tạo lộ trình"
 
@@ -174,6 +180,117 @@ quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). M
   - Nháp chỉ PT thấy, học viên không thấy (N12).
 - **Cách hiểu của Claude, chờ xác nhận:** mỗi PT có tối đa một bản nháp. Chưa nói rõ làm sao bỏ nháp để làm lộ trình mới (M15).
 - **Hệ quả:** thay cho mô tả cũ "Lưu nháp thoát về PT-01, chỗ mở lại nháp chưa có thiết kế". Về nơi lưu nháp có vướng schema (K8).
+
+## 1b. Bổ sung từ sếp (22/11/2026)
+
+Nguồn: hai đoạn yêu cầu người dùng chuyển lại từ sếp ngày 22/11/2026. Đây là yêu cầu của người ra quyết định nên ghi là đã
+chốt về nghiệp vụ; những chỗ mâu thuẫn với N1 đến N22 hoặc với schema hiện có ghi rõ ở từng mục và đưa vào mục 4.
+Chi tiết giao diện chưa viết vào `luong-man-hinh.md`.
+
+### N23. Học viên phải chấp nhận lời mời mới tham gia lộ trình
+
+- **Yêu cầu:** PT tạo lộ trình rồi thêm học viên; học viên chấp nhận thì mới tham gia.
+- **Hệ quả:** thay N12. Cần trạng thái lời mời (chờ chấp nhận, đã chấp nhận, từ chối) và màn lời mời cho học viên; học viên
+  nhận thông báo khi được mời. Lộ trình chỉ tính nhiệm vụ, check-in cho học viên đã chấp nhận.
+- **Mâu thuẫn:** N12 ("kích hoạt luôn, học viên đã đồng ý khi kết nối PT") bị bỏ; trạng thái `ke_hoach` (K6) phải xét lại vì
+  lời mời thuộc từng học viên, không thuộc cả lộ trình (M16).
+
+### N24. Có hai loại lộ trình: đơn và nhóm
+
+- **Yêu cầu:** khi bấm tạo lộ trình chọn **lộ trình đơn** (quản lý một người) hoặc **lộ trình nhóm** (nhiều người chung một
+  lộ trình).
+- **Hệ quả:**
+  - Lộ trình nhóm là một thực thể chung, nhiều học viên tham gia; check-in và tiến độ vẫn tính riêng từng học viên (khớp N2
+    gốc). Vì vậy cần bảng lượt tham gia (lộ trình, học viên, trạng thái lời mời, ngày vào, ngày ra).
+  - Lộ trình đơn có thể dùng cùng cấu trúc với một lượt tham gia, để màn hình và API không tách hai đường (M17).
+  - PT-02 cho chọn nhiều học viên khi là lộ trình nhóm, một học viên khi là lộ trình đơn.
+- **Mâu thuẫn:** N2 sau M2, N18 và K6 (không có bảng nối, mỗi học viên một lộ trình, chia sẻ là sao chép) không còn đúng.
+  Xem K9.
+
+### N25. Chỉ người đã kết bạn mới hiện trong danh sách để PT mời
+
+- **Yêu cầu:** danh sách chọn học viên chỉ gồm người kết bạn với PT.
+- **Mâu thuẫn:** N15 và `phan-quyen.md` đang dùng **kết nối PT** (`ket_noi_pt` đang hoạt động, đủ phạm vi `tap_luyen` và
+  `dinh_duong`) làm điều kiện. "Kết bạn" và "kết nối PT" có phải cùng một thứ không, và N15 (bắt buộc đủ hai phạm vi) còn áp
+  dụng không: chưa rõ (M18).
+
+### N26. Danh sách chọn người dùng phải tải dần và phân trang
+
+- **Yêu cầu:** trang chọn người dùng dùng lazy load kèm phân trang.
+- **Hệ quả:** API danh sách bạn của PT nhận `PagingRequest` có sẵn trong `apps/api/src/Base`, có ô tìm theo tên; mobile cuộn
+  vô hạn. Áp dụng cho cả lộ trình đơn và nhóm.
+
+### N27. Màn "Lộ trình tôi quản lý": lọc, mặc định tháng này và đang hoạt động
+
+- **Yêu cầu:** một PT quản lý nhiều lộ trình. Có bộ lọc theo trạng thái (đang hoạt động, đã hoàn thành, thất bại) và theo
+  tháng; mặc định là tháng hiện tại và đang hoạt động.
+- **Mục đích:** PT thấy tháng này đang dạy bao nhiêu người, bao nhiêu lộ trình, lộ trình nào sắp hết hạn.
+- **Hệ quả:**
+  - Cần ngày bắt đầu và ngày kết thúc của lộ trình để lọc và để biết "sắp hết".
+  - Màn hiển thị tổng số lộ trình đang hoạt động và (với lộ trình nhóm) số người; cần ngưỡng "sắp hết" (M20).
+  - API danh sách có tham số trạng thái, tháng và phân trang.
+
+### N28. Đóng lộ trình trước thời hạn
+
+- **Yêu cầu:** PT đóng lộ trình trước hạn; trạng thái chuyển sang hoàn thành hoặc thất bại; có hộp xác nhận và bắt buộc
+  nhập lý do.
+- **Hệ quả:** lưu lý do, người đóng và thời điểm đóng; thông báo cho học viên. Sau khi đóng, lộ trình chỉ xem. PT chọn hoàn
+  thành hay thất bại khi đóng, hay hệ thống tự suy ra: chưa rõ (M19).
+- **Mâu thuẫn:** `ke_hoach.trang_thai` hiện có `nhap`, `dang_ap_dung`, `tam_dung`, `ket_thuc`; chưa có "thất bại" (K9).
+
+### N29. Lịch tập: số tuần, khung giờ trong tuần, tuần đầu tự điền cho các tuần sau
+
+- **Yêu cầu của sếp, tổng hợp từ hai đoạn:**
+  - Chọn khung thời gian trong tuần; mỗi buổi có ca tập mấy giờ, bài tập gì, có video hướng dẫn hoặc ảnh minh họa hay không.
+  - Số tuần của lịch lấy từ độ dài lộ trình. PT lập tuần 1 thì các tuần sau tự điền giống tuần 1; PT có thể sang từng tuần
+    để sửa riêng; gắn được video.
+  - Học viên phải xem được trước khi check-in: tuần này tập những buổi nào, ngày đó mấy giờ, tập bài gì, video hoặc ảnh.
+- **Hệ quả:** trả lời phần lớn M14 (lặp theo thứ trong tuần, PT chọn từng buổi). Cần lưu **theo từng tuần** vì tuần sau sửa
+  riêng được, không chỉ "mẫu tuần". Video và ảnh dùng `tep_tin` (cần giá trị `loai_doi_tuong` cho bài tập, K7). Quy tắc khi PT
+  sửa tuần 1 sau khi đã sửa riêng tuần khác chưa rõ (M21).
+- **Mâu thuẫn:** `muc_ke_hoach` hiện lặp theo `cac_thu_trong_tuan` mỗi tuần, không có chỗ cho tuần khác nhau; xem K10.
+
+### N30. Lịch ăn: ca, giờ, calo nhập tay, ghi chú món ưu tiên
+
+- **Yêu cầu:** PT đặt ăn những ca nào, mấy giờ, số calo của bữa đó (nhập tay, không cần công thức), kèm ghi chú món ưu tiên.
+- **Hệ quả:** chốt M13: calo là số PT nhập, không cộng từ món; không cần bảng món và dinh dưỡng từng món. Cột P, C, F ở màn
+  HV-04 hiện chưa rõ còn dùng không (M22). Ghi chú gắn mỗi bữa; giới hạn ký tự thống nhất với N6.
+
+### N31. Học viên được xem trước chi tiết khi đến giờ check-in
+
+- **Yêu cầu:** đến giờ có thông báo; vào check-in thì xem được những gì PT thiết lập ở mục cần check-in (bữa ăn: giờ, calo,
+  ghi chú; buổi tập: bài, video, ảnh).
+- **Hệ quả:** màn check-in đọc chi tiết từ mục kế hoạch của đúng ngày; snapshot khi gửi vẫn theo K5.
+
+### N32. Quyền sửa: lộ trình tôi quản lý chỉ PT sửa; lộ trình của tôi thì chủ lộ trình sửa
+
+- **Yêu cầu:** lộ trình trong "Lộ trình tôi quản lý" chỉ PT tạo ra được sửa và thao tác. Lộ trình trong "Lộ trình của tôi"
+  thì ai là chủ lộ trình đều được sửa.
+- **Hệ quả:** học viên tham gia lộ trình của PT chỉ xem và check-in, không sửa kế hoạch. Cần xác định "chủ lộ trình" là một
+  cột của lộ trình. Câu "ai là chủ lộ trình" gợi ý có lộ trình học viên tự tạo cho mình, điều N1 chưa nói (M23).
+
+### N33. Ảnh cơ thể có chế độ riêng tư
+
+- **Yêu cầu:** ảnh cơ thể theo dõi định kỳ chọn được "chỉ mình tôi" hoặc cho cả PT xem.
+- **Hệ quả:** thêm cờ hiển thị cho ảnh; kiểm quyền đọc ảnh theo cờ này ngoài kết nối PT (K7 nói ảnh là riêng tư, đọc qua URL
+  ký). Mặc định nên là "chỉ mình tôi" (chờ xác nhận, M24). Đổi cờ sau khi đã đăng có hiệu lực ngay.
+
+### N34. Chọn ngày có hiển thị thứ
+
+- **Yêu cầu:** bộ chọn ngày (DatePicker) hiện thứ trong tuần.
+- **Hệ quả:** dùng cho ngày bắt đầu và kết thúc của lộ trình; thuộc phần giao diện, không ảnh hưởng schema.
+
+### N35. Màn tạo lộ trình theo yêu cầu sếp
+
+- **Yêu cầu:** ngày bắt đầu và ngày kết thúc bắt buộc (N27); loại lộ trình đơn hoặc nhóm (N24); lịch tập (N29); lịch ăn (N30);
+  chọn học viên (N25, N26).
+- **Hệ quả:** thứ tự và bố cục màn chưa viết lại; làm trong `luong-man-hinh.md` sau khi chốt các câu mở.
+
+### N36. Chuẩn bị cho V2: gói Free giới hạn 5 lộ trình đang hoạt động mỗi PT
+
+- **Yêu cầu:** gói Free chỉ cho một PT tạo tối đa 5 lộ trình đang hoạt động; V2 mới làm.
+- **Hệ quả:** V1 chưa giới hạn, nhưng nên gom việc đếm lộ trình đang hoạt động theo PT vào một hàm để V2 bổ sung mà không sửa
+  nhiều nơi. Schema chưa có khái niệm gói. Đề xuất cho M12 ở V1: không chặn.
 
 ## 2. Quyết định kỹ thuật
 
@@ -233,6 +350,23 @@ Không còn áp dụng sau M2: không có lượt tham gia. Quyền vẫn gắn 
 - Hướng (b) hợp với "mỗi PT một nháp": ràng buộc duy nhất theo `nguoi_tao_id` với `trang_thai = nhap`.
 - Danh sách món và bài tập (N20, N21) nằm trong `muc_ke_hoach.chi_tiet` (JSON); backend phải kiểm tra cấu trúc JSON theo loại mục (thiết kế 21 bảng, mục 4).
 
+### K9. Lộ trình nhóm và lời mời cần bảng lượt tham gia, kéo theo sửa K6 (từ N23, N24, N28, chờ xác nhận)
+
+- Thêm bảng lượt tham gia: `ke_hoach_id`, học viên (qua `ket_noi_pt_id` hoặc `tai_khoan_id` tùy M18), `trang_thai` lời mời
+  (`cho_chap_nhan`, `tham_gia`, `tu_choi`), thời điểm mời, trả lời, rời. Lộ trình đơn là lộ trình có đúng một lượt tham gia.
+- `ke_hoach.ket_noi_pt_id` (NOT NULL, một học viên) không còn phù hợp cho lộ trình nhóm; chuyển sang gắn PT (người tạo) ở
+  `ke_hoach`, còn kết nối PT nằm ở lượt tham gia. `nhat_ky_hoat_dong.ket_noi_pt_id` vẫn giữ để dùng lại kiểm quyền có sẵn.
+- `trang_thai` của `ke_hoach` thêm giá trị thất bại, cộng cột lý do đóng, người đóng, thời điểm đóng (N28), ngày bắt đầu,
+  ngày kết thúc.
+- Đảo K6 phần "không thêm bảng nối" và N5 phần "sửa lộ trình không ảnh hưởng học viên khác": sửa lộ trình nhóm áp dụng cho
+  mọi người tham gia từ hôm sửa.
+
+### K10. Lịch tập theo từng tuần (từ N29, chờ xác nhận)
+
+- `muc_ke_hoach` lặp theo thứ nên không đủ cho tuần khác nhau. Hướng: thêm số thứ tự tuần vào mục buổi tập (một dòng mỗi
+  buổi mỗi tuần, tạo bằng cách sao chép tuần 1 khi lập), hoặc cột tuần cho mục; chốt khi viết schema.
+- Video và ảnh bài tập dùng `tep_tin`; ảnh cơ thể có cờ riêng tư (N33) và không dùng chung quy tắc với ảnh bài tập.
+
 ## 3. Đối chiếu với tài liệu và schema đã có
 
 Đọc thêm `GymBase_V1_Dac_Ta_Chuc_Nang_SRS.docx` và `GymBase_V1_Thiet_ke_Database_21_bang.docx` (ngày 21/11/2026):
@@ -270,11 +404,19 @@ Các câu hỏi chưa hỏi hoặc chưa trả lời:
 | --- | --- | --- |
 | M6 | Xác nhận K3, K5, K6, K7 và cập nhật SRS: N3 (hai trạng thái bữa ăn) khác FR-CHK-01 (ba trạng thái); N16 (cân nặng, ảnh không qua duyệt) khác SRS FR-PRG-06 nếu SRS coi chúng là check-in. | K3, K5, K6, K7 |
 | M9 | Luồng mở rộng phạm vi kết nối PT sang đủ cả hai phạm vi (N15): thuộc module kết nối PT, cần thiết kế riêng. | N15 |
-| M12 | Học viên đã có một lộ trình đang chạy với cùng PT thì PT có được tạo lộ trình thứ hai không (hay phải kết thúc lộ trình cũ trước)? | N18 |
-| M13 | PT-02a: tổng dinh dưỡng là cộng từ từng món (mỗi món có kcal, P, C, F) hay PT nhập tay? Món có ảnh và mô tả không (HV-04 hiển thị ảnh món)? | N21 |
-| M14 | PT-02b: buổi tập lặp vào những thứ nào trong tuần (PT chọn từng buổi), bao nhiêu buổi mỗi tuần, một buổi có nhiều bài tập thế nào (tên bài lấy từ danh sách có sẵn hay PT tự gõ)? | N20 |
+| M12 | Học viên đã có một lộ trình đang chạy với cùng PT thì PT có được tạo lộ trình thứ hai không? Sếp chỉ nói giới hạn 5 lộ trình đang hoạt động ở gói Free (N36); đề xuất V1 không chặn. | N36 |
+| M14 | PT-02b còn lại: tên bài lấy từ danh sách có sẵn hay PT tự gõ? (Lặp theo thứ và theo tuần đã trả lời ở N29.) | N20, N29 |
 | M15 | Nháp: mỗi PT một hay nhiều bản; muốn tạo lộ trình mới khi đang có nháp thì có nút "Bắt đầu lại / xóa nháp" không; nháp lưu ở server hay thiết bị (K8). | N22, K8 |
+| M16 | Lộ trình nhóm: một người từ chối lời mời thì lộ trình vẫn chạy với những người còn lại? Có mời thêm người khi lộ trình đã chạy không, người vào muộn bắt đầu từ tuần nào? Học viên rời giữa chừng thì sao? | N23, N24 |
+| M17 | Lộ trình đơn và nhóm dùng chung một cấu trúc (đơn là nhóm một người) hay tách hai loại? | N24, K9 |
+| M18 | "Kết bạn" và "kết nối PT" có phải cùng một thứ không? Nếu khác thì kết bạn là tính năng nào (chưa có trong schema); N15 (đủ hai phạm vi) còn áp dụng không? | N25, N15 |
+| M19 | Đóng sớm: PT tự chọn "hoàn thành" hay "thất bại", hay hệ thống suy ra? Hết hạn mà không đóng thì tự chuyển trạng thái gì? | N28 |
+| M20 | Lộ trình "sắp hết" là còn bao nhiêu ngày? | N27 |
+| M21 | Sửa tuần 1 sau khi đã sửa riêng tuần khác: ghi đè các tuần sau hay chỉ tuần chưa sửa riêng? | N29 |
+| M22 | Calo bữa ăn nhập tay: còn hiển thị P, C, F (đạm, tinh bột, béo) không, hay chỉ calo? | N30 |
+| M23 | "Lộ trình của tôi, ai là chủ đều được sửa": học viên tự tạo lộ trình cho mình được không (N1 chỉ nói PT tạo)? Nếu được thì khác gì lộ trình PT tạo? | N32 |
+| M24 | Ảnh cơ thể mặc định "chỉ mình tôi"; chế độ chọn theo từng ảnh hay một cài đặt chung cho lộ trình? | N33 |
 
-Đã chốt từ các câu hỏi trước: M1 (N2 và N8 xác nhận ngày 21/11/2026), M2 (N2 sau sửa), M3 (N12), M4 (N13), M5 (N14), M7 (N16, N17, K7), M8 (N15), M10 (N19), M11 (N18).
+Đã chốt từ các câu hỏi trước: M13 (N30, ngày 22/11/2026), M1 (N2 và N8 xác nhận ngày 21/11/2026), M2 (N2 sau sửa), M3 (N12), M4 (N13), M5 (N14), M7 (N16, N17, K7), M8 (N15), M10 (N19), M11 (N18).
 
 Mâu thuẫn thiết kế số 1 đến 9 ở `luong-man-hinh.md` mục 7 đã chốt hết (N2 đến N11, thêm N14 đến N17); số 10 (số liệu mẫu) không cần chốt.
