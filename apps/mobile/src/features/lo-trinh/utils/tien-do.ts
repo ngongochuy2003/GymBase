@@ -83,3 +83,8 @@ export function chinhCanNang(chu: string, buoc: number, goc: number): string {
   const moi = Math.round((hienTai + buoc) * 10) / 10;
   return soThapPhan(Math.min(CAN_NANG_TOI_DA, Math.max(CAN_NANG_TOI_THIEU, moi)));
 }
+
+/** Cân nặng ghi ở đầu tuần `tuan` (lần cân thứ nhất); `undefined` khi tuần đó chưa có lần cân nào. */
+export function canNangTaiTuan(diem: readonly { tuan: number; kg: number }[], tuan: number) {
+  return diem.find((d) => d.tuan === tuan)?.kg;
+}

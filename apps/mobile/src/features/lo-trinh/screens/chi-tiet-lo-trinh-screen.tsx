@@ -58,7 +58,11 @@ export function ChiTietLoTrinhScreen({ id }: { id?: string }) {
             />
           </Rise>
           <Rise delay={90}>
-            <KhoiCanNang diem={chiTiet.tienDo.canNang} donVi={chiTiet.loTrinh.mucTieu.donVi} />
+            <KhoiCanNang
+              diem={chiTiet.tienDo.canNang}
+              donVi={chiTiet.loTrinh.mucTieu.donVi}
+              onMoChiTiet={() => router.push({ pathname: '/chi-tiet-can-nang', params: { id } })}
+            />
           </Rise>
           <Rise delay={180}>
             <KhoiChiSo
@@ -68,7 +72,10 @@ export function ChiTietLoTrinhScreen({ id }: { id?: string }) {
             />
           </Rise>
           <Rise delay={270}>
-            <KhoiAnhMoc anh={chiTiet.tienDo.anhMoc} />
+            <KhoiAnhMoc
+              anh={chiTiet.tienDo.anhMoc}
+              onXemTatCa={() => router.push({ pathname: '/anh-theo-moc', params: { id } })}
+            />
           </Rise>
           {chiTiet.tienDo.danhGia ? (
             <Rise delay={360}>

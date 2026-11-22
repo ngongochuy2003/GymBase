@@ -1,4 +1,4 @@
-import type { LoTrinhCuaToi, LoTrinhQuanLy, NguoiLoTrinh, TienDoLoTrinh } from '../types';
+import type { AnhCoTheMoc, LoTrinhCuaToi, LoTrinhQuanLy, NguoiLoTrinh, TienDoLoTrinh } from '../types';
 import { layNgayLech } from '../utils/ngay';
 
 const anh = (n: number) => `https://i.pravatar.cc/200?img=${n}`;
@@ -334,6 +334,18 @@ const TI_LE_CAN_NANG = [
   0, 0.03, 0.08, 0.07, 0.17, 0.2, 0.29, 0.33, 0.4, 0.43, 0.48, 0.47, 0.59, 0.61, 0.65, 0.65,
 ];
 
+/** Ảnh cơ thể chụp cách nhau 2 tuần, bắt đầu từ Tuần 1 và luôn có mốc của tuần hiện tại. Mốc đầu cho PT xem, các mốc sau riêng tư. */
+function taoMocAnhMau(lo: LoTrinhCuaToi): AnhCoTheMoc[] {
+  const tuan: number[] = [];
+  for (let t = 1; t < lo.tuanHienTai; t += 2) tuan.push(t);
+  tuan.push(lo.tuanHienTai);
+  return tuan.map((t, i) => ({
+    tuan: t,
+    uri: bia(`${lo.id}-tuan-${t}`),
+    quyenXem: i === 0 ? 'cho_pt' : 'rieng_tu',
+  }));
+}
+
 /** Số liệu tiến độ mẫu cho màn chi tiết lộ trình, suy ra từ mục tiêu của lộ trình. */
 // TODO(ROUTE): thay bằng API tiến độ (cân nặng theo tuần, check-in đã duyệt, ảnh theo mốc, đánh giá mới nhất của PT).
 export function taoTienDoMau(lo: LoTrinhCuaToi): TienDoLoTrinh {
@@ -346,10 +358,7 @@ export function taoTienDoMau(lo: LoTrinhCuaToi): TienDoLoTrinh {
     })),
     buoiTap: { xong: 14, tong: 16 },
     buaAn: { xong: 24, tong: 30 },
-    anhMoc: [
-      { tuan: 1, uri: bia(`${lo.id}-tuan-1`) },
-      { tuan: lo.tuanHienTai, uri: bia(`${lo.id}-tuan-${lo.tuanHienTai}`) },
-    ],
+    anhMoc: taoMocAnhMau(lo),
     danhGia: {
       pt: lo.pt,
       noiDung: `Tiến độ rất tốt! Bạn đã đi được ${lo.tienDo}% chặng đường, bám sát lộ trình. Hãy tiếp tục duy trì lịch tập và ăn đủ lượng theo kế hoạch. Cố lên! 💪`,

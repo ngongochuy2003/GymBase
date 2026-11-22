@@ -83,14 +83,21 @@ export function KhoiMucTieu({
 }
 
 /** Biểu đồ cân nặng các tuần đã đo. */
-export function KhoiCanNang({ diem, donVi }: { diem: readonly DiemCanNang[]; donVi: string }) {
+export function KhoiCanNang({
+  diem,
+  donVi,
+  onMoChiTiet,
+}: {
+  diem: readonly DiemCanNang[];
+  donVi: string;
+  onMoChiTiet(): void;
+}) {
   const soTuan = diem.at(-1)?.tuan ?? 0;
   return (
     <KhungThe
       icon="trend"
       tieuDe={`Cân nặng ${soTuan} tuần`}
-      // TODO(ROUTE): mở tab Cân nặng của HV-07; màn này chưa có thiết kế (luong-man-hinh.md, HV-07).
-      lienKet={{ nhan: 'Chi tiết', onPress: () => undefined }}
+      lienKet={{ nhan: 'Chi tiết', onPress: onMoChiTiet }}
     >
       <BieuDoCanNang diem={diem} donVi={donVi} />
     </KhungThe>
@@ -183,17 +190,24 @@ export function KhoiChiSo({
   );
 }
 
-/** Ảnh cơ thể theo mốc tuần, hai ảnh cạnh nhau. */
-export function KhoiAnhMoc({ anh }: { anh: readonly AnhCoTheMoc[] }) {
+/** Ảnh cơ thể theo mốc tuần: mốc đầu và mốc mới nhất cạnh nhau; "Xem tất cả" mở màn ảnh theo mốc. */
+export function KhoiAnhMoc({
+  anh,
+  onXemTatCa,
+}: {
+  anh: readonly AnhCoTheMoc[];
+  onXemTatCa(): void;
+}) {
+  const [dau, cuoi] = [anh[0], anh.at(-1)];
+  const hai = dau && cuoi && dau !== cuoi ? [dau, cuoi] : dau ? [dau] : [];
   return (
     <KhungThe
       icon="images"
       tieuDe="Ảnh cơ thể theo mốc"
-      // TODO(ROUTE): mở tab Ảnh cơ thể của HV-07; màn này chưa có thiết kế (luong-man-hinh.md, HV-07).
-      lienKet={{ nhan: 'Xem tất cả', onPress: () => undefined }}
+      lienKet={{ nhan: 'Xem tất cả', onPress: onXemTatCa }}
     >
       <View className="flex-row gap-3">
-        {anh.map((a) => (
+        {hai.map((a) => (
           <View
             key={a.tuan}
             className="aspect-[3/4] flex-1 overflow-hidden rounded-xl bg-secondary"

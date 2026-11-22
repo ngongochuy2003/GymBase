@@ -5,5 +5,7 @@ export { CheckInBuaAnScreen } from './screens/check-in-bua-an-screen';
 export { ChiTietCheckInBuaAnScreen } from './screens/chi-tiet-check-in-bua-an-screen';
 export { CheckInBuoiTapScreen } from './screens/check-in-buoi-tap-screen';
 export { ChiTietCheckInBuoiTapScreen } from './screens/chi-tiet-check-in-buoi-tap-screen';
+export { ChiTietCanNangScreen } from './screens/chi-tiet-can-nang-screen';
+export { AnhTheoMocScreen } from './screens/anh-theo-moc-screen';
 export { GhiCanNangScreen } from './screens/ghi-can-nang-screen';
 export { GhiAnhCoTheScreen } from './screens/ghi-anh-co-the-screen';

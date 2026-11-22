@@ -108,6 +108,8 @@ export interface AnhCoTheMoc {
   /** Mốc tuần tính từ ngày bắt đầu lộ trình. */
   tuan: number;
   uri: string;
+  /** Ai xem được ảnh này (N33). */
+  quyenXem: QuyenXemAnh;
 }
 
 /** Nhận xét mới nhất của PT trên một check-in. */
