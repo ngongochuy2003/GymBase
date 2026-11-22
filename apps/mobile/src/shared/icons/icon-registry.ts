@@ -86,3 +86,28 @@ registerIcon('play', Ionicons, 'play');
 registerIcon('pause', Ionicons, 'pause');
 registerIcon('volume-mute', Ionicons, 'volume-mute-outline');
 registerIcon('volume-high', Ionicons, 'volume-high-outline');
+
+// --- Lộ trình ---
+registerIcon('route-mine', MaterialCommunityIcons, 'account-arrow-right-outline');
+registerIcon('route-manage', Ionicons, 'people-outline');
+registerIcon('target', MaterialCommunityIcons, 'target');
+registerIcon('trend', Feather, 'trending-up');
+registerIcon('images', Ionicons, 'images-outline');
+registerIcon('calendar', Ionicons, 'calendar-outline');
+registerIcon('calendar-check', MaterialCommunityIcons, 'calendar-check-outline');
+registerIcon('stats', MaterialCommunityIcons, 'chart-box-outline');
+registerIcon('bowl', MaterialCommunityIcons, 'noodles');
+registerIcon('scale', MaterialCommunityIcons, 'scale-bathroom');
+registerIcon('check-circle', Ionicons, 'checkmark-circle');
+registerIcon('clipboard-check', MaterialCommunityIcons, 'clipboard-check-outline');
+registerIcon('alert', Ionicons, 'alert-circle-outline');
+registerIcon('clock', Ionicons, 'time-outline');
+registerIcon('edit', Ionicons, 'create-outline');
+registerIcon('person-check', MaterialCommunityIcons, 'account-check-outline');
+registerIcon('close-circle', Ionicons, 'close-circle-outline');
+registerIcon('circle-half', MaterialCommunityIcons, 'circle-half-full');
+registerIcon('minus', Feather, 'minus');
+registerIcon('lock', Feather, 'lock');
+registerIcon('clipboard', MaterialCommunityIcons, 'clipboard-text-outline');
+registerIcon('note', MaterialCommunityIcons, 'note-text-outline');
+registerIcon('chevron-up', Feather, 'chevron-up');
