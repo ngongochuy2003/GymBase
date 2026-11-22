@@ -1,6 +1,6 @@
 # Lộ trình: luồng màn hình (học viên và PT)
 
-> **Ngày viết:** 21/11/2026 · **Cập nhật:** 21/11/2026 · **Trạng thái:** thiết kế đã chốt (luồng theo [adr.md](adr.md) N1 đến N22; còn các màn chưa có thiết kế ở mục 8, chưa có code)
+> **Ngày viết:** 21/11/2026 · **Cập nhật:** 22/11/2026 · **Trạng thái:** thiết kế đã chốt (luồng theo [adr.md](adr.md) N1 đến N22; còn các màn chưa có thiết kế ở mục 8, chưa có code)
 
 Nguồn: `Tài liệu dự án/GymBase_V1_Workflow_Thiet_Ke.docx`, phần 05 đến 14, đã áp các quyết định trong [adr.md](adr.md). Phần chữ
 của docx rất ngắn, nội dung nằm trong ảnh storyboard nên tài liệu này đọc từ ảnh. Chỉ mô tả **đi từ đâu tới đâu**. Quy tắc nghiệp
@@ -170,13 +170,37 @@ Tab Tổng quan gồm: tiến độ mục tiêu (từ x kg đến y kg, %, ngày
 
 | Thao tác | Đích |
 | --- | --- |
-| "Chi tiết" cạnh biểu đồ | Tab Cân nặng |
-| "Xem tất cả" cạnh ảnh theo mốc | Tab Ảnh cơ thể |
+| "Chi tiết" cạnh biểu đồ | Tab Cân nặng (HV-07a) |
+| "Xem tất cả" cạnh ảnh theo mốc | Tab Ảnh cơ thể (HV-07b) |
 | Bấm ô "Buổi tập hoàn thành" hoặc "Bữa ăn đã check" | Tab Check-in, lọc theo loại (chưa có thiết kế) |
 | Bấm ô "Tuân thủ kế hoạch" | Chưa có thiết kế |
 | Bấm một ảnh | Xem ảnh lớn, so sánh mốc (chưa có thiết kế) |
 
 Tab Check-in chỉ liệt kê bữa ăn và buổi tập; cân nặng và ảnh nằm ở tab riêng của chúng.
+
+#### HV-07a Theo dõi cân nặng (tab Cân nặng, tự thiết kế)
+
+Chưa có thiết kế gốc nên dựng theo khuôn các màn tiến độ; trên app là một màn riêng có nút quay lại, mở từ "Chi tiết" cạnh biểu đồ. Từ trên xuống:
+
+| Khối | Nội dung |
+| --- | --- |
+| Cân nặng hiện tại | Số lớn (lần cân mới nhất), mức đổi so với lúc bắt đầu (xanh nếu đi về phía mục tiêu, cam nếu đi ngược), rồi ba ô Bắt đầu, Mục tiêu, Còn lại |
+| Biểu đồ cân nặng | Cùng biểu đồ ở HV-07 tab Tổng quan: trục dọc co giãn theo dữ liệu, tối đa 8 điểm một màn, nhiều hơn thì cuộn ngang và mở sẵn ở đoạn mới nhất, bấm điểm để xem số kg |
+| Thống kê | Cao nhất, Thấp nhất, mức đổi trung bình mỗi tuần |
+| Lịch sử cân nặng | Từng lần cân, mới nhất ở trên: "Tuần n • Lần m", mức đổi so với lần trước (lần đầu ghi "Mốc đầu") và số kg |
+
+Mỗi tuần cân 2 lần (dữ liệu mẫu). Chưa có ngày thật của từng lần cân, chỉ có tuần và lần trong tuần.
+
+#### HV-07b Ảnh cơ thể theo mốc (tab Ảnh cơ thể, tự thiết kế)
+
+Cũng là một màn riêng, mở từ "Xem tất cả" cạnh ảnh theo mốc. Ảnh chụp cách nhau 2 tuần, bắt đầu từ Tuần 1, luôn có mốc của tuần hiện tại.
+
+| Khối | Nội dung |
+| --- | --- |
+| So sánh mốc | Hai hàng chip chọn "Mốc trước" và "Mốc sau" (mặc định mốc đầu và mốc mới nhất). Hai ảnh cạnh nhau, nhãn "Tuần n" phía trên, cân nặng của tuần đó phía dưới, rồi dòng "Cách nhau n tuần • +x kg". Chọn cùng một mốc ở hai bên thì ghi "Cùng một mốc". Dưới 2 ảnh thì thay bằng lời nhắn cần ít nhất 2 ảnh mốc |
+| Các mốc đã chụp | Danh sách mới nhất ở trên: ảnh nhỏ, "Tuần n", cân nặng tuần đó (hoặc "Chưa ghi cân nặng") và chế độ xem của ảnh ("Chỉ mình tôi" hoặc "Cho PT xem", N33) |
+
+Chưa có: xem ảnh lớn toàn màn hình, đổi chế độ xem của ảnh đã lưu, trạng thái chưa có ảnh nào mới chỉ là một dòng chữ.
 
 ### HV-08 Ghi cân nặng và ảnh cơ thể (chưa có thiết kế)
 
@@ -325,6 +349,7 @@ Các mâu thuẫn tìm thấy khi đọc thiết kế, và cách chốt (chi ti�
 
 - HV-08 Ghi cân nặng và ảnh cơ thể (ghi nhận, không duyệt).
 - Tab Kế hoạch, tab Ảnh của HV-02; lọc theo Check-in của HV-07.
+- HV-07a (Cân nặng) và HV-07b (Ảnh cơ thể theo mốc) đã tự thiết kế ở mục 3 để có màn cho "Chi tiết" và "Xem tất cả", chờ thiết kế chính thức. Tab Check-in của HV-07 vẫn chưa có.
 - Trạng thái "PT yêu cầu bổ sung" phía học viên, và check-in buổi tập đã được đánh giá (PT-04 cho buổi tập).
 - PT-02a và PT-02b mới được mô tả bằng chữ, chưa có hình thiết kế; nội dung một món và một bài tập chi tiết hơn chưa có. "Chỉnh sửa kế hoạch" dùng lại các màn này.
 - Menu `...` ở thẻ lộ trình, HV-02, PT-03.
