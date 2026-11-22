@@ -292,6 +292,21 @@ Chi tiết giao diện chưa viết vào `luong-man-hinh.md`.
 - **Hệ quả:** V1 chưa giới hạn, nhưng nên gom việc đếm lộ trình đang hoạt động theo PT vào một hàm để V2 bổ sung mà không sửa
   nhiều nơi. Schema chưa có khái niệm gói. Đề xuất cho M12 ở V1: không chặn.
 
+### N37. PT-02a, PT-02b: bài tập theo buổi và theo tuần, bữa ăn lặp mỗi ngày
+
+- **Nguồn:** người dùng hỏi cách PT đặt món và bài tập (22/11/2026), Claude đề xuất, người dùng đồng ý ("ok"). Chưa có bản thiết kế
+  chính thức; app đã dựng theo đề xuất này.
+- **Chốt:**
+  - Bài tập gắn vào **buổi tập của từng tuần**. Sửa Tuần 1 thì các tuần **chưa sửa riêng** đổi theo, tuần đã sửa riêng giữ nguyên
+    (đề xuất cho M21). Sửa ở tuần khác thì tách riêng tuần đó (N29).
+  - Bữa ăn **lặp mỗi ngày**; V1 không có thực đơn khác nhau theo ngày.
+  - Mỗi bữa gồm: giờ ăn, một ô "mô tả món ăn" kèm ghi chú món ưu tiên (tối đa 300 ký tự, N6), năng lượng nhập tay (kcal, N30),
+    một ảnh tùy chọn. **Không có P, C, F** (đề xuất cho M22; màn học viên đã bỏ các cột này).
+  - Mỗi bài tập gồm: tên (PT tự gõ, trả lời một phần M14), số set, số lần (chữ tự do như "8–10 rep" hoặc "45 giây"), một ảnh
+    minh họa tùy chọn. Đổi thứ tự và xóa được. **Video chưa làm** (N29 nhắc tới video).
+- **Hệ quả:** lưu trong `muc_ke_hoach.chi_tiet` (JSON) theo từng tuần (K10); ảnh dùng `tep_tin` (K7). Học viên đọc lại đúng các giá
+  trị này ở HV-04 và HV-06 (N31).
+
 ## 2. Quyết định kỹ thuật
 
 Các mục này suy ra từ quyết định nghiệp vụ ở trên, chưa có câu hỏi riêng. Cần người dùng xác nhận trước khi thiết kế schema.
@@ -405,15 +420,15 @@ Các câu hỏi chưa hỏi hoặc chưa trả lời:
 | M6 | Xác nhận K3, K5, K6, K7 và cập nhật SRS: N3 (hai trạng thái bữa ăn) khác FR-CHK-01 (ba trạng thái); N16 (cân nặng, ảnh không qua duyệt) khác SRS FR-PRG-06 nếu SRS coi chúng là check-in. | K3, K5, K6, K7 |
 | M9 | Luồng mở rộng phạm vi kết nối PT sang đủ cả hai phạm vi (N15): thuộc module kết nối PT, cần thiết kế riêng. | N15 |
 | M12 | Học viên đã có một lộ trình đang chạy với cùng PT thì PT có được tạo lộ trình thứ hai không? Sếp chỉ nói giới hạn 5 lộ trình đang hoạt động ở gói Free (N36); đề xuất V1 không chặn. | N36 |
-| M14 | PT-02b còn lại: tên bài lấy từ danh sách có sẵn hay PT tự gõ? (Lặp theo thứ và theo tuần đã trả lời ở N29.) | N20, N29 |
+| M14 | PT-02b còn lại: tên bài lấy từ danh sách có sẵn hay PT tự gõ? (Lặp theo thứ và theo tuần đã trả lời ở N29.) V1 đang cho PT tự gõ (N37), chưa có danh sách bài có sẵn. | N20, N29, N37 |
 | M15 | Nháp: mỗi PT một hay nhiều bản; muốn tạo lộ trình mới khi đang có nháp thì có nút "Bắt đầu lại / xóa nháp" không; nháp lưu ở server hay thiết bị (K8). | N22, K8 |
 | M16 | Lộ trình nhóm: một người từ chối lời mời thì lộ trình vẫn chạy với những người còn lại? Có mời thêm người khi lộ trình đã chạy không, người vào muộn bắt đầu từ tuần nào? Học viên rời giữa chừng thì sao? | N23, N24 |
 | M17 | Lộ trình đơn và nhóm dùng chung một cấu trúc (đơn là nhóm một người) hay tách hai loại? | N24, K9 |
 | M18 | "Kết bạn" và "kết nối PT" có phải cùng một thứ không? Nếu khác thì kết bạn là tính năng nào (chưa có trong schema); N15 (đủ hai phạm vi) còn áp dụng không? | N25, N15 |
 | M19 | Đóng sớm: PT tự chọn "hoàn thành" hay "thất bại", hay hệ thống suy ra? Hết hạn mà không đóng thì tự chuyển trạng thái gì? | N28 |
 | M20 | Lộ trình "sắp hết" là còn bao nhiêu ngày? | N27 |
-| M21 | Sửa tuần 1 sau khi đã sửa riêng tuần khác: ghi đè các tuần sau hay chỉ tuần chưa sửa riêng? | N29 |
-| M22 | Calo bữa ăn nhập tay: còn hiển thị P, C, F (đạm, tinh bột, béo) không, hay chỉ calo? | N30 |
+| M21 | Sửa tuần 1 sau khi đã sửa riêng tuần khác: ghi đè các tuần sau hay chỉ tuần chưa sửa riêng? Đang làm theo "chỉ tuần chưa sửa riêng" (N37), chờ xác nhận. | N29, N37 |
+| M22 | Calo bữa ăn nhập tay: còn hiển thị P, C, F (đạm, tinh bột, béo) không, hay chỉ calo? Đang làm chỉ calo (N37), chờ xác nhận. | N30, N37 |
 | M23 | "Lộ trình của tôi, ai là chủ đều được sửa": học viên tự tạo lộ trình cho mình được không (N1 chỉ nói PT tạo)? Nếu được thì khác gì lộ trình PT tạo? | N32 |
 | M24 | Ảnh cơ thể mặc định "chỉ mình tôi"; chế độ chọn theo từng ảnh hay một cài đặt chung cho lộ trình? | N33 |
 
