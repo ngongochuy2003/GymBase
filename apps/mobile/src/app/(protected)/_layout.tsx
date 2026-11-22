@@ -34,6 +34,15 @@ export default function ProtectedLayout() {
         }}
       >
         <Stack.Screen name="home" />
+        <Stack.Screen name="route" />
+        <Stack.Screen name="tao-lo-trinh" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-lo-trinh" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="check-in-bua-an" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-check-in" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="check-in-buoi-tap" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-check-in-buoi-tap" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ghi-can-nang" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ghi-anh-co-the" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="profile" />
         <Stack.Screen name="compose" />
         <Stack.Screen name="post-detail" />

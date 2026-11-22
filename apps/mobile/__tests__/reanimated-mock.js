@@ -36,6 +36,7 @@ module.exports = {
   FadeIn: new Builder(),
   ZoomIn: new Builder(),
   ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
+  Easing: { out: (f) => f, cubic: (t) => t },
   useSharedValue: (value) => ({ value }),
   useAnimatedStyle: (factory) => factory(),
   withTiming: (value) => value,
