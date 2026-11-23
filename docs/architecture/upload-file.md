@@ -10,14 +10,14 @@ và vòng đời file: [database/diagrams/02-tep-tin.md](../../database/diagrams
 ```text
 Mobile ──(1) upload-url / (3) confirm / url──▶ API ──▶ MySQL (tep_tin, outbox)
    │                                            │
-   └──────────(2) PUT file────────────▶ MinIO / S3 ◀── worker nền (BackgroundService)
+   └──────────(2) POST form───────────▶ MinIO / S3 ◀── worker nền (BackgroundService)
 ```
 
 | Thành phần | Việc |
 | --- | --- |
 | `FilesController` (mob) | Ba endpoint bên dưới; chỉ gọi BL |
 | `FileService` (`GymBase.BLFile`) | Luật nghiệp vụ: whitelist mục đích, giới hạn, quyền, chuyển trạng thái |
-| `IFileStorage` / `S3FileStorage` | Presigned PUT/GET, HEAD, đọc đầu object, xóa |
+| `IFileStorage` / `S3FileStorage` | Presigned POST (upload) và GET, copy, đọc đầu object, xóa |
 | `IFileUrlResolver` | Biến `tep_tin` (và ảnh xem trước của video) thành URL đọc; sau này thêm CDN ở đây |
 | `IImageProcessor` | Bỏ EXIF, xoay đúng chiều, kiểm kích thước điểm ảnh, tính blurhash |
 | Worker xử lý file | Đọc outbox, xử lý ảnh/video, (sau này) kiểm duyệt |
@@ -39,20 +39,20 @@ sequenceDiagram
     M->>A: 1. POST /upload-url (muc_dich, loai_mime, kich_thuoc_byte)
     A->>A: Kiểm mục đích, MIME, dung lượng, hạn số file chờ
     A->>D: Tạo tep_tin (cho_tai_len, s3_key)
-    A->>S: Ký presigned PUT vào key tạm (ràng buộc Content-Type, Content-Length)
-    A-->>M: file_id + URL PUT + hạn
+    A->>A: Ký policy form upload vào key tạm (đúng Content-Type, từ 1 byte đến mức tối đa của loại file)
+    A-->>M: file_id + url + fields + hạn
 
-    M->>S: 2. PUT file (có progress, hủy, retry)
+    M->>S: 2. POST form multipart (có progress, hủy, retry)
     alt URL hết hạn (403)
         M->>A: Xin lại URL
         A-->>M: URL mới
-        M->>S: PUT lại
+        M->>S: POST lại
     end
     S-->>M: 200
 
     M->>A: 3. POST /{id}/confirm
     A->>S: HEAD key tạm, đọc vài KB đầu
-    A->>A: Đối chiếu kích thước, MIME, magic bytes
+    A->>A: Đối chiếu kích thước (1 đến tối đa), MIME, magic bytes; ghi kích thước thật
     alt Đạt
         A->>S: Copy sang key chính, xóa key tạm
         A->>D: tep_tin = da_tai_len + ghi outbox (cùng transaction)
@@ -140,10 +140,16 @@ BL kiểm, theo thứ tự:
 Response:
 
 ```json
-{ "file_id": "…", "upload": { "url": "https://…", "method": "PUT", "headers": { "Content-Type": "image/jpeg" }, "het_han": "…" } }
+{
+  "file_id": "…",
+  "upload": {
+    "url": "http://…/gymbase-files", "method": "POST", "file_field": "file", "het_han": "…",
+    "fields": { "key": "tmp/…", "Content-Type": "image/jpeg", "x-amz-algorithm": "…", "x-amz-credential": "…", "x-amz-date": "…", "policy": "…", "x-amz-signature": "…" }
+  }
+}
 ```
 
-Presigned PUT ràng buộc `Content-Type` và `Content-Length` (client phải khai đúng kích thước), hạn vài phút, trỏ vào **key tạm**
+Form upload (presigned POST) có policy ràng buộc đúng `key`, đúng `Content-Type` và `content-length-range` từ 1 byte đến mức tối đa của loại file (10MB ảnh và PDF, 100MB video), hạn 15 phút, trỏ vào **key tạm**
 `tmp/{file_id}`. Hạn mức chống lạm dụng, kiểm ở bước này:
 
 - Tối đa 20 dòng `cho_tai_len` đồng thời mỗi tài khoản.
@@ -159,10 +165,10 @@ thật không chạm tới, còn tài khoản bị lạm dụng thì bị chặn
 BL kiểm:
 
 1. `tep_tin` thuộc người gọi và đang `cho_tai_len`.
-2. `HEAD` object: tồn tại, kích thước và `Content-Type` khớp với lúc xin.
+2. `HEAD` object: tồn tại, kích thước từ 1 đến mức tối đa của loại file, `Content-Type` khớp với lúc xin. Kích thước thật ghi vào `kich_thuoc_byte` (số khai lúc xin chỉ là ước lượng để kiểm sớm và tính hạn mức; app khó biết chính xác dung lượng sau khi nén).
 3. Đọc vài KB đầu, kiểm magic bytes khớp loại khai báo (JPEG, PNG, WebP, HEIC, MP4/MOV, PDF).
 4. Đạt: **copy** object từ `tmp/{file_id}` sang key chính, xóa key tạm, rồi `da_tai_len`, đặt `ngay_xac_nhan`, ghi dòng outbox xử lý
-   file trong cùng transaction. Copy phía server để URL PUT còn hạn không đè được file đã kiểm: sau confirm, ai PUT lại vào
+   file trong cùng transaction. Copy phía server để form upload còn hạn không đè được file đã kiểm: sau confirm, ai POST lại vào
    key tạm cũng không ảnh hưởng key chính. Không đạt: `loi`, xóa key tạm.
 
 Confirm gọi lại với file đã `da_tai_len` thì trả kết quả hiện tại (idempotent), không lỗi.
@@ -221,11 +227,11 @@ trong `tep_tin` chỉ còn là gợi ý (công khai hay không); quyền thật 
 ## 5. Storage
 
 - `S3FileStorage` dùng AWSSDK.S3. Cấu hình trong `StorageOptions` (đã có `ServiceUrl`, `ForcePathStyle`, `AccessKey`,
-  `SecretKey`, `BucketName`, `PresignExpiryMinutes`); thêm hạn riêng cho PUT, GET riêng tư, GET công khai.
+  `SecretKey`, `BucketName`, `PresignExpiryMinutes`); đã thêm hạn riêng cho upload (`PutExpiryMinutes`), GET riêng tư, GET công khai.
 - MinIO dev: thêm dịch vụ và tạo bucket tự động trong `deploy/development/compose.yml`. **URL presigned phải dùng host mà
   điện thoại với tới được** (IP máy dev, không phải `localhost` hay tên service trong Docker), nên cần `PublicServiceUrl`
   tách khỏi `ServiceUrl` nội bộ nếu hai cái khác nhau. Xem [chay-mobile.md](../onboarding/chay-mobile.md).
-- Key tạm: `tmp/{file_id}` (chỉ để PUT). Key chính: `{muc_dich}/{yyyy}/{MM}/{file_id}` cho file; ảnh xem trước video là `{muc_dich}/{yyyy}/{MM}/{file_id}.thumb.jpg`.
+- Key tạm: `tmp/{file_id}` (chỉ để upload). Key chính: `{muc_dich}/{yyyy}/{MM}/{file_id}` cho file; ảnh xem trước video là `{muc_dich}/{yyyy}/{MM}/{file_id}.thumb.jpg`.
   Không đưa tên file người dùng vào key. Đặt lifecycle rule xóa `tmp/` sau 1 ngày làm lớp phòng thủ thứ hai
   bên cạnh job dọn file.
 - Bucket private; không bật public read. File "công khai" vẫn đọc qua presigned.
@@ -254,7 +260,7 @@ Giữ `useFileUpload` và `uploadMultipartFile` làm điểm vào (đổi tên `
 1. (Ảnh) nén bằng `expo-image-manipulator` (cạnh dài 2048, JPEG 0.9) để giảm dung lượng. (Video) kiểm dung lượng và thời lượng
    trước khi xin URL; quá 100MB thì báo luôn, không gọi API.
 2. Gọi `upload-url`.
-3. PUT bằng `FileSystem.createUploadTask` với `UploadType.BINARY_CONTENT`; `onProgress` theo byte thật; hủy bằng `AbortSignal`.
+3. POST form bằng `FileSystem.createUploadTask` với `UploadType.MULTIPART` (các `fields` làm `parameters`, `fieldName` là `file_field`); `onProgress` theo byte thật; hủy bằng `AbortSignal`.
 4. Lỗi mạng hoặc 5xx thì thử lại có backoff (`maxRetries`, `initialRetryDelayMs` đã có trong `UploadOptions`); 403 do URL hết hạn
    thì xin URL mới một lần.
 5. Gọi `confirm`, trả `FileUploadResult` gồm `file_id` (và URL xem nếu cần ngay).
@@ -268,7 +274,7 @@ hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào sto
 ## 8. Kế hoạch làm
 
 1. `S3FileStorage`, presigned, `FilePolicy`, hai API xin/confirm, MinIO trong compose, test tích hợp với MinIO.
-2. Mobile chuyển sang PUT, progress, hủy, retry; sửa các màn hình gọi upload.
+2. Mobile chuyển sang POST form, progress, hủy, retry; sửa các màn hình gọi upload.
 3. `IFileUrlResolver`, `GET /{id}/url`, `POST /urls`, đổi các response danh sách; bỏ `GetContent` và đường legacy.
 4. Xóa code và dữ liệu cũ (`BLUploadAsync`, `uploads/`, `DevFallbackUserId`, dòng `tep_tin` cũ).
 5. Worker xử lý ảnh (EXIF, blurhash) và ảnh xem trước của video.
@@ -285,11 +291,11 @@ Xem mục "Còn mở" của ADR-0003. Thêm: xác nhận quyền xem của `gym_
 ## 10. Kiểm thử
 
 - Đơn vị: `FilePolicy` (mục đích, MIME, dung lượng), chuyển trạng thái, liên kết sai chủ sở hữu hoặc sai mục đích.
-- Tích hợp với MinIO thật: xin URL, PUT, confirm đạt; PUT sai `Content-Type` hoặc quá dung lượng bị từ chối; confirm khi
-  chưa PUT; file đổi nhãn MIME nhưng magic bytes sai; confirm gọi hai lần.
+- Tích hợp với MinIO thật: xin form, POST, confirm đạt; POST sai `Content-Type`, sai key, quá dung lượng tối đa, file rỗng, hết hạn đều bị từ chối; confirm khi
+  chưa POST; file đổi nhãn MIME nhưng magic bytes sai; confirm gọi hai lần.
 - Quyền đọc: người ngoài không lấy được URL file riêng tư; URL hết hạn thì 403 từ storage; ảnh cơ thể `chi_minh_toi` thì PT không xem,
   đổi sang `chia_se_pt` thì xem được, hết quan hệ kèm thì không xem nữa; kiểm theo lô cho danh sách nhiều file.
-- Đè file: PUT lại vào key tạm sau khi confirm không đổi nội dung file chính.
+- Đè file: POST lại vào key tạm sau khi confirm không đổi nội dung file chính.
 - Hạn mức: vượt số dòng chờ, dung lượng ngày, rate limit đều bị từ chối.
 - Worker: xử lý ảnh, nhiều worker không giành trùng một dòng, dòng kẹt `dang_xu_ly` được giành lại.
 - Job dọn: không xóa nhầm file đang `da_lien_ket`; chạy lại an toàn.

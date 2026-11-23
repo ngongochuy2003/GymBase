@@ -13,13 +13,13 @@ Phạm vi: ảnh, video ngắn và PDF; vài chục nghìn người dùng; MinIO
 
 Các quyết định:
 
-1. **Upload hai bước, app gửi thẳng lên storage.** App xin URL (`upload-url`), PUT thẳng lên MinIO/S3 bằng presigned PUT, rồi
+1. **Upload hai bước, app gửi thẳng lên storage.** App xin form upload (`upload-url`), POST thẳng lên MinIO/S3 bằng presigned POST có policy, rồi
    báo xong (`confirm`). Byte của file không đi qua API.
 2. **Bỏ upload multipart qua API.** Xóa `BLUploadAsync`, đường đọc legacy trong thư mục `uploads/`, `DevFallbackUserId`,
    và `GetContent` kiểu proxy. Dữ liệu và file cũ xóa, không viết script chuyển. `LocalFileStorage` chỉ còn cho test đơn
    vị; chạy dev thật bằng MinIO.
-3. **Tin client ít nhất có thể, và PUT chỉ vào key tạm.** App PUT vào `tmp/{file_id}`; confirm kiểm xong thì server copy sang key chính rồi xóa key tạm, nên URL PUT còn hạn không đè được file đã kiểm. Lúc xin URL kiểm quyền, mục đích, MIME theo mục đích và dung lượng, rồi ràng buộc
-   `Content-Type` và `Content-Length` vào chữ ký. Lúc confirm `HEAD` object để đối chiếu và đọc vài byte đầu kiểm magic
+3. **Tin client ít nhất có thể, và upload chỉ vào key tạm.** App POST vào `tmp/{file_id}`; confirm kiểm xong thì server copy sang key chính rồi xóa key tạm, nên form upload còn hạn không đè được file đã kiểm. Lúc xin form kiểm quyền, mục đích, MIME theo mục đích và dung lượng ước lượng, rồi ràng buộc
+   `Content-Type` và khoảng dung lượng vào policy. Lúc confirm `HEAD` object để đối chiếu và đọc vài byte đầu kiểm magic
    bytes. Giới hạn: ảnh 10MB, PDF 10MB, video 100MB.
 4. **Mọi file đọc bằng presigned GET, quyền theo đối tượng đích.** Một đường đọc duy nhất: `GET /files/{id}/url` (và dạng
    gộp nhiều file cho danh sách). Ba nhóm quyền: công khai (mạng xã hội); chủ và PT đang kèm (check-in bữa ăn, buổi tập);
@@ -38,10 +38,12 @@ Các quyết định:
 9. **Mobile: progress thật, hủy và thử lại.** Dùng `createUploadTask` của `expo-file-system`, `AbortSignal`, retry có
    backoff; URL hết hạn thì xin URL mới. Giao diện của `useFileUpload` giữ nguyên để các màn hình hiện tại ít phải đổi.
    Cache ảnh theo `file_id`, không theo URL, vì presigned URL đổi mỗi lần.
-10. **`IFileStorage` là seam.** Thêm `CreatePresignedPutAsync`, `CreatePresignedGetAsync`, `HeadAsync`; `S3FileStorage` chạy
+10. **`IFileStorage` là seam.** Thêm `CreatePresignedUpload`, `CreatePresignedGetUrl`, `CopyAsync`, `ReadHeadAsync`; `S3FileStorage` chạy
     được với MinIO qua `ServiceUrl` và `ForcePathStyle`.
 
 11. **Hạn mức chống lạm dụng.** Tối đa 20 file chờ đồng thời, mỗi tài khoản mỗi ngày tối đa 50 ảnh, 10 video, 5 PDF và 500MB, rate limit `upload-url` 30 lần mỗi phút (số cụ thể ở [upload-file.md](../architecture/upload-file.md), chỉnh được trong `StorageOptions`).
+
+12. **Dùng presigned POST có policy, không dùng presigned PUT.** Đã thử trên MinIO (24/11/2026, `S3FileStorageMinioTests`): presigned PUT chỉ ép được `Content-Type`, còn `Content-Length` đã ký vẫn nhận body lớn hơn. Presigned POST ràng buộc bằng policy: đúng key, đúng `Content-Type`, `content-length-range` từ 1 byte đến mức tối đa của loại file (không ép đúng một số byte, vì app không biết chính xác dung lượng sau khi nén; kích thước thật ghi lúc confirm); sai một điều kiện là bị từ chối ngay tại storage, nên không ai nhét được file lớn vào key tạm. Policy ký thủ công bằng SigV4 vì SDK .NET không hỗ trợ `content-length-range`.
 
 ## Hệ quả
 
@@ -49,6 +51,7 @@ Các quyết định:
 - Mỗi ảnh chỉ có một bản (cạnh dài 2048px do app nén), nên danh sách ảnh tải bản lớn hơn mức cần; chấp nhận để đơn giản, thêm bản thu nhỏ sau nếu số liệu cho thấy tốn data.
 - File xuất hiện trong storage trước khi API biết (`cho_tai_len`), nên bắt buộc có job dọn.
 - URL presigned không thu hồi được trước khi hết hạn: hạn phải ngắn (2 đến 5 phút riêng tư, 15 phút công khai); gỡ file hay hết quan hệ PT có hiệu lực sau tối đa chừng đó.
+- App gửi form `multipart/form-data` (không phải PUT thuần): trường policy trước, trường `file` đặt cuối cùng.
 - Mỗi đối tượng gắn file phải cài `IFileTruyCapPolicy`; thêm loại đối tượng mới là thêm một policy.
 - Confirm tốn thêm một lần copy phía server (tối đa 100MB).
 - App phải xóa cache ảnh riêng tư khi đăng xuất.
@@ -57,7 +60,7 @@ Các quyết định:
 
 ## Còn mở
 
-- Hạn cụ thể của presigned GET (riêng tư, công khai) và presigned PUT.
+- Hạn cụ thể của presigned GET (riêng tư, công khai) và form upload (presigned POST).
 - Ảnh xem trước của video tạo bằng ffmpeg trong worker hay lấy từ client lúc upload.
 - Khi nào thêm CDN cho file công khai.
 - Chính sách xóa file khi đối tượng gắn bị xóa.
