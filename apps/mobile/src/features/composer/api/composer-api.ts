@@ -77,9 +77,10 @@ export function createComposerRepository(
           const uploadResult = await uploadMultipartFile(uri, 'post', {
             contentType: isVideo ? (item.mimeType || 'video/mp4') : undefined,
           });
-          const resultUrl = uploadResult?.content_url;
-          if (!resultUrl) throw new Error('API không trả về URL sau khi tải tệp lên.');
-          processedMediaUrls.push(resultUrl);
+          if (!uploadResult?.file_id) throw new Error('API không trả về file_id sau khi tải tệp lên.');
+          // TODO(FILE): bài viết còn nhận URL chuỗi nên tạm dùng đường đọc cũ (/files/{id}/content); đổi sang gửi file_ids khi
+          //   POST /baiviet nhận file_ids và trả URL ký (xem docs/architecture/upload-file.md, mục 8, bước 3).
+          processedMediaUrls.push(`/api/v1/mob/files/${uploadResult.file_id}/content`);
         }
       }
       body.hinh_anh_urls = processedMediaUrls;
