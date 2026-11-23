@@ -257,6 +257,11 @@ async function postForm(target: UploadTarget, file: PreparedFile, options?: Uplo
   }
 }
 
+/** Xóa tệp đã upload mà chưa gắn vào đâu (ví dụ đăng bài lỗi, hoặc người dùng bỏ ảnh đã chọn). Lỗi do người gọi xử lý. */
+export async function deleteUploadedFile(fileId: string): Promise<void> {
+  await getMobClient().delete(`/files/${fileId}`);
+}
+
 /**
  * Upload hai bước lên MinIO/S3 (xem docs/architecture/upload-file.md):
  * 1. xin form đã ký (`POST /files/upload-url`), 2. gửi tệp thẳng lên storage, 3. báo xong (`POST /files/{id}/confirm`).

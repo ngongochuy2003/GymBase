@@ -1,13 +1,16 @@
 import type { AxiosInstance } from 'axios';
 import { getMobClient } from '@/core/api/mobile-client';
-import { uploadMultipartFile, isVideoUrl } from '@/shared/file/file-uploader';
+import { deleteUploadedFile, isVideoUrl, uploadMultipartFile } from '@/shared/file/file-uploader';
 import type { ComposerPayload } from '../types';
 
 export interface BaiVietCreateRequestDto {
   noi_dung: string | null;
   che_do_hien_thi: string;
   chu_de?: string;
+  /** Chỉ URL http(s) của nội dung có sẵn; tệp tải lên đi qua `file_ids`. */
   hinh_anh_urls: string[];
+  /** Id các tệp đã upload (`muc_dich = post`), theo thứ tự hiển thị. */
+  file_ids?: string[];
 }
 
 export interface BaiVietCreatedResponseDto {
@@ -55,8 +58,7 @@ export function createComposerRepository(
     async createPost(payload: ComposerPayload): Promise<BaiVietCreatedResponseDto> {
       const body = toBaiVietCreateDto(payload);
 
-
-      // Tự động upload các ảnh từ thiết bị (blob: hoặc file://) lên backend
+      // Ảnh/video từ thiết bị (blob: hoặc file://) được upload trước, bài viết chỉ mang file_id; URL http(s) giữ nguyên.
       const itemsToUpload =
         payload.mediaItems && payload.mediaItems.length > 0
           ? payload.mediaItems
@@ -67,26 +69,32 @@ export function createComposerRepository(
               mimeType: undefined,
             }));
 
-      const processedMediaUrls: string[] = [];
-      for (const item of itemsToUpload) {
-        const uri = item.uri;
-        if (uri.startsWith('http://') || uri.startsWith('https://')) {
-          processedMediaUrls.push(uri);
-        } else {
+      const externalUrls: string[] = [];
+      const fileIds: string[] = [];
+      try {
+        for (const item of itemsToUpload) {
+          const uri = item.uri;
+          if (uri.startsWith('http://') || uri.startsWith('https://')) {
+            externalUrls.push(uri);
+            continue;
+          }
           const isVideo = item.type === 'video' || isVideoUrl(uri);
-          const uploadResult = await uploadMultipartFile(uri, 'post', {
+          const uploaded = await uploadMultipartFile(uri, 'post', {
             contentType: isVideo ? (item.mimeType || 'video/mp4') : undefined,
           });
-          if (!uploadResult?.file_id) throw new Error('API không trả về file_id sau khi tải tệp lên.');
-          // TODO(FILE): bài viết còn nhận URL chuỗi nên tạm dùng đường đọc cũ (/files/{id}/content); đổi sang gửi file_ids khi
-          //   POST /baiviet nhận file_ids và trả URL ký (xem docs/architecture/upload-file.md, mục 8, bước 3).
-          processedMediaUrls.push(`/api/v1/mob/files/${uploadResult.file_id}/content`);
+          if (!uploaded?.file_id) throw new Error('API không trả về file_id sau khi tải tệp lên.');
+          fileIds.push(uploaded.file_id);
         }
-      }
-      body.hinh_anh_urls = processedMediaUrls;
+        body.hinh_anh_urls = externalUrls;
+        body.file_ids = fileIds;
 
-      const response = await client.post<BaiVietCreatedResponseDto>('/baiviet', body);
-      return response.data;
+        const response = await client.post<BaiVietCreatedResponseDto>('/baiviet', body);
+        return response.data;
+      } catch (error) {
+        // Đăng bài hỏng thì bỏ các tệp đã tải lên, khỏi để chúng nằm lại ở trạng thái chờ gắn.
+        await Promise.allSettled(fileIds.map((id) => deleteUploadedFile(id)));
+        throw error;
+      }
     },
   };
 }
