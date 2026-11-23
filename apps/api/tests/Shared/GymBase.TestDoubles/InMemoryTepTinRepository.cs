@@ -16,6 +16,18 @@ public sealed class InMemoryTepTinRepository : InMemoryBaseRepository<tep_tin>, 
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
+    public Task<IReadOnlyList<tep_tin>> DLFindStaleAsync(
+        DateTime choTaiLenTruoc, DateTime daTaiLenTruoc, int soLuong, CancellationToken ct = default)
+    {
+        var list = Store.All()
+            .Where(t => ((t.trang_thai is TrangThaiTepTin.cho_tai_len or TrangThaiTepTin.loi) && t.ngay_tao < choTaiLenTruoc)
+                        || (t.trang_thai == TrangThaiTepTin.da_tai_len && (t.ngay_xac_nhan ?? t.ngay_tao) < daTaiLenTruoc))
+            .OrderBy(t => t.ngay_tao)
+            .Take(soLuong)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<tep_tin>>(list);
+    }
+
     public Task<IReadOnlyList<tep_tin>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<tep_tin>>(Store.All().Where(t => ids.Contains(t.Id)).ToList());
 

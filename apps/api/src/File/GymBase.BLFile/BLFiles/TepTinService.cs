@@ -20,9 +20,6 @@ public sealed class TepTinService(
     private static readonly TimeSpan GioVietNam = TimeSpan.FromHours(7);
     private readonly StorageOptions _options = options.Value;
 
-    /// <summary>Key tạm app POST vào. Sau confirm file được copy sang <c>tep_tin.s3_key</c> nên form upload còn hạn không đè được file đã kiểm.</summary>
-    internal static string KeyTam(Guid fileId) => $"tmp/{fileId}";
-
     public async Task<XinUploadResultDto> BLXinUploadAsync(
         Guid nguoiDungId, XinUploadRequestDto request, CancellationToken ct = default)
     {
@@ -81,7 +78,7 @@ public sealed class TepTinService(
         await tepTins.DLInsertAsync(entity, ct);
 
         var expiry = TimeSpan.FromMinutes(_options.PutExpiryMinutes);
-        var form = provider.CreatePresignedUpload(KeyTam(id), mime, toiDa, expiry);
+        var form = provider.CreatePresignedUpload(FilePolicy.KeyTam(id), mime, toiDa, expiry);
         return new XinUploadResultDto(id, new UploadTargetDto(form.Url, "POST", form.Fields, "file", now.Add(expiry)));
     }
 
@@ -104,7 +101,7 @@ public sealed class TepTinService(
         }
 
         var storage = storageResolver.Resolve(entity.s3_bucket);
-        var keyTam = KeyTam(entity.Id);
+        var keyTam = FilePolicy.KeyTam(entity.Id);
         var info = await storage.GetInfoAsync(keyTam, ct);
         if (info == null)
         {
@@ -283,7 +280,7 @@ public sealed class TepTinService(
         }
 
         var storage = storageResolver.Resolve(entity.s3_bucket);
-        await storage.DeleteAsync(KeyTam(entity.Id), ct);
+        await storage.DeleteAsync(FilePolicy.KeyTam(entity.Id), ct);
         await storage.DeleteAsync(entity.s3_key, ct);
         await tepTins.DLDeleteAsync(entity.Id, ct);
     }

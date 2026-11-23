@@ -41,4 +41,16 @@ public sealed class StorageOptions
     public int MaxVideosPerDay { get; set; } = 10;
     public int MaxDocumentsPerDay { get; set; } = 5;
     public long MaxBytesPerDay { get; set; } = 500L * 1024 * 1024;
+
+    /// <summary>Job dọn file chạy mỗi bao nhiêu phút.</summary>
+    public int CleanupIntervalMinutes { get; set; } = 10;
+
+    /// <summary>File <c>cho_tai_len</c> hoặc <c>loi</c> quá số phút này thì bị xóa (cả object lẫn dòng).</summary>
+    public int PendingMaxAgeMinutes { get; set; } = 60;
+
+    /// <summary>File <c>da_tai_len</c> mà chưa gắn vào đâu quá số giờ này thì bị xóa.</summary>
+    public int UnlinkedMaxAgeHours { get; set; } = 24;
+
+    /// <summary>Số file xử lý tối đa mỗi lượt dọn, để một lượt không chạy quá lâu.</summary>
+    public int CleanupBatchSize { get; set; } = 200;
 }

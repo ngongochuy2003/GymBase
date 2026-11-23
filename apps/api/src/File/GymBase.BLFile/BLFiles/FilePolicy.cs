@@ -48,6 +48,9 @@ public static class FilePolicy
 
     public static IEnumerable<string> CacMucDich => Rules.Keys;
 
+    /// <summary>Key tạm app POST vào. Sau confirm file được copy sang <c>tep_tin.s3_key</c> nên form upload còn hạn không đè được file đã kiểm.</summary>
+    public static string KeyTam(Guid fileId) => $"tmp/{fileId}";
+
     /// <summary>Đuôi tệp theo MIME (có dấu chấm), để key và URL có đuôi: app đoán ảnh hay video theo đuôi URL.</summary>
     public static string DuoiTep(string mime) => mime switch
     {
