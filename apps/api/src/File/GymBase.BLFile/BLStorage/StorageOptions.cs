@@ -13,9 +13,6 @@ public sealed class StorageOptions
     public string? SecretKey { get; set; }
     public bool ForcePathStyle { get; set; } = true;
     public string? CdnBaseUrl { get; set; }
-    public long MaxUploadBytes { get; set; } = 10 * 1024 * 1024;
-    public int PresignExpiryMinutes { get; set; } = 15;
-    public bool AllowAnonymousForDev { get; set; } = false;
 
     /// <summary>
     /// Địa chỉ storage mà thiết bị với tới được, dùng để ký presigned URL khi khác <see cref="ServiceUrl"/> (ví dụ MinIO dev:

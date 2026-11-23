@@ -18,6 +18,24 @@ public sealed class InMemoryBaiVietRepository(InMemoryStore<bai_viet> store)
 
     public void SeedProfile(ho_so_nguoi_dung profile) => _profiles[profile.tai_khoan_id] = profile;
 
+    /// <summary>Thêm một tệp đã upload (lưu ở kho, không phải URL ngoài) gắn vào bài viết, như khi <c>IFileLienKet</c> đã gắn.</summary>
+    public void AddUploadedFile(Guid postId, Guid fileId, int order) => _files.Add(new tep_tin
+    {
+        Id = fileId,
+        nguoi_tai_len_id = Guid.NewGuid(),
+        loai_doi_tuong = LoaiDoiTuongTepTin.bai_viet,
+        doi_tuong_id = postId,
+        muc_dich = "post",
+        s3_bucket = "gymbase-files",
+        s3_key = $"post/2026/11/{fileId}.jpg",
+        loai_mime = "image/jpeg",
+        kich_thuoc_byte = 1,
+        che_do_truy_cap = CheDoTruyCap.cong_khai,
+        trang_thai = TrangThaiTepTin.da_lien_ket,
+        thu_tu_hien_thi = order,
+        ngay_tao = DateTime.UtcNow,
+    });
+
     public Task<PagingResult<bai_viet>> DLGetFeedPagingAsync(
         string? tab,
         Guid? currentUserId,
@@ -137,7 +155,12 @@ public sealed class InMemoryBaiVietRepository(InMemoryStore<bai_viet> store)
     {
         var result = _files
             .Where(f => fileIds.Contains(f.Id))
-            .ToDictionary(f => f.Id, f => f.s3_key.Split("#tep=")[0]);
+            .Select(f => (f.Id, Url: f.s3_key.Split("#tep=")[0]))
+            .Where(x => x.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(x => x.Id, x => x.Url);
         return Task.FromResult<IReadOnlyDictionary<Guid, string>>(result);
     }
+
+    public Task<IReadOnlyList<bai_viet>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<bai_viet>>(Store.All().Where(b => ids.Contains(b.Id)).ToList());
 }

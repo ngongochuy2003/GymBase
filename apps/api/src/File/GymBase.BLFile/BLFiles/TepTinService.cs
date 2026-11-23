@@ -71,7 +71,7 @@ public sealed class TepTinService(
             ten_tep_goc = TenTep(request.TenTep),
             muc_dich = rule.MucDich,
             s3_bucket = TenBucket(provider),
-            s3_key = $"{rule.MucDich}/{now:yyyy}/{now:MM}/{id}",
+            s3_key = $"{rule.MucDich}/{now:yyyy}/{now:MM}/{id}{FilePolicy.DuoiTep(mime)}",
             loai_mime = mime,
             kich_thuoc_byte = request.KichThuocByte,
             che_do_truy_cap = rule.CheDoMacDinh,
@@ -180,7 +180,7 @@ public sealed class TepTinService(
             var congKhai = tep.che_do_truy_cap == CheDoTruyCap.cong_khai;
             var expiry = TimeSpan.FromMinutes(congKhai ? _options.GetPublicExpiryMinutes : _options.GetPrivateExpiryMinutes);
             var url = storageResolver.Resolve(tep.s3_bucket).CreatePresignedGetUrl(tep.s3_key, expiry);
-            ketQua[tep.Id] = new FileUrlDto(tep.Id, url, now.Add(expiry));
+            ketQua[tep.Id] = new FileUrlDto(tep.Id, url, now.Add(expiry), tep.loai_mime);
         }
 
         return ketQua;
@@ -211,6 +211,81 @@ public sealed class TepTinService(
         }
 
         return duocXem;
+    }
+
+    public async Task BLGanAsync(
+        Guid nguoiDungId,
+        IReadOnlyCollection<Guid> fileIds,
+        string loaiDoiTuong,
+        Guid doiTuongId,
+        IReadOnlyCollection<string> mucDichChoPhep,
+        CancellationToken ct = default)
+    {
+        if (fileIds.Count == 0)
+        {
+            return;
+        }
+
+        if (!Enum.TryParse<LoaiDoiTuongTepTin>(loaiDoiTuong, ignoreCase: false, out var loai))
+        {
+            throw new ArgumentException($"Loại đối tượng '{loaiDoiTuong}' không hợp lệ.", nameof(loaiDoiTuong));
+        }
+
+        var thuTu = fileIds.ToList();
+        if (thuTu.Distinct().Count() != thuTu.Count)
+        {
+            throw new ValidationFailedException("file_ids", "Danh sách tệp đính kèm bị trùng.");
+        }
+
+        var caTep = (await tepTins.DLFindByIdsAsync(thuTu, ct)).ToDictionary(t => t.Id);
+        if (caTep.Count != thuTu.Count || caTep.Values.Any(t => t.nguoi_tai_len_id != nguoiDungId))
+        {
+            throw new ValidationFailedException("file_ids", "Tệp đính kèm không tồn tại hoặc không phải của bạn.");
+        }
+
+        foreach (var tep in caTep.Values)
+        {
+            if (tep.trang_thai != TrangThaiTepTin.da_tai_len)
+            {
+                throw new ValidationFailedException(
+                    "file_ids", "Tệp đính kèm chưa tải lên xong hoặc đã được dùng ở nơi khác.", FileErrorCodes.InvalidState);
+            }
+
+            if (!mucDichChoPhep.Contains(tep.muc_dich ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+            {
+                throw new ValidationFailedException(
+                    "file_ids", "Tệp đính kèm không dùng được cho mục này.", FileErrorCodes.PurposeInvalid);
+            }
+        }
+
+        for (var i = 0; i < thuTu.Count; i++)
+        {
+            var tep = caTep[thuTu[i]];
+            tep.loai_doi_tuong = loai;
+            tep.doi_tuong_id = doiTuongId;
+            tep.thu_tu_hien_thi = i + 1;
+            tep.trang_thai = TrangThaiTepTin.da_lien_ket;
+            await tepTins.DLUpdateAsync(tep, ct);
+        }
+    }
+
+    public async Task BLXoaAsync(Guid nguoiDungId, Guid fileId, CancellationToken ct = default)
+    {
+        var entity = await tepTins.DLGetByIdAsync(fileId, ct);
+        if (entity == null || entity.nguoi_tai_len_id != nguoiDungId)
+        {
+            throw new NotFoundException("Không tìm thấy tệp tin.");
+        }
+
+        if (entity.trang_thai == TrangThaiTepTin.da_lien_ket)
+        {
+            throw new BusinessRuleException("Tệp tin đang được sử dụng nên không xóa được.", FileErrorCodes.InvalidState);
+        }
+
+        var storage = storageResolver.Resolve(entity.s3_bucket);
+        await storage.DeleteAsync(KeyTam(entity.Id), ct);
+        await storage.DeleteAsync(entity.s3_key, ct);
+        await tepTins.DLDeleteAsync(entity.Id, ct);
     }
 
     private async Task KiemHanMucAsync(Guid nguoiDungId, LoaiFile loai, long kichThuoc, DateTime now, CancellationToken ct)

@@ -15,15 +15,6 @@ public sealed class TepTinRepository(AppDbContext db) : BaseRepository<tep_tin>(
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
-    public async Task<IReadOnlyList<tep_tin>> DLGetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
-    {
-        return await Set
-            .Where(t => (t.s3_bucket == provider || t.s3_bucket == "LOCAL") && t.trang_thai == TrangThaiTepTin.da_tai_len)
-            .OrderBy(t => t.ngay_tao)
-            .Take(limit)
-            .ToListAsync(ct);
-    }
-
     public async Task<IReadOnlyList<tep_tin>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
         ids.Count == 0 ? [] : await Set.AsNoTracking().Where(t => ids.Contains(t.Id)).ToListAsync(ct);
 

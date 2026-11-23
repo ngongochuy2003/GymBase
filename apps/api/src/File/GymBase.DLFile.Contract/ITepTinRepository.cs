@@ -6,8 +6,6 @@ namespace GymBase.DLFile.Contract;
 
 public interface ITepTinRepository : IBaseRepository<tep_tin>
 {
-    Task<IReadOnlyList<tep_tin>> DLGetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default);
-
     /// <summary>Các tệp theo danh sách <c>Id</c>, bỏ qua Id không có. Không bảo đảm thứ tự.</summary>
     Task<IReadOnlyList<tep_tin>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default);
 

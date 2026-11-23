@@ -40,8 +40,15 @@ public sealed class BaiVietCreateDto
     /// <summary>Mã chủ đề bài viết (ví dụ: <c>workout</c>, <c>meal-prep</c>, <c>progress</c>, <c>tips</c>).</summary>
     public string? chu_de { get; init; }
 
-    /// <summary>Danh sách đường dẫn ảnh/video đính kèm (tối đa 10).</summary>
+    /// <summary>
+    /// Đường dẫn tuyệt đối (http/https) của ảnh/video bên ngoài (nội dung mẫu). Tệp người dùng tải lên đi qua <see cref="file_ids"/>.
+    /// </summary>
     public List<string>? hinh_anh_urls { get; init; }
+
+    /// <summary>
+    /// Id các tệp đã upload và xác nhận (<c>muc_dich = post</c>), theo thứ tự hiển thị. Tổng với <see cref="hinh_anh_urls"/> tối đa 10.
+    /// </summary>
+    public List<Guid>? file_ids { get; init; }
 
 }
 

@@ -75,8 +75,9 @@ namespace GymBase.IntegrationTests
             // Upload hai bước (docs/architecture/upload-file.md) và controller file của mobile, trên kho giả.
             builder.Services.Configure<StorageOptions>(_ => { });
             builder.Services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
-            builder.Services.AddScoped<IFileService, FileService>();
             builder.Services.AddScoped<ITepTinService, TepTinService>();
+            builder.Services.AddScoped<IFileLienKet>(sp => sp.GetRequiredService<ITepTinService>());
+            builder.Services.AddScoped<IFileUrlProvider>(sp => sp.GetRequiredService<ITepTinService>());
             builder.Services.AddScoped<IBaiVietRepository, InMemoryBaiVietRepository>();
             builder.Services.AddScoped<ITuongTacBaiVietRepository, InMemoryTuongTacBaiVietRepository>();
 

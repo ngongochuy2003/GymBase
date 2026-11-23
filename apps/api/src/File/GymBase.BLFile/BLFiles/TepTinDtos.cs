@@ -30,10 +30,5 @@ public sealed record XacNhanUploadResultDto(
     [property: JsonPropertyName("muc_dich")] string MucDich,
     [property: JsonPropertyName("trang_thai")] string TrangThai);
 
-public sealed record FileUrlDto(
-    [property: JsonPropertyName("file_id")] Guid FileId,
-    [property: JsonPropertyName("url")] string Url,
-    [property: JsonPropertyName("het_han")] DateTime HetHan);
-
 public sealed record LayUrlsRequestDto(
     [property: JsonPropertyName("file_ids")] IReadOnlyList<Guid>? FileIds);

@@ -397,6 +397,90 @@ public class TepTinServiceTests
         Assert.Equal(0, policy.SoLanGoi);
     }
 
+    [Fact]
+    public async Task XinUpload_FinalKeyKeepsFileExtensionSoUrlsTellImageFromVideo()
+    {
+        var anh = await Service().BLXinUploadAsync(_userId, Xin("post", "image/jpeg", 10), default);
+        var video = await Service().BLXinUploadAsync(_userId, Xin("post", "video/mp4", 10, "v.mp4"), default);
+
+        Assert.EndsWith(".jpg", (await _repo.DLGetByIdAsync(anh.FileId, default))!.s3_key);
+        Assert.EndsWith(".mp4", (await _repo.DLGetByIdAsync(video.FileId, default))!.s3_key);
+    }
+
+    [Fact]
+    public async Task Gan_UploadedFiles_LinksInOrderWithDisplayOrder()
+    {
+        var svc = Service();
+        var a = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        var b = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        var baiViet = Guid.NewGuid();
+
+        await svc.BLGanAsync(_userId, [b, a], "bai_viet", baiViet, ["post"], default);
+
+        var eb = (await _repo.DLGetByIdAsync(b, default))!;
+        var ea = (await _repo.DLGetByIdAsync(a, default))!;
+        Assert.Equal((1, TrangThaiTepTin.da_lien_ket, LoaiDoiTuongTepTin.bai_viet, baiViet), (eb.thu_tu_hien_thi, eb.trang_thai, eb.loai_doi_tuong, eb.doi_tuong_id));
+        Assert.Equal(2, ea.thu_tu_hien_thi);
+    }
+
+    [Fact]
+    public async Task Gan_OtherUsersFile_IsRejectedAndNothingIsLinked()
+    {
+        var svc = Service();
+        var mine = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        var theirs = await UploadVaConfirmAsync(svc, Guid.NewGuid(), "post", "image/jpeg", Jpeg);
+
+        await Assert.ThrowsAsync<ValidationFailedException>(() =>
+            svc.BLGanAsync(_userId, [mine, theirs], "bai_viet", Guid.NewGuid(), ["post"], default));
+
+        Assert.Equal(TrangThaiTepTin.da_tai_len, (await _repo.DLGetByIdAsync(mine, default))!.trang_thai);
+    }
+
+    [Fact]
+    public async Task Gan_PendingOrAlreadyLinkedOrWrongPurposeOrDuplicate_IsRejected()
+    {
+        var svc = Service();
+        var pending = (await svc.BLXinUploadAsync(_userId, Xin("post", "image/jpeg", 10), default)).FileId;
+        var wrongPurpose = await UploadVaConfirmAsync(svc, _userId, "progress", "image/jpeg", Jpeg);
+        var linked = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        await svc.BLGanAsync(_userId, [linked], "bai_viet", Guid.NewGuid(), ["post"], default);
+
+        foreach (var ids in new[] { new[] { pending }, [wrongPurpose], [linked] })
+        {
+            await Assert.ThrowsAsync<ValidationFailedException>(() =>
+                svc.BLGanAsync(_userId, ids, "bai_viet", Guid.NewGuid(), ["post"], default));
+        }
+
+        var fresh = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        await Assert.ThrowsAsync<ValidationFailedException>(() =>
+            svc.BLGanAsync(_userId, [fresh, fresh], "bai_viet", Guid.NewGuid(), ["post"], default));
+    }
+
+    [Fact]
+    public async Task Xoa_UnlinkedFile_RemovesObjectsAndRow()
+    {
+        var svc = Service();
+        var id = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        var key = (await _repo.DLGetByIdAsync(id, default))!.s3_key;
+
+        await svc.BLXoaAsync(_userId, id, default);
+
+        Assert.Null(await _repo.DLGetByIdAsync(id, default));
+        Assert.False(_storage.Objects.ContainsKey(key));
+    }
+
+    [Fact]
+    public async Task Xoa_LinkedOrOtherUsersFile_IsRejected()
+    {
+        var svc = Service();
+        var id = await UploadVaConfirmAsync(svc, _userId, "post", "image/jpeg", Jpeg);
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.BLXoaAsync(Guid.NewGuid(), id, default));
+
+        await svc.BLGanAsync(_userId, [id], "bai_viet", Guid.NewGuid(), ["post"], default);
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => svc.BLXoaAsync(_userId, id, default));
+        Assert.Equal(FileErrorCodes.InvalidState, ex.Code);
+    }
+
     private async Task Lien(Guid id, LoaiDoiTuongTepTin loai)
     {
         var e = (await _repo.DLGetByIdAsync(id, default))!;

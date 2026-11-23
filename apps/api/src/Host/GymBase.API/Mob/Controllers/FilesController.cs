@@ -3,137 +3,50 @@ using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
 using GymBase.BLFile.BLFiles;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymBase.API.Mob.Controllers;
 
 /// <summary>
-/// Quản lý file trên kênh mobile: /api/v1/mob/files
-/// Yêu cầu xác thực khi tải lên (Upload); cho phép truy cập công khai khi xem nội dung (GetContent).
-/// Tự động lưu trữ trên MinIO / S3 tương thích ngược với fallback tệp cục bộ.
+/// File trên kênh mobile: <c>/api/v1/mob/files</c>. App xin form upload, gửi thẳng lên MinIO/S3, báo xong, rồi xem file bằng URL đã ký;
+/// byte của file không đi qua API. Xem docs/architecture/upload-file.md.
 /// </summary>
-public sealed class FilesController(IFileService fileService, ITepTinService tepTinService, IWebHostEnvironment env) : BaseApiController
+[Authorize]
+public sealed class FilesController(ITepTinService tepTinService) : BaseApiController
 {
     private Guid NguoiDungId =>
         Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var id)
             ? id
             : throw new UnauthorizedException();
 
-    /// <summary>Bước 1 của upload: xin form upload đã ký (presigned POST). Xem docs/architecture/upload-file.md.</summary>
+    /// <summary>Bước 1 của upload: xin form upload đã ký (presigned POST).</summary>
     [HttpPost("upload-url")]
-    [Authorize]
     public async Task<IActionResult> XinUpload([FromBody] XinUploadRequestDto request, CancellationToken ct) =>
         Ok(await tepTinService.BLXinUploadAsync(NguoiDungId, request, ct));
 
     /// <summary>Bước 3 của upload: báo đã gửi xong, server kiểm object trên storage.</summary>
     [HttpPost("{id:guid}/confirm")]
-    [Authorize]
     public async Task<IActionResult> XacNhanUpload(Guid id, CancellationToken ct) =>
         Ok(await tepTinService.BLXacNhanUploadAsync(NguoiDungId, id, ct));
 
     /// <summary>URL đọc (presigned GET) của một file, sau khi kiểm quyền.</summary>
     [HttpGet("{id:guid}/url")]
-    [Authorize]
     public async Task<IActionResult> LayUrl(Guid id, CancellationToken ct) =>
         Ok(await tepTinService.BLLayUrlAsync(NguoiDungId, id, ct));
 
     /// <summary>URL đọc của nhiều file một lần; file không được xem thì vắng mặt trong <c>data</c>.</summary>
     [HttpPost("urls")]
-    [Authorize]
     public async Task<IActionResult> LayUrls([FromBody] LayUrlsRequestDto request, CancellationToken ct)
     {
         var urls = await tepTinService.BLLayUrlsAsync(NguoiDungId, request.FileIds ?? [], ct);
         return Ok(new { data = urls.Values });
     }
 
-    [HttpPost]
-    [Authorize]
-    [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Upload([FromForm] IFormFile? file, [FromForm] string? purpose, CancellationToken ct)
+    /// <summary>Xóa file đã upload mà chưa gắn vào đâu (ví dụ người dùng bỏ ảnh đã chọn).</summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Xoa(Guid id, CancellationToken ct)
     {
-        if (file == null || file.Length == 0)
-        {
-            return BadRequest(new { message = "Tệp tin tải lên rỗng." });
-        }
-
-        var actualPurpose = string.IsNullOrWhiteSpace(purpose) ? "post" : purpose.Trim().ToLowerInvariant();
-        var result = await fileService.BLUploadAsync(User, file, actualPurpose, ct);
-
-        var isVideo = result.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
-        var contentPath = isVideo
-            ? $"/api/v1/mob/files/{result.FileId}/content.mp4"
-            : $"/api/v1/mob/files/{result.FileId}/content";
-
-        return Ok(new
-        {
-            file_id = result.FileId,
-            fileId = result.FileId,
-            original_name = result.OriginalName,
-            originalName = result.OriginalName,
-            content_type = result.ContentType,
-            contentType = result.ContentType,
-            size = result.Size,
-            purpose = result.Purpose,
-            provider = result.Provider,
-            blurhash = result.Blurhash,
-            content_url = contentPath,
-            contentUrl = contentPath
-        });
+        await tepTinService.BLXoaAsync(NguoiDungId, id, ct);
+        return NoContent();
     }
-
-    [HttpGet("{id:guid}/content")]
-    [HttpGet("{id:guid}/content.{ext}")]
-    [HttpGet("/api/files/{id:guid}/content")]
-    [HttpGet("/api/files/{id:guid}/content.{ext}")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetContent(Guid id, string? ext, CancellationToken ct)
-    {
-        // 1. Kiểm tra file legacy trên ổ đĩa nếu tồn tại
-        var uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
-        if (Directory.Exists(uploadsDir))
-        {
-            var idPrefix = id.ToString("N");
-            var matchingFiles = Directory.GetFiles(uploadsDir, $"{idPrefix}*");
-            if (matchingFiles.Length == 0)
-            {
-                matchingFiles = Directory.GetFiles(uploadsDir, $"{id}*");
-            }
-
-            if (matchingFiles.Length > 0)
-            {
-                var filePath = matchingFiles[0];
-                var ext2 = Path.GetExtension(filePath);
-                var mime = GetMimeType(ext2);
-                return PhysicalFile(filePath, mime, enableRangeProcessing: true);
-            }
-        }
-
-        // 2. Mở qua IFileService (MinIO / S3 / Local chuẩn)
-        try
-        {
-            var streamResult = await fileService.BLOpenAuthorizedAsync(User, id, ct);
-            return File(streamResult.Stream, streamResult.ContentType, enableRangeProcessing: true);
-        }
-        catch (FileNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-    }
-
-    private static string GetMimeType(string ext) => ext.ToLowerInvariant() switch
-    {
-        ".jpg" or ".jpeg" => "image/jpeg",
-        ".png" => "image/png",
-        ".webp" => "image/webp",
-        ".gif" => "image/gif",
-        ".mp4" => "video/mp4",
-        ".mov" => "video/quicktime",
-        _ => "application/octet-stream",
-    };
 }

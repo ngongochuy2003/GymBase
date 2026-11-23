@@ -48,6 +48,20 @@ public static class FilePolicy
 
     public static IEnumerable<string> CacMucDich => Rules.Keys;
 
+    /// <summary>Đuôi tệp theo MIME (có dấu chấm), để key và URL có đuôi: app đoán ảnh hay video theo đuôi URL.</summary>
+    public static string DuoiTep(string mime) => mime switch
+    {
+        "image/jpeg" => ".jpg",
+        "image/png" => ".png",
+        "image/webp" => ".webp",
+        "image/heic" => ".heic",
+        "image/heif" => ".heif",
+        "video/mp4" => ".mp4",
+        "video/quicktime" => ".mov",
+        "application/pdf" => ".pdf",
+        _ => string.Empty,
+    };
+
     public static bool TryGetRule(string? mucDich, out FileMucDichRule rule)
     {
         rule = null!;

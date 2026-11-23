@@ -8,6 +8,7 @@ using GymBase.Base.Validation;
 using GymBase.DLBiz.Contract;
 using GymBase.Entities.Biz;
 using GymBase.Entities.Biz.Enums;
+using GymBase.ModuleContracts.TepTin;
 
 namespace GymBase.BLBiz.BaiViet;
 
@@ -22,6 +23,8 @@ public sealed class BaiVietService
     private readonly ITuongTacBaiVietRepository _tuongTacRepository;
     private readonly IValidator<BaiVietCreateDto> _createValidator;
     private readonly IValidator<BinhLuanCreateDto> _commentValidator;
+    private readonly IFileLienKet _fileLienKet;
+    private readonly IFileUrlProvider _fileUrls;
 
     public BaiVietService(
         IBaiVietRepository baiVietRepository,
@@ -30,13 +33,17 @@ public sealed class BaiVietService
         ICurrentUser currentUser,
         IValidator<BaiVietCreateDto> createValidator,
         IValidator<BaiVietUpdateDto> updateValidator,
-        IValidator<BinhLuanCreateDto> commentValidator)
+        IValidator<BinhLuanCreateDto> commentValidator,
+        IFileLienKet fileLienKet,
+        IFileUrlProvider fileUrls)
         : base(baiVietRepository, timeProvider, currentUser, createValidator, updateValidator)
     {
         _baiVietRepository = baiVietRepository;
         _tuongTacRepository = tuongTacRepository;
         _createValidator = createValidator;
         _commentValidator = commentValidator;
+        _fileLienKet = fileLienKet;
+        _fileUrls = fileUrls;
     }
     private static readonly HashSet<string> SystemSeedUserNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -47,6 +54,9 @@ public sealed class BaiVietService
         "hv.huy",
         "hv.phuong",
     };
+
+    /// <summary><c>tep_tin.muc_dich</c> của ảnh/video đính kèm bài viết.</summary>
+    private const string PostFilePurpose = "post";
 
     protected override string EntityDisplayName => "bài viết";
 
@@ -91,6 +101,13 @@ public sealed class BaiVietService
         var entity = BLCreateEntity(dto);
         var creatorName = CurrentUser.UserName;
         entity.MarkCreated(creatorName, utcNow);
+
+        // Gắn tệp trước khi lưu bài: tệp sai (của người khác, chưa upload xong...) thì không tạo bài viết dở.
+        if (dto.file_ids is { Count: > 0 } fileIds)
+        {
+            await _fileLienKet.BLGanAsync(
+                ResolveActorId(), fileIds, nameof(LoaiDoiTuongTepTin.bai_viet), entity.Id, [PostFilePurpose], cancellationToken);
+        }
 
         await _baiVietRepository.DLInsertAsync(entity, cancellationToken);
 
@@ -176,7 +193,7 @@ public sealed class BaiVietService
             .Select(p => p.anh_dai_dien_tep_tin_id!.Value)
             .Distinct()
             .ToList();
-        var avatarUrls = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
+        var avatarUrls = await ResolveFileUrlsAsync(avatarFileIds, cancellationToken);
 
         return comments.Select(c =>
         {
@@ -236,7 +253,7 @@ public sealed class BaiVietService
             .Where(p => p.anh_dai_dien_tep_tin_id.HasValue)
             .Select(p => p.anh_dai_dien_tep_tin_id!.Value)
             .ToList();
-        var avatarUrls = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
+        var avatarUrls = await ResolveFileUrlsAsync(avatarFileIds, cancellationToken);
         var author = ResolveAuthorInfo(actorId, null, profiles, avatarUrls);
 
         return new BinhLuanDto(
@@ -271,7 +288,8 @@ public sealed class BaiVietService
     {
         var utcNow = TimeProvider.GetUtcNow().UtcDateTime;
         var hasText = !string.IsNullOrWhiteSpace(dto.noi_dung);
-        var hasMedia = dto.hinh_anh_urls is { Count: > 0 } && dto.hinh_anh_urls.Any(u => !string.IsNullOrWhiteSpace(u));
+        var hasMedia = (dto.hinh_anh_urls is { Count: > 0 } && dto.hinh_anh_urls.Any(u => !string.IsNullOrWhiteSpace(u)))
+                       || dto.file_ids is { Count: > 0 };
 
         var postType = ParsePostType(dto.loai_bai_viet, hasText, hasMedia);
         var visibility = ParseVisibility(dto.che_do_hien_thi);
@@ -323,13 +341,21 @@ public sealed class BaiVietService
             .Select(p => p.anh_dai_dien_tep_tin_id!.Value)
             .Distinct()
             .ToList();
-        var avatarUrlsByFile = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(avatarFileIds, cancellationToken);
+        var avatarUrlsByFile = await ResolveFileUrlsAsync(avatarFileIds, cancellationToken);
+
+        var storedFileIds = mediaByPost.Values.SelectMany(f => f).Where(IsStoredFile).Select(f => f.Id).ToList();
+        var signedMedia = await _fileUrls.BLLayUrlsAsync(viewerId, storedFileIds, cancellationToken);
 
         var result = new List<BaiVietDto>(posts.Count);
         foreach (var post in posts)
         {
             var files = mediaByPost.TryGetValue(post.Id, out var attached) ? attached : [];
-            var imageUrls = files.Select(ExtractCleanUrl).ToList();
+            var imageUrls = files
+                .Select(f => IsStoredFile(f)
+                    ? (signedMedia.TryGetValue(f.Id, out var signed) ? signed.Url : null)
+                    : ExtractExternalUrl(f))
+                .OfType<string>()
+                .ToList();
             var fileTopic = files.FirstOrDefault(f => !string.IsNullOrWhiteSpace(f.muc_dich))?.muc_dich;
             var topic = explicitTopic ?? fileTopic ?? InferTopic(post.noi_dung, null);
 
@@ -384,7 +410,12 @@ public sealed class BaiVietService
         return new TacGiaBaiVietDto(accountId, fallbackName, null);
     }
 
-    private static string ExtractCleanUrl(tep_tin file)
+    /// <summary>Tệp do người dùng tải lên (lưu ở MinIO/S3, đọc qua URL ký) khác với dòng "external" giữ URL ngoài của nội dung mẫu.</summary>
+    private static bool IsStoredFile(tep_tin file) =>
+        !string.Equals(file.s3_bucket, "external", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>URL ngoài (http/https) của nội dung mẫu; dòng "external" không có URL hợp lệ thì bỏ qua.</summary>
+    private static string? ExtractExternalUrl(tep_tin file)
     {
         var key = file.s3_key;
         var hashIndex = key.IndexOf("#tep=", StringComparison.Ordinal);
@@ -393,19 +424,34 @@ public sealed class BaiVietService
             key = key[..hashIndex];
         }
 
-        if (key.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-            || key.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
-            || key.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+        return key.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+               || key.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            ? key
+            : null;
+    }
+
+    /// <summary>
+    /// URL của các file (ảnh đại diện): file lưu ở MinIO/S3 lấy URL ký sau khi kiểm quyền, file "external" lấy URL ngoài đã lưu.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, string>> ResolveFileUrlsAsync(
+        IReadOnlyCollection<Guid> fileIds, CancellationToken cancellationToken)
+    {
+        if (fileIds.Count == 0)
         {
-            return key;
+            return new Dictionary<Guid, string>();
         }
 
-        var isVideo = file.loai_mime.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
-                      || file.ten_tep_goc?.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) == true;
+        var viewerId = CurrentUser.UserId ?? throw new UnauthorizedException();
+        var external = await _baiVietRepository.DLGetAvatarUrlsByFileIdsAsync(fileIds, cancellationToken);
+        var signed = await _fileUrls.BLLayUrlsAsync(viewerId, fileIds, cancellationToken);
 
-        return isVideo
-            ? $"/api/v1/mob/files/{file.Id}/content.mp4"
-            : $"/api/v1/mob/files/{file.Id}/content";
+        var result = new Dictionary<Guid, string>(external);
+        foreach (var (id, url) in signed)
+        {
+            result[id] = url.Url;
+        }
+
+        return result;
     }
 
     private static CheDoHienThi ParseVisibility(string raw) =>

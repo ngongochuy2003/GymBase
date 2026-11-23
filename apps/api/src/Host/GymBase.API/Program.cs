@@ -55,47 +55,5 @@ var app = builder.Build();
 
 app.UseAppApi();
 
-// Endpoint tải nội dung file công khai dùng chung cho mobile và web (/api/files/{id}/content)
-app.MapGet("/api/files/{id:guid}/content", async (Guid id, IFileService fileService, IWebHostEnvironment env, HttpContext ctx, CancellationToken ct) =>
-{
-    var uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
-    if (Directory.Exists(uploadsDir))
-    {
-        var idPrefix = id.ToString("N");
-        var matchingFiles = Directory.GetFiles(uploadsDir, $"{idPrefix}*");
-        if (matchingFiles.Length == 0)
-        {
-            matchingFiles = Directory.GetFiles(uploadsDir, $"{id}*");
-        }
-
-        if (matchingFiles.Length > 0)
-        {
-            var filePath = matchingFiles[0];
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            var mime = ext switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".webp" => "image/webp",
-                ".gif" => "image/gif",
-                ".mp4" => "video/mp4",
-                ".mov" => "video/quicktime",
-                _ => "application/octet-stream",
-            };
-            return Results.File(filePath, mime, enableRangeProcessing: true);
-        }
-    }
-
-    try
-    {
-        var streamResult = await fileService.BLOpenAuthorizedAsync(ctx.User, id, ct);
-        return Results.File(streamResult.Stream, streamResult.ContentType, enableRangeProcessing: true);
-    }
-    catch (Exception)
-    {
-        return Results.NotFound();
-    }
-}).AllowAnonymous();
-
 app.Run();
 return 0;
