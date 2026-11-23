@@ -1,6 +1,6 @@
 # Upload file: thiết kế chi tiết
 
-> **Ngày viết:** 24/11/2026 · **Trạng thái:** thiết kế đã chốt (chưa có code; code hiện tại vẫn là multipart qua API)
+> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình · **Đối chiếu code:** ad9a16d
 
 Quyết định và lý do: [ADR-0003](../adr/0003-upload-file-presigned-minio-s3.md). Tài liệu này mô tả cách làm. Bảng `tep_tin`
 và vòng đời file: [database/diagrams/02-tep-tin.md](../../database/diagrams/02-tep-tin.md).
@@ -114,8 +114,8 @@ stateDiagram-v2
     da_xoa --> [*]
 ```
 
-Cần thêm giá trị `bi_go` vào `TrangThaiTepTin` khi làm kiểm duyệt. Xử lý nền (bỏ EXIF, blurhash, ảnh xem trước của video) không đổi trạng thái chính:
-theo dõi bằng cột `trang_thai_xu_ly` (`cho_xu_ly`, `dang_xu_ly`, `xong`, `loi`) trên `tep_tin`.
+Cần thêm giá trị `bi_go` vào `TrangThaiTepTin` khi làm kiểm duyệt. Xử lý nền (bỏ EXIF, blurhash) không đổi trạng thái chính: theo dõi bằng cột
+`trang_thai_xu_ly` (`khong_can`, `cho_xu_ly`, `dang_xu_ly`, `xong`, `loi`) trên `tep_tin`, kèm `ngay_bat_dau_xu_ly` và `blurhash`.
 
 ## 3. API
 
@@ -240,18 +240,25 @@ trong `tep_tin` chỉ còn là gợi ý (công khai hay không); quyền thật 
 
 ## 6. Xử lý nền
 
-1. Confirm ghi dòng outbox (`tep_tin_id`, loại tác vụ, `trang_thai`, số lần thử).
-2. `BackgroundService` giành dòng bằng cập nhật có điều kiện `cho_xu_ly` sang `dang_xu_ly` (như ADR-0002, để nhiều instance
-   không xử lý trùng); dòng `dang_xu_ly` quá hạn thì được giành lại.
-3. Ảnh: tải bản gốc, từ chối nếu số điểm ảnh quá lớn (chống ảnh nén bom), bỏ EXIF, xoay đúng chiều, tính blurhash, rồi ghi đè lại
-   cùng key chính. Không tạo bản thu nhỏ: app đã nén xuống cạnh dài 2048px trước khi gửi, và mỗi file chỉ có một bản.
-4. Video: tạo thumbnail (khung đầu hoặc giây thứ 1) bằng ffmpeg; ghi thời lượng nếu đọc được. Cần ffmpeg trong image Docker
-   của API (`infrastructure/docker/Dockerfile.api`).
-5. Lỗi tạm thì thử lại với backoff, quá số lần thì `loi` (file vẫn dùng được, chỉ thiếu blurhash hoặc ảnh xem trước).
-6. Bước kiểm duyệt (sau này) là một tác vụ tiếp theo trong cùng chuỗi: gọi Rekognition, vi phạm thì `bi_go` và gỡ khỏi đối
-   tượng gắn. Ảnh riêng tư có thể bỏ qua để tiết kiệm phí; quyết định khi làm.
+Hàng đợi là chính cột `trang_thai_xu_ly` của `tep_tin` (không có bảng outbox riêng): ghi trạng thái cùng lúc với `da_tai_len` nên không thể lệch nhau.
 
-Nếu CPU xử lý ảnh chen vào API thì tách worker thành tiến trình riêng cùng codebase; hợp đồng outbox giữ nguyên.
+1. Confirm đặt `trang_thai_xu_ly`: `cho_xu_ly` cho ảnh JPEG, PNG, WebP; `khong_can` cho video, PDF và ảnh HEIC (Skia chưa giải mã được; app đã
+   đổi ảnh sang JPEG khi nén nên HEIC hầu như không tới).
+2. `TepTinXuLyWorker` (`BackgroundService` trong API) quét mỗi 10 giây, mỗi lượt tối đa 10 tệp, còn việc thì làm tiếp ngay. Worker **nhận việc**
+   bằng cập nhật có điều kiện (`cho_xu_ly` sang `dang_xu_ly`, kèm mốc `ngay_bat_dau_xu_ly`), nên nhiều instance không xử lý trùng; việc
+   `dang_xu_ly` quá 10 phút coi như worker đã chết và được nhận lại.
+3. Ảnh: từ chối nếu quá 8192px mỗi cạnh hoặc 36MP (kiểm từ header trước khi cấp bộ nhớ, chống ảnh nén bom); xoay đúng chiều theo EXIF
+   (cả 8 hướng), mã hóa lại không kèm metadata (EXIF, GPS), ghi đè cùng key chính, lưu `blurhash` và dung lượng mới. Không tạo bản thu nhỏ: app
+   đã nén xuống cạnh dài 2048px trước khi gửi, và mỗi file chỉ có một bản.
+4. Ảnh quá lớn hoặc hỏng: xóa object, `trang_thai = loi`, `trang_thai_xu_ly = loi`; job dọn file xóa dòng sau 60 phút. Lỗi bất ngờ (kho, bộ nhớ):
+   `trang_thai_xu_ly = loi`, tệp vẫn xem được nhưng chưa bỏ EXIF (ghi log mức lỗi).
+5. **Chưa làm:** ảnh xem trước của video (cần ffmpeg trong image Docker của API, `infrastructure/docker/Dockerfile.api`), kiểm duyệt: gọi
+   Rekognition như một tác vụ tiếp theo, vi phạm thì `bi_go` và gỡ khỏi đối tượng gắn; ảnh riêng tư có thể bỏ qua để tiết kiệm phí.
+
+**Job dọn file** (`TepTinDonDepWorker`, mỗi 10 phút, tối đa 200 tệp mỗi lượt): xóa object (key tạm và key chính) rồi dòng của tệp `cho_tai_len` hoặc
+`loi` quá 60 phút và `da_tai_len` chưa gắn quá 24 giờ. Tệp `da_lien_ket` không bao giờ bị dọn. Object nào xóa lỗi thì giữ dòng để lượt sau thử lại.
+
+Nếu CPU xử lý ảnh chen vào API thì tách worker thành tiến trình riêng cùng codebase; cơ chế nhận việc giữ nguyên.
 
 ## 7. Mobile
 
@@ -273,20 +280,32 @@ hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào sto
 
 ## 8. Kế hoạch làm
 
-1. `S3FileStorage`, presigned, `FilePolicy`, hai API xin/confirm, MinIO trong compose, test tích hợp với MinIO.
-2. Mobile chuyển sang POST form, progress, hủy, retry; sửa các màn hình gọi upload.
-3. `IFileUrlResolver`, `GET /{id}/url`, `POST /urls`, đổi các response danh sách; bỏ `GetContent` và đường legacy.
-4. Xóa code và dữ liệu cũ (`BLUploadAsync`, `uploads/`, `DevFallbackUserId`, dòng `tep_tin` cũ).
-5. Worker xử lý ảnh (EXIF, blurhash) và ảnh xem trước của video.
-6. Job dọn file mồ côi.
-7. Kiểm duyệt Rekognition (đợt sau), kèm `TODO(FILE)` ở chỗ chừa.
+Đã làm (24/11/2026):
 
-Khi làm, mỗi bước là một commit riêng. Code tạm đặt `// TODO(FILE): …`; thêm chủ đề `FILE` vào
-[quy-uoc-todo.md](quy-uoc-todo.md) nếu chưa có.
+1. `S3FileStorage` (presigned POST và GET, copy, đọc đầu object), `FilePolicy`, API xin/confirm, hạn mức, test với MinIO thật.
+2. Mobile: POST form, progress, hủy, thử lại, xin lại form khi hết hạn.
+3. Bài viết nhận `file_ids` (`IFileLienKet`), URL đọc ký theo lô (`IFileUrlProvider`), `BaiVietFileTruyCapPolicy`, `DELETE /files/{id}`.
+4. Xóa code cũ: `FileService`, `FileMigrationService`, `GetContent`, endpoint đọc legacy, controller web cũ.
+5. Worker xử lý ảnh (EXIF, blurhash).
+6. Job dọn file mồ côi.
+
+Còn lại:
+
+7. Ảnh xem trước của video (ffmpeg).
+8. Kiểm duyệt Rekognition (đợt sau), kèm `TODO(FILE)` ở chỗ chừa.
+9. `IFileTruyCapPolicy` cho `check_in` và `progress` (ảnh cơ thể: `chi_minh_toi` hoặc `chia_se_pt`) cùng nối upload cho các màn hình lộ trình khi có API check-in
+   (hiện kho check-in của mobile còn lưu URI cục bộ, `TODO(ROUTE)`).
+10. Mobile: dùng blurhash làm placeholder, `cacheKey` theo `file_id`, xóa cache ảnh riêng tư khi đăng xuất.
+
+Code tạm đặt `// TODO(FILE): …`; thêm chủ đề `FILE` vào [quy-uoc-todo.md](quy-uoc-todo.md) nếu chưa có.
 
 ## 9. Còn mở
 
 Xem mục "Còn mở" của ADR-0003. Thêm: xác nhận quyền xem của `gym_photo`, theo dõi thực tế rồi chỉnh hạn mức mỗi ngày.
+
+**Chạy dev với điện thoại:** URL ký mang địa chỉ của `Storage:ServiceUrl` (`http://localhost:9000`), điện thoại không với tới được. Đặt
+`Storage:PublicServiceUrl` là địa chỉ máy dev mà điện thoại gọi được, ví dụ `http://192.168.1.10:9000` (biến môi trường
+`Storage__PublicServiceUrl`); máy ảo Android dùng `http://10.0.2.2:9000`. API vẫn nói chuyện với MinIO bằng `ServiceUrl`.
 
 ## 10. Kiểm thử
 

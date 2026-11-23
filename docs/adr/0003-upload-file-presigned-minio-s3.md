@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Upload file: presigned URL thẳng lên MinIO/S3, xử lý nền bằng outbox
+# Upload file: presigned POST thẳng lên MinIO/S3, xử lý nền bằng hàng đợi trong DB
 
 Ngày 24/11/2026. Hiện app gửi file dạng multipart qua API (`POST /api/v1/mob/files`), API nén, lưu rồi tự phát lại nội dung
 qua `GET .../content`. Cách này làm API chịu toàn bộ băng thông upload và download, không có progress thật, giới hạn video
@@ -26,12 +26,13 @@ Các quyết định:
    chủ chọn `chi_minh_toi` hoặc `chia_se_pt` cho từng ảnh cơ thể. Mỗi loại đối tượng đích cài `IFileTruyCapPolicy`, kiểm
    **theo lô** để danh sách không kiểm từng file. URL hết hạn 2 đến 5 phút (riêng tư), 15 phút (công khai); không ghi URL
    vào log. Chưa dùng CDN; việc tạo URL nằm sau `IFileUrlResolver` để thêm CDN cho file công khai sau mà không sửa nơi gọi.
-5. **Xử lý ảnh và video ở nền, không ở request.** Confirm xong ghi một dòng outbox; `BackgroundService` trong API (cùng kiểu
-   ADR-0002) bỏ EXIF, tính blurhash cho ảnh (không tạo bản thu nhỏ, mỗi file một bản), tạo ảnh xem trước cho video. Video phát
-   nguyên bản MP4, không transcode.
+5. **Xử lý ảnh ở nền, không ở request; hàng đợi là cột `trang_thai_xu_ly` của `tep_tin`.** Confirm đặt `cho_xu_ly` cùng lúc với `da_tai_len` (cùng
+   một lần ghi, không thể lệch), `BackgroundService` trong API nhận việc bằng cập nhật có điều kiện (như ADR-0002) rồi xoay đúng chiều, bỏ
+   EXIF, tính blurhash (không tạo bản thu nhỏ, mỗi file một bản). Không dùng bảng outbox riêng vì việc luôn gắn với đúng một dòng `tep_tin`.
+   Ảnh xem trước cho video (ffmpeg) làm sau; video phát nguyên bản MP4, không transcode.
 6. **Liên kết bằng `file_id`.** Client gửi `file_id` khi tạo bài viết, check-in, avatar...; BL kiểm chủ sở hữu, `muc_dich` và
    trạng thái rồi chuyển `da_lien_ket`. Quyền xem file riêng tư dựa vào đối tượng đích.
-7. **Job dọn file mồ côi.** `cho_tai_len` quá khoảng 1 giờ thì chuyển `loi` và xóa; `da_tai_len` chưa liên kết quá khoảng
+7. **Job dọn file mồ côi.** `cho_tai_len` và `loi` quá 60 phút thì xóa; `da_tai_len` chưa liên kết quá khoảng
    24 giờ thì xóa. Xóa object trước rồi xóa dòng, chạy lại được an toàn.
 8. **Kiểm duyệt nội dung (Amazon Rekognition) làm sau, theo kiểu quét nền, hiển thị trước, gỡ sau.** Thiết kế chừa sẵn trạng
    thái `bi_go` và một bước trong chuỗi xử lý nền; chưa làm trong đợt này.
@@ -74,6 +75,7 @@ Các quyết định:
 - Xử lý ảnh đồng bộ lúc confirm: không cần worker nhưng confirm chậm, tốn CPU API. Loại.
 - Chỉ nén ở client, không xử lý server: không tin được client (EXIF/GPS, kích thước). Loại.
 - Hàng đợi ngoài (SQS, RabbitMQ) hoặc worker tiến trình riêng: bền và tách tải hơn, nhưng thêm hạ tầng chưa cần ở quy mô
-  vài chục nghìn người dùng. Loại; outbox trong API đủ, chuyển sau nếu CPU xử lý ảnh chen vào API.
+  vài chục nghìn người dùng. Loại; hàng đợi trong DB và worker trong API đủ, chuyển sau nếu CPU xử lý ảnh chen vào API.
+- Bảng outbox riêng cho việc xử lý: cần thêm bảng và transaction ghi hai nơi, trong khi mỗi việc chỉ gắn với một dòng `tep_tin`. Loại.
 - Backend proxy stream khi xem file riêng tư: kiểm quyền dễ nhưng giữ lại đúng vấn đề tải của hiện tại. Loại.
 - Upload chia mảnh / resumable cho video lớn: không cần với video ngắn dưới 100MB. Loại; mở lại nếu cho phép video dài.
