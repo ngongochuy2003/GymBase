@@ -27,6 +27,16 @@ public sealed class InMemoryTepTinRepository : InMemoryBaseRepository<tep_tin>, 
         return Task.FromResult<IReadOnlyList<tep_tin>>(list);
     }
 
+    public Task<IReadOnlyList<tep_tin>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<tep_tin>>(Store.All().Where(t => ids.Contains(t.Id)).ToList());
+
+    public Task<IReadOnlyList<tep_tin>> DLFindByUploaderSinceAsync(
+        Guid nguoiTaiLenId, DateTime tuNgayUtc, CancellationToken ct = default)
+    {
+        var list = Store.All().Where(t => t.nguoi_tai_len_id == nguoiTaiLenId && t.ngay_tao >= tuNgayUtc).ToList();
+        return Task.FromResult<IReadOnlyList<tep_tin>>(list);
+    }
+
     public Task<IReadOnlyList<tep_tin>> DLFindLinkedAsync(
         LoaiDoiTuongTepTin loaiDoiTuong, Guid doiTuongId, string mucDich, CancellationToken ct = default)
     {

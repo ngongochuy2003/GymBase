@@ -11,6 +11,7 @@ using GymBase.DLBiz.Contract;
 using GymBase.BLBiz.BLTruyCap;
 using GymBase.BLDI;
 using GymBase.BLFile.BLFiles;
+using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
 using GymBase.DLFile.Contract;
 using GymBase.ModuleContracts.TepTin;
@@ -71,6 +72,11 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<FakeFileStorage>();
             builder.Services.AddSingleton<IStorageResolver>(services => new FakeStorageResolver(services.GetRequiredService<FakeFileStorage>()));
             builder.Services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
+            // Upload hai bước (docs/architecture/upload-file.md) và controller file của mobile, trên kho giả.
+            builder.Services.Configure<StorageOptions>(_ => { });
+            builder.Services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
+            builder.Services.AddScoped<IFileService, FileService>();
+            builder.Services.AddScoped<ITepTinService, TepTinService>();
             builder.Services.AddScoped<IBaiVietRepository, InMemoryBaiVietRepository>();
             builder.Services.AddScoped<ITuongTacBaiVietRepository, InMemoryTuongTacBaiVietRepository>();
 

@@ -16,4 +16,32 @@ public sealed class StorageOptions
     public long MaxUploadBytes { get; set; } = 10 * 1024 * 1024;
     public int PresignExpiryMinutes { get; set; } = 15;
     public bool AllowAnonymousForDev { get; set; } = false;
+
+    /// <summary>
+    /// Địa chỉ storage mà thiết bị với tới được, dùng để ký presigned URL khi khác <see cref="ServiceUrl"/> (ví dụ MinIO dev:
+    /// <c>ServiceUrl</c> là localhost, điện thoại cần IP máy dev). Trống thì dùng <see cref="ServiceUrl"/>.
+    /// </summary>
+    public string? PublicServiceUrl { get; set; }
+
+    /// <summary>Hạn presigned PUT (phút). Đủ để gửi video 100MB trên mạng yếu.</summary>
+    public int PutExpiryMinutes { get; set; } = 15;
+
+    /// <summary>Hạn presigned GET cho file riêng tư (phút).</summary>
+    public int GetPrivateExpiryMinutes { get; set; } = 5;
+
+    /// <summary>Hạn presigned GET cho file công khai (phút).</summary>
+    public int GetPublicExpiryMinutes { get; set; } = 15;
+
+    public long MaxImageBytes { get; set; } = 10 * 1024 * 1024;
+    public long MaxDocumentBytes { get; set; } = 10 * 1024 * 1024;
+    public long MaxVideoBytes { get; set; } = 100 * 1024 * 1024;
+
+    /// <summary>Số file đang chờ tải lên (<c>cho_tai_len</c>) tối đa của một tài khoản.</summary>
+    public int MaxPendingUploads { get; set; } = 20;
+
+    /// <summary>Hạn mức mỗi tài khoản mỗi ngày (tính theo giờ UTC+7, đếm cả file lỗi).</summary>
+    public int MaxImagesPerDay { get; set; } = 50;
+    public int MaxVideosPerDay { get; set; } = 10;
+    public int MaxDocumentsPerDay { get; set; } = 5;
+    public long MaxBytesPerDay { get; set; } = 500L * 1024 * 1024;
 }

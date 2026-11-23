@@ -55,6 +55,7 @@ public static class FileBusinessExtensions
 
         // 4. File Services
         services.AddScoped<IFileService, FileService>();
+        services.AddScoped<ITepTinService, TepTinService>();
         services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
         services.AddScoped<IFileMigrationService, FileMigrationService>();
 
