@@ -309,7 +309,7 @@ Chưa có: video hướng dẫn (N29), danh sách bài tập có sẵn để ch�
 
 | Thao tác | Đích |
 | --- | --- |
-| Bấm nút "Xem" của một check-in chờ duyệt, hoặc một dòng ở tab Check-in | PT-04 (chưa có màn) |
+| Bấm nút "Xem" của một check-in chờ duyệt, hoặc một dòng ở tab Check-in | PT-04 (đánh giá, hoặc xem lại nếu đã xử lý) |
 | Bấm vào dòng "Nhóm n người" | Mở, đóng danh sách thành viên |
 | Chip thành viên ở tab Tiến độ | Đổi sang tiến độ của người đó |
 | "Chỉnh sửa kế hoạch" | Form giống PT-02 với dữ liệu hiện có, thay đổi áp dụng từ hôm nay, check-in cũ giữ nguyên (N5); chưa có thiết kế. Khóa khi lộ trình đã đóng |
@@ -322,15 +322,30 @@ Chưa có thiết kế gốc cho tab Kế hoạch, Tiến độ, Check-in, danh 
 
 ### PT-04 Đánh giá check-in
 
-Điểm vào: PT-03. Chỉ cho check-in **bữa ăn và buổi tập**. Nội dung: tên bữa hoặc buổi tập và giờ, kế hoạch lúc check-in (không phải kế hoạch mới sau khi sửa, K5), ảnh học viên gửi, ghi chú của học viên, ô "Nhận xét của PT". Ba nút:
+Điểm vào: PT-03 (nút "Xem" ở khối "Check-in chờ duyệt", hoặc một dòng ở tab Check-in). Chỉ cho check-in **bữa ăn và buổi tập** (N16). Từ trên xuống:
+
+| Khối | Nội dung |
+| --- | --- |
+| Thẻ kế hoạch | Bữa hoặc buổi tập **theo kế hoạch lúc check-in**, không phải kế hoạch mới sau khi sửa (K5) |
+| Kết quả học viên báo | Bữa ăn: Đã ăn hoặc Bỏ bữa. Buổi tập: Đã tập, Tập một phần hoặc Nghỉ tập |
+| Bài tập (chỉ buổi tập) | Danh sách bài, bài nào học viên đã tick, "Đã hoàn thành x/y bài" |
+| Học viên gửi | Tên, giờ gửi, ảnh (bữa ăn tối đa 3; buổi tập một ảnh), ghi chú của học viên. Lộ trình nhóm cho biết rõ của ai |
+| Nhận xét của PT | Ô nhiều dòng tối đa 300 ký tự (N6), có bộ đếm |
+
+Thiết kế gốc chỉ vẽ cho bữa ăn; buổi tập dựng theo màn chi tiết check-in buổi tập của học viên (HV-06) (N39).
 
 | Nút | Hệ quả |
 | --- | --- |
-| "Duyệt" | Quay về PT-03, banner "Đã gửi đánh giá cho học viên", check-in thành "Đã duyệt", mục "Hoạt động gần đây" thêm dòng. Học viên thấy nhận xét ở HV-05, không sửa được nữa |
-| "Yêu cầu bổ sung" | Gửi lại học viên để bổ sung ảnh hoặc ghi chú; học viên thấy ở HV-05 và sửa được (N13); chưa có thiết kế |
-| "Nhắn tin học viên" | Mở cuộc trò chuyện (phần 15 của tài liệu thiết kế) |
+| "Duyệt" | Nhận xét **tùy chọn**. Quay về PT-03, banner "Đã gửi đánh giá cho học viên" (đóng được), check-in thành "Đã duyệt", số "chờ duyệt" giảm (cả ở thẻ PT-01), mục "Hoạt động gần đây" thêm dòng. Học viên thấy nhận xét ở HV-05, không sửa được nữa |
+| "Yêu cầu bổ sung" | Nhận xét **bắt buộc** (không có thì báo "Nhập nội dung cần học viên bổ sung"). Check-in thành "Cần bổ sung"; học viên thấy ở HV-05 và sửa được (N13) |
+| "Nhắn tin học viên" | Mở cuộc trò chuyện với học viên (phần 15 của tài liệu thiết kế; chưa có màn) |
 
-Nếu học viên vừa sửa trong lúc PT đang xem thì PT phải được báo phiên bản đã cũ (N13). Thiết kế chỉ vẽ cho check-in bữa ăn; check-in buổi tập chưa có.
+**Xem lại (không có nút đánh giá):**
+- Check-in **đã duyệt**: hiện nhận xét đã gửi và ghi học viên không sửa được nữa.
+- Check-in **cần bổ sung**: hiện nhận xét đã gửi và ghi "Đang chờ học viên bổ sung"; PT đánh giá tiếp khi học viên gửi lại.
+- **Lộ trình đã đóng** (N28): mọi check-in chỉ xem.
+
+**Học viên sửa trong lúc PT đang xem (N13):** mỗi check-in có số phiên bản. Bấm Duyệt hoặc Yêu cầu bổ sung khi bản đã đổi thì **không ghi**, hiện "Học viên vừa sửa check-in này. Hãy xem lại nội dung mới rồi đánh giá."; sau khi PT xem lại, bấm lần nữa thì ghi. Một check-in chỉ nhận một đánh giá: gửi lần hai (ví dụ do mạng chậm) thì báo "Check-in này đã được đánh giá."
 
 ## 5. Nhãn trạng thái
 
@@ -382,6 +397,7 @@ Các mâu thuẫn tìm thấy khi đọc thiết kế, và cách chốt (chi ti�
 - HV-08 Ghi cân nặng và ảnh cơ thể (ghi nhận, không duyệt).
 - Tab Kế hoạch, tab Ảnh của HV-02; lọc theo Check-in của HV-07.
 - PT-03: tab Kế hoạch, Tiến độ, Check-in, danh sách thành viên nhóm và hộp "Đóng lộ trình" đã tự dựng ngày 22/11/2026 theo N38, chờ thiết kế chính thức.
+- PT-04: phần buổi tập, trạng thái xem lại (đã duyệt, cần bổ sung), báo học viên vừa sửa đã tự dựng ngày 22/11/2026 theo N39, chờ thiết kế chính thức. Duyệt xong thì màn học viên (HV-05) chưa tự đổi vì dữ liệu mẫu hai phía tách nhau.
 - HV-07a (Cân nặng) và HV-07b (Ảnh cơ thể theo mốc) đã tự thiết kế ở mục 3 để có màn cho "Chi tiết" và "Xem tất cả", chờ thiết kế chính thức. Tab Check-in của HV-07 vẫn chưa có.
 - Trạng thái "PT yêu cầu bổ sung" phía học viên, và check-in buổi tập đã được đánh giá (PT-04 cho buổi tập).
 - PT-02a và PT-02b đã tự thiết kế ngày 22/11/2026 theo N37 (mục 3, PT-02a và PT-02b), chờ thiết kế chính thức; chưa có video bài tập. "Chỉnh sửa kế hoạch" dùng lại các màn này.

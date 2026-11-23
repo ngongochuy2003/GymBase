@@ -325,6 +325,22 @@ Chi tiết giao diện chưa viết vào `luong-man-hinh.md`.
 - **Hệ quả:** hoàn thành của nhiệm vụ nhóm phải suy ra từ tập thành viên đang tham gia (bảng lượt tham gia, K9), không lưu
   một cột trạng thái riêng cho nhiệm vụ nhóm. Ảnh cơ thể chỉ hiện cho PT khi học viên để chế độ "Cho PT xem" (N33).
 
+### N39. PT-04: cách PT duyệt và yêu cầu bổ sung
+
+- **Nguồn:** người dùng hỏi có làm được phần duyệt và xem chi tiết không (22/11/2026), Claude đề xuất, người dùng đồng ý ("ok").
+  Thiết kế gốc chỉ vẽ ba nút Duyệt, Yêu cầu bổ sung, Nhắn tin học viên cho bữa ăn.
+- **Chốt:**
+  - **Duyệt:** nhận xét **không bắt buộc**. **Yêu cầu bổ sung:** nhận xét **bắt buộc** để học viên biết cần bổ sung gì.
+  - Gửi xong quay về PT-03: banner "Đã gửi đánh giá cho học viên" (đóng được), check-in đổi trạng thái, số "chờ duyệt" giảm
+    (cả ở thẻ PT-01), "Hoạt động gần đây" thêm một dòng.
+  - Check-in **đã duyệt** chỉ xem (hiện nhận xét đã gửi, học viên không sửa nữa, N13). Check-in **cần bổ sung** hiện "đang chờ
+    học viên bổ sung", PT chưa đánh giá tiếp cho đến khi học viên gửi lại. Lộ trình đã đóng (N28) thì mọi check-in chỉ xem.
+  - **Học viên sửa lúc PT đang xem (N13):** mỗi check-in có số phiên bản; PT đánh giá bản cũ thì không ghi và hiện thông báo xem
+    lại. Một check-in chỉ nhận một đánh giá (gửi hai lần vì mạng chậm thì lần sau bị chặn).
+  - Màn hiện kế hoạch lúc check-in (K5), không phải kế hoạch sau khi PT sửa.
+- **Hệ quả:** backend cần cột phiên bản (hoặc thời điểm sửa cuối) ở check-in và kiểm khi lưu đánh giá, trả lỗi để app báo PT. Ví dụ
+  này nằm trong các ca ngoại lệ bắt buộc kiểm thử của SRS (mục 6.4).
+
 ## 2. Quyết định kỹ thuật
 
 Các mục này suy ra từ quyết định nghiệp vụ ở trên, chưa có câu hỏi riêng. Cần người dùng xác nhận trước khi thiết kế schema.
