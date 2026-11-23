@@ -48,6 +48,13 @@ public static class FilePolicy
 
     public static IEnumerable<string> CacMucDich => Rules.Keys;
 
+    /// <summary>
+    /// Trạng thái xử lý nền ngay sau khi xác nhận: ảnh JPEG, PNG, WebP cần bỏ EXIF và tính blurhash. HEIC và HEIF chưa giải mã được nên giữ
+    /// nguyên (app đã đổi sang JPEG khi nén); video và PDF không cần.
+    /// </summary>
+    public static TrangThaiXuLyTepTin TrangThaiXuLyBanDau(string mime) =>
+        mime is "image/jpeg" or "image/png" or "image/webp" ? TrangThaiXuLyTepTin.cho_xu_ly : TrangThaiXuLyTepTin.khong_can;
+
     /// <summary>Key tạm app POST vào. Sau confirm file được copy sang <c>tep_tin.s3_key</c> nên form upload còn hạn không đè được file đã kiểm.</summary>
     public static string KeyTam(Guid fileId) => $"tmp/{fileId}";
 

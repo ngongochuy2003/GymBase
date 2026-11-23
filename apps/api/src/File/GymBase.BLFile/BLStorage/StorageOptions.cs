@@ -42,6 +42,15 @@ public sealed class StorageOptions
     public int MaxDocumentsPerDay { get; set; } = 5;
     public long MaxBytesPerDay { get; set; } = 500L * 1024 * 1024;
 
+    /// <summary>Worker xử lý ảnh nền quét việc mới mỗi bao nhiêu giây.</summary>
+    public int ProcessingIntervalSeconds { get; set; } = 10;
+
+    /// <summary>Số tệp xử lý tối đa mỗi lượt.</summary>
+    public int ProcessingBatchSize { get; set; } = 10;
+
+    /// <summary>Việc `dang_xu_ly` quá số phút này thì coi như worker đã chết và được nhận lại.</summary>
+    public int ProcessingReclaimMinutes { get; set; } = 10;
+
     /// <summary>Job dọn file chạy mỗi bao nhiêu phút.</summary>
     public int CleanupIntervalMinutes { get; set; } = 10;
 

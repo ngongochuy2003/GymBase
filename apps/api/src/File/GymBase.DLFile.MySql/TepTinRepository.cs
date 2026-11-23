@@ -15,6 +15,28 @@ public sealed class TepTinRepository(AppDbContext db) : BaseRepository<tep_tin>(
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
+    public async Task<IReadOnlyList<tep_tin>> DLFindPendingProcessingAsync(DateTime nhanTruoc, int soLuong, CancellationToken ct = default) =>
+        await Set
+            .AsNoTracking()
+            .Where(t => t.trang_thai_xu_ly == TrangThaiXuLyTepTin.cho_xu_ly
+                        || (t.trang_thai_xu_ly == TrangThaiXuLyTepTin.dang_xu_ly && t.ngay_bat_dau_xu_ly < nhanTruoc))
+            .OrderBy(t => t.ngay_tao)
+            .Take(soLuong)
+            .ToListAsync(ct);
+
+    public async Task<bool> DLTryClaimProcessingAsync(tep_tin daThay, DateTime now, CancellationToken ct = default)
+    {
+        var id = daThay.Id;
+        var trangThai = daThay.trang_thai_xu_ly;
+        var mocNhan = daThay.ngay_bat_dau_xu_ly;
+        var capNhat = await Set
+            .Where(t => t.Id == id && t.trang_thai_xu_ly == trangThai && t.ngay_bat_dau_xu_ly == mocNhan)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(t => t.trang_thai_xu_ly, TrangThaiXuLyTepTin.dang_xu_ly).SetProperty(t => t.ngay_bat_dau_xu_ly, now),
+                ct);
+        return capNhat == 1;
+    }
+
     public async Task<IReadOnlyList<tep_tin>> DLFindStaleAsync(
         DateTime choTaiLenTruoc, DateTime daTaiLenTruoc, int soLuong, CancellationToken ct = default) =>
         await Set

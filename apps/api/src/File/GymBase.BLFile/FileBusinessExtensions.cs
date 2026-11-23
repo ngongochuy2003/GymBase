@@ -55,6 +55,8 @@ public static class FileBusinessExtensions
 
         // 4. File Services
         services.AddScoped<ITepTinService, TepTinService>();
+        services.AddScoped<TepTinXuLyService>();
+        services.AddHostedService<TepTinXuLyWorker>();
         services.AddScoped<TepTinDonDepService>();
         services.AddHostedService<TepTinDonDepWorker>();
         services.AddScoped<IFileLienKet>(sp => sp.GetRequiredService<ITepTinService>());

@@ -7,7 +7,8 @@ public sealed record FileUrlDto(
     [property: JsonPropertyName("file_id")] Guid FileId,
     [property: JsonPropertyName("url")] string Url,
     [property: JsonPropertyName("het_han")] DateTime HetHan,
-    [property: JsonPropertyName("loai_mime")] string LoaiMime);
+    [property: JsonPropertyName("loai_mime")] string LoaiMime,
+    [property: JsonPropertyName("blurhash")] string? Blurhash = null);
 
 /// <summary>Cấp URL đọc (presigned GET) cho nhóm Biz mà không phải tham chiếu BLFile. Quyền xem do BLFile kiểm.</summary>
 public interface IFileUrlProvider

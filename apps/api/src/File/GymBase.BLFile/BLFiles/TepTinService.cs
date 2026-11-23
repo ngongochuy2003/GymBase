@@ -134,6 +134,7 @@ public sealed class TepTinService(
         // Copy trước, ghi DB sau, xóa key tạm cuối: lỗi giữa chừng thì gọi lại confirm được; key tạm sót lại để job dọn / lifecycle xóa.
         await storage.CopyAsync(keyTam, entity.s3_key, ct);
         entity.kich_thuoc_byte = info.Length;
+        entity.trang_thai_xu_ly = FilePolicy.TrangThaiXuLyBanDau(entity.loai_mime);
         entity.trang_thai = TrangThaiTepTin.da_tai_len;
         entity.ngay_xac_nhan = timeProvider.GetUtcNow().UtcDateTime;
         await tepTins.DLUpdateAsync(entity, ct);
@@ -147,7 +148,7 @@ public sealed class TepTinService(
             logger.LogWarning(ex, "Không xóa được key tạm {Key} của tệp {FileId}; để job dọn xử lý.", keyTam, entity.Id);
         }
 
-        // TODO(FILE): ghi dòng outbox xử lý nền (bỏ EXIF, blurhash, ảnh xem trước video) cùng transaction với dòng trên.
+        // TODO(FILE): ảnh xem trước cho video (cần ffmpeg trong image Docker của API); ảnh HEIC chưa giải mã được nên chưa bỏ EXIF.
         return ToResult(entity);
     }
 
@@ -177,7 +178,7 @@ public sealed class TepTinService(
             var congKhai = tep.che_do_truy_cap == CheDoTruyCap.cong_khai;
             var expiry = TimeSpan.FromMinutes(congKhai ? _options.GetPublicExpiryMinutes : _options.GetPrivateExpiryMinutes);
             var url = storageResolver.Resolve(tep.s3_bucket).CreatePresignedGetUrl(tep.s3_key, expiry);
-            ketQua[tep.Id] = new FileUrlDto(tep.Id, url, now.Add(expiry), tep.loai_mime);
+            ketQua[tep.Id] = new FileUrlDto(tep.Id, url, now.Add(expiry), tep.loai_mime, tep.blurhash);
         }
 
         return ketQua;

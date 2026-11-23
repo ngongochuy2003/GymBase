@@ -16,6 +16,33 @@ public sealed class InMemoryTepTinRepository : InMemoryBaseRepository<tep_tin>, 
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
+    public Task<IReadOnlyList<tep_tin>> DLFindPendingProcessingAsync(DateTime nhanTruoc, int soLuong, CancellationToken ct = default)
+    {
+        var list = Store.All()
+            .Where(t => t.trang_thai_xu_ly == TrangThaiXuLyTepTin.cho_xu_ly
+                        || (t.trang_thai_xu_ly == TrangThaiXuLyTepTin.dang_xu_ly && t.ngay_bat_dau_xu_ly < nhanTruoc))
+            .OrderBy(t => t.ngay_tao)
+            .Take(soLuong)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<tep_tin>>(list);
+    }
+
+    public Task<bool> DLTryClaimProcessingAsync(tep_tin daThay, DateTime now, CancellationToken ct = default)
+    {
+        lock (Store)
+        {
+            var hienTai = Store.Find(daThay.Id);
+            if (hienTai == null || hienTai.trang_thai_xu_ly != daThay.trang_thai_xu_ly || hienTai.ngay_bat_dau_xu_ly != daThay.ngay_bat_dau_xu_ly)
+            {
+                return Task.FromResult(false);
+            }
+
+            hienTai.trang_thai_xu_ly = TrangThaiXuLyTepTin.dang_xu_ly;
+            hienTai.ngay_bat_dau_xu_ly = now;
+            return Task.FromResult(Store.TryReplace(hienTai));
+        }
+    }
+
     public Task<IReadOnlyList<tep_tin>> DLFindStaleAsync(
         DateTime choTaiLenTruoc, DateTime daTaiLenTruoc, int soLuong, CancellationToken ct = default)
     {
