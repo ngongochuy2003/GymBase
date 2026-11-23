@@ -12,8 +12,10 @@ import { TabCheckIn } from '../components/quan-ly/tab-check-in';
 import { TabHomNay } from '../components/quan-ly/tab-hom-nay';
 import { TabKeHoach } from '../components/quan-ly/tab-ke-hoach';
 import { TabTienDo } from '../components/quan-ly/tab-tien-do';
+import { useThongBaoDanhGia, xoaThongBaoDanhGia } from '../data/danh-gia-check-in-store';
 import { dongLoTrinh } from '../data/dong-lo-trinh-store';
 import { useChiTietQuanLy, useLoTrinh } from '../hooks/use-lo-trinh';
+import type { CheckInQuanLy } from '../types';
 
 type Tab = 'hom_nay' | 'ke_hoach' | 'tien_do' | 'check_in';
 
@@ -62,8 +64,7 @@ function NutHanhDong({
  * hiện tại; bốn tab Hôm nay, Kế hoạch, Tiến độ, Check-in; thanh hành động dưới cùng. Menu `...` có "Đóng lộ trình" (N28);
  * lộ trình đã đóng chỉ xem: khóa sửa kế hoạch và ẩn mục đóng. Mở từ "Xem chi tiết" ở PT-01.
  */
-// TODO(ROUTE): PT-04 (đánh giá check-in), "Chỉnh sửa kế hoạch" (form PT-02 nạp dữ liệu hiện có) và "Nhắn tin" chưa có màn;
-//   các nút tương ứng chưa dẫn đi đâu. Banner "Đã gửi đánh giá cho học viên" thuộc PT-04.
+// TODO(ROUTE): "Chỉnh sửa kế hoạch" (form PT-02 nạp dữ liệu hiện có) và "Nhắn tin" chưa có màn; hai nút này chưa dẫn đi đâu.
 export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -73,6 +74,13 @@ export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
   const [tab, setTab] = useState<Tab>('hom_nay');
   const [moMenu, setMoMenu] = useState(false);
   const [moDong, setMoDong] = useState(false);
+  const thongBao = useThongBaoDanhGia();
+
+  const moCheckIn = (c: CheckInQuanLy) =>
+    router.push({
+      pathname: '/danh-gia-check-in',
+      params: { loTrinhId: id, checkInId: c.id },
+    });
 
   const dangChay = chiTiet?.loTrinh.trangThai === 'dang_hoat_dong';
 
@@ -109,6 +117,23 @@ export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
             contentContainerClassName="w-full max-w-[680px] gap-4 self-center px-4"
             contentContainerStyle={{ paddingBottom: 24 }}
           >
+            {thongBao ? (
+              <View
+                accessibilityRole="alert"
+                className="flex-row items-center gap-2 rounded-xl bg-success/15 px-3 py-3"
+              >
+                <Icon name="check-circle" size={20} color={colors.primary} />
+                <Text className="flex-1 text-sm font-medium">{thongBao}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Đóng thông báo"
+                  hitSlop={8}
+                  onPress={xoaThongBaoDanhGia}
+                >
+                  <Icon name="close" size={18} color={colors.muted} />
+                </Pressable>
+              </View>
+            ) : null}
             <DauLoTrinh chiTiet={chiTiet} />
 
             <View accessibilityRole="tablist" className="flex-row flex-wrap gap-2">
@@ -138,16 +163,14 @@ export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
               })}
             </View>
 
-            {tab === 'hom_nay' ? (
-              <TabHomNay chiTiet={chiTiet} onXemCheckIn={() => undefined} />
-            ) : null}
+            {tab === 'hom_nay' ? <TabHomNay chiTiet={chiTiet} onXemCheckIn={moCheckIn} /> : null}
             {tab === 'ke_hoach' ? <TabKeHoach chiTiet={chiTiet} /> : null}
             {tab === 'tien_do' ? <TabTienDo chiTiet={chiTiet} homNay={homNay} /> : null}
             {tab === 'check_in' ? (
               <TabCheckIn
                 checkIn={chiTiet.checkIn}
                 laNhom={chiTiet.loTrinh.loai === 'nhom'}
-                onMo={() => undefined}
+                onMo={moCheckIn}
               />
             ) : null}
           </ScrollView>

@@ -1,5 +1,7 @@
 import type {
   AnhCoTheMoc,
+  BuaAnNhiemVu,
+  BuoiTapNhiemVu,
   ChiTietQuanLy,
   CheckInQuanLy,
   KeHoachLoTrinh,
@@ -9,6 +11,7 @@ import type {
   NhiemVuNhom,
   ThanhVienLoTrinh,
   TienDoLoTrinh,
+  TrangThaiDuyet,
 } from '../types';
 import { layNgayLech, tuanHienTaiCua } from '../utils/ngay';
 
@@ -512,7 +515,73 @@ function taoNhiemVuNhomMau(thanhVien: readonly ThanhVienLoTrinh[]): NhiemVuNhom[
   ];
 }
 
-/** Check-in mẫu: số bản chờ duyệt khớp \`soCheckInChoDuyet\` của thẻ, chia đều cho các thành viên, kèm vài bản đã xử lý. */
+const BAI_TAP_CHECK_IN_MAU = [
+  { id: 'ci-bt-1', ten: 'Đẩy ngực với tạ đòn', soSet: 4, soLan: '8–10 rep' },
+  { id: 'ci-bt-2', ten: 'Đẩy vai với tạ đơn', soSet: 3, soLan: '10 rep' },
+  { id: 'ci-bt-3', ten: 'Đẩy tay sau với dây cáp', soSet: 3, soLan: '12 rep' },
+];
+
+/** Chi tiết một check-in bữa ăn mẫu; `boBua` thì không có ảnh và học viên giải thích trong ghi chú. */
+function taoBuaAnCheckInMau(
+  id: string,
+  tieuDe: string,
+  trangThai: TrangThaiDuyet,
+  boBua: boolean,
+): BuaAnNhiemVu {
+  return {
+    keHoach: {
+      ten: tieuDe,
+      gio: '12:00',
+      moTa: 'Cơm gạo lứt, ức gà áp chảo, rau xanh luộc',
+      kcal: 620,
+      anh: bia(`${id}-ke-hoach`),
+    },
+    checkIn: {
+      trangThaiBua: boBua ? 'bo_bua' : 'da_an',
+      anh: boBua ? [] : [bia(`${id}-1`), bia(`${id}-2`)],
+      ghiChu: boBua
+        ? 'Hôm nay em bận họp nên bỏ bữa này ạ.'
+        : 'Em đã ăn đúng kế hoạch, có thêm 1 quả trứng.',
+      trangThaiDuyet: trangThai,
+      gioGui: '12:10',
+    },
+  };
+}
+
+/** Chi tiết một check-in buổi tập mẫu; `motPhan` thì mới xong hai trong ba bài. */
+function taoBuoiTapCheckInMau(
+  id: string,
+  tieuDe: string,
+  trangThai: TrangThaiDuyet,
+  motPhan: boolean,
+  coAnh = true,
+): BuoiTapNhiemVu {
+  return {
+    keHoach: {
+      ten: tieuDe,
+      gio: '06:30',
+      nhomCo: 'Ngực, vai, tay sau',
+      thoiLuongPhut: 60,
+      anh: bia(`${id}-ke-hoach`),
+      baiTap: BAI_TAP_CHECK_IN_MAU,
+    },
+    checkIn: {
+      trangThaiBuoi: motPhan ? 'tap_mot_phan' : 'da_tap',
+      baiTapXong: BAI_TAP_CHECK_IN_MAU.slice(0, motPhan ? 2 : 3).map((b) => b.id),
+      ghiChu: motPhan
+        ? 'Em bị đau vai nên bỏ bài cuối ạ.'
+        : 'Buổi tập ổn, tăng được 2,5 kg ở bài đầu.',
+      anh: coAnh ? bia(`${id}-anh`) : undefined,
+      trangThaiDuyet: trangThai,
+      gioGui: '08:00',
+    },
+  };
+}
+
+/**
+ * Check-in mẫu: số bản chờ duyệt khớp `soCheckInChoDuyet` của thẻ, chia đều cho các thành viên, kèm vài bản đã xử lý có
+ * nhận xét của PT. Mỗi bản mang đủ chi tiết (kế hoạch lúc check-in, ảnh, ghi chú) để mở PT-04.
+ */
 function taoCheckInQuanLyMau(
   lo: LoTrinhQuanLy,
   thanhVien: readonly ThanhVienLoTrinh[],
@@ -520,31 +589,55 @@ function taoCheckInQuanLyMau(
   const dangThamGia = thanhVien.filter((t) => t.thamGia === 'tham_gia');
   const dau = dangThamGia[0];
   if (!dau) return [];
-  const choDuyet: CheckInQuanLy[] = Array.from({ length: lo.soCheckInChoDuyet }, (_, i) => ({
-    id: `ci-${lo.id}-${i + 1}`,
-    loai: i % 2 === 0 ? 'bua_an' : 'buoi_tap',
-    tieuDe: i % 2 === 0 ? 'Bữa trưa' : 'Buổi tập Upper A',
-    thoiDiem: i % 2 === 0 ? 'Hôm nay, 12:00' : 'Hôm nay, 06:30',
-    hocVien: dangThamGia[i % dangThamGia.length] ?? dau,
-    trangThai: 'cho_duyet',
-  }));
+  const choDuyet: CheckInQuanLy[] = Array.from({ length: lo.soCheckInChoDuyet }, (_, i) => {
+    const id = `ci-${lo.id}-${i + 1}`;
+    const laBua = i % 2 === 0;
+    const tieuDe = laBua ? 'Bữa trưa' : 'Buổi tập Upper A';
+    return {
+      id,
+      loai: laBua ? 'bua_an' : 'buoi_tap',
+      tieuDe,
+      thoiDiem: laBua ? 'Hôm nay, 12:00' : 'Hôm nay, 06:30',
+      hocVien: dangThamGia[i % dangThamGia.length] ?? dau,
+      trangThai: 'cho_duyet',
+      phienBan: 1,
+      bua: laBua ? taoBuaAnCheckInMau(id, tieuDe, 'cho_duyet', i % 3 === 2) : undefined,
+      buoiTap: laBua ? undefined : taoBuoiTapCheckInMau(id, tieuDe, 'cho_duyet', i === 1),
+    };
+  });
+  const idDuyet = `ci-${lo.id}-da-1`;
+  const idBoSung = `ci-${lo.id}-da-2`;
   return [
     ...choDuyet,
     {
-      id: `ci-${lo.id}-da-1`,
+      id: idDuyet,
       loai: 'bua_an',
       tieuDe: 'Bữa sáng',
       thoiDiem: 'Hôm nay, 07:00',
       hocVien: dau,
       trangThai: 'da_duyet',
+      phienBan: 1,
+      bua: taoBuaAnCheckInMau(idDuyet, 'Bữa sáng', 'da_duyet', false),
+      nhanXet: {
+        pt: ptTranDucAnh,
+        noiDung: 'Khẩu phần ổn, đủ protein. Bữa sau giữ lượng rau như hôm nay nhé.',
+        thoiDiem: 'Hôm nay',
+      },
     },
     {
-      id: `ci-${lo.id}-da-2`,
+      id: idBoSung,
       loai: 'buoi_tap',
       tieuDe: 'Buổi tập Cardio & Core',
       thoiDiem: 'Hôm qua, 06:00',
       hocVien: dau,
       trangThai: 'can_bo_sung',
+      phienBan: 1,
+      buoiTap: taoBuoiTapCheckInMau(idBoSung, 'Cardio & Core', 'can_bo_sung', false, false),
+      nhanXet: {
+        pt: ptTranDucAnh,
+        noiDung: 'Chưa thấy ảnh buổi tập, em bổ sung ảnh giúp anh nhé.',
+        thoiDiem: 'Hôm qua',
+      },
     },
   ];
 }

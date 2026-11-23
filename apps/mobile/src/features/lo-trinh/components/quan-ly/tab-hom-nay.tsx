@@ -97,12 +97,7 @@ export function TabHomNay({
           <View>
             {choDuyet.map((c, i) => (
               <View key={c.id} className={cn(i > 0 && 'border-t border-border')}>
-                <DongCheckIn
-                  checkIn={c}
-                  hienTenHocVien={laNhom}
-                  // TODO(ROUTE): mở PT-04 (đánh giá check-in) khi có màn; thuộc luong-man-hinh.md, PT-04.
-                  onXem={() => onXemCheckIn(c)}
-                />
+                <DongCheckIn checkIn={c} hienTenHocVien={laNhom} onXem={() => onXemCheckIn(c)} />
               </View>
             ))}
           </View>

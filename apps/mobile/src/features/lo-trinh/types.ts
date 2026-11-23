@@ -275,6 +275,14 @@ export interface CheckInQuanLy {
   thoiDiem: string;
   hocVien: NguoiLoTrinh;
   trangThai: TrangThaiDuyet;
+  /** Tăng mỗi lần học viên sửa check-in; PT đánh giá bản cũ thì bị chặn (adr.md, N13). */
+  phienBan: number;
+  /** Chi tiết check-in bữa ăn (kế hoạch lúc check-in, ảnh, ghi chú); có khi `loai` là `bua_an`. */
+  bua?: BuaAnNhiemVu;
+  /** Chi tiết check-in buổi tập; có khi `loai` là `buoi_tap`. */
+  buoiTap?: BuoiTapNhiemVu;
+  /** Nhận xét PT đã gửi khi duyệt hoặc yêu cầu bổ sung. */
+  nhanXet?: DanhGiaTuPt;
 }
 
 export interface HoatDongGanDay {

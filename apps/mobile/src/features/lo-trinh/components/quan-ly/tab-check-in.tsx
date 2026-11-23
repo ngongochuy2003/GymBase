@@ -69,12 +69,7 @@ export function TabCheckIn({
           <View>
             {danhSach.map((c, i) => (
               <View key={c.id} className={cn(i > 0 && 'border-t border-border')}>
-                <DongCheckIn
-                  checkIn={c}
-                  hienTenHocVien={laNhom}
-                  // TODO(ROUTE): mở PT-04 (đánh giá hoặc xem lại check-in) khi có màn; thuộc luong-man-hinh.md, PT-04.
-                  onMo={() => onMo(c)}
-                />
+                <DongCheckIn checkIn={c} hienTenHocVien={laNhom} onMo={() => onMo(c)} />
               </View>
             ))}
           </View>

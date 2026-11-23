@@ -4,6 +4,7 @@ export { DatBuaAnScreen } from './screens/dat-bua-an-screen';
 export { DatBuoiTapScreen } from './screens/dat-buoi-tap-screen';
 export { ChiTietLoTrinhScreen } from './screens/chi-tiet-lo-trinh-screen';
 export { ChiTietLoTrinhHocVienScreen } from './screens/chi-tiet-lo-trinh-hoc-vien-screen';
+export { DanhGiaCheckInScreen } from './screens/danh-gia-check-in-screen';
 export { CheckInBuaAnScreen } from './screens/check-in-bua-an-screen';
 export { ChiTietCheckInBuaAnScreen } from './screens/chi-tiet-check-in-bua-an-screen';
 export { CheckInBuoiTapScreen } from './screens/check-in-buoi-tap-screen';
