@@ -27,6 +27,9 @@ export interface NotificationAdapter {
   scheduleNotificationAsync(request: Record<string, unknown>): Promise<string>;
   getAllScheduledNotificationsAsync(): Promise<ScheduledNotification[]>;
   cancelScheduledNotificationAsync(identifier: string): Promise<void>;
+  /** Chỉ có trên Android 12 trở lên; nền tảng khác thiếu hàm hoặc ném lỗi. */
+  getExactAlarmPermissionsAsync?(): Promise<{ granted: boolean }>;
+  requestExactAlarmPermissionsAsync?(): Promise<{ granted: boolean }>;
 }
 
 let adapter: NotificationAdapter | null | undefined;

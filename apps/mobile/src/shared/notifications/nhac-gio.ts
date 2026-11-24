@@ -178,6 +178,55 @@ export async function datNhacThuAsync(
   return identifier;
 }
 
+export interface ChanDoanNhac {
+  quyenThongBao: boolean;
+  /** Android 12 trở lên: có được đặt báo thức chính xác không. `null` khi nền tảng không có khái niệm này hoặc không đọc được. */
+  baoThucChinhXac: boolean | null;
+  /** Mọi thông báo đang chờ trên máy (kể cả nhắc thử). */
+  soDangCho: number;
+  /** Trong đó là nhắc ăn, nhắc tập theo kế hoạch. */
+  soNhacCuaKeHoach: number;
+}
+
+/**
+ * Tình trạng nhắc trên máy, để biết vì sao nhắc không tới: thiếu quyền thông báo, thiếu quyền báo thức chính xác (nhắc có thể
+ * trễ vài phút khi máy ngủ sâu), hay chưa có nhắc nào được đặt. Trả `null` khi không có adapter.
+ */
+// TODO(THONGBAO): chỉ dùng ở màn dev; bỏ khi đã thử xong nhắc giờ trên máy thật.
+export async function chanDoanNhacGioAsync(
+  adapter: NotificationAdapter | null = layNotificationAdapter(),
+): Promise<ChanDoanNhac | null> {
+  if (!adapter) return null;
+  const [quyen, daLap] = await Promise.all([adapter.getPermissionsAsync(), adapter.getAllScheduledNotificationsAsync()]);
+  let baoThucChinhXac: boolean | null = null;
+  try {
+    baoThucChinhXac = adapter.getExactAlarmPermissionsAsync ? (await adapter.getExactAlarmPermissionsAsync()).granted : null;
+  } catch {
+    baoThucChinhXac = null;
+  }
+  return {
+    quyenThongBao: quyen.granted,
+    baoThucChinhXac,
+    soDangCho: daLap.length,
+    soNhacCuaKeHoach: daLap.filter((r) => laNhacCuaMinh(r.identifier)).length,
+  };
+}
+
+/**
+ * Mở màn cài đặt hệ thống để cấp quyền báo thức chính xác (Android 12 trở lên; từ Android 14 mặc định bị từ chối). Trả kết quả,
+ * hoặc `null` khi nền tảng không hỗ trợ.
+ */
+export async function xinBaoThucChinhXacAsync(
+  adapter: NotificationAdapter | null = layNotificationAdapter(),
+): Promise<boolean | null> {
+  if (!adapter?.requestExactAlarmPermissionsAsync) return null;
+  try {
+    return (await adapter.requestExactAlarmPermissionsAsync()).granted;
+  } catch {
+    return null;
+  }
+}
+
 /** Hủy mọi nhắc của mình, dùng khi đăng xuất để máy dùng chung không nhắc theo lịch của người trước. */
 export async function huyTatCaNhacGioAsync(adapter: NotificationAdapter | null = layNotificationAdapter()): Promise<void> {
   if (!adapter) return;

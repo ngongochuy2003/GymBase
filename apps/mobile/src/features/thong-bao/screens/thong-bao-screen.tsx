@@ -4,20 +4,19 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { ApiError, toApiError } from '@/core/api/api-error';
+import { toApiError } from '@/core/api/api-error';
 import { Icon } from '@/shared/icons';
 import {
-  datNhacThuAsync,
   duongDanCuaThongBao,
   useDanhDauDaDoc,
   useDanhDauTatCaDaDoc,
-  useGuiThongBaoThu,
   useHopThu,
   type ThongBaoDto,
 } from '@/shared/notifications';
 import { EmptyState, ErrorState, LoadingState } from '@/shared/components/ui';
 import { useTheme } from '@/shared/theme/theme';
 import { DongThongBao } from '../components/dong-thong-bao';
+import { KhuVucThu } from '../components/khu-vuc-thu';
 
 /** Hộp thông báo: mới nhất trước, kéo xuống để tải lại, cuộn tới cuối để tải thêm. Bấm một dòng thì đánh dấu đã đọc và mở màn tương ứng. */
 export function ThongBaoScreen() {
@@ -27,7 +26,6 @@ export function ThongBaoScreen() {
   const hopThu = useHopThu();
   const { mutate: danhDauDaDoc } = useDanhDauDaDoc();
   const tatCaDaDoc = useDanhDauTatCaDaDoc();
-  const guiThu = useGuiThongBaoThu();
 
   const coChuaDoc = hopThu.thongBaos.some((t) => !t.da_doc);
 
@@ -95,43 +93,7 @@ export function ThongBaoScreen() {
         />
       )}
 
-      {__DEV__ ? (
-        // TODO(THONGBAO): bỏ nút thử này (và endpoint thong-bao/thu-nghiem) khi tin nhắn thật đã tạo thông báo.
-        <View className="border-t border-border p-4" style={{ paddingBottom: insets.bottom + 16 }}>
-          <Button
-            variant="outline"
-            loading={guiThu.isPending}
-            onPress={() => guiThu.mutate(undefined)}
-            accessibilityLabel="Gửi thông báo thử"
-          >
-            <Text>Gửi thông báo thử</Text>
-          </Button>
-          {/* Hẹn giờ để kịp tắt app rồi xem push tới khi app đã đóng. */}
-          <Button
-            variant="outline"
-            className="mt-2"
-            disabled={guiThu.isPending}
-            onPress={() => guiThu.mutate(15)}
-            accessibilityLabel="Gửi thông báo thử sau 15 giây"
-          >
-            <Text>Gửi thử sau 15 giây</Text>
-          </Button>
-          {/* Nhắc local (đặt lịch ngay trên máy, không qua server): thử khi đã tắt app. */}
-          <Button
-            variant="outline"
-            className="mt-2"
-            onPress={() => void datNhacThuAsync(30).catch(() => undefined)}
-            accessibilityLabel="Nhắc thử trên máy sau 30 giây"
-          >
-            <Text>Nhắc thử trên máy sau 30 giây</Text>
-          </Button>
-          {guiThu.isError && !(guiThu.error instanceof ApiError && guiThu.error.status === 404) ? (
-            <Text variant="destructive" className="mt-2 text-sm">
-              {toApiError(guiThu.error).message}
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
+      {__DEV__ ? <KhuVucThu paddingBottom={insets.bottom + 16} /> : null}
     </View>
   );
 }

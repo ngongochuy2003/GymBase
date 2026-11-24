@@ -1,7 +1,9 @@
 import {
   dongBoNhacGioAsync,
+  chanDoanNhacGioAsync,
   datNhacThuAsync,
   huyTatCaNhacGioAsync,
+  xinBaoThucChinhXacAsync,
   tinhLichNhac,
   SO_NHAC_TOI_DA,
   type NotificationAdapter,
@@ -224,6 +226,58 @@ describe('datNhacThuAsync', () => {
 
   it('không có adapter thì trả null', async () => {
     await expect(datNhacThuAsync(30, { adapter: null, now: NOW })).resolves.toBeNull();
+  });
+});
+
+describe('chanDoanNhacGioAsync', () => {
+  function adapterChanDoan(phan: Record<string, unknown>) {
+    const { adapter } = taoAdapter([
+      { identifier: 'nhac_tap:a:2026-11-25:dung_luc' },
+      { identifier: 'nhac_an:b:2026-11-25:truoc15' },
+      { identifier: 'nhac_thu:1' },
+    ]);
+    return Object.assign(adapter, { getPermissionsAsync: jest.fn(async () => ({ granted: true })) }, phan) as NotificationAdapter;
+  }
+
+  it('báo quyền thông báo, quyền báo thức chính xác và số nhắc đang chờ trên máy', async () => {
+    const adapter = adapterChanDoan({ getExactAlarmPermissionsAsync: jest.fn(async () => ({ granted: false })) });
+
+    await expect(chanDoanNhacGioAsync(adapter)).resolves.toEqual({
+      quyenThongBao: true,
+      baoThucChinhXac: false,
+      soDangCho: 3,
+      soNhacCuaKeHoach: 2,
+    });
+  });
+
+  it('nền tảng không có quyền báo thức chính xác (iOS) thì trả null, không ném lỗi', async () => {
+    const adapter = adapterChanDoan({
+      getExactAlarmPermissionsAsync: jest.fn(async () => {
+        throw new Error('Not supported');
+      }),
+    });
+
+    await expect(chanDoanNhacGioAsync(adapter)).resolves.toMatchObject({ baoThucChinhXac: null });
+  });
+
+  it('không có adapter thì trả null', async () => {
+    await expect(chanDoanNhacGioAsync(null)).resolves.toBeNull();
+  });
+});
+
+describe('xinBaoThucChinhXacAsync', () => {
+  it('mở màn cấp quyền báo thức chính xác và trả kết quả', async () => {
+    const xin = jest.fn(async () => ({ granted: true }));
+    const { adapter } = taoAdapter();
+
+    await expect(xinBaoThucChinhXacAsync(Object.assign(adapter, { requestExactAlarmPermissionsAsync: xin }) as NotificationAdapter)).resolves.toBe(true);
+    expect(xin).toHaveBeenCalledTimes(1);
+  });
+
+  it('nền tảng không hỗ trợ thì trả null', async () => {
+    const { adapter } = taoAdapter();
+
+    await expect(xinBaoThucChinhXacAsync(adapter)).resolves.toBeNull();
   });
 });
 
