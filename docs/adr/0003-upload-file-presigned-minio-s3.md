@@ -53,7 +53,8 @@ Các quyết định:
 
 ## Hệ quả
 
-- API hết chịu tải băng thông file; thêm một worker nền.
+- Khi người dùng upload hoặc xem file, byte đi thẳng giữa app và storage nên API không gánh băng thông đó. API vẫn tải ảnh JPEG, PNG, WebP (tối đa 10MB) về bộ nhớ để xử lý nền rồi ghi đè lại, nên tốn CPU và băng thông tới storage; tách worker ra tiến trình riêng nếu việc này chen vào API.
+- Thêm hai worker nền trong API: xử lý ảnh (`TepTinXuLyWorker`) và dọn file mồ côi (`TepTinDonDepWorker`).
 - Mỗi ảnh chỉ có một bản (cạnh dài 1600px do app nén), nên danh sách ảnh tải bản lớn hơn mức cần; chấp nhận để đơn giản, thêm bản thu nhỏ sau nếu số liệu cho thấy tốn data.
 - File xuất hiện trong storage trước khi API biết (`cho_tai_len`), nên bắt buộc có job dọn.
 - URL presigned không thu hồi được trước khi hết hạn: hạn phải ngắn (2 đến 5 phút riêng tư, 15 phút công khai); gỡ file hay hết quan hệ PT có hiệu lực sau tối đa chừng đó.
