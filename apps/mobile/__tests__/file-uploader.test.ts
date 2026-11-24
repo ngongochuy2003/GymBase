@@ -160,6 +160,46 @@ describe('uploadMultipartFile (xin form, gửi lên storage, xác nhận)', () =
     expect(apiPost.mock.calls[0]![1]).toMatchObject({ kich_thuoc_byte: 1 });
   });
 
+  describe('giới hạn dung lượng (kiểm ở app, trước khi xin form)', () => {
+    const MB = 1024 * 1024;
+
+    it('chặn video quá 100MB, báo FILE_TOO_LARGE và không gọi API nào', async () => {
+      const err = await uploadMultipartFile('file:///clips/dai.mp4', 'post', { sizeBytes: 100 * MB + 1 }).catch((e) => e);
+
+      expect(err).toBeInstanceOf(UploadError);
+      expect(err).toMatchObject({ status: 413, code: 'FILE_TOO_LARGE' });
+      expect(err.message).toContain('100MB');
+      expect(apiPost).not.toHaveBeenCalled();
+      expect(storagePost).not.toHaveBeenCalled();
+    });
+
+    it('cho qua video đúng 100MB', async () => {
+      await uploadMultipartFile('file:///clips/vua.mp4', 'post', { sizeBytes: 100 * MB });
+
+      expect(apiPost.mock.calls[0]![1]).toMatchObject({ kich_thuoc_byte: 100 * MB });
+    });
+
+    it('chặn PDF quá 10MB', async () => {
+      await expect(
+        uploadMultipartFile('file:///cache/cc.pdf', 'chung_chi_pt', { contentType: 'application/pdf', sizeBytes: 10 * MB + 1 }),
+      ).rejects.toMatchObject({ code: 'FILE_TOO_LARGE' });
+      expect(apiPost).not.toHaveBeenCalled();
+    });
+
+    it('kiểm ảnh theo dung lượng sau khi nén, không theo ảnh gốc', async () => {
+      // Ảnh gốc khai 50MB nhưng bản nén chỉ vài trăm KB nên vẫn được gửi.
+      await uploadMultipartFile('file:///photos/lon.jpg', 'post', { sizeBytes: 50 * MB });
+
+      expect(apiPost).toHaveBeenCalled();
+    });
+
+    it('chưa biết dung lượng thì không chặn (storage vẫn chặn bằng policy)', async () => {
+      await uploadMultipartFile('file:///clips/khong-ro.mp4', 'post');
+
+      expect(apiPost).toHaveBeenCalled();
+    });
+  });
+
   describe('lỗi và thử lại', () => {
     it('thử lại khi mất mạng rồi thành công', async () => {
       storagePost.mockRejectedValueOnce(new Error('Network Error')).mockResolvedValue({ status: 204 });

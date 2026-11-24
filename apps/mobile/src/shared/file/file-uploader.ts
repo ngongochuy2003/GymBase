@@ -9,6 +9,18 @@ const UPLOAD_TIMEOUT_MS = 5 * 60_000;
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_RETRY_DELAY_MS = 800;
 
+/**
+ * Dung lượng tối đa mỗi loại tệp (byte), khớp `StorageOptions` của backend (docs/architecture/upload-file.md, mục 4).
+ * Kiểm ở app để báo ngay, khỏi tốn thời gian gửi tệp rồi mới bị storage từ chối.
+ */
+export const DUNG_LUONG_TOI_DA_BYTE = {
+  image: 10 * 1024 * 1024,
+  document: 10 * 1024 * 1024,
+  video: 100 * 1024 * 1024,
+} as const;
+
+const TEN_LOAI_TEP = { image: 'Ảnh', document: 'Tệp', video: 'Video' } as const;
+
 /** Upload thất bại; `status` để giao diện nói đúng nguyên nhân (401 hết phiên, 400 tệp không hợp lệ, 413 quá lớn...). */
 export class UploadError extends Error {
   constructor(
@@ -218,6 +230,17 @@ async function prepareFile(
     } else if (!type.startsWith('video/')) {
       type = 'video/mp4';
     }
+  }
+
+  // Chỉ kiểm khi biết dung lượng; chưa biết (0) thì để storage chặn bằng policy.
+  const loai = isDocument ? 'document' : isVideo ? 'video' : 'image';
+  const toiDa = DUNG_LUONG_TOI_DA_BYTE[loai];
+  if (sizeBytes > toiDa) {
+    throw new UploadError(
+      `${TEN_LOAI_TEP[loai]} quá lớn (tối đa ${Math.round(toiDa / (1024 * 1024))}MB). Vui lòng chọn tệp nhỏ hơn.`,
+      413,
+      'FILE_TOO_LARGE',
+    );
   }
 
   return { uri, type, name, sizeBytes: Math.max(1, Math.round(sizeBytes)), blob };
