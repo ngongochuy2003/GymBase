@@ -43,7 +43,8 @@ export const useDanhDauDaDoc = () => useLamMoiSauKhiDoi((id: string) => thongBao
 
 export const useDanhDauTatCaDaDoc = () => useLamMoiSauKhiDoi(() => thongBaoApi.danhDauTatCaDaDoc());
 
-export const useGuiThongBaoThu = () => useLamMoiSauKhiDoi(() => thongBaoApi.guiThu());
+export const useGuiThongBaoThu = () =>
+  useLamMoiSauKhiDoi((treGiay: number | undefined) => thongBaoApi.guiThu(treGiay));
 
 /** Cho chuông ở các header: có chưa đọc không, và mở màn thông báo. */
 export function useThongBaoHeader() {

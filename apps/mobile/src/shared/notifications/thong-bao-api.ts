@@ -25,8 +25,8 @@ export const thongBaoApi = {
   async danhDauTatCaDaDoc(): Promise<void> {
     await getMobClient().post('/thong-bao/da-doc-tat-ca');
   },
-  /** Chỉ chạy ở môi trường Development của API: tạo một thông báo cho chính mình. */
-  async guiThu(): Promise<void> {
-    await getMobClient().post('/thong-bao/thu-nghiem', {});
+  /** Chỉ chạy ở môi trường Development của API: tạo một thông báo cho chính mình, tùy chọn hẹn `treGiay` giây (tối đa 300). */
+  async guiThu(treGiay?: number): Promise<void> {
+    await getMobClient().post('/thong-bao/thu-nghiem', treGiay ? { tre_giay: treGiay } : {});
   },
 };

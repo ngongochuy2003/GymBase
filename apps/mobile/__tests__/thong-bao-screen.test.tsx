@@ -136,6 +136,16 @@ describe('ThongBaoScreen', () => {
     expect(mockBack).toHaveBeenCalled();
   });
 
+  it('nút gửi thử sau 15 giây hẹn giờ phía server để kịp tắt app', async () => {
+    api.layHopThu.mockResolvedValue(hopThu([]));
+    await renderScreen();
+    await screen.findByText('Chưa có thông báo nào.');
+
+    await fireEvent.press(screen.getByLabelText('Gửi thông báo thử sau 15 giây'));
+
+    await waitFor(() => expect(api.guiThu).toHaveBeenCalledWith(15));
+  });
+
   it('nút gửi thử (chỉ bản dev) gọi API thử rồi tải lại hộp thư', async () => {
     api.layHopThu.mockResolvedValue(hopThu([]));
     await renderScreen();

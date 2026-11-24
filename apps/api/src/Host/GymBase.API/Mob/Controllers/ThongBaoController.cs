@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using GymBase.Base.Auth;
 using GymBase.Base.Exceptions;
 using GymBase.Base.Hosting;
@@ -49,6 +50,7 @@ public sealed class ThongBaoController(
 
     /// <summary>
     /// Chỉ môi trường Development: tạo một thông báo cho chính người gọi để thử hộp thư và push (worker gửi tới thiết bị đã đăng ký).
+    /// <c>tre_giay</c> (0 đến 300) hẹn giờ gửi, để kịp tắt app rồi xem push tới khi app đã đóng; dòng chưa tới giờ thì chưa hiện trong hộp thư.
     /// </summary>
     // TODO(THONGBAO): bỏ endpoint thử này (và nút thử ở màn tin nhắn của app) khi tin nhắn thật đã gọi IThongBaoTao.
     [HttpPost("thu-nghiem")]
@@ -59,6 +61,7 @@ public sealed class ThongBaoController(
             return NotFound();
         }
 
+        var tre = Math.Clamp(dto?.TreGiay ?? 0, 0, 300);
         var id = await thongBaoTao.BLTaoAsync(
             new TaoThongBaoRequest(
                 TaiKhoanId,
@@ -67,10 +70,14 @@ public sealed class ThongBaoController(
                 "Đây là thông báo thử từ server.",
                 "thu_nghiem",
                 null,
-                $"thu_nghiem:{Guid.NewGuid():N}"),
+                $"thu_nghiem:{Guid.NewGuid():N}",
+                tre > 0 ? DateTime.UtcNow.AddSeconds(tre) : null),
             ct);
         return Ok(new { id });
     }
 }
 
-public sealed record ThuNghiemDto(string? LoaiThongBao, string? TieuDe);
+public sealed record ThuNghiemDto(
+    string? LoaiThongBao,
+    string? TieuDe,
+    [property: JsonPropertyName("tre_giay")] int? TreGiay);

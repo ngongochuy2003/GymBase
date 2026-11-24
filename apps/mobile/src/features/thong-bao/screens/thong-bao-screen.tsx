@@ -105,6 +105,16 @@ export function ThongBaoScreen() {
           >
             <Text>Gửi thông báo thử</Text>
           </Button>
+          {/* Hẹn giờ để kịp tắt app rồi xem push tới khi app đã đóng. */}
+          <Button
+            variant="outline"
+            className="mt-2"
+            disabled={guiThu.isPending}
+            onPress={() => guiThu.mutate(15)}
+            accessibilityLabel="Gửi thông báo thử sau 15 giây"
+          >
+            <Text>Gửi thử sau 15 giây</Text>
+          </Button>
           {guiThu.isError && !(guiThu.error instanceof ApiError && guiThu.error.status === 404) ? (
             <Text variant="destructive" className="mt-2 text-sm">
               {toApiError(guiThu.error).message}
