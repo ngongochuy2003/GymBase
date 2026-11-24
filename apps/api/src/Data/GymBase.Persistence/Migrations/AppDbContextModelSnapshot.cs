@@ -506,6 +506,51 @@ namespace GymBase.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GymBase.Entities.Biz.cai_dat_thong_bao", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<bool>("bat")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("loai_thong_bao")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTime?>("ngay_chinh_sua")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ngay_tao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("nguoi_chinh_sua")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("nguoi_tao")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("tai_khoan_id")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("tai_khoan_id", "loai_thong_bao")
+                        .IsUnique();
+
+                    b.ToTable("cai_dat_thong_bao", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_cai_dat_thong_bao_loai_thong_bao", "`loai_thong_bao` IN ('nhac_an', 'nhac_tap', 'tin_nhan', 'danh_gia', 'ket_noi_pt')");
+                        });
+                });
+
             modelBuilder.Entity("GymBase.Entities.Biz.chan_tai_khoan", b =>
                 {
                     b.Property<string>("nguoi_chan_id")
@@ -1362,6 +1407,10 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("varchar(128)");
 
+                    b.Property<string>("mui_gio")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
                     b.Property<string>("nen_tang")
                         .IsRequired()
                         .HasMaxLength(12)
@@ -1421,6 +1470,11 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
+                    b.Property<string>("kenh")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
+
                     b.Property<string>("loai_doi_tuong")
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
@@ -1444,6 +1498,9 @@ namespace GymBase.Persistence.Migrations
                     b.Property<string>("noi_dung")
                         .HasColumnType("text");
 
+                    b.Property<int>("so_lan_thu")
+                        .HasColumnType("int");
+
                     b.Property<string>("tai_khoan_id")
                         .IsRequired()
                         .HasMaxLength(36)
@@ -1453,6 +1510,12 @@ namespace GymBase.Persistence.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("thoi_diem_du_kien")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("thoi_diem_nhan")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("thoi_diem_thu_lai")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("tieu_de")
@@ -1473,10 +1536,12 @@ namespace GymBase.Persistence.Migrations
                     b.HasIndex("tai_khoan_id", "ngay_tao")
                         .IsDescending(false, true);
 
-                    b.HasIndex("trang_thai_gui", "thoi_diem_du_kien");
+                    b.HasIndex("kenh", "trang_thai_gui", "thoi_diem_du_kien");
 
                     b.ToTable("thong_bao", null, t =>
                         {
+                            t.HasCheckConstraint("CK_thong_bao_kenh", "`kenh` IN ('push', 'local', 'chi_hop_thu')");
+
                             t.HasCheckConstraint("CK_thong_bao_loai_thong_bao", "`loai_thong_bao` IN ('nhac_an', 'nhac_tap', 'tin_nhan', 'danh_gia', 'ket_noi_pt')");
 
                             t.HasCheckConstraint("CK_thong_bao_trang_thai_gui", "`trang_thai_gui` IN ('cho_gui', 'dang_gui', 'da_gui', 'loi', 'huy')");
@@ -1823,6 +1888,15 @@ namespace GymBase.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("pt_id")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GymBase.Entities.Biz.cai_dat_thong_bao", b =>
+                {
+                    b.HasOne("GymBase.Entities.Auth.tai_khoan", null)
+                        .WithMany()
+                        .HasForeignKey("tai_khoan_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GymBase.Entities.Biz.chan_tai_khoan", b =>

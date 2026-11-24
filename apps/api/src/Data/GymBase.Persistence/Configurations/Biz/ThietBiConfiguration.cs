@@ -17,6 +17,7 @@ public sealed class ThietBiConfiguration : IEntityTypeConfiguration<thiet_bi>
 
         builder.ConfigureAudit();
         builder.Property(e => e.ma_thiet_bi).HasMaxLength(128);
+        builder.Property(e => e.mui_gio).HasMaxLength(64);
         builder.Property(e => e.nen_tang).AsEnumString(12);
         builder.Property(e => e.push_token).HasMaxLength(512).UseCollation(ConfigurationExtensions.BinaryCollation);
 

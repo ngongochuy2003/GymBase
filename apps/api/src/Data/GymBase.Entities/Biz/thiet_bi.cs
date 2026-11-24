@@ -21,6 +21,9 @@ public sealed class thiet_bi : BaseAuditableEntity
     /// <summary>Có cho phép gửi push hay không.</summary>
     public bool dang_hoat_dong { get; set; }
 
+    /// <summary>Múi giờ IANA của máy (ví dụ Asia/Ho_Chi_Minh), app gửi lại mỗi lần mở. Dùng đổi giờ địa phương sang UTC.</summary>
+    public string? mui_gio { get; set; }
+
     /// <summary>Lần cuối thiết bị liên hệ (UTC).</summary>
     public DateTime ngay_hoat_dong_cuoi { get; set; }
 }
