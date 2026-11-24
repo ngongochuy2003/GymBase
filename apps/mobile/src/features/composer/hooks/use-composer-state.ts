@@ -65,6 +65,7 @@ export function useComposerState({
         uri: asset.uri,
         type: isVideo ? 'video' : 'image',
         mimeType: asset.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg'),
+        sizeBytes: asset.fileSize,
       };
     });
 

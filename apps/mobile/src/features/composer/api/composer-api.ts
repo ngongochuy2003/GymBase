@@ -67,6 +67,7 @@ export function createComposerRepository(
               uri,
               type: undefined as 'image' | 'video' | undefined,
               mimeType: undefined,
+              sizeBytes: undefined as number | undefined,
             }));
 
       const externalUrls: string[] = [];
@@ -81,6 +82,8 @@ export function createComposerRepository(
           const isVideo = item.type === 'video' || isVideoUrl(uri);
           const uploaded = await uploadMultipartFile(uri, 'post', {
             contentType: isVideo ? (item.mimeType || 'video/mp4') : undefined,
+            // Video giữ nguyên bản gốc nên dung lượng bộ chọn báo là dung lượng gửi đi; ảnh được nén lại rồi đo lại.
+            sizeBytes: isVideo ? item.sizeBytes : undefined,
           });
           if (!uploaded?.file_id) throw new Error('API không trả về file_id sau khi tải tệp lên.');
           fileIds.push(uploaded.file_id);
