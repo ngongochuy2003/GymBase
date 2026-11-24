@@ -1,100 +1,105 @@
 import {
-  displayUrgentMessageAsync,
-  NotificationAdapter,
-  requestNotificationPermissionsAsync,
-  scheduleWorkoutAlarmAsync,
-  setCustomNotificationAdapter,
+  KENH_ANDROID,
+  LOAI_THONG_BAO,
   setupNotificationChannelsAsync,
+  xinQuyenThongBaoAsync,
+  type NotificationAdapter,
 } from '../src/shared/notifications';
 
-describe('Notification Service (Mobile)', () => {
-  let mockAdapter: jest.Mocked<NotificationAdapter>;
+function taoAdapter(quyen: { granted: boolean; canAskAgain?: boolean } = { granted: true }) {
+  const adapter: jest.Mocked<NotificationAdapter> = {
+    setNotificationHandler: jest.fn(),
+    setNotificationChannelAsync: jest.fn().mockResolvedValue({}),
+    getPermissionsAsync: jest.fn().mockResolvedValue(quyen),
+    requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+    getDevicePushTokenAsync: jest.fn(),
+    addPushTokenListener: jest.fn(),
+    addNotificationReceivedListener: jest.fn(),
+    addNotificationResponseReceivedListener: jest.fn(),
+  };
+  return adapter;
+}
 
-  beforeEach(() => {
-    mockAdapter = {
-      setNotificationChannelAsync: jest.fn().mockResolvedValue({}),
-      scheduleNotificationAsync: jest.fn().mockResolvedValue('notif-id-999'),
-      requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted', granted: true }),
-      setNotificationHandler: jest.fn(),
+describe('setupNotificationChannelsAsync', () => {
+  it('tạo một kênh Android cho mỗi loại thông báo, id trùng tên loại', async () => {
+    const adapter = taoAdapter();
+
+    await setupNotificationChannelsAsync(adapter, 'android');
+
+    expect(adapter.setNotificationChannelAsync.mock.calls.map(([id]) => id).sort()).toEqual(
+      [...LOAI_THONG_BAO].sort(),
+    );
+    expect(adapter.setNotificationChannelAsync).toHaveBeenCalledWith(
+      'tin_nhan',
+      expect.objectContaining({ name: KENH_ANDROID.tin_nhan.name, importance: 5, lockscreenVisibility: 1 }),
+    );
+    expect(adapter.setNotificationChannelAsync).toHaveBeenCalledWith(
+      'danh_gia',
+      expect.objectContaining({ importance: 3 }),
+    );
+  });
+
+  it('không đặt sound (chuỗi "default" bị Android coi là tên file âm thanh)', async () => {
+    const adapter = taoAdapter();
+
+    await setupNotificationChannelsAsync(adapter, 'android');
+
+    for (const [, kenh] of adapter.setNotificationChannelAsync.mock.calls) {
+      expect(kenh).not.toHaveProperty('sound');
+    }
+  });
+
+  it('trên iOS chỉ cài cách hiện thông báo, không tạo kênh', async () => {
+    const adapter = taoAdapter();
+
+    await setupNotificationChannelsAsync(adapter, 'ios');
+
+    expect(adapter.setNotificationHandler).toHaveBeenCalledTimes(1);
+    expect(adapter.setNotificationChannelAsync).not.toHaveBeenCalled();
+  });
+
+  it('khi app đang mở vẫn hiện banner và vào danh sách thông báo', async () => {
+    const adapter = taoAdapter();
+    await setupNotificationChannelsAsync(adapter, 'ios');
+
+    const handler = adapter.setNotificationHandler.mock.calls[0]?.[0] as {
+      handleNotification(): Promise<Record<string, boolean>>;
     };
-    setCustomNotificationAdapter(mockAdapter);
+
+    await expect(handler.handleNotification()).resolves.toMatchObject({
+      shouldShowBanner: true,
+      shouldShowList: true,
+    });
   });
 
-  it('setupNotificationChannelsAsync đăng ký 2 kênh IMPORTANCE_MAX và lockscreenVisibility PUBLIC', async () => {
-    await setupNotificationChannelsAsync(mockAdapter);
+  it('không có adapter (Jest, web) thì bỏ qua, không ném lỗi', async () => {
+    await expect(setupNotificationChannelsAsync(null, 'android')).resolves.toBeUndefined();
+  });
+});
 
-    expect(mockAdapter.setNotificationHandler).toHaveBeenCalled();
-    expect(mockAdapter.setNotificationChannelAsync).toHaveBeenCalledTimes(2);
+describe('xinQuyenThongBaoAsync', () => {
+  it('đã có quyền thì không hỏi lại', async () => {
+    const adapter = taoAdapter({ granted: true });
 
-    expect(mockAdapter.setNotificationChannelAsync).toHaveBeenCalledWith(
-      'gymbase_urgent_messages',
-      expect.objectContaining({
-        importance: 5, // AndroidImportance.MAX
-        lockscreenVisibility: 1, // PUBLIC
-        bypassDnd: true,
-      }),
-    );
-
-    expect(mockAdapter.setNotificationChannelAsync).toHaveBeenCalledWith(
-      'gymbase_alarms',
-      expect.objectContaining({
-        importance: 5,
-        lockscreenVisibility: 1,
-      }),
-    );
+    await expect(xinQuyenThongBaoAsync(adapter)).resolves.toBe(true);
+    expect(adapter.requestPermissionsAsync).not.toHaveBeenCalled();
   });
 
-  it('requestNotificationPermissionsAsync trả về true khi được cấp quyền', async () => {
-    const granted = await requestNotificationPermissionsAsync(mockAdapter);
-    expect(granted).toBe(true);
-    expect(mockAdapter.requestPermissionsAsync).toHaveBeenCalled();
+  it('chưa có quyền thì xin và trả kết quả', async () => {
+    const adapter = taoAdapter({ granted: false, canAskAgain: true });
+
+    await expect(xinQuyenThongBaoAsync(adapter)).resolves.toBe(true);
+    expect(adapter.requestPermissionsAsync).toHaveBeenCalledTimes(1);
   });
 
-  it('displayUrgentMessageAsync tạo notification khẩn với priority max trên màn hình khóa', async () => {
-    const notifId = await displayUrgentMessageAsync(
-      {
-        title: 'HLV Tuấn Anh',
-        body: 'Hôm nay tập ngực lúc 18h nhé!',
-        data: { type: 'chat_message', conversation_id: 'conv-01' },
-      },
-      mockAdapter,
-    );
+  it('người dùng đã từ chối hẳn thì không hỏi nữa', async () => {
+    const adapter = taoAdapter({ granted: false, canAskAgain: false });
 
-    expect(notifId).toBe('notif-id-999');
-    expect(mockAdapter.scheduleNotificationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        content: expect.objectContaining({
-          title: 'HLV Tuấn Anh',
-          body: 'Hôm nay tập ngực lúc 18h nhé!',
-          priority: 'max',
-        }),
-        trigger: expect.objectContaining({
-          channelId: 'gymbase_urgent_messages',
-        }),
-      }),
-    );
+    await expect(xinQuyenThongBaoAsync(adapter)).resolves.toBe(false);
+    expect(adapter.requestPermissionsAsync).not.toHaveBeenCalled();
   });
 
-  it('scheduleWorkoutAlarmAsync lên lịch báo thức reo chuông đúng giờ', async () => {
-    const triggerDate = new Date(Date.now() + 1800 * 1000);
-    const notifId = await scheduleWorkoutAlarmAsync(
-      {
-        title: 'Báo thức giờ tập Gym',
-        body: 'Buổi tập bắt đầu sau 30 phút!',
-        triggerDate,
-        workoutSessionId: 'session-123',
-      },
-      mockAdapter,
-    );
-
-    expect(notifId).toBe('notif-id-999');
-    expect(mockAdapter.scheduleNotificationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        trigger: expect.objectContaining({
-          channelId: 'gymbase_alarms',
-          date: triggerDate,
-        }),
-      }),
-    );
+  it('không có adapter thì trả false', async () => {
+    await expect(xinQuyenThongBaoAsync(null)).resolves.toBe(false);
   });
 });
