@@ -61,9 +61,13 @@ public sealed partial class ThietBiService(IThietBiRepository thietBis, TimeProv
         }
     }
 
+    /// <summary>
+    /// Ghi thiết bị. Hai tình huống đua nhau ở unique index, mỗi bên được thử lại một lần:
+    /// hai request cùng chuyển một token (va <c>push_token</c>) thì gỡ token lại rồi ghi tiếp; hai request cùng đăng ký một thiết bị
+    /// mới (va <c>(tai_khoan_id, ma_thiet_bi)</c>, hay gặp khi app đồng bộ nhiều lần cùng lúc) thì bên thua cập nhật lên dòng bên thắng.
+    /// </summary>
     private async Task LuuAsync(thiet_bi thietBi, bool moi, string? token, CancellationToken ct)
     {
-        // Hai request cùng chuyển một token có thể cùng thấy nó trống rồi va unique index: gỡ lại và thử thêm một lần.
         for (var lan = 0; ; lan++)
         {
             if (token != null)
@@ -86,6 +90,13 @@ public sealed partial class ThietBiService(IThietBiRepository thietBis, TimeProv
             }
             catch (ConflictException) when (lan == 0)
             {
+                if (moi && await thietBis.DLFindByMaThietBiAsync(thietBi.tai_khoan_id, thietBi.ma_thiet_bi, ct) is { } daCo)
+                {
+                    thietBi.Id = daCo.Id;
+                    thietBi.ngay_tao = daCo.ngay_tao;
+                    thietBi.nguoi_tao = daCo.nguoi_tao;
+                    moi = false;
+                }
             }
         }
     }
