@@ -1,6 +1,6 @@
 # Upload file: thiết kế chi tiết
 
-> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình · **Đối chiếu code:** fd9ffa9 · **Cập nhật:** 24/11/2026 (mobile kiểm dung lượng, thu ảnh theo cạnh dài 1600px, nén video, blurhash và cache theo `file_id` cho ảnh bài viết, xóa cache khi đăng xuất)
+> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình, rate limit riêng cho file, lifecycle `tmp/` và SSE ở bucket, xin lại URL xem khi hết hạn · **Đối chiếu code:** fd9ffa9 · **Cập nhật:** 24/11/2026 (mobile kiểm dung lượng, thu ảnh theo cạnh dài 1600px, nén video, blurhash và cache theo `file_id` cho ảnh bài viết, xóa cache khi đăng xuất; rà soát lại toàn bộ với code)
 
 Quyết định và lý do: [ADR-0003](../adr/0003-upload-file-presigned-minio-s3.md). Tài liệu này mô tả cách làm. Bảng `tep_tin`
 và vòng đời file: [database/diagrams/02-tep-tin.md](../../database/diagrams/02-tep-tin.md).
@@ -15,13 +15,13 @@ Mobile ──(1) upload-url / (3) confirm / url──▶ API ──▶ MySQL (te
 
 | Thành phần | Việc |
 | --- | --- |
-| `FilesController` (mob) | Ba endpoint bên dưới; chỉ gọi BL |
-| `FileService` (`GymBase.BLFile`) | Luật nghiệp vụ: whitelist mục đích, giới hạn, quyền, chuyển trạng thái |
+| `FilesController` (mob) | Các endpoint bên dưới (xin upload, confirm, lấy URL, lấy nhiều URL, xóa); chỉ gọi BL |
+| `TepTinService` (`ITepTinService`, `GymBase.BLFile`) | Luật nghiệp vụ: whitelist mục đích, giới hạn, quyền, chuyển trạng thái |
 | `IFileStorage` / `S3FileStorage` | Presigned POST (upload) và GET, copy, đọc đầu object, xóa |
-| `IFileUrlResolver` | Biến `tep_tin` (và ảnh xem trước của video) thành URL đọc; sau này thêm CDN ở đây |
+| `IFileUrlProvider` (`ModuleContracts`) | Biến `file_id` thành URL đọc đã kiểm quyền, theo lô (bài viết, hồ sơ gọi vào); sau này thêm CDN ở đây. Ảnh xem trước của video chưa làm |
 | `IImageProcessor` | Bỏ EXIF, xoay đúng chiều, kiểm kích thước điểm ảnh, tính blurhash |
 | Worker xử lý file | Quét cột `trang_thai_xu_ly` của `tep_tin`, xử lý ảnh/video, (sau này) kiểm duyệt |
-| Job dọn file | Xóa file mồ côi và `loi` |
+| Job dọn file (`TepTinDonDepWorker`) | Xóa file mồ côi và `loi` |
 
 ### Sơ đồ tuần tự
 
@@ -30,32 +30,32 @@ Upload, xử lý nền và gắn vào đối tượng:
 ```mermaid
 sequenceDiagram
     participant M as Mobile
-    participant A as API (FileService)
+    participant A as API (TepTinService)
     participant D as MySQL
     participant S as MinIO / S3
     participant W as Worker nền
 
-    M->>M: Nén ảnh, kiểm dung lượng video
+    M->>M: Nén ảnh và video lớn, kiểm dung lượng
     M->>A: 1. POST /upload-url (muc_dich, loai_mime, kich_thuoc_byte)
     A->>A: Kiểm mục đích, MIME, dung lượng, hạn số file chờ
     A->>D: Tạo tep_tin (cho_tai_len, s3_key)
     A->>A: Ký policy form upload vào key tạm (đúng Content-Type, từ 1 byte đến mức tối đa của loại file)
     A-->>M: file_id + url + fields + hạn
 
-    M->>S: 2. POST form multipart (có progress, hủy, retry)
-    alt URL hết hạn (403)
-        M->>A: Xin lại URL
-        A-->>M: URL mới
-        M->>S: POST lại
+    opt Form đã hết hạn (het_han đã qua, ví dụ app nằm nền lâu)
+        M->>A: Xin lại form
+        A-->>M: Form mới
     end
-    S-->>M: 200
+    M->>S: 2. POST form multipart (có progress, hủy, retry)
+    S-->>M: 204
 
     M->>A: 3. POST /{id}/confirm
-    A->>S: HEAD key tạm, đọc vài KB đầu
+    A->>S: HEAD key tạm, đọc 16 byte đầu
     A->>A: Đối chiếu kích thước (1 đến tối đa), MIME, magic bytes, ghi kích thước thật
     alt Đạt
-        A->>S: Copy sang key chính, xóa key tạm
+        A->>S: Copy sang key chính
         A->>D: tep_tin = da_tai_len + trang_thai_xu_ly = cho_xu_ly (cùng một lần ghi)
+        A->>S: Xóa key tạm (lỗi chỉ ghi log, job dọn xử lý nốt)
         A-->>M: 200 (file_id)
     else Không đạt
         A->>D: tep_tin = loi
@@ -65,9 +65,9 @@ sequenceDiagram
 
     W->>D: Giành dòng tep_tin (cho_xu_ly sang dang_xu_ly)
     W->>S: Tải bản gốc
-    W->>W: Ảnh: bỏ EXIF, tính blurhash. Video: tạo ảnh xem trước
-    W->>S: Ghi đè bản gốc đã bỏ EXIF (video: ghi ảnh xem trước)
-    W->>D: Ghi blurhash, khóa ảnh xem trước, trạng thái xử lý = xong
+    W->>W: Ảnh: bỏ EXIF, tính blurhash. Video: tạo ảnh xem trước (chưa làm)
+    W->>S: Ghi đè bản gốc đã bỏ EXIF
+    W->>D: Ghi blurhash, trạng thái xử lý = xong
 
     M->>A: 4. Tạo bài viết / check-in / avatar (kèm file_id)
     A->>A: Kiểm chủ sở hữu, muc_dich, trạng thái
@@ -80,7 +80,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant M as Mobile
-    participant A as API (FileService)
+    participant A as API (TepTinService)
     participant D as MySQL
     participant S as MinIO / S3
     participant J as Job dọn file
@@ -88,7 +88,7 @@ sequenceDiagram
     M->>A: GET /{id}/url hoặc danh sách (đã dựng sẵn URL)
     A->>D: Đọc tep_tin + đối tượng đích (chủ chọn phạm vi, quan hệ PT)
     A->>A: Kiểm quyền theo lô qua IFileTruyCapPolicy của đối tượng đích
-    A->>S: Ký presigned GET (2 đến 5 phút nếu riêng tư, 15 phút nếu công khai)
+    A->>S: Ký presigned GET (mặc định 5 phút nếu riêng tư, 15 phút nếu công khai)
     A-->>M: URL + blurhash
     M->>S: GET ảnh/video (cache theo file_id)
 
@@ -108,13 +108,13 @@ stateDiagram-v2
     cho_tai_len --> loi : confirm sai hoặc quá hạn
     da_tai_len --> da_lien_ket : gắn vào đối tượng
     da_lien_ket --> bi_go : kiểm duyệt (sau này)
-    da_tai_len --> da_xoa : job dọn
-    loi --> da_xoa
-    da_lien_ket --> da_xoa : đối tượng bị xóa
+    da_tai_len --> [*] : job dọn hoặc DELETE xóa dòng
+    loi --> [*] : job dọn xóa dòng
+    da_lien_ket --> da_xoa : chứng chỉ PT bị thay hoặc gỡ
     da_xoa --> [*]
 ```
 
-Cần thêm giá trị `bi_go` vào `TrangThaiTepTin` khi làm kiểm duyệt. Xử lý nền (bỏ EXIF, blurhash) không đổi trạng thái chính: theo dõi bằng cột
+Job dọn file và `DELETE /files/{id}` xóa hẳn dòng (không đặt `da_xoa`); `da_xoa` hiện chỉ do thay hoặc gỡ chứng chỉ PT. Cần thêm giá trị `bi_go` vào `TrangThaiTepTin` khi làm kiểm duyệt. Xử lý nền (bỏ EXIF, blurhash) không đổi trạng thái chính: theo dõi bằng cột
 `trang_thai_xu_ly` (`khong_can`, `cho_xu_ly`, `dang_xu_ly`, `xong`, `loi`) trên `tep_tin`, kèm `ngay_bat_dau_xu_ly` và `blurhash`.
 
 ## 3. API
@@ -155,7 +155,8 @@ Form upload (presigned POST) có policy ràng buộc đúng `key`, đúng `Conte
 - Tối đa 20 dòng `cho_tai_len` đồng thời mỗi tài khoản.
 - Mỗi tài khoản mỗi ngày (tính theo giờ UTC+7, đếm cả file `loi` vì chúng đã tốn lượt xin): tối đa 50 ảnh, 10 video, 5 PDF
   và tổng 500MB. Con số đặt trong `StorageOptions` để chỉnh không cần sửa code.
-- Rate limit `upload-url`: 30 lần mỗi phút mỗi tài khoản. `confirm` và `url`: 120 lần mỗi phút.
+- **Chưa làm:** rate limit riêng cho file (dự kiến `upload-url` 30 lần mỗi phút mỗi tài khoản, `confirm` và `url` 120 lần). Hiện chỉ đăng nhập có rate limit;
+  hạn mức số lượng và dung lượng ở trên đã chặn phần lớn lạm dụng.
 
 Cơ sở: một ngày tập điển hình có vài ảnh bữa ăn, vài ảnh cơ thể và một hai video; ngưỡng trên gấp nhiều lần mức đó nên người dùng
 thật không chạm tới, còn tài khoản bị lạm dụng thì bị chặn trước khi tốn nhiều storage.
@@ -166,9 +167,9 @@ BL kiểm:
 
 1. `tep_tin` thuộc người gọi và đang `cho_tai_len`.
 2. `HEAD` object: tồn tại, kích thước từ 1 đến mức tối đa của loại file, `Content-Type` khớp với lúc xin. Kích thước thật ghi vào `kich_thuoc_byte` (số khai lúc xin chỉ là ước lượng để kiểm sớm và tính hạn mức; app khó biết chính xác dung lượng sau khi nén).
-3. Đọc vài KB đầu, kiểm magic bytes khớp loại khai báo (JPEG, PNG, WebP, HEIC, MP4/MOV, PDF).
-4. Đạt: **copy** object từ `tmp/{file_id}` sang key chính, xóa key tạm, rồi `da_tai_len`, đặt `ngay_xac_nhan` và `trang_thai_xu_ly` (xem mục 6)
-   trong cùng một lần ghi. Copy phía server để form upload còn hạn không đè được file đã kiểm: sau confirm, ai POST lại vào
+3. Đọc 16 byte đầu, kiểm magic bytes khớp loại khai báo (JPEG, PNG, WebP, HEIC, MP4/MOV, PDF).
+4. Đạt: **copy** object từ `tmp/{file_id}` sang key chính, ghi `da_tai_len`, `ngay_xac_nhan`, `trang_thai_xu_ly` (xem mục 6) và kích thước thật trong một lần ghi, rồi mới xóa
+   key tạm (xóa lỗi chỉ ghi log để job dọn xử lý nốt, nên lỗi giữa chừng thì gọi lại confirm được). Copy phía server để form upload còn hạn không đè được file đã kiểm: sau confirm, ai POST lại vào
    key tạm cũng không ảnh hưởng key chính. Không đạt: `loi`, xóa key tạm.
 
 Confirm gọi lại với file đã `da_tai_len` thì trả kết quả hiện tại (idempotent), không lỗi.
@@ -178,7 +179,7 @@ Confirm gọi lại với file đã `da_tai_len` thì trả kết quả hiện t
 Quyền xem do **đối tượng đích** quyết định, không suy từ loại file. Ba nhóm (bảng ở mục 4):
 
 - **Công khai** (mạng xã hội: `avatar`, `post`, ...): mọi tài khoản đã đăng nhập đều xem được; URL hạn khoảng 15 phút.
-- **Chỉ chủ và PT** (`check_in`, `chung_chi_pt` theo vai trò riêng): chủ file và PT đang kèm học viên đó; URL hạn 2 đến 5 phút.
+- **Chỉ chủ và PT** (`check_in`, `chung_chi_pt` theo vai trò riêng): chủ file và PT đang kèm học viên đó; URL hạn tối đa 5 phút (`GetPrivateExpiryMinutes`, mặc định 5).
 - **Chủ chọn** (`progress`, ảnh cơ thể): mỗi ảnh có phạm vi `chi_minh_toi` hoặc `chia_se_pt`, do chủ chọn và đổi được. `chi_minh_toi` thì chỉ chủ; `chia_se_pt` thì thêm PT đang kèm. Phạm vi lưu trên bản ghi ảnh cơ thể (đối tượng đích), không lưu trên `tep_tin`.
 
 "PT đang kèm" tính tại thời điểm cấp URL: hết quan hệ kèm thì không cấp nữa (URL đã cấp còn sống tối đa vài phút).
@@ -190,16 +191,20 @@ public interface IFileTruyCapPolicy
 {
     string LoaiDoiTuong { get; }
     // Kiểm theo lô để danh sách/feed không gọi N lần; trả về tập file_id được phép xem.
-    Task<IReadOnlySet<Guid>> DLKiemTruyCapAsync(Guid nguoiXemId, IReadOnlyCollection<tep_tin> cacTep, CancellationToken ct);
+    Task<IReadOnlySet<Guid>> BLKiemTruyCapAsync(Guid nguoiXemId, IReadOnlyCollection<TepTinTruyCap> cacTep, CancellationToken ct = default);
 }
+
+// Thông tin tối thiểu của file đã gắn vào đối tượng.
+public sealed record TepTinTruyCap(Guid Id, Guid NguoiTaiLenId, Guid? DoiTuongId, string? MucDich);
 ```
 
-`FileService` gom file theo `loai_doi_tuong`, gọi policy tương ứng một lần cho mỗi nhóm, rồi ký URL cho các file được phép.
+`TepTinService` gom file theo `loai_doi_tuong`, gọi policy tương ứng một lần cho mỗi nhóm, rồi ký URL cho các file được phép. Đối tượng chưa có policy
+(check-in, ảnh cơ thể: `TODO(FILE)`) thì file công khai xem được, file riêng tư chỉ chủ xem được.
 
-- Chủ file luôn xem được file của mình, kể cả khi chưa liên kết (`cho_tai_len`, `da_tai_len`). Người khác không xem được file chưa liên kết.
-- `bi_go` và `da_xoa` không cấp URL.
-- `POST /urls` nhận danh sách `file_id`, trả map; file không được phép thì vắng mặt trong map (không báo lý do để khỏi lộ sự tồn tại). Danh sách (bài viết, check-in) dựng sẵn URL trong response để client khỏi gọi thêm. Bài viết kèm `hinh_anh_meta` (cùng thứ tự với `hinh_anh_urls`): mỗi phần tử có `file_id` và `blurhash` của tệp; nội dung ngoài (URL http/https của dữ liệu mẫu) thì cả hai để trống. Tạo presigned URL chỉ tính chữ ký cục bộ nên rẻ; phần tốn là kiểm quyền, nên kiểm theo lô.
-- Mỗi file chỉ có một bản để đọc. Video có thêm URL ảnh xem trước (`thumbnail_url`) khi worker đã tạo xong, chưa xong thì để trống.
+- Chủ file xem được file của mình khi đã `da_tai_len`, kể cả chưa liên kết. Người khác không xem được file chưa liên kết. File `cho_tai_len` hoặc `loi` không cấp URL cho ai, kể cả chủ.
+- Chỉ file `da_tai_len` và `da_lien_ket` được cấp URL (`bi_go` chưa có trong `TrangThaiTepTin`; `da_xoa` không cấp).
+- `POST /urls` nhận danh sách `file_id`, trả `{ "data": [...] }` (danh sách `FileUrlDto`: `file_id`, `url`, hạn, `loai_mime`, `blurhash`); file không được phép thì vắng mặt trong `data` (không báo lý do để khỏi lộ sự tồn tại). Danh sách (bài viết, check-in) dựng sẵn URL trong response để client khỏi gọi thêm. Bài viết kèm `hinh_anh_meta` (cùng thứ tự với `hinh_anh_urls`): mỗi phần tử có `file_id` và `blurhash` của tệp; nội dung ngoài (URL http/https của dữ liệu mẫu) thì cả hai để trống. Tạo presigned URL chỉ tính chữ ký cục bộ nên rẻ; phần tốn là kiểm quyền, nên kiểm theo lô.
+- Mỗi file chỉ có một bản để đọc. Video sẽ có thêm URL ảnh xem trước (`thumbnail_url`) khi worker tạo xong; **chưa làm**, `FileUrlDto` chưa có trường này.
 - Không ghi URL presigned vào log (API, nginx, công cụ theo dõi lỗi).
 
 ### 3.4 Liên kết
@@ -209,18 +214,23 @@ Không có endpoint riêng. API tạo đối tượng nhận `file_id`; BL của
 `muc_dich` khớp, chưa gắn nơi khác; rồi đặt `loai_doi_tuong`, `doi_tuong_id`, `da_lien_ket`. Gắn trong cùng transaction với
 việc tạo đối tượng.
 
+### 3.5 Xóa file chưa gắn: `DELETE /{id}`
+
+Chủ file xóa file chưa gắn vào đâu (ví dụ người dùng bỏ ảnh đã chọn, hoặc đăng bài lỗi): xóa cả key tạm lẫn key chính rồi xóa dòng, trả 204. File
+`da_lien_ket` không xóa được; file của người khác báo không tìm thấy.
+
 ## 4. Quy tắc theo mục đích
 
 | `muc_dich` | Loại | MIME cho phép | Tối đa | Ai xem |
 | --- | --- | --- | --- | --- |
-| `avatar` | ảnh | jpeg, png, webp, heic | 10MB | công khai |
+| `avatar` | ảnh | jpeg, png, webp, heic, heif | 10MB | công khai |
 | `post` (mạng xã hội) | ảnh, video | ảnh như trên; mp4, quicktime | 10MB ảnh, 100MB video | công khai |
 | `progress` (ảnh cơ thể) | ảnh | ảnh | 10MB | chủ chọn: `chi_minh_toi` hoặc `chia_se_pt` |
 | `check_in` (bữa ăn, buổi tập) | ảnh, video | ảnh; mp4, quicktime | 10MB / 100MB | chủ và PT đang kèm |
 | `chung_chi_pt` | PDF | application/pdf | 10MB | chủ hồ sơ và vai trò được phép (xem [ho-so.md](../api/ho-so.md)) |
 | `gym_photo` | ảnh | ảnh | 10MB | chưa rõ, xác nhận khi làm |
 
-Bảng này là **một nơi duy nhất** trong BL (cấu hình hoặc `FilePolicy`), không rải trong code như hiện nay. `che_do_truy_cap`
+Bảng này nằm ở **một nơi duy nhất** trong BL: `FilePolicy`. `che_do_truy_cap`
 trong `tep_tin` chỉ còn là gợi ý (công khai hay không); quyền thật do `IFileTruyCapPolicy` của đối tượng đích quyết định.
 `check_in` là mục đích mới, tách khỏi `progress`; cần đối chiếu với các màn hình `lo-trinh` đang dùng upload và sửa chúng cùng lúc.
 
@@ -228,14 +238,14 @@ trong `tep_tin` chỉ còn là gợi ý (công khai hay không); quyền thật 
 
 - `S3FileStorage` dùng AWSSDK.S3. Cấu hình trong `StorageOptions` (đã có `ServiceUrl`, `ForcePathStyle`, `AccessKey`,
   `SecretKey`, `BucketName`, `PresignExpiryMinutes`); đã thêm hạn riêng cho upload (`PutExpiryMinutes`), GET riêng tư, GET công khai.
-- MinIO dev: thêm dịch vụ và tạo bucket tự động trong `deploy/development/compose.yml`. **URL presigned phải dùng host mà
+- MinIO dev: chạy trong `deploy/development/compose.yml` (S3 ở cổng 9100, giao diện 9101) hoặc riêng bằng `infrastructure/docker/docker-compose.minio.yml` (cổng 9000, 9001); bucket `gymbase-files` tự tạo ở lần tải lên đầu. **URL presigned phải dùng host mà
   điện thoại với tới được** (IP máy dev, không phải `localhost` hay tên service trong Docker), nên cần `PublicServiceUrl`
   tách khỏi `ServiceUrl` nội bộ nếu hai cái khác nhau. Xem [chay-mobile.md](../onboarding/chay-mobile.md).
-- Key tạm: `tmp/{file_id}` (chỉ để upload). Key chính: `{muc_dich}/{yyyy}/{MM}/{file_id}` cho file; ảnh xem trước video là `{muc_dich}/{yyyy}/{MM}/{file_id}.thumb.jpg`.
-  Không đưa tên file người dùng vào key. Đặt lifecycle rule xóa `tmp/` sau 1 ngày làm lớp phòng thủ thứ hai
-  bên cạnh job dọn file.
+- Key tạm: `tmp/{file_id}` (chỉ để upload). Key chính: `{muc_dich}/{yyyy}/{MM}/{file_id}{đuôi theo MIME}`, ví dụ `post/2026/11/{file_id}.jpg` (đuôi để app đoán ảnh hay video theo URL); ảnh xem trước của video (chưa làm) dự kiến là `{file_id}.thumb.jpg`.
+  Không đưa tên file người dùng vào key. **Chưa làm:** lifecycle rule xóa `tmp/` sau 1 ngày làm lớp phòng thủ thứ hai
+  bên cạnh job dọn file (hiện chỉ có job dọn).
 - Bucket private; không bật public read. File "công khai" vẫn đọc qua presigned.
-- Bật mã hóa phía server (SSE) trên S3. Khóa truy cập tối thiểu: chỉ `Get/Put/Head/DeleteObject` trên bucket.
+- **Chưa làm (cấu hình ở bucket khi triển khai production):** mã hóa phía server (SSE), code không đặt; khóa truy cập tối thiểu, chỉ `Get/Put/Head/Copy/DeleteObject` trên bucket.
 - `LocalFileStorage` không hỗ trợ presigned, chỉ giữ cho test đơn vị.
 
 ## 6. Xử lý nền
@@ -315,6 +325,9 @@ Còn lại:
 11. `IFileTruyCapPolicy` cho `check_in` và `progress` (ảnh cơ thể: `chi_minh_toi` hoặc `chia_se_pt`) cùng nối upload cho các màn hình lộ trình khi có API check-in
    (hiện kho check-in của mobile còn lưu URI cục bộ, `TODO(ROUTE)`).
 12. Mobile: dùng blurhash và `cacheKey` theo `file_id` cho ảnh check-in và ảnh cơ thể khi có API trả `hinh_anh_meta` tương ứng; kiểm dung lượng lúc chọn ở các màn hình lộ trình khi nối upload.
+13. Rate limit riêng cho `upload-url`, `confirm` và `url` (hiện chỉ đăng nhập có rate limit).
+14. Lifecycle rule xóa `tmp/` sau 1 ngày và mã hóa phía server (SSE) ở bucket production.
+15. Mobile: xin lại URL xem khi hết hạn rồi thử một lần.
 
 Code tạm đặt `// TODO(FILE): …`; thêm chủ đề `FILE` vào [quy-uoc-todo.md](quy-uoc-todo.md) nếu chưa có.
 

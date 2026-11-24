@@ -25,7 +25,7 @@ Các quyết định:
    gộp nhiều file cho danh sách). Ba nhóm quyền: công khai (mạng xã hội); chủ và PT đang kèm (check-in bữa ăn, buổi tập);
    chủ chọn `chi_minh_toi` hoặc `chia_se_pt` cho từng ảnh cơ thể. Mỗi loại đối tượng đích cài `IFileTruyCapPolicy`, kiểm
    **theo lô** để danh sách không kiểm từng file. URL hết hạn 2 đến 5 phút (riêng tư), 15 phút (công khai); không ghi URL
-   vào log. Chưa dùng CDN; việc tạo URL nằm sau `IFileUrlResolver` để thêm CDN cho file công khai sau mà không sửa nơi gọi.
+   vào log. Chưa dùng CDN; việc tạo URL nằm sau `IFileUrlProvider` để thêm CDN cho file công khai sau mà không sửa nơi gọi.
 5. **Xử lý ảnh ở nền, không ở request; hàng đợi là cột `trang_thai_xu_ly` của `tep_tin`.** Confirm đặt `cho_xu_ly` cùng lúc với `da_tai_len` (cùng
    một lần ghi, không thể lệch), `BackgroundService` trong API nhận việc bằng cập nhật có điều kiện (như ADR-0002) rồi xoay đúng chiều, bỏ
    EXIF, tính blurhash (không tạo bản thu nhỏ, mỗi file một bản). Không dùng bảng outbox riêng vì việc luôn gắn với đúng một dòng `tep_tin`.
@@ -42,7 +42,7 @@ Các quyết định:
 10. **`IFileStorage` là seam.** Thêm `CreatePresignedUpload`, `CreatePresignedGetUrl`, `CopyAsync`, `ReadHeadAsync`; `S3FileStorage` chạy
     được với MinIO qua `ServiceUrl` và `ForcePathStyle`.
 
-11. **Hạn mức chống lạm dụng.** Tối đa 20 file chờ đồng thời, mỗi tài khoản mỗi ngày tối đa 50 ảnh, 10 video, 5 PDF và 500MB, rate limit `upload-url` 30 lần mỗi phút (số cụ thể ở [upload-file.md](../architecture/upload-file.md), chỉnh được trong `StorageOptions`).
+11. **Hạn mức chống lạm dụng.** Tối đa 20 file chờ đồng thời, mỗi tài khoản mỗi ngày tối đa 50 ảnh, 10 video, 5 PDF và 500MB, rate limit `upload-url` 30 lần mỗi phút (hạn mức số lượng và dung lượng đã làm, rate limit theo phút chưa làm; số cụ thể ở [upload-file.md](../architecture/upload-file.md), chỉnh được trong `StorageOptions`).
 
 12. **Dùng presigned POST có policy, không dùng presigned PUT.** Đã thử trên MinIO (24/11/2026, `S3FileStorageMinioTests`): presigned PUT chỉ ép được `Content-Type`, còn `Content-Length` đã ký vẫn nhận body lớn hơn. Presigned POST ràng buộc bằng policy: đúng key, đúng `Content-Type`, `content-length-range` từ 1 byte đến mức tối đa của loại file (không ép đúng một số byte, vì app không biết chính xác dung lượng sau khi nén; kích thước thật ghi lúc confirm); sai một điều kiện là bị từ chối ngay tại storage, nên không ai nhét được file lớn vào key tạm. Policy ký thủ công bằng SigV4 vì SDK .NET không hỗ trợ `content-length-range`.
 
@@ -68,7 +68,7 @@ Các quyết định:
 
 ## Còn mở
 
-- Hạn cụ thể của presigned GET (riêng tư, công khai) và form upload (presigned POST).
+- Hạn của presigned GET và form upload đã chọn trong `StorageOptions` (GET riêng tư 5 phút, GET công khai 15 phút, form upload 15 phút); xem lại theo thực tế dùng.
 - Ảnh xem trước của video tạo bằng ffmpeg trong worker hay lấy từ client lúc upload.
 - Khi nào thêm CDN cho file công khai.
 - Chính sách xóa file khi đối tượng gắn bị xóa.
