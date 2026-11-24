@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { duongDanCuaThongBao } from './dieu-huong';
 import { THONG_BAO_QUERY_KEY } from './hooks';
+import { gopLanGoi } from './gop-lan-goi';
 import { layNotificationAdapter } from './notification-adapter';
 import { setupNotificationChannelsAsync, xinQuyenThongBaoAsync } from './notification-service';
 import { dongBoThietBiAsync } from './thiet-bi';
@@ -21,7 +22,9 @@ export function ThongBaoSync() {
   useEffect(() => {
     let dangChay = true;
     const lamMoi = () => void client.invalidateQueries({ queryKey: THONG_BAO_QUERY_KEY });
-    const dongBo = () => void dongBoThietBiAsync().catch(() => undefined);
+    // Các lần đồng bộ đến chồng nhau (vào app, foreground, token đổi) được gộp, tránh nhiều request đăng ký cùng lúc.
+    const dongBoMotLan = gopLanGoi(() => dongBoThietBiAsync());
+    const dongBo = () => void dongBoMotLan();
 
     void (async () => {
       await setupNotificationChannelsAsync().catch(() => undefined);
