@@ -1,6 +1,6 @@
 # Thông báo: hộp thư, đăng ký thiết bị và push FCM
 
-> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (hộp thư, đăng ký thiết bị, worker đẩy push với bản log, màn thông báo và chuông trên mobile); chưa làm FCM thật, nhắc giờ local, cài đặt kênh, push dự phòng, iOS · **Đối chiếu code:** 064d133 (+ thay đổi chưa commit ở `apps/mobile/app.json`)
+> **Ngày viết:** 24/11/2026 · **Cập nhật:** 24/11/2026 · **Trạng thái:** đã triển khai (hộp thư, đăng ký thiết bị, worker đẩy push, FcmPushSender, màn thông báo và chuông trên mobile); chưa thử FCM với Firebase thật, chưa làm nhắc giờ local, cài đặt kênh, push dự phòng, iOS · **Đối chiếu code:** 9b2dd69
 
 Tài liệu này mô tả phần thông báo đã có trong code và cách thiết lập Firebase Cloud Messaging (FCM) để push tới máy thật.
 Lý do thiết kế nằm ở [ADR-2](../adr/0002-thong-bao-day-bang-fcm-truc-tiep-outbox.md); tài liệu này không lặp lại, chỉ nói "đang chạy thế nào" và "làm gì tiếp".
@@ -12,7 +12,7 @@ Lý do thiết kế nằm ở [ADR-2](../adr/0002-thong-bao-day-bang-fcm-truc-ti
 | Hộp thư `thong_bao`, đọc, đánh dấu đã đọc | Đã có (backend và mobile) |
 | Đăng ký thiết bị, push token, múi giờ; gỡ khi đăng xuất | Đã có |
 | Worker đẩy push: giành dòng có điều kiện, backoff, phân loại lỗi, gỡ token chết | Đã có, có test |
-| Gửi qua FCM thật | **Chưa**: `ThongBao:PushProvider = LOG` chỉ ghi log (`LogPushSender`) |
+| Gửi qua FCM (`FcmPushSender`) | Đã có code và test bằng HTTP giả; **chưa thử với Firebase thật**. Mặc định `PushProvider = LOG` chỉ ghi log |
 | Nhắc ăn, nhắc tập bằng local notification (ADR-2, quyết định 12 đến 18) | Chưa |
 | Cài đặt bật/tắt từng loại (có bảng `cai_dat_thong_bao`, chưa có API) | Chưa |
 | Push dự phòng khi lịch local không phủ được (quyết định 20) | Chưa |
@@ -71,14 +71,16 @@ await thongBaoTao.BLTaoAsync(new TaoThongBaoRequest(
 
 | Khóa | Mặc định | Ý nghĩa |
 | --- | --- | --- |
-| `PushProvider` | `LOG` | `LOG` chỉ ghi log; `FCM` (chưa có code) |
+| `PushProvider` | `LOG` | `LOG` chỉ ghi log; `FCM` gửi thật. Giá trị khác, hoặc `FCM` mà cấu hình sai, làm API dừng ngay lúc khởi động |
+| `Fcm:CredentialsPath` | rỗng | Đường dẫn tới file JSON service account (bắt buộc khi `FCM`; file phải tồn tại) |
+| `Fcm:ProjectId` | rỗng | Id project Firebase; bỏ trống thì đọc `project_id` trong file service account |
 | `IntervalSeconds` | 5 | Giây giữa hai lượt quét của worker |
 | `BatchSize` | 50 | Số dòng mỗi lượt |
 | `MaxAttempts` | 5 | Số lần gặp lỗi tạm tối đa |
 | `BackoffSeconds`, `MaxBackoffSeconds` | 30, 600 | Thời gian chờ thử lại và mức trần |
 | `ReclaimMinutes` | 5 | Dòng `dang_gui` quá số phút này coi như worker đã chết và giành lại |
 
-Khi làm `FcmPushSender`, đề xuất thêm hai khóa **chưa có trong code**: `ThongBao:Fcm:ProjectId` và `ThongBao:Fcm:CredentialsPath` (đường dẫn tới file service account, để ngoài repo, nạp qua user-secrets hoặc biến môi trường).
+Khóa service account là bí mật: để file ngoài repo, nạp đường dẫn qua user-secrets (`dotnet user-secrets set "ThongBao:Fcm:CredentialsPath" "C:\...\gymbase-fcm.json"`) hoặc biến môi trường `ThongBao__Fcm__CredentialsPath`.
 
 ## 6. Thiết lập Firebase cho Android
 
@@ -101,6 +103,8 @@ Không cần thẻ thanh toán: FCM miễn phí trên gói Spark. Bỏ qua mọi
 
 ## 7. Chạy thử
 
+**Với FCM thật** (sau khi xong mục 6): đặt `ThongBao:PushProvider = FCM` và `ThongBao:Fcm:CredentialsPath` bằng user-secrets, chạy API ở Development, đăng nhập trên dev build, rồi bấm **Gửi thông báo thử** ở màn thông báo (đưa app xuống nền trước khi bấm). Log API ghi số dòng, số tin thành công, token chết. Push gửi tới đúng `channel_id` bằng loại thông báo.
+
 **Chưa cần Firebase** (kiểm hộp thư và worker):
 1. Áp migration `ThemThongBaoOutbox`, chạy API ở Development.
 2. Đăng nhập app, mở chuông, bấm **Gửi thông báo thử**. Dòng mới hiện trong hộp thư và chấm chưa đọc xuất hiện.
@@ -115,13 +119,13 @@ Không cần thẻ thanh toán: FCM miễn phí trên gói Spark. Bỏ qua mọi
 | Triệu chứng | Nguyên nhân thường gặp |
 | --- | --- |
 | `push_token` NULL | Đang chạy Expo Go; thiếu `google-services.json` hoặc chưa prebuild lại; chưa cấp quyền thông báo (Android 13+); máy ảo không có Google Play; package name trong Firebase khác `vn.gymbase.app` |
-| Có token nhưng không nhận push | Chưa có `FcmPushSender` (đang dùng `LOG`); thiết bị đã bị tắt `dang_hoat_dong` sau khi token chết |
+| Có token nhưng không nhận push | `PushProvider` vẫn là `LOG`; thiết bị đã bị tắt `dang_hoat_dong` sau khi token chết; dòng `thong_bao` ở trạng thái `loi` (xem log: `LoiCauHinh` thường là sai service account hoặc project) |
+| API không khởi động, báo `ThongBao:Fcm:CredentialsPath` | `PushProvider = FCM` nhưng đường dẫn rỗng hoặc file không tồn tại |
 | Thông báo vào hộp thư nhưng không có chuông | Dòng có `kenh` là `local` hoặc `chi_hop_thu` (nhắc ăn, nhắc tập, hoặc loại đã tắt) |
 | Chấm chưa đọc không cập nhật | App chỉ tải lại khi mở, quay lại foreground, nhận push hoặc đánh dấu đã đọc |
 
 ## 9. Còn lại
 
-- **`FcmPushSender`** (FCM HTTP v1 bằng service account; `channel_id` bằng đúng `loai_thong_bao`; ưu tiên và TTL theo loại; quy kết quả về bốn nhóm lỗi của worker). Cần Firebase của bạn.
 - **iOS:** `getDevicePushTokenAsync` trên iOS thường trả token APNs, không phải token FCM mà ADR-2 giả định. Muốn đi qua FCM cần thêm `@react-native-firebase/messaging` hoặc tương đương, rồi sửa ADR-2. Không ảnh hưởng Android.
 - Nhắc giờ local, cài đặt kênh, push dự phòng (ADR-2, quyết định 12 đến 20); phụ thuộc module lộ trình.
 - Bấm push khi app đã tắt hẳn chưa mở màn tương ứng; điều hướng sau khi bấm thông báo đang tạm mở màn lộ trình. Tìm `TODO(THONGBAO)` trong repo.
