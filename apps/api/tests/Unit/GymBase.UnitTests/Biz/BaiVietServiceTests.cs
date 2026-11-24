@@ -125,6 +125,26 @@ public sealed class BaiVietServiceTests
         var detail = await service.BLGetByIdAsync(created.Id, CancellationToken.None);
 
         Assert.Equal(["https://minio.test/get/post/a.mp4?sig=1"], detail.hinh_anh_urls);
+        // hinh_anh_meta cùng thứ tự với hinh_anh_urls: tệp không được xem không để lại dấu ở cả hai danh sách.
+        var meta = Assert.Single(detail.hinh_anh_meta!);
+        Assert.Equal(visible, meta.file_id);
+    }
+
+    [Fact]
+    public async Task Feed_returns_file_id_and_blurhash_alongside_each_uploaded_image()
+    {
+        var service = CreateService();
+        var image = Guid.NewGuid();
+        var created = await service.BLCreateAsync(
+            new BaiVietCreateDto { noi_dung = "Bài có ảnh", file_ids = [image] }, CancellationToken.None);
+        _postRepository.AddUploadedFile(created.Id, image, 1);
+        _fileUrls.Urls[image] = new FileUrlDto(image, "https://minio.test/get/post/a.jpg?sig=1", DateTime.UtcNow, "image/jpeg", "LEHV6nWB2yk8pyo0adR*.7kCMdnj");
+
+        var detail = await service.BLGetByIdAsync(created.Id, CancellationToken.None);
+
+        var meta = Assert.Single(detail.hinh_anh_meta!);
+        Assert.Equal(image, meta.file_id);
+        Assert.Equal("LEHV6nWB2yk8pyo0adR*.7kCMdnj", meta.blurhash);
     }
 
     [Theory]

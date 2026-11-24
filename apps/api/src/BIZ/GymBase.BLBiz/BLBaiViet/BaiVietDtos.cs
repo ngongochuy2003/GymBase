@@ -8,6 +8,13 @@ public sealed record TacGiaBaiVietDto(
     string ten_hien_thi,
     string? anh_dai_dien_url);
 
+/// <summary>
+/// Thông tin đi kèm một ảnh hoặc video của bài viết, cùng vị trí với phần tử của <c>hinh_anh_urls</c>:
+/// <c>file_id</c> để app cache theo id (URL ký đổi mỗi lần), <c>blurhash</c> để vẽ bản mờ khi ảnh đang tải.
+/// Nội dung ngoài (URL http/https của dữ liệu mẫu) không có cả hai.
+/// </summary>
+public sealed record BaiVietAnhMetaDto(Guid? file_id, string? blurhash);
+
 /// <summary>Dữ liệu bài viết trả ra API cho cả bảng tin và chi tiết bài viết.</summary>
 public sealed record BaiVietDto(
     Guid Id,
@@ -24,7 +31,8 @@ public sealed record BaiVietDto(
     bool da_thich,
     DateTime? ngay_dang,
     DateTime ngay_tao,
-    DateTime? ngay_chinh_sua) : IHasId;
+    DateTime? ngay_chinh_sua,
+    IReadOnlyList<BaiVietAnhMetaDto>? hinh_anh_meta = null) : IHasId;
 
 /// <summary>Body khi tạo bài viết mới từ web hoặc mobile.</summary>
 public sealed class BaiVietCreateDto

@@ -350,12 +350,12 @@ public sealed class BaiVietService
         foreach (var post in posts)
         {
             var files = mediaByPost.TryGetValue(post.Id, out var attached) ? attached : [];
-            var imageUrls = files
-                .Select(f => IsStoredFile(f)
-                    ? (signedMedia.TryGetValue(f.Id, out var signed) ? signed.Url : null)
-                    : ExtractExternalUrl(f))
-                .OfType<string>()
+            var attachedMedia = files
+                .Select(f => ResolveMedia(f, signedMedia))
+                .Where(m => m.Url is not null)
                 .ToList();
+            var imageUrls = attachedMedia.Select(m => m.Url!).ToList();
+            var imageMeta = attachedMedia.Select(m => m.Meta).ToList();
             var fileTopic = files.FirstOrDefault(f => !string.IsNullOrWhiteSpace(f.muc_dich))?.muc_dich;
             var topic = explicitTopic ?? fileTopic ?? InferTopic(post.noi_dung, null);
 
@@ -380,10 +380,29 @@ public sealed class BaiVietService
                 summary.da_thich,
                 post.ngay_dang,
                 post.ngay_tao,
-                post.ngay_chinh_sua));
+                post.ngay_chinh_sua,
+                imageMeta));
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// URL và thông tin đi kèm của một tệp đính kèm: tệp lưu ở MinIO/S3 lấy URL ký (không có URL, tức người xem không được phép, thì bỏ qua),
+    /// dòng "external" lấy URL ngoài và không có <c>file_id</c> hay blurhash.
+    /// </summary>
+    private static (string? Url, BaiVietAnhMetaDto Meta) ResolveMedia(
+        tep_tin file,
+        IReadOnlyDictionary<Guid, FileUrlDto> signedMedia)
+    {
+        if (!IsStoredFile(file))
+        {
+            return (ExtractExternalUrl(file), new BaiVietAnhMetaDto(null, null));
+        }
+
+        return signedMedia.TryGetValue(file.Id, out var signed)
+            ? (signed.Url, new BaiVietAnhMetaDto(file.Id, signed.Blurhash))
+            : (null, new BaiVietAnhMetaDto(file.Id, null));
     }
 
     private static TacGiaBaiVietDto ResolveAuthorInfo(
