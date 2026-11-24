@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { useSession } from '@/core/auth/session';
+import { NhacGioSync } from '@/features/lo-trinh';
 import { ProfileDraftProvider } from '@/features/profile';
 import { LoadingState, Screen } from '@/shared/components/ui';
 import { ThongBaoSync } from '@/shared/notifications';
@@ -28,6 +29,7 @@ export default function ProtectedLayout() {
   return (
     <ProfileDraftProvider>
       <ThongBaoSync />
+      <NhacGioSync />
       <Stack
         screenOptions={{
           headerShown: false,

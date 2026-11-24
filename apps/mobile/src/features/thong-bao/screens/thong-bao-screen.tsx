@@ -7,6 +7,7 @@ import { Text } from '@/components/ui/text';
 import { ApiError, toApiError } from '@/core/api/api-error';
 import { Icon } from '@/shared/icons';
 import {
+  datNhacThuAsync,
   duongDanCuaThongBao,
   useDanhDauDaDoc,
   useDanhDauTatCaDaDoc,
@@ -114,6 +115,15 @@ export function ThongBaoScreen() {
             accessibilityLabel="Gửi thông báo thử sau 15 giây"
           >
             <Text>Gửi thử sau 15 giây</Text>
+          </Button>
+          {/* Nhắc local (đặt lịch ngay trên máy, không qua server): thử khi đã tắt app. */}
+          <Button
+            variant="outline"
+            className="mt-2"
+            onPress={() => void datNhacThuAsync(30).catch(() => undefined)}
+            accessibilityLabel="Nhắc thử trên máy sau 30 giây"
+          >
+            <Text>Nhắc thử trên máy sau 30 giây</Text>
           </Button>
           {guiThu.isError && !(guiThu.error instanceof ApiError && guiThu.error.status === 404) ? (
             <Text variant="destructive" className="mt-2 text-sm">

@@ -19,6 +19,9 @@ function taoAdapter(
     addPushTokenListener: jest.fn(),
     addNotificationReceivedListener: jest.fn(),
     addNotificationResponseReceivedListener: jest.fn(),
+    scheduleNotificationAsync: jest.fn(),
+    getAllScheduledNotificationsAsync: jest.fn(),
+    cancelScheduledNotificationAsync: jest.fn(),
   };
 }
 

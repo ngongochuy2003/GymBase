@@ -16,6 +16,9 @@ function taoAdapter(quyen: { granted: boolean; canAskAgain?: boolean } = { grant
     addPushTokenListener: jest.fn(),
     addNotificationReceivedListener: jest.fn(),
     addNotificationResponseReceivedListener: jest.fn(),
+    scheduleNotificationAsync: jest.fn(),
+    getAllScheduledNotificationsAsync: jest.fn(),
+    cancelScheduledNotificationAsync: jest.fn(),
   };
   return adapter;
 }

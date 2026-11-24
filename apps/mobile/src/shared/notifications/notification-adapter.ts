@@ -8,6 +8,12 @@ export interface NotificationSubscription {
   remove(): void;
 }
 
+/** Một thông báo đã lên lịch trên máy; chỉ phần app đọc lại. */
+export interface ScheduledNotification {
+  identifier: string;
+  content: { data?: Record<string, unknown> | null };
+}
+
 /** Phần của `expo-notifications` mà app dùng. Tách ra để test bằng bản giả và để web, Jest không cần module native. */
 export interface NotificationAdapter {
   setNotificationHandler(handler: Record<string, unknown> | null): void;
@@ -18,6 +24,9 @@ export interface NotificationAdapter {
   addPushTokenListener(listener: (token: { data: unknown }) => void): NotificationSubscription;
   addNotificationReceivedListener(listener: () => void): NotificationSubscription;
   addNotificationResponseReceivedListener(listener: () => void): NotificationSubscription;
+  scheduleNotificationAsync(request: Record<string, unknown>): Promise<string>;
+  getAllScheduledNotificationsAsync(): Promise<ScheduledNotification[]>;
+  cancelScheduledNotificationAsync(identifier: string): Promise<void>;
 }
 
 let adapter: NotificationAdapter | null | undefined;
