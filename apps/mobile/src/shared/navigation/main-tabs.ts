@@ -1,4 +1,6 @@
+import { useCallback, useMemo } from 'react';
 import { useRouter, type Href } from 'expo-router';
+import { useThongBaoHeader } from '../notifications';
 import type { HeaderAction, TabItem } from '../ui-kit';
 
 /** Toàn bộ tab của ứng dụng; mỗi màn hình chọn tập con và thứ tự bằng `pickTabs`. */
@@ -21,8 +23,27 @@ export function pickTabs(ids: readonly string[]): TabItem[] {
 /** Action mặc định bên phải AppHeader. */
 export const DEFAULT_HEADER_ACTIONS: HeaderAction[] = [
   { id: 'search', icon: 'search', label: 'Tìm kiếm' },
-  { id: 'notifications', icon: 'bell', label: 'Thông báo', badge: true },
+  { id: 'notifications', icon: 'bell', label: 'Thông báo' },
 ];
+
+/**
+ * Action bên phải AppHeader kèm hành vi: chuông hiện chấm khi có thông báo chưa đọc và mở màn thông báo.
+ * Dùng cho `header` của ScreenConfig: `header: { ...headerActions }`.
+ */
+export function useHeaderActions(): { rightActions: HeaderAction[]; onActionPress(id: string): void } {
+  const { coChuaDoc, moThongBao } = useThongBaoHeader();
+  const rightActions = useMemo(
+    () => DEFAULT_HEADER_ACTIONS.map((a) => (a.id === 'notifications' ? { ...a, badge: coChuaDoc } : a)),
+    [coChuaDoc],
+  );
+  const onActionPress = useCallback(
+    (id: string) => {
+      if (id === 'notifications') moThongBao();
+    },
+    [moThongBao],
+  );
+  return { rightActions, onActionPress };
+}
 
 /** Điều hướng khi bấm tab; tab chưa có `href` (chưa có màn hình) thì bỏ qua. */
 export function useTabNavigation(): (tab: TabItem) => void {
