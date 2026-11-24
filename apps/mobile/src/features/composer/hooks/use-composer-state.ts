@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { isVideoUrl } from '@/shared/file';
+import { isVideoUrl, kiemTraVideoKhiChon } from '@/shared/file';
 import type { ComposerPayload, MediaItem } from '../types';
 
 export const MAX_MEDIA = 10;
@@ -11,6 +11,8 @@ export interface ComposerStateOptions {
   initialVisibilityId: string;
   maxMedia?: number;
   onPermissionDenied?(message: string): void;
+  /** Có tệp bị loại ngay lúc chọn (video quá lớn); `message` nói rõ lý do. */
+  onMediaRejected?(message: string): void;
 }
 
 /**
@@ -23,6 +25,7 @@ export function useComposerState({
   initialVisibilityId,
   maxMedia = MAX_MEDIA,
   onPermissionDenied,
+  onMediaRejected,
 }: ComposerStateOptions) {
   const [text, setText] = useState('');
   const [media, setMedia] = useState<MediaItem[]>(initialMedia);
@@ -54,7 +57,19 @@ export function useComposerState({
       return;
     }
 
-    const newItems: MediaItem[] = result.assets.map((asset) => {
+    // Video quá lớn bị loại ngay lúc chọn, khỏi chờ tới lúc bấm Đăng mới biết.
+    let rejectedMessage: string | null = null;
+    const accepted = result.assets.filter((asset) => {
+      const isVideo =
+        asset.type === 'video' || isVideoUrl(asset.uri) || asset.mimeType?.startsWith('video/');
+      const message = isVideo ? kiemTraVideoKhiChon(asset.fileSize) : null;
+      if (message) rejectedMessage = message;
+      return !message;
+    });
+    if (rejectedMessage) onMediaRejected?.(rejectedMessage);
+    if (accepted.length === 0) return;
+
+    const newItems: MediaItem[] = accepted.map((asset) => {
       const n = counter.current++;
       const isVideo =
         asset.type === 'video' ||
@@ -70,7 +85,7 @@ export function useComposerState({
     });
 
     setMedia((prev) => [...prev, ...newItems].slice(0, maxMedia));
-  }, [media.length, maxMedia, onPermissionDenied]);
+  }, [media.length, maxMedia, onPermissionDenied, onMediaRejected]);
 
   const removeMedia = useCallback(
     (id: string) => setMedia((prev) => prev.filter((m) => m.id !== id)),

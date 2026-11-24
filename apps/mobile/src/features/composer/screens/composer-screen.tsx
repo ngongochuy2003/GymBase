@@ -33,6 +33,7 @@ export function ComposerScreen() {
   const state = useComposerState({
     initialTopicIds: INITIAL_TOPICS,
     initialVisibilityId: visibilityOptions[0]?.id ?? '',
+    onMediaRejected: show,
     onPermissionDenied: (message) => {
       show(message);
       if (Platform.OS !== 'web') {
