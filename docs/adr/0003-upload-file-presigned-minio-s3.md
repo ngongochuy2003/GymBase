@@ -36,8 +36,8 @@ Các quyết định:
    24 giờ thì xóa. Xóa object trước rồi xóa dòng, chạy lại được an toàn.
 8. **Kiểm duyệt nội dung (Amazon Rekognition) làm sau, theo kiểu quét nền, hiển thị trước, gỡ sau.** Thiết kế chừa sẵn trạng
    thái `bi_go` và một bước trong chuỗi xử lý nền; chưa làm trong đợt này.
-9. **Mobile: progress thật, hủy và thử lại.** Dùng `createUploadTask` của `expo-file-system`, `AbortSignal`, retry có
-   backoff; URL hết hạn thì xin URL mới. Giao diện của `useFileUpload` giữ nguyên để các màn hình hiện tại ít phải đổi.
+9. **Mobile: progress thật, hủy và thử lại.** Dùng `axios.post` với `onUploadProgress`, `AbortSignal`, retry có
+   backoff (ban đầu định dùng `createUploadTask` của `expo-file-system`, chuyển sang axios khi làm vì đủ tính năng và chạy được cả trên web); URL hết hạn thì xin URL mới. Giao diện của `useFileUpload` giữ nguyên để các màn hình hiện tại ít phải đổi.
    Cache ảnh theo `file_id`, không theo URL, vì presigned URL đổi mỗi lần.
 10. **`IFileStorage` là seam.** Thêm `CreatePresignedUpload`, `CreatePresignedGetUrl`, `CopyAsync`, `ReadHeadAsync`; `S3FileStorage` chạy
     được với MinIO qua `ServiceUrl` và `ForcePathStyle`.
@@ -46,17 +46,23 @@ Các quyết định:
 
 12. **Dùng presigned POST có policy, không dùng presigned PUT.** Đã thử trên MinIO (24/11/2026, `S3FileStorageMinioTests`): presigned PUT chỉ ép được `Content-Type`, còn `Content-Length` đã ký vẫn nhận body lớn hơn. Presigned POST ràng buộc bằng policy: đúng key, đúng `Content-Type`, `content-length-range` từ 1 byte đến mức tối đa của loại file (không ép đúng một số byte, vì app không biết chính xác dung lượng sau khi nén; kích thước thật ghi lúc confirm); sai một điều kiện là bị từ chối ngay tại storage, nên không ai nhét được file lớn vào key tạm. Policy ký thủ công bằng SigV4 vì SDK .NET không hỗ trợ `content-length-range`.
 
+13. **Nén ở app trước khi gửi, ảnh và video đều vậy (24/11/2026).** Ảnh thu nhỏ theo cạnh dài tối đa 1600px (chỉ thu nhỏ, không phóng to), JPEG 0.9. Video lớn hơn 20MB
+    hoặc chưa biết dung lượng được nén xuống 720p và bỏ GPS bằng `react-native-compressor` (module native, cần dev build; không có thì gửi bản gốc, giới hạn 100MB
+    như cũ). Kiểm dung lượng ở app trước khi xin URL (ảnh và PDF 10MB, video 100MB) và loại video quá lớn ngay lúc chọn: cho tới 500MB nếu máy nén được video,
+    không thì 100MB. Chỉ quan tâm dung lượng, không giới hạn thời lượng video. Lý do: video quay bằng điện thoại thường vượt 100MB, và gửi 85MB qua mạng yếu mất cả phút.
+
 ## Hệ quả
 
 - API hết chịu tải băng thông file; thêm một worker nền.
-- Mỗi ảnh chỉ có một bản (cạnh dài 2048px do app nén), nên danh sách ảnh tải bản lớn hơn mức cần; chấp nhận để đơn giản, thêm bản thu nhỏ sau nếu số liệu cho thấy tốn data.
+- Mỗi ảnh chỉ có một bản (cạnh dài 1600px do app nén), nên danh sách ảnh tải bản lớn hơn mức cần; chấp nhận để đơn giản, thêm bản thu nhỏ sau nếu số liệu cho thấy tốn data.
 - File xuất hiện trong storage trước khi API biết (`cho_tai_len`), nên bắt buộc có job dọn.
 - URL presigned không thu hồi được trước khi hết hạn: hạn phải ngắn (2 đến 5 phút riêng tư, 15 phút công khai); gỡ file hay hết quan hệ PT có hiệu lực sau tối đa chừng đó.
 - App gửi form `multipart/form-data` (không phải PUT thuần): trường policy trước, trường `file` đặt cuối cùng.
 - Mỗi đối tượng gắn file phải cài `IFileTruyCapPolicy`; thêm loại đối tượng mới là thêm một policy.
 - Confirm tốn thêm một lần copy phía server (tối đa 100MB).
-- App phải xóa cache ảnh riêng tư khi đăng xuất.
-- App phải tự xử lý hết hạn URL và cache theo `file_id`.
+- App phải xóa cache ảnh riêng tư khi đăng xuất (đã làm: `xoaCacheAnh` xóa toàn bộ cache ảnh của expo-image, kể cả ảnh công khai).
+- App phải tự xử lý hết hạn URL và cache theo `file_id`; API bài viết trả `hinh_anh_meta` (`file_id`, `blurhash`) để làm việc này.
+- Nén video cần dev build và thư viện native; chạy bằng Expo Go thì video gửi bản gốc. Nén tốn pin và thời gian trước khi gửi.
 - Cần cấu hình CORS cho bucket nếu có client web; mobile native không cần.
 
 ## Còn mở
@@ -65,6 +71,7 @@ Các quyết định:
 - Ảnh xem trước của video tạo bằng ffmpeg trong worker hay lấy từ client lúc upload.
 - Khi nào thêm CDN cho file công khai.
 - Chính sách xóa file khi đối tượng gắn bị xóa.
+- Ngưỡng nén video (20MB), độ phân giải (720p) và cạnh dài ảnh (1600px) chọn theo ước lượng; chỉnh theo dung lượng và chất lượng thực tế.
 
 ## Considered Options
 
@@ -78,4 +85,5 @@ Các quyết định:
   vài chục nghìn người dùng. Loại; hàng đợi trong DB và worker trong API đủ, chuyển sau nếu CPU xử lý ảnh chen vào API.
 - Bảng outbox riêng cho việc xử lý: cần thêm bảng và transaction ghi hai nơi, trong khi mỗi việc chỉ gắn với một dòng `tep_tin`. Loại.
 - Backend proxy stream khi xem file riêng tư: kiểm quyền dễ nhưng giữ lại đúng vấn đề tải của hiện tại. Loại.
+- Không nén video ở app, chỉ chặn quá 100MB: đơn giản nhất, nhưng người dùng với video quay thường phải tự cắt hoặc không đăng được. Loại.
 - Upload chia mảnh / resumable cho video lớn: không cần với video ngắn dưới 100MB. Loại; mở lại nếu cho phép video dài.

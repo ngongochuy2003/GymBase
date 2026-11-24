@@ -1,6 +1,6 @@
 # Upload file: thiết kế chi tiết
 
-> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình · **Đối chiếu code:** 824c548 · **Cập nhật:** 24/11/2026 (mobile kiểm dung lượng trước khi upload)
+> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình · **Đối chiếu code:** fd9ffa9 · **Cập nhật:** 24/11/2026 (mobile kiểm dung lượng, thu ảnh theo cạnh dài 1600px, nén video, blurhash và cache theo `file_id` cho ảnh bài viết, xóa cache khi đăng xuất)
 
 Quyết định và lý do: [ADR-0003](../adr/0003-upload-file-presigned-minio-s3.md). Tài liệu này mô tả cách làm. Bảng `tep_tin`
 và vòng đời file: [database/diagrams/02-tep-tin.md](../../database/diagrams/02-tep-tin.md).
@@ -198,7 +198,7 @@ public interface IFileTruyCapPolicy
 
 - Chủ file luôn xem được file của mình, kể cả khi chưa liên kết (`cho_tai_len`, `da_tai_len`). Người khác không xem được file chưa liên kết.
 - `bi_go` và `da_xoa` không cấp URL.
-- `POST /urls` nhận danh sách `file_id`, trả map; file không được phép thì vắng mặt trong map (không báo lý do để khỏi lộ sự tồn tại). Danh sách (bài viết, check-in) dựng sẵn URL trong response để client khỏi gọi thêm. Tạo presigned URL chỉ tính chữ ký cục bộ nên rẻ; phần tốn là kiểm quyền, nên kiểm theo lô.
+- `POST /urls` nhận danh sách `file_id`, trả map; file không được phép thì vắng mặt trong map (không báo lý do để khỏi lộ sự tồn tại). Danh sách (bài viết, check-in) dựng sẵn URL trong response để client khỏi gọi thêm. Bài viết kèm `hinh_anh_meta` (cùng thứ tự với `hinh_anh_urls`): mỗi phần tử có `file_id` và `blurhash` của tệp; nội dung ngoài (URL http/https của dữ liệu mẫu) thì cả hai để trống. Tạo presigned URL chỉ tính chữ ký cục bộ nên rẻ; phần tốn là kiểm quyền, nên kiểm theo lô.
 - Mỗi file chỉ có một bản để đọc. Video có thêm URL ảnh xem trước (`thumbnail_url`) khi worker đã tạo xong, chưa xong thì để trống.
 - Không ghi URL presigned vào log (API, nginx, công cụ theo dõi lỗi).
 
@@ -249,7 +249,7 @@ Hàng đợi là chính cột `trang_thai_xu_ly` của `tep_tin` (không có b�
    `dang_xu_ly` quá 10 phút coi như worker đã chết và được nhận lại.
 3. Ảnh: từ chối nếu quá 8192px mỗi cạnh hoặc 36MP (kiểm từ header trước khi cấp bộ nhớ, chống ảnh nén bom); xoay đúng chiều theo EXIF
    (cả 8 hướng), mã hóa lại không kèm metadata (EXIF, GPS), ghi đè cùng key chính, lưu `blurhash` và dung lượng mới. Không tạo bản thu nhỏ: app
-   đã nén xuống cạnh dài 2048px trước khi gửi, và mỗi file chỉ có một bản.
+   đã nén xuống cạnh dài 1600px trước khi gửi, và mỗi file chỉ có một bản.
 4. Ảnh quá lớn hoặc hỏng: xóa object, `trang_thai = loi`, `trang_thai_xu_ly = loi`; job dọn file xóa dòng sau 60 phút. Lỗi bất ngờ (kho, bộ nhớ):
    `trang_thai_xu_ly = loi`, tệp vẫn xem được nhưng chưa bỏ EXIF (ghi log mức lỗi).
 5. **Chưa làm:** ảnh xem trước của video (cần ffmpeg trong image Docker của API, `infrastructure/docker/Dockerfile.api`), kiểm duyệt: gọi
@@ -264,12 +264,21 @@ Nếu CPU xử lý ảnh chen vào API thì tách worker thành tiến trình ri
 
 Giữ `useFileUpload` và `uploadMultipartFile` làm điểm vào (đổi tên `uploadFile` khi sửa các nơi gọi), đổi bên trong:
 
-1. (Ảnh) nén bằng `expo-image-manipulator` (cạnh dài 2048, JPEG 0.9) để giảm dung lượng. (Video) kiểm dung lượng
-   trước khi xin URL; quá 100MB thì báo luôn, không gọi API. Đã làm trong `prepareFile` (`file-uploader.ts`) cho cả ảnh (sau khi nén) và PDF
-   (`DUNG_LUONG_TOI_DA_BYTE`, ném `UploadError` mã `FILE_TOO_LARGE`). Dung lượng video lấy từ `fileSize` của bộ chọn; bộ chọn không báo thì
-   chưa chặn được ở app và storage vẫn từ chối bằng policy. **Chưa làm:** kiểm thời lượng video, chặn ngay lúc chọn (hiện báo khi bấm Đăng), nén video.
+1. **Chuẩn bị tệp** (`prepareFile` trong `file-uploader.ts`):
+   - Ảnh: nén bằng `expo-image-manipulator`, thu nhỏ theo **cạnh dài tối đa 1600px** (chỉ thu nhỏ, ảnh nhỏ hơn không bị phóng to), JPEG 0.9, bỏ EXIF.
+     Điện thoại hiển thị ảnh rộng chừng 1080 đến 1440px nên 1600px đủ nét (`CANH_DAI_ANH_TOI_DA_PX`).
+   - Video: trên bản dev build, video lớn hơn 20MB hoặc chưa biết dung lượng được nén bằng `react-native-compressor` (`video-compressor.ts`, cạnh dài
+     1280px tức 720p, bỏ metadata GPS). Không có thư viện (Expo Go) hoặc nén lỗi hoặc bản nén không nhỏ hơn thì gửi bản gốc.
+   - Kiểm dung lượng sau bước trên, trước khi xin URL: ảnh và PDF tối đa 10MB, video 100MB (`DUNG_LUONG_TOI_DA_BYTE`); quá thì ném `UploadError`
+     mã `FILE_TOO_LARGE` (status 413), không gọi API. Ảnh được kiểm theo dung lượng sau khi nén.
+   - Composer loại video quá lớn **ngay lúc chọn** (`kiemTraVideoKhiChon`) và báo qua toast: máy nén được video thì cho tới 500MB (sẽ nén xuống trước
+     khi gửi), không thì áp thẳng 100MB. Dung lượng lấy từ `fileSize` của bộ chọn; bộ chọn không báo thì chưa loại được lúc chọn, nhưng uploader và
+     policy của storage vẫn chặn. Chỉ kiểm dung lượng, không kiểm thời lượng video.
+   - **Chưa làm:** kiểm lúc chọn ở các màn hình khác ngoài composer (chưa nối upload).
 2. Gọi `upload-url`.
-3. POST form bằng `FileSystem.createUploadTask` với `UploadType.MULTIPART` (các `fields` làm `parameters`, `fieldName` là `file_field`); `onProgress` theo byte thật; hủy bằng `AbortSignal`.
+3. POST form `multipart/form-data` bằng `axios.post` (các `fields` đặt trước, trường file dạng `{ uri, type, name }` đặt cuối để phần native của React Native tự đọc tệp,
+   không nạp cả video vào bộ nhớ JS); `onProgress` theo `onUploadProgress` (byte thật); hủy bằng `AbortSignal`; chờ tối đa 5 phút. Không dùng
+   `FileSystem.createUploadTask`: axios đã đủ progress, hủy, thử lại và chạy cả trên web.
 4. Lỗi mạng hoặc 5xx thì thử lại có backoff (`maxRetries`, `initialRetryDelayMs` đã có trong `UploadOptions`); 403 do URL hết hạn
    thì xin URL mới một lần.
 5. Gọi `confirm`, trả `FileUploadResult` gồm `file_id` (và URL xem nếu cần ngay).
@@ -277,8 +286,12 @@ Giữ `useFileUpload` và `uploadMultipartFile` làm điểm vào (đổi tên `
 Trạng thái hook: `idle`, `preparing` (nén/kiểm), `uploading`, `confirming`, `done`, `error`. Sửa `UploadState` và bỏ
 `ConfirmUploadResponse`, `ImageVariantUrls` kiểu cũ. `UploadError` giữ `status` để màn hình báo đúng nguyên nhân.
 
-Hiển thị ảnh: `expo-image` với `cacheKey = file_id`, `placeholder` là blurhash. URL lấy từ response danh sách; hết
-hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào store lâu dài; lưu `file_id`.
+Hiển thị ảnh: `RemoteImage` dùng `expo-image` cho ảnh có `file_id` hoặc blurhash, với `cacheKey = file_id` và `placeholder` là blurhash; ảnh khác giữ
+`Image` của React Native. API bài viết trả `hinh_anh_meta` (mục 3.3); `mapBaiVietDtoToFeedPost` nhớ thông tin theo đúng URL ký (`ghiNhoThongTinAnh`,
+tối đa 1000 URL, bỏ mục cũ nhất) để `RemoteImage` tự tra, các màn hình không phải truyền xuống từng ảnh. URL lấy từ response danh sách; hết
+hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào store lâu dài; lưu `file_id`. Đăng xuất gọi `xoaCacheAnh`: xóa cache ảnh của
+expo-image (bộ nhớ và đĩa) cùng thông tin đã nhớ, để máy dùng chung không còn ảnh riêng tư của người trước. Hiện mới áp dụng cho ảnh bài viết; ảnh
+check-in và ảnh cơ thể dùng cách này khi có API trả `hinh_anh_meta` tương ứng.
 
 ## 8. Kế hoạch làm
 
@@ -290,21 +303,26 @@ hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào sto
 4. Xóa code cũ: `FileService`, `FileMigrationService`, `GetContent`, endpoint đọc legacy, controller web cũ.
 5. Worker xử lý ảnh (EXIF, blurhash).
 6. Job dọn file mồ côi.
-7. Mobile kiểm dung lượng ảnh, PDF, video trước khi xin URL; composer truyền `fileSize` của video và hiện câu báo lỗi `FILE_TOO_LARGE`.
+7. Mobile: kiểm dung lượng ảnh, PDF, video trước khi xin URL; thu ảnh theo cạnh dài 1600px; nén video bằng `react-native-compressor`; composer loại video quá lớn
+   ngay lúc chọn và hiện câu báo lỗi `FILE_TOO_LARGE`.
+8. Bài viết trả `hinh_anh_meta` (`file_id`, `blurhash`); mobile dùng blurhash làm placeholder, cache ảnh theo `file_id` và xóa cache khi đăng xuất (cho ảnh bài viết).
 
 Còn lại:
 
-8. Ảnh xem trước của video (ffmpeg).
-9. Kiểm duyệt Rekognition (đợt sau), kèm `TODO(FILE)` ở chỗ chừa.
-10. `IFileTruyCapPolicy` cho `check_in` và `progress` (ảnh cơ thể: `chi_minh_toi` hoặc `chia_se_pt`) cùng nối upload cho các màn hình lộ trình khi có API check-in
+9. Ảnh xem trước của video (ffmpeg).
+10. Kiểm duyệt Rekognition (đợt sau), kèm `TODO(FILE)` ở chỗ chừa.
+11. `IFileTruyCapPolicy` cho `check_in` và `progress` (ảnh cơ thể: `chi_minh_toi` hoặc `chia_se_pt`) cùng nối upload cho các màn hình lộ trình khi có API check-in
    (hiện kho check-in của mobile còn lưu URI cục bộ, `TODO(ROUTE)`).
-11. Mobile: dùng blurhash làm placeholder, `cacheKey` theo `file_id`, xóa cache ảnh riêng tư khi đăng xuất.
+12. Mobile: dùng blurhash và `cacheKey` theo `file_id` cho ảnh check-in và ảnh cơ thể khi có API trả `hinh_anh_meta` tương ứng; kiểm dung lượng lúc chọn ở các màn hình lộ trình khi nối upload.
 
 Code tạm đặt `// TODO(FILE): …`; thêm chủ đề `FILE` vào [quy-uoc-todo.md](quy-uoc-todo.md) nếu chưa có.
 
 ## 9. Còn mở
 
 Xem mục "Còn mở" của ADR-0003. Thêm: xác nhận quyền xem của `gym_photo`, theo dõi thực tế rồi chỉnh hạn mức mỗi ngày.
+
+**Nén video cần dev build:** `react-native-compressor` là module native (Nitro), không chạy trong Expo Go. Sau `pnpm install`, build lại dev build
+(`pnpm mobile:android:dev`). Chạy bằng Expo Go vẫn được nhưng video gửi bản gốc và bị giới hạn 100MB ngay lúc chọn.
 
 **Chạy dev với điện thoại:** URL ký mang địa chỉ của `Storage:ServiceUrl` (`http://localhost:9000`), điện thoại không với tới được. Đặt
 `Storage:PublicServiceUrl` là địa chỉ máy dev mà điện thoại gọi được, ví dụ `http://192.168.1.10:9000` (biến môi trường
@@ -321,4 +339,5 @@ Xem mục "Còn mở" của ADR-0003. Thêm: xác nhận quyền xem của `gym_
 - Hạn mức: vượt số dòng chờ, dung lượng ngày, rate limit đều bị từ chối.
 - Worker: xử lý ảnh, nhiều worker không giành trùng một dòng, dòng kẹt `dang_xu_ly` được giành lại.
 - Job dọn: không xóa nhầm file đang `da_lien_ket`; chạy lại an toàn.
-- Mobile: progress, hủy, retry và xin lại URL khi hết hạn (đã có `file-uploader.test.ts` làm nền).
+- Mobile: progress, hủy, retry và xin lại URL khi hết hạn (đã có `file-uploader.test.ts` làm nền); thu ảnh theo cạnh dài, nén video (thư viện nén giả), kiểm dung lượng
+  ảnh, PDF, video, loại video lúc chọn (`composer-chon-media.test.tsx`), blurhash và `cacheKey` của `RemoteImage`, xóa cache khi đăng xuất (`image-cache.test.tsx`).
