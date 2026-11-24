@@ -8,11 +8,13 @@ using GymBase.BLBiz.BaiViet;
 using GymBase.BLDI;
 using GymBase.BLFile;
 using GymBase.BLFile.BLFiles;
+using GymBase.BLThongBao;
 using Microsoft.AspNetCore.Authorization;
 using GymBase.DLAuth.MySql;
 using GymBase.DLBiz.MySql;
 using GymBase.DLDI.MySql;
 using GymBase.DLFile.MySql;
+using GymBase.DLThongBao.MySql;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,9 +45,13 @@ builder.Services.AddAuthData();
 builder.Services.AddBizBusiness();
 builder.Services.AddBizData();
 
-// File: lưu trữ tệp tin (Local/S3) và push notification
+// File: lưu trữ tệp tin (Local/S3)
 builder.Services.AddFileBusiness(builder.Configuration);
 builder.Services.AddFileData();
+
+// ThongBao: hộp thư thông báo, thiết bị và push token, worker đẩy push (ADR-2)
+builder.Services.AddThongBaoBusiness(builder.Configuration);
+builder.Services.AddThongBaoData();
 
 // DI (Danh mục): dữ liệu tham chiếu cho dropdown (docs/api/danh-muc.md)
 builder.Services.AddDIBusiness();

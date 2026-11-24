@@ -40,6 +40,11 @@
     <Project Path="src/File/GymBase.DLFile.Contract/GymBase.DLFile.Contract.csproj" />
     <Project Path="src/File/GymBase.DLFile.MySql/GymBase.DLFile.MySql.csproj" />
   </Folder>
+  <Folder Name="/src/ThongBao/">
+    <Project Path="src/ThongBao/GymBase.BLThongBao/GymBase.BLThongBao.csproj" />
+    <Project Path="src/ThongBao/GymBase.DLThongBao.Contract/GymBase.DLThongBao.Contract.csproj" />
+    <Project Path="src/ThongBao/GymBase.DLThongBao.MySql/GymBase.DLThongBao.MySql.csproj" />
+  </Folder>
   <Folder Name="/tests/Shared/">
     <Project Path="tests/Shared/GymBase.TestDoubles/GymBase.TestDoubles.csproj" />
   </Folder>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
+    <ProjectReference Include="..\..\Contracts\GymBase.ModuleContracts\GymBase.ModuleContracts.csproj" />
+    <ProjectReference Include="..\GymBase.DLThongBao.Contract\GymBase.DLThongBao.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

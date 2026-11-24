@@ -7,6 +7,7 @@
     <ProjectReference Include="..\..\..\src\BIZ\GymBase.DLBiz.Contract\GymBase.DLBiz.Contract.csproj" />
     <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
     <ProjectReference Include="..\..\..\src\DI\GymBase.DLDI.Contract\GymBase.DLDI.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\ThongBao\GymBase.DLThongBao.Contract\GymBase.DLThongBao.Contract.csproj" />
   </ItemGroup>
 
 </Project>
