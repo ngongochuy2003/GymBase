@@ -5,6 +5,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.Auth" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Base\GymBase.Base\GymBase.Base.csproj" />
     <ProjectReference Include="..\..\Contracts\GymBase.ModuleContracts\GymBase.ModuleContracts.csproj" />
     <ProjectReference Include="..\GymBase.DLThongBao.Contract\GymBase.DLThongBao.Contract.csproj" />
