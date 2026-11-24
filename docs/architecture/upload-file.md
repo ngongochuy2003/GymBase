@@ -52,7 +52,7 @@ sequenceDiagram
 
     M->>A: 3. POST /{id}/confirm
     A->>S: HEAD key tạm, đọc vài KB đầu
-    A->>A: Đối chiếu kích thước (1 đến tối đa), MIME, magic bytes; ghi kích thước thật
+    A->>A: Đối chiếu kích thước (1 đến tối đa), MIME, magic bytes, ghi kích thước thật
     alt Đạt
         A->>S: Copy sang key chính, xóa key tạm
         A->>D: tep_tin = da_tai_len + trang_thai_xu_ly = cho_xu_ly (cùng một lần ghi)
