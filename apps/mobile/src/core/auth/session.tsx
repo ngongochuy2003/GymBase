@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { ApiError } from '../api/api-error';
 import { authApi, authRuntime, type RegisterInput } from '../api/auth-api';
+import { xoaCacheAnh } from '@/shared/file/image-cache';
 import { userStorage } from '../storage/user-storage';
 import { googleSignIn } from './google-sign-in';
 import type { AuthResult, AuthUser } from './types';
@@ -129,6 +130,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       setUser(null);
       await authRuntime.clear();
       await userStorage.clear();
+      // Máy dùng chung: không để ảnh riêng tư của người vừa đăng xuất nằm lại trong cache.
+      await xoaCacheAnh();
       await googleSignIn.signOut();
     }
   }, []);
