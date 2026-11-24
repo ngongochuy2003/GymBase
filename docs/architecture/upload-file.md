@@ -1,6 +1,6 @@
 # Upload file: thiết kế chi tiết
 
-> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình · **Đối chiếu code:** ad9a16d
+> **Ngày viết:** 24/11/2026 · **Trạng thái:** đã triển khai (upload hai bước, bài viết gắn `file_ids`, URL đọc ký sẵn, job dọn file, xử lý ảnh nền); chưa làm: ảnh xem trước của video, kiểm duyệt Rekognition, policy xem cho check-in và ảnh cơ thể, nối upload cho màn hình lộ trình · **Đối chiếu code:** 824c548 · **Cập nhật:** 24/11/2026 (mobile kiểm dung lượng trước khi upload)
 
 Quyết định và lý do: [ADR-0003](../adr/0003-upload-file-presigned-minio-s3.md). Tài liệu này mô tả cách làm. Bảng `tep_tin`
 và vòng đời file: [database/diagrams/02-tep-tin.md](../../database/diagrams/02-tep-tin.md).
@@ -264,8 +264,10 @@ Nếu CPU xử lý ảnh chen vào API thì tách worker thành tiến trình ri
 
 Giữ `useFileUpload` và `uploadMultipartFile` làm điểm vào (đổi tên `uploadFile` khi sửa các nơi gọi), đổi bên trong:
 
-1. (Ảnh) nén bằng `expo-image-manipulator` (cạnh dài 2048, JPEG 0.9) để giảm dung lượng. (Video) kiểm dung lượng và thời lượng
-   trước khi xin URL; quá 100MB thì báo luôn, không gọi API.
+1. (Ảnh) nén bằng `expo-image-manipulator` (cạnh dài 2048, JPEG 0.9) để giảm dung lượng. (Video) kiểm dung lượng
+   trước khi xin URL; quá 100MB thì báo luôn, không gọi API. Đã làm trong `prepareFile` (`file-uploader.ts`) cho cả ảnh (sau khi nén) và PDF
+   (`DUNG_LUONG_TOI_DA_BYTE`, ném `UploadError` mã `FILE_TOO_LARGE`). Dung lượng video lấy từ `fileSize` của bộ chọn; bộ chọn không báo thì
+   chưa chặn được ở app và storage vẫn từ chối bằng policy. **Chưa làm:** kiểm thời lượng video, chặn ngay lúc chọn (hiện báo khi bấm Đăng), nén video.
 2. Gọi `upload-url`.
 3. POST form bằng `FileSystem.createUploadTask` với `UploadType.MULTIPART` (các `fields` làm `parameters`, `fieldName` là `file_field`); `onProgress` theo byte thật; hủy bằng `AbortSignal`.
 4. Lỗi mạng hoặc 5xx thì thử lại có backoff (`maxRetries`, `initialRetryDelayMs` đã có trong `UploadOptions`); 403 do URL hết hạn
@@ -288,14 +290,15 @@ hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào sto
 4. Xóa code cũ: `FileService`, `FileMigrationService`, `GetContent`, endpoint đọc legacy, controller web cũ.
 5. Worker xử lý ảnh (EXIF, blurhash).
 6. Job dọn file mồ côi.
+7. Mobile kiểm dung lượng ảnh, PDF, video trước khi xin URL; composer truyền `fileSize` của video và hiện câu báo lỗi `FILE_TOO_LARGE`.
 
 Còn lại:
 
-7. Ảnh xem trước của video (ffmpeg).
-8. Kiểm duyệt Rekognition (đợt sau), kèm `TODO(FILE)` ở chỗ chừa.
-9. `IFileTruyCapPolicy` cho `check_in` và `progress` (ảnh cơ thể: `chi_minh_toi` hoặc `chia_se_pt`) cùng nối upload cho các màn hình lộ trình khi có API check-in
+8. Ảnh xem trước của video (ffmpeg).
+9. Kiểm duyệt Rekognition (đợt sau), kèm `TODO(FILE)` ở chỗ chừa.
+10. `IFileTruyCapPolicy` cho `check_in` và `progress` (ảnh cơ thể: `chi_minh_toi` hoặc `chia_se_pt`) cùng nối upload cho các màn hình lộ trình khi có API check-in
    (hiện kho check-in của mobile còn lưu URI cục bộ, `TODO(ROUTE)`).
-10. Mobile: dùng blurhash làm placeholder, `cacheKey` theo `file_id`, xóa cache ảnh riêng tư khi đăng xuất.
+11. Mobile: dùng blurhash làm placeholder, `cacheKey` theo `file_id`, xóa cache ảnh riêng tư khi đăng xuất.
 
 Code tạm đặt `// TODO(FILE): …`; thêm chủ đề `FILE` vào [quy-uoc-todo.md](quy-uoc-todo.md) nếu chưa có.
 
