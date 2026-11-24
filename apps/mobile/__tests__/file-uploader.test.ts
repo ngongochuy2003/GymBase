@@ -2,7 +2,9 @@ import axios, { AxiosError } from 'axios';
 import { getMobClient } from '@/core/api/mobile-client';
 import {
   compressImageOnDevice,
+  kiemTraVideoKhiChon,
   setCustomManipulator,
+  setCustomVideoCompressor,
   UploadError,
   uploadMultipartFile,
 } from '../src/shared/file';
@@ -66,6 +68,7 @@ describe('uploadMultipartFile (xin form, gửi lên storage, xác nhận)', () =
     storagePost = jest.spyOn(axios, 'post').mockResolvedValue({ status: 204, data: '' });
     manipulate.mockResolvedValue({ uri: 'file:///compressed.jpg', width: 1080, height: 1080 });
     setCustomManipulator({ manipulateAsync: manipulate });
+    setCustomVideoCompressor(null);
   });
 
   afterEach(() => {
@@ -104,9 +107,130 @@ describe('uploadMultipartFile (xin form, gửi lên storage, xác nhận)', () =
   it('nén ảnh trước khi gửi', async () => {
     await uploadMultipartFile('file:///original.jpg', 'progress');
 
-    expect(manipulate).toHaveBeenCalledWith('file:///original.jpg', [{ resize: { width: 2048 } }], {
+    // Chưa biết kích thước ảnh gốc thì thu theo chiều rộng 1600.
+    expect(manipulate).toHaveBeenCalledWith('file:///original.jpg', [{ resize: { width: 1600 } }], {
       compress: 0.9,
       format: 'jpeg',
+    });
+  });
+
+  describe('thu nhỏ ảnh theo cạnh dài 1600px', () => {
+    const voiKichThuoc = (width: number, height: number) =>
+      setCustomManipulator({ manipulateAsync: manipulate, getSize: async () => ({ width, height }) });
+
+    it('ảnh ngang: thu theo chiều rộng', async () => {
+      voiKichThuoc(4000, 3000);
+      await uploadMultipartFile('file:///ngang.jpg', 'post');
+      expect(manipulate.mock.calls[0]![1]).toEqual([{ resize: { width: 1600 } }]);
+    });
+
+    it('ảnh dọc: thu theo chiều cao, để cạnh dài đúng 1600', async () => {
+      voiKichThuoc(3000, 4000);
+      await uploadMultipartFile('file:///doc.jpg', 'post');
+      expect(manipulate.mock.calls[0]![1]).toEqual([{ resize: { height: 1600 } }]);
+    });
+
+    it('ảnh đã nhỏ hơn 1600px: không phóng to, vẫn mã hóa lại để bỏ EXIF', async () => {
+      voiKichThuoc(1200, 900);
+      await uploadMultipartFile('file:///nho.jpg', 'post');
+      expect(manipulate.mock.calls[0]![1]).toEqual([]);
+    });
+
+    it('đọc kích thước lỗi thì quay về thu theo chiều rộng', async () => {
+      setCustomManipulator({ manipulateAsync: manipulate, getSize: async () => Promise.reject(new Error('x')) });
+      await uploadMultipartFile('file:///loi.jpg', 'post');
+      expect(manipulate.mock.calls[0]![1]).toEqual([{ resize: { width: 1600 } }]);
+    });
+  });
+
+  describe('nén video trên điện thoại', () => {
+    const MB = 1024 * 1024;
+    const compress = jest.fn();
+    const getFileSize = jest.fn();
+
+    beforeEach(() => {
+      compress.mockResolvedValue('file:///cache/nen.mp4');
+      getFileSize.mockResolvedValue(30 * MB);
+      setCustomVideoCompressor({ compress, getFileSize });
+    });
+
+    it('nén video lớn rồi gửi bản đã nén với MIME mp4 và dung lượng thật', async () => {
+      await uploadMultipartFile('file:///clips/lon.mov', 'post', { sizeBytes: 85 * MB });
+
+      expect(compress).toHaveBeenCalledWith('file:///clips/lon.mov', undefined);
+      expect(apiPost.mock.calls[0]![1]).toMatchObject({ loai_mime: 'video/mp4', kich_thuoc_byte: 30 * MB });
+      expect(storageCalls()[0]![1].parts.at(-1)![1]).toMatchObject({ uri: 'file:///cache/nen.mp4', type: 'video/mp4' });
+    });
+
+    it('không nén video nhỏ (từ 20MB trở xuống)', async () => {
+      await uploadMultipartFile('file:///clips/nho.mp4', 'post', { sizeBytes: 20 * MB });
+
+      expect(compress).not.toHaveBeenCalled();
+    });
+
+    it('không biết dung lượng thì vẫn nén', async () => {
+      await uploadMultipartFile('file:///clips/khong-ro.mp4', 'post');
+
+      expect(compress).toHaveBeenCalled();
+    });
+
+    it('nén lỗi thì gửi bản gốc', async () => {
+      compress.mockRejectedValue(new Error('hỏng'));
+
+      await uploadMultipartFile('file:///clips/lon.mp4', 'post', { sizeBytes: 85 * MB });
+
+      expect(apiPost.mock.calls[0]![1]).toMatchObject({ kich_thuoc_byte: 85 * MB });
+    });
+
+    it('bản nén không nhỏ hơn bản gốc thì giữ bản gốc', async () => {
+      getFileSize.mockResolvedValue(90 * MB);
+
+      await uploadMultipartFile('file:///clips/lon.mp4', 'post', { sizeBytes: 85 * MB });
+
+      expect(storageCalls()[0]![1].parts.at(-1)![1]).toMatchObject({ uri: 'file:///clips/lon.mp4' });
+    });
+
+    it('video 300MB nén xuống dưới 100MB thì được gửi', async () => {
+      await uploadMultipartFile('file:///clips/rat-lon.mp4', 'post', { sizeBytes: 300 * MB });
+
+      expect(apiPost).toHaveBeenCalled();
+    });
+
+    it('nén xong vẫn quá 100MB thì báo FILE_TOO_LARGE', async () => {
+      getFileSize.mockResolvedValue(120 * MB);
+
+      await expect(uploadMultipartFile('file:///clips/khung.mp4', 'post', { sizeBytes: 400 * MB })).rejects.toMatchObject({
+        code: 'FILE_TOO_LARGE',
+      });
+    });
+
+    it('máy không có thư viện nén (Expo Go): video 300MB bị chặn vì quá 100MB', async () => {
+      setCustomVideoCompressor(null);
+
+      await expect(uploadMultipartFile('file:///clips/rat-lon.mp4', 'post', { sizeBytes: 300 * MB })).rejects.toMatchObject({
+        code: 'FILE_TOO_LARGE',
+      });
+    });
+  });
+
+  describe('kiểm video lúc chọn', () => {
+    const MB = 1024 * 1024;
+
+    it('máy nén được video: cho tới 500MB', () => {
+      setCustomVideoCompressor({ compress: jest.fn(), getFileSize: jest.fn() });
+
+      expect(kiemTraVideoKhiChon(500 * MB)).toBeNull();
+      expect(kiemTraVideoKhiChon(500 * MB + 1)).toContain('500MB');
+    });
+
+    it('máy không nén được: áp giới hạn 100MB', () => {
+      expect(kiemTraVideoKhiChon(100 * MB)).toBeNull();
+      expect(kiemTraVideoKhiChon(100 * MB + 1)).toContain('100MB');
+    });
+
+    it('chưa biết dung lượng thì không loại', () => {
+      expect(kiemTraVideoKhiChon(undefined)).toBeNull();
+      expect(kiemTraVideoKhiChon(0)).toBeNull();
     });
   });
 

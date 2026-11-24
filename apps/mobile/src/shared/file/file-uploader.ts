@@ -1,8 +1,13 @@
 import axios, { isAxiosError } from 'axios';
-import { Platform } from 'react-native';
+import { Image, Platform } from 'react-native';
 import { toApiError } from '@/core/api/api-error';
 import { getMobClient } from '@/core/api/mobile-client';
 import { FilePurpose, FileUploadResult, UploadOptions } from './file.types';
+import {
+  compressVideoOnDevice,
+  isVideoCompressorAvailable,
+  NGUONG_NEN_VIDEO_BYTE,
+} from './video-compressor';
 
 /** Thời gian chờ tối đa cho một lần gửi tệp lên storage (ms); video trên mạng yếu cần lâu hơn các lệnh API thường. */
 const UPLOAD_TIMEOUT_MS = 5 * 60_000;
@@ -20,6 +25,27 @@ export const DUNG_LUONG_TOI_DA_BYTE = {
 } as const;
 
 const TEN_LOAI_TEP = { image: 'Ảnh', document: 'Tệp', video: 'Video' } as const;
+
+/** Cạnh dài tối đa của ảnh sau khi nén (px). Dùng chủ yếu trên điện thoại nên 1600 đã đủ nét; chỉ thu nhỏ, không phóng to. */
+export const CANH_DAI_ANH_TOI_DA_PX = 1600;
+
+/** Video chọn từ thư viện được lấy tối đa mức này khi máy nén được video (thư viện nén bớt xuống dưới 100MB trước khi gửi). */
+export const DUNG_LUONG_CHON_VIDEO_KHI_NEN_BYTE = 500 * 1024 * 1024;
+
+const cauQuaLon = (loai: keyof typeof TEN_LOAI_TEP, toiDa: number) =>
+  `${TEN_LOAI_TEP[loai]} quá lớn (tối đa ${Math.round(toiDa / (1024 * 1024))}MB). Vui lòng chọn tệp nhỏ hơn.`;
+
+/**
+ * Kiểm video vừa chọn từ thư viện, trả câu báo lỗi nếu quá lớn (null nếu được hoặc chưa biết dung lượng).
+ * Máy nén được video thì cho tới 500MB (sẽ nén xuống trước khi gửi), không thì áp thẳng giới hạn 100MB của storage.
+ */
+export function kiemTraVideoKhiChon(sizeBytes?: number | null): string | null {
+  if (!sizeBytes) return null;
+  const toiDa = isVideoCompressorAvailable()
+    ? DUNG_LUONG_CHON_VIDEO_KHI_NEN_BYTE
+    : DUNG_LUONG_TOI_DA_BYTE.video;
+  return sizeBytes > toiDa ? cauQuaLon('video', toiDa) : null;
+}
 
 /** Upload thất bại; `status` để giao diện nói đúng nguyên nhân (401 hết phiên, 400 tệp không hợp lệ, 413 quá lớn...). */
 export class UploadError extends Error {
@@ -39,6 +65,8 @@ export interface ManipulatorAdapter {
     actions: { resize?: { width?: number; height?: number } }[],
     saveOptions: { compress: number; format: 'jpeg' | 'png' | 'webp' },
   ): Promise<{ uri: string; width: number; height: number; base64?: string }>;
+  /** Kích thước ảnh gốc để chọn thu nhỏ theo cạnh dài; không có thì thu nhỏ theo chiều rộng. */
+  getSize?(uri: string): Promise<{ width: number; height: number }>;
 }
 
 let defaultManipulator: ManipulatorAdapter | null = null;
@@ -48,6 +76,10 @@ try {
   defaultManipulator = {
     manipulateAsync: (uri, actions, options) =>
       ExpoManipulator.manipulateAsync(uri, actions, options),
+    getSize: (uri) =>
+      new Promise((resolve, reject) =>
+        Image.getSize(uri, (width, height) => resolve({ width, height }), reject),
+      ),
   };
 } catch {
   // Môi trường Node.js / Jest
@@ -80,9 +112,17 @@ export function isVideoUrl(urlOrPath?: string | null): boolean {
   );
 }
 
+/** Thu nhỏ theo cạnh dài, không phóng to; chưa biết kích thước thì thu theo chiều rộng. */
+function hanhDongThuNho(size?: { width: number; height: number }) {
+  const max = CANH_DAI_ANH_TOI_DA_PX;
+  if (!size) return [{ resize: { width: max } }];
+  if (Math.max(size.width, size.height) <= max) return [];
+  return size.width >= size.height ? [{ resize: { width: max } }] : [{ resize: { height: max } }];
+}
+
 /**
  * 1. Nén và chuẩn hóa ảnh phía Mobile bằng expo-image-manipulator.
- * - Cạnh dài tối đa 2048px (giữ nguyên tỷ lệ chuẩn).
+ * - Cạnh dài tối đa `CANH_DAI_ANH_TOI_DA_PX` (1600px), giữ nguyên tỷ lệ; ảnh nhỏ hơn thì không phóng to.
  * - Nén chất lượng 0.90 JPEG để đảm bảo độ nét cao không bị vỡ/bóp méo.
  * - Tự động loại bỏ metadata EXIF nhạy cảm (GPS coordinates).
  */
@@ -93,7 +133,8 @@ export async function compressImageOnDevice(
   const activeManipulator = manipulator || defaultManipulator;
 
   if (activeManipulator) {
-    const result = await activeManipulator.manipulateAsync(uri, [{ resize: { width: 2048 } }], {
+    const size = await activeManipulator.getSize?.(uri).catch(() => undefined);
+    const result = await activeManipulator.manipulateAsync(uri, hanhDongThuNho(size), {
       compress: 0.9,
       format: 'jpeg',
     });
@@ -211,7 +252,7 @@ async function prepareFile(
     // Giữ nguyên tệp gốc.
   } else if (!isVideo) {
     try {
-      // Nén ảnh giữ độ nét cao bằng expo-image-manipulator (cạnh dài 2048px, JPEG 0.9, bỏ EXIF).
+      // Nén ảnh giữ độ nét cao bằng expo-image-manipulator (cạnh dài 1600px, JPEG 0.9, bỏ EXIF).
       const compressed = await compressImageOnDevice(localUri);
       uri = compressed.uri;
       type = compressed.contentType;
@@ -223,12 +264,23 @@ async function prepareFile(
       uri = localUri;
     }
   } else {
-    // Video: giữ nguyên dữ liệu gốc và chỉ định đúng MIME.
+    // Video: chỉ định đúng MIME. Trên điện thoại có thư viện nén thì nén các video lớn (hoặc chưa biết dung lượng) xuống
+    // 720p, bỏ GPS; không nén được thì giữ nguyên bản gốc.
     const lower = uri.toLowerCase();
     if (lower.endsWith('.mov')) {
       type = 'video/quicktime';
     } else if (!type.startsWith('video/')) {
       type = 'video/mp4';
+    }
+    if (!blob && isVideoCompressorAvailable() && (sizeBytes === 0 || sizeBytes > NGUONG_NEN_VIDEO_BYTE)) {
+      const compressed = await compressVideoOnDevice(uri);
+      // Nén xong mà không nhỏ hơn bản gốc (đã biết dung lượng) thì giữ bản gốc.
+      if (compressed && (sizeBytes === 0 || compressed.sizeBytes < sizeBytes)) {
+        uri = compressed.uri;
+        type = 'video/mp4';
+        name = `video_${Date.now()}.mp4`;
+        sizeBytes = compressed.sizeBytes;
+      }
     }
   }
 
@@ -236,11 +288,7 @@ async function prepareFile(
   const loai = isDocument ? 'document' : isVideo ? 'video' : 'image';
   const toiDa = DUNG_LUONG_TOI_DA_BYTE[loai];
   if (sizeBytes > toiDa) {
-    throw new UploadError(
-      `${TEN_LOAI_TEP[loai]} quá lớn (tối đa ${Math.round(toiDa / (1024 * 1024))}MB). Vui lòng chọn tệp nhỏ hơn.`,
-      413,
-      'FILE_TOO_LARGE',
-    );
+    throw new UploadError(cauQuaLon(loai, toiDa), 413, 'FILE_TOO_LARGE');
   }
 
   return { uri, type, name, sizeBytes: Math.max(1, Math.round(sizeBytes)), blob };
