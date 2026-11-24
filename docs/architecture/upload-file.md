@@ -8,7 +8,7 @@ và vòng đời file: [database/diagrams/02-tep-tin.md](../../database/diagrams
 ## 1. Thành phần
 
 ```text
-Mobile ──(1) upload-url / (3) confirm / url──▶ API ──▶ MySQL (tep_tin, outbox)
+Mobile ──(1) upload-url / (3) confirm / url──▶ API ──▶ MySQL (tep_tin)
    │                                            │
    └──────────(2) POST form───────────▶ MinIO / S3 ◀── worker nền (BackgroundService)
 ```
@@ -20,7 +20,7 @@ Mobile ──(1) upload-url / (3) confirm / url──▶ API ──▶ MySQL (te
 | `IFileStorage` / `S3FileStorage` | Presigned POST (upload) và GET, copy, đọc đầu object, xóa |
 | `IFileUrlResolver` | Biến `tep_tin` (và ảnh xem trước của video) thành URL đọc; sau này thêm CDN ở đây |
 | `IImageProcessor` | Bỏ EXIF, xoay đúng chiều, kiểm kích thước điểm ảnh, tính blurhash |
-| Worker xử lý file | Đọc outbox, xử lý ảnh/video, (sau này) kiểm duyệt |
+| Worker xử lý file | Quét cột `trang_thai_xu_ly` của `tep_tin`, xử lý ảnh/video, (sau này) kiểm duyệt |
 | Job dọn file | Xóa file mồ côi và `loi` |
 
 ### Sơ đồ tuần tự
@@ -55,7 +55,7 @@ sequenceDiagram
     A->>A: Đối chiếu kích thước (1 đến tối đa), MIME, magic bytes; ghi kích thước thật
     alt Đạt
         A->>S: Copy sang key chính, xóa key tạm
-        A->>D: tep_tin = da_tai_len + ghi outbox (cùng transaction)
+        A->>D: tep_tin = da_tai_len + trang_thai_xu_ly = cho_xu_ly (cùng một lần ghi)
         A-->>M: 200 (file_id)
     else Không đạt
         A->>D: tep_tin = loi
@@ -63,7 +63,7 @@ sequenceDiagram
         A-->>M: 400
     end
 
-    W->>D: Giành dòng outbox (cho_xu_ly sang dang_xu_ly)
+    W->>D: Giành dòng tep_tin (cho_xu_ly sang dang_xu_ly)
     W->>S: Tải bản gốc
     W->>W: Ảnh: bỏ EXIF, tính blurhash. Video: tạo ảnh xem trước
     W->>S: Ghi đè bản gốc đã bỏ EXIF (video: ghi ảnh xem trước)
@@ -167,8 +167,8 @@ BL kiểm:
 1. `tep_tin` thuộc người gọi và đang `cho_tai_len`.
 2. `HEAD` object: tồn tại, kích thước từ 1 đến mức tối đa của loại file, `Content-Type` khớp với lúc xin. Kích thước thật ghi vào `kich_thuoc_byte` (số khai lúc xin chỉ là ước lượng để kiểm sớm và tính hạn mức; app khó biết chính xác dung lượng sau khi nén).
 3. Đọc vài KB đầu, kiểm magic bytes khớp loại khai báo (JPEG, PNG, WebP, HEIC, MP4/MOV, PDF).
-4. Đạt: **copy** object từ `tmp/{file_id}` sang key chính, xóa key tạm, rồi `da_tai_len`, đặt `ngay_xac_nhan`, ghi dòng outbox xử lý
-   file trong cùng transaction. Copy phía server để form upload còn hạn không đè được file đã kiểm: sau confirm, ai POST lại vào
+4. Đạt: **copy** object từ `tmp/{file_id}` sang key chính, xóa key tạm, rồi `da_tai_len`, đặt `ngay_xac_nhan` và `trang_thai_xu_ly` (xem mục 6)
+   trong cùng một lần ghi. Copy phía server để form upload còn hạn không đè được file đã kiểm: sau confirm, ai POST lại vào
    key tạm cũng không ảnh hưởng key chính. Không đạt: `loi`, xóa key tạm.
 
 Confirm gọi lại với file đã `da_tai_len` thì trả kết quả hiện tại (idempotent), không lỗi.
@@ -279,17 +279,18 @@ Giữ `useFileUpload` và `uploadMultipartFile` làm điểm vào (đổi tên `
 3. POST form `multipart/form-data` bằng `axios.post` (các `fields` đặt trước, trường file dạng `{ uri, type, name }` đặt cuối để phần native của React Native tự đọc tệp,
    không nạp cả video vào bộ nhớ JS); `onProgress` theo `onUploadProgress` (byte thật); hủy bằng `AbortSignal`; chờ tối đa 5 phút. Không dùng
    `FileSystem.createUploadTask`: axios đã đủ progress, hủy, thử lại và chạy cả trên web.
-4. Lỗi mạng hoặc 5xx thì thử lại có backoff (`maxRetries`, `initialRetryDelayMs` đã có trong `UploadOptions`); 403 do URL hết hạn
-   thì xin URL mới một lần.
+4. Lỗi mạng hoặc 5xx thì thử lại có backoff (`maxRetries`, `initialRetryDelayMs` đã có trong `UploadOptions`). Form hết hạn (`het_han` đã qua, ví dụ app nằm nền lâu) thì xin form mới trước khi gửi;
+   storage trả 403 thì báo `STORAGE_REJECTED`, không thử lại.
 5. Gọi `confirm`, trả `FileUploadResult` gồm `file_id` (và URL xem nếu cần ngay).
 
-Trạng thái hook: `idle`, `preparing` (nén/kiểm), `uploading`, `confirming`, `done`, `error`. Sửa `UploadState` và bỏ
-`ConfirmUploadResponse`, `ImageVariantUrls` kiểu cũ. `UploadError` giữ `status` để màn hình báo đúng nguyên nhân.
+`UploadState` có `idle`, `compressing`, `uploading`, `confirming`, `done`, `error`, nhưng `useFileUpload` hiện chỉ đặt `idle`, `uploading`, `done`,
+`error` (`compressing` và `confirming` chưa dùng, nên giao diện chưa phân biệt được bước nén và bước xác nhận). `UploadError` giữ `status` và `code`
+để màn hình báo đúng nguyên nhân.
 
 Hiển thị ảnh: `RemoteImage` dùng `expo-image` cho ảnh có `file_id` hoặc blurhash, với `cacheKey = file_id` và `placeholder` là blurhash; ảnh khác giữ
 `Image` của React Native. API bài viết trả `hinh_anh_meta` (mục 3.3); `mapBaiVietDtoToFeedPost` nhớ thông tin theo đúng URL ký (`ghiNhoThongTinAnh`,
-tối đa 1000 URL, bỏ mục cũ nhất) để `RemoteImage` tự tra, các màn hình không phải truyền xuống từng ảnh. URL lấy từ response danh sách; hết
-hạn thì xin lại rồi thử một lần. Không lưu URL presigned vào store lâu dài; lưu `file_id`. Đăng xuất gọi `xoaCacheAnh`: xóa cache ảnh của
+tối đa 1000 URL, bỏ mục cũ nhất) để `RemoteImage` tự tra, các màn hình không phải truyền xuống từng ảnh. URL lấy từ response danh sách; việc
+xin lại URL khi hết hạn rồi thử một lần **chưa làm** (hiện ảnh lỗi thì hiện nền xám). Không lưu URL presigned vào store lâu dài; lưu `file_id`. Đăng xuất gọi `xoaCacheAnh`: xóa cache ảnh của
 expo-image (bộ nhớ và đĩa) cùng thông tin đã nhớ, để máy dùng chung không còn ảnh riêng tư của người trước. Hiện mới áp dụng cho ảnh bài viết; ảnh
 check-in và ảnh cơ thể dùng cách này khi có API trả `hinh_anh_meta` tương ứng.
 
