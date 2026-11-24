@@ -2,6 +2,8 @@
 
 > **Ngày viết:** 21/11/2026 · **Cập nhật:** 21/11/2026 (đã sửa D1–D5, D7, D10, D11, S9, S10, S12, S13, S15, B17, B18, B19, M4, M10, M14, N16, N17; sửa một phần M5) · **Trạng thái:** đã triển khai (review code đang chạy; S9, S10, S12, S13, S15, B17, B18, B19 đã sửa, M4, M10, M14, N16, N17 đã sửa, M5 sửa một phần; các mục còn lại chưa sửa) · **Đối chiếu code:** 481539c
 
+> **Lưu ý (24/11/2026):** các phát hiện về upload và `FileService` (S3 đến S8, B1, B10 đến B14, N9) mô tả code trước khi làm lại upload theo [ADR-0003](../adr/0003-upload-file-presigned-minio-s3.md): `FileService`, `FileMigrationService`, endpoint `/content`, `migrate-to-s3`, `DevFallbackUserId` và upload multipart qua API đã bị xóa hoặc thay. Hãy đọc các mục đó như lịch sử, không phải hiện trạng; tôi chưa đối chiếu từng mục xem còn đúng một phần nào không.
+
 Tài liệu ghi lại kết quả review phần base của `apps/api` và `apps/mobile` trên nhánh `quantv_code-review`, sau khi merge `origin/develop` (6 commit mới của đồng nghiệp, gồm upload video, lưu bài, bình luận).
 Mục tiêu: chỉ ra phần nào ổn, phần nào chưa ổn, phần nào lạ so với thông thường, về cách đặt file, tên file, logic bên trong và cách các file gọi nhau.
 

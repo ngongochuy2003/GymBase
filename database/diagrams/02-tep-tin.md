@@ -44,9 +44,9 @@ stateDiagram-v2
     cho_tai_len --> da_tai_len : backend kiểm tra object trên S3
     cho_tai_len --> loi : upload hỏng hoặc quá hạn
     da_tai_len --> da_lien_ket : gắn vào bài viết, tin nhắn, nhật ký, avatar
-    da_lien_ket --> da_xoa
-    da_tai_len --> da_xoa : job dọn file mồ côi
-    loi --> da_xoa
+    da_lien_ket --> da_xoa : chứng chỉ PT bị thay hoặc gỡ
+    da_tai_len --> [*] : job dọn file mồ côi hoặc DELETE xóa dòng
+    loi --> [*] : job dọn xóa dòng
     da_xoa --> [*]
 ```
 
