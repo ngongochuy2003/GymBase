@@ -1,6 +1,6 @@
 # Lộ trình: luồng màn hình (học viên và PT)
 
-> **Ngày viết:** 21/11/2026 · **Cập nhật:** 22/11/2026 · **Trạng thái:** thiết kế đã chốt (luồng theo [adr.md](adr.md) N1 đến N22; còn các màn chưa có thiết kế ở mục 8, chưa có code)
+> **Ngày viết:** 21/11/2026 · **Cập nhật:** 25/11/2026 · **Trạng thái:** PoC (mobile chạy dữ liệu mẫu theo [adr.md](adr.md); chưa có backend, còn các màn chưa có thiết kế ở mục 8) · **Đối chiếu code:** 19d49ec (+ thay đổi chưa commit)
 
 Nguồn: `Tài liệu dự án/GymBase_V1_Workflow_Thiet_Ke.docx`, phần 05 đến 14, đã áp các quyết định trong [adr.md](adr.md). Phần chữ
 của docx rất ngắn, nội dung nằm trong ảnh storyboard nên tài liệu này đọc từ ảnh. Chỉ mô tả **đi từ đâu tới đâu**. Quy tắc nghiệp
@@ -83,6 +83,20 @@ Bản thiết kế dùng là **danh sách nhóm theo trạng thái** (phần 06,
 | Chuyển sub-tab "Lộ trình tôi quản lý" | PT-01 |
 
 Trạng thái cần có: chưa có lộ trình (trống), đang tải, lỗi tải, nhiều lộ trình cùng lúc.
+
+Có lời mời đang chờ (N23) thì mỗi lời mời là một thẻ "Lời mời tham gia" nằm **trên** các lộ trình đang thực hiện: ảnh, tên lộ trình, tên PT, thời gian, nút "Xem chi tiết" sang HV-01a.
+
+### HV-01a Chi tiết lời mời (N23, chưa có thiết kế chính thức)
+
+Điểm vào: thẻ lời mời ở HV-01. Màn con, không có thanh dưới (N10). Từ trên xuống: thông tin lộ trình (ảnh bìa, tên, PT, thời gian, loại đơn hay nhóm), lời nhắn từ PT, mục tiêu, kế hoạch dinh dưỡng, lịch tập (hàng chip chọn tuần như PT-02, mặc định Tuần 1, tuần sửa riêng có chấm), theo dõi định kỳ. Cuối nội dung là hai nút **Từ chối** và **Tham gia**: **không ghim** ở đáy màn, phải cuộn hết mới thấy.
+
+| Thao tác | Đích |
+| --- | --- |
+| "Tham gia", rồi xác nhận | Về HV-01; thẻ lời mời mất, lộ trình vào nhóm đang thực hiện (chưa có số liệu tiến độ) |
+| "Từ chối", rồi xác nhận | Về HV-01; thẻ lời mời mất |
+| "Hủy" ở hộp xác nhận | Ở lại HV-01a, chưa trả lời |
+
+Chưa làm: báo cho PT, thông báo mời bấm vào mở màn này, lý do từ chối.
 
 ### HV-02 Chi tiết lộ trình
 
