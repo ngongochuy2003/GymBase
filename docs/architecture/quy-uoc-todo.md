@@ -33,3 +33,4 @@ viết cùng lúc với code. Extension Todo Tree (cấu hình ở `.vscode/sett
 | `LINK-GOOGLE` | Liên kết Google vào tài khoản mật khẩu có sẵn từ tab Cá nhân (backend và mobile) |
 | `IOS` | Đăng nhập Google trên iOS (plugin `iosUrlScheme`, client ID iOS) và Sign in with Apple |
 | `LEGAL` | Điều khoản sử dụng và Chính sách bảo mật thật (hiện là URL giữ chỗ) |
+| `THONGBAO` | Thông báo: mã thử (endpoint `thu-nghiem`, nút nhắc thử, màn chẩn đoán) chờ gỡ sau khi thử trên máy thật; bấm push mở đúng màn hình. Xem [thong-bao.md](thong-bao.md) |
