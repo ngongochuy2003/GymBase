@@ -20,6 +20,7 @@ import { useThongBaoHeader } from '@/shared/notifications';
 import { useTheme } from '@/shared/theme/theme';
 import { BoLocQuanLy } from '../components/bo-loc-quan-ly';
 import { KhoiHomNay } from '../components/khoi-hom-nay';
+import { TheLoiMoi } from '../components/the-loi-moi';
 import { TheLoTrinhCuaToi } from '../components/the-lo-trinh-cua-toi';
 import { TheLoTrinhQuanLy } from '../components/the-lo-trinh-quan-ly';
 import { useLoTrinh } from '../hooks/use-lo-trinh';
@@ -124,7 +125,7 @@ export function LoTrinhScreen() {
   const { user } = useSession();
   const thongBao = useThongBaoHeader();
   const { colors } = useTheme();
-  const { homNay, cuaToi, quanLy } = useLoTrinh();
+  const { homNay, cuaToi, quanLy, loiMoi } = useLoTrinh();
   const toast = useToastCheckIn();
   const [subTab, setSubTab] = useState<SubTab>('cua_toi');
   const [trangThai, setTrangThai] = useState<TrangThaiLoTrinh>('dang_hoat_dong');
@@ -164,12 +165,15 @@ export function LoTrinhScreen() {
         <Animated.View key={subTab} entering={FadeInDown.duration(250)} className="gap-4">
           {subTab === 'cua_toi' ? (
             <>
+              {loiMoi.map((m) => (
+                <TheLoiMoi key={m.loTrinh.id} loiMoi={m} />
+              ))}
               {dangChay.length > 0 ? (
                 <>
                   {dangChay.map((lo) => (
                     <TheLoTrinhCuaToi key={lo.id} loTrinh={lo} />
                   ))}
-                  {dangChay[0] ? (
+                  {dangChay[0] && nhiemVuHomNay.length > 0 ? (
                     <KhoiHomNay
                       loTrinhId={dangChay[0].id}
                       nhiemVu={nhiemVuHomNay}

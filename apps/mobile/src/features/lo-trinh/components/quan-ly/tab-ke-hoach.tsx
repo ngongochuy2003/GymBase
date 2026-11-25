@@ -3,13 +3,21 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import type { ChiTietQuanLy } from '../../types';
 import { buoiTapCuaTuan, tenThu } from '../../utils/lich-tap';
+import { ChonTuan } from '../chon-tuan';
 import { KhungThe } from '../khung-the';
 
 /**
- * Tab Kế hoạch của chi tiết lộ trình PT (PT-03), chỉ xem: các bữa ăn đang bật (giờ, kcal, món) và lịch tập của tuần hiện
+ * Tab Kế hoạch của chi tiết lộ trình PT (PT-03), cũng dùng ở màn lời mời của học viên; chỉ xem: các bữa ăn đang bật (giờ, kcal, món) và lịch tập của tuần hiện
  * tại (thứ, giờ, nhóm cơ, bài tập). Sửa kế hoạch ở nút "Chỉnh sửa kế hoạch" cuối màn.
  */
-export function TabKeHoach({ chiTiet }: { chiTiet: ChiTietQuanLy }) {
+export function TabKeHoach({
+  chiTiet,
+  chonTuan,
+}: {
+  chiTiet: Pick<ChiTietQuanLy, 'keHoach' | 'tuanHienTai'>;
+  /** Có thì khối Lịch tập thêm hàng chip để xem tuần khác; `tuanHienTai` là tuần đang chọn. */
+  chonTuan?: { soTuan: number; onDoiTuan(tuan: number): void };
+}) {
   const { keHoach, tuanHienTai } = chiTiet;
   const buaAn = keHoach.buaAn.filter((b) => b.bat);
   const buoiTap = [...buoiTapCuaTuan(keHoach.lichTap, tuanHienTai)].sort((a, b) => a.thu - b.thu);
@@ -42,6 +50,14 @@ export function TabKeHoach({ chiTiet }: { chiTiet: ChiTietQuanLy }) {
       </KhungThe>
 
       <KhungThe icon="dumbbell" tieuDe="Lịch tập" tieuDePhu={`(Tuần ${tuanHienTai})`}>
+        {chonTuan ? (
+          <ChonTuan
+            lich={keHoach.lichTap}
+            soTuan={chonTuan.soTuan}
+            tuanChon={tuanHienTai}
+            onDoiTuan={chonTuan.onDoiTuan}
+          />
+        ) : null}
         {buoiTap.length === 0 ? (
           <Text variant="muted" className="text-sm">
             Tuần này không có buổi tập.

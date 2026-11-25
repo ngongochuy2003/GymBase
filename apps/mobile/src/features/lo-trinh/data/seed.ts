@@ -5,6 +5,7 @@ import type {
   ChiTietQuanLy,
   CheckInQuanLy,
   KeHoachLoTrinh,
+  LoiMoiLoTrinh,
   LoTrinhCuaToi,
   LoTrinhQuanLy,
   NguoiLoTrinh,
@@ -321,6 +322,39 @@ export function taoDuLieuMau(homNay: Date): {
   ];
 
   return { cuaToi, quanLy };
+}
+
+/** Lời mời đang chờ học viên trả lời; lộ trình bắt đầu sau `homNay` nên chưa có nhiệm vụ. */
+// TODO(ROUTE): thay bằng API lời mời của học viên (bảng lượt tham gia, adr.md, N23, K9).
+export function taoLoiMoiMau(homNay: Date): LoiMoiLoTrinh[] {
+  const keHoach = taoKeHoachMau();
+  // Tuần 4 giảm tải: chỉ giữ hai buổi đầu.
+  keHoach.lichTap.rieng[4] = keHoach.lichTap.chung.slice(0, 2);
+  return [
+    {
+      loTrinh: {
+        id: 'lm-1',
+        ten: 'Săn chắc toàn thân 8 tuần',
+        loai: 'don',
+        trangThai: 'dang_hoat_dong',
+        ngayBatDau: layNgayLech(homNay, 3),
+        ngayKetThuc: layNgayLech(homNay, 59),
+        tongTuan: 8,
+        tienDo: 0,
+        anhBia: bia('san-chac'),
+        pt: nguoi('pt-4', 'Nguyễn Thu Trang', 32),
+        tuanHienTai: 1,
+        mucTieu: { tu: 64, den: 60, donVi: 'kg' },
+        tuanThu: 0,
+        checkInTiepTheo: 'Khi lộ trình bắt đầu',
+        nhiemVuHomNay: [],
+      },
+      loiNhan: 'Mình đã lên lộ trình theo mục tiêu bạn chia sẻ. Bạn xem kỹ rồi tham gia nhé.',
+      keHoach,
+      canMoiTuan: 2,
+      chuKyAnhTuan: 2,
+    },
+  ];
 }
 
 /**

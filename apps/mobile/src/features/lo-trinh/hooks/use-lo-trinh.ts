@@ -7,7 +7,8 @@ import {
 } from '../data/check-in-store';
 import { useDanhGiaCheckIn } from '../data/danh-gia-check-in-store';
 import { useLoTrinhDaDong } from '../data/dong-lo-trinh-store';
-import { taoChiTietQuanLyMau, taoDuLieuMau, taoTienDoMau } from '../data/seed';
+import { useLoiMoiDaTraLoi } from '../data/loi-moi-store';
+import { taoChiTietQuanLyMau, taoDuLieuMau, taoLoiMoiMau, taoTienDoMau } from '../data/seed';
 import { apDanhGia, demDaDanhGia } from '../utils/danh-gia-check-in';
 import type {
   CheckInBuaAn,
@@ -16,6 +17,7 @@ import type {
   GhiCanNang,
   LoTrinhCuaToi,
   NhiemVuHomNay,
+  TienDoLoTrinh,
   TrangThaiNhiemVu,
 } from '../types';
 
@@ -67,14 +69,20 @@ export function useLoTrinh() {
   const anhDaGhi = useAnhCoTheDaGhi();
   const daDong = useLoTrinhDaDong();
   const danhGia = useDanhGiaCheckIn();
+  const traLoi = useLoiMoiDaTraLoi();
   const goc = useMemo(() => {
     const homNay = new Date();
-    return { homNay, ...taoDuLieuMau(homNay) };
+    return { homNay, ...taoDuLieuMau(homNay), moi: taoLoiMoiMau(homNay) };
   }, []);
   return useMemo(
     () => ({
       ...goc,
-      cuaToi: goc.cuaToi.map((lo): LoTrinhCuaToi => ({
+      loiMoi: goc.moi.filter((m) => !traLoi[m.loTrinh.id]),
+      // Lộ trình vừa tham gia nối vào cuối, để khối "Nhiệm vụ hôm nay" vẫn theo lộ trình đang chạy từ trước.
+      cuaToi: [
+        ...goc.cuaToi,
+        ...goc.moi.filter((m) => traLoi[m.loTrinh.id] === 'tham_gia').map((m) => m.loTrinh),
+      ].map((lo): LoTrinhCuaToi => ({
         ...lo,
         nhiemVuHomNay: lo.nhiemVuHomNay.map((nv) =>
           apAnhCoThe(
@@ -95,18 +103,37 @@ export function useLoTrinh() {
         return dong ? { ...capNhat, trangThai: dong.trangThai, lyDoDong: dong.lyDo } : capNhat;
       }),
     }),
-    [goc, daGuiBuaAn, daGuiBuoiTap, canNangDaGhi, anhDaGhi, daDong, danhGia],
+    [goc, daGuiBuaAn, daGuiBuoiTap, canNangDaGhi, anhDaGhi, daDong, danhGia, traLoi],
   );
 }
+
+/** Một lời mời kèm câu trả lời trong phiên (nếu đã trả lời); `null` khi không có lời mời mang id đó. */
+// TODO(ROUTE): chuyển sang useQuery gọi API chi tiết lời mời theo id; thêm isPending, isError.
+export function useLoiMoi(id: string | undefined) {
+  const { moi } = useLoTrinh();
+  const traLoi = useLoiMoiDaTraLoi();
+  const loiMoi = moi.find((m) => m.loTrinh.id === id);
+  return loiMoi ? { loiMoi, traLoi: traLoi[loiMoi.loTrinh.id] } : null;
+}
+
+const CHUA_CO_TIEN_DO: TienDoLoTrinh = {
+  canNang: [],
+  buoiTap: { xong: 0, tong: 0 },
+  buaAn: { xong: 0, tong: 0 },
+  anhMoc: [],
+};
 
 /** Chi tiết một lộ trình của học viên kèm số liệu tiến độ; trả `null` khi không có lộ trình mang id đó. */
 // TODO(ROUTE): chuyển sang useQuery gọi API chi tiết lộ trình theo id; thêm isPending, isError.
 export function useChiTietLoTrinh(id: string | undefined) {
-  const { homNay, cuaToi } = useLoTrinh();
+  const { homNay, cuaToi, moi } = useLoTrinh();
   return useMemo(() => {
     const loTrinh = cuaToi.find((lo) => lo.id === id);
-    return loTrinh ? { homNay, loTrinh, tienDo: taoTienDoMau(loTrinh) } : null;
-  }, [homNay, cuaToi, id]);
+    if (!loTrinh) return null;
+    // Lộ trình vừa tham gia từ lời mời chưa có số đo nào, không sinh số liệu mẫu cho nó.
+    const vuaThamGia = moi.some((m) => m.loTrinh.id === id);
+    return { homNay, loTrinh, tienDo: vuaThamGia ? CHUA_CO_TIEN_DO : taoTienDoMau(loTrinh) };
+  }, [homNay, cuaToi, moi, id]);
 }
 
 /** Chi tiết một lộ trình ở góc nhìn PT (PT-03); trả `null` khi không có lộ trình mang id đó. */

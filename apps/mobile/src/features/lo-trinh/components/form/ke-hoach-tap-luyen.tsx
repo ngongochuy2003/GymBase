@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/shared/components/ui';
 import { cn } from '@/lib/utils';
@@ -6,6 +6,7 @@ import { Icon } from '@/shared/icons';
 import { useTheme } from '@/shared/theme/theme';
 import type { BuoiTapTuan, LichTapTheoTuan } from '../../types';
 import { buoiTapCuaTuan, ghiBuoiTapCuaTuan } from '../../utils/lich-tap';
+import { ChonTuan } from '../chon-tuan';
 import { ChonGio } from './chon-gio';
 import { KhoiForm } from './thanh-phan-form';
 
@@ -60,46 +61,7 @@ export function KeHoachTapLuyen({
       tieuDe="Kế hoạch tập luyện"
       moTa="Lập Tuần 1, các tuần sau tự điền theo và có thể sửa riêng."
     >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-2"
-        accessibilityRole="tablist"
-      >
-        {Array.from({ length: soTuan }, (_, i) => i + 1).map((tuan) => {
-          const chon = tuan === tuanDangSua;
-          const rieng = tuan > 1 && lich.rieng[tuan] !== undefined;
-          return (
-            <Pressable
-              key={tuan}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: chon }}
-              onPress={() => onDoiTuan(tuan)}
-              className={cn(
-                'flex-row items-center gap-1.5 rounded-full border px-3.5 py-1.5',
-                chon ? 'border-primary bg-primary' : 'border-border bg-background',
-              )}
-            >
-              <Text
-                className={cn(
-                  'text-sm font-medium',
-                  chon ? 'text-primary-foreground' : 'text-foreground',
-                )}
-              >
-                Tuần {tuan}
-              </Text>
-              {rieng ? (
-                <View
-                  className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    chon ? 'bg-primary-foreground' : 'bg-warning',
-                  )}
-                />
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <ChonTuan lich={lich} soTuan={soTuan} tuanChon={tuanDangSua} onDoiTuan={onDoiTuan} />
 
       <View className="flex-row items-center gap-2 rounded-xl bg-secondary px-3 py-2">
         <Icon name="calendar" size={18} color={colors.muted} />

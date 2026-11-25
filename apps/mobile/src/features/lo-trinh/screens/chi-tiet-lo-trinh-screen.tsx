@@ -57,31 +57,41 @@ export function ChiTietLoTrinhScreen({ id }: { id?: string }) {
               homNay={chiTiet.homNay}
             />
           </Rise>
-          <Rise delay={90}>
-            <KhoiCanNang
-              diem={chiTiet.tienDo.canNang}
-              donVi={chiTiet.loTrinh.mucTieu.donVi}
-              onMoChiTiet={() => router.push({ pathname: '/chi-tiet-can-nang', params: { id } })}
-            />
-          </Rise>
-          <Rise delay={180}>
-            <KhoiChiSo
-              buoiTap={chiTiet.tienDo.buoiTap}
-              buaAn={chiTiet.tienDo.buaAn}
-              tuanThu={chiTiet.loTrinh.tuanThu}
-            />
-          </Rise>
-          <Rise delay={270}>
-            <KhoiAnhMoc
-              anh={chiTiet.tienDo.anhMoc}
-              onXemTatCa={() => router.push({ pathname: '/anh-theo-moc', params: { id } })}
-            />
-          </Rise>
-          {chiTiet.tienDo.danhGia ? (
-            <Rise delay={360}>
-              <KhoiDanhGiaPt danhGia={chiTiet.tienDo.danhGia} />
-            </Rise>
-          ) : null}
+          {chiTiet.tienDo.canNang.length === 0 ? (
+            <Text variant="muted" className="text-center text-sm">
+              Chưa có số liệu tiến độ.
+            </Text>
+          ) : (
+            <>
+              <Rise delay={90}>
+                <KhoiCanNang
+                  diem={chiTiet.tienDo.canNang}
+                  donVi={chiTiet.loTrinh.mucTieu.donVi}
+                  onMoChiTiet={() =>
+                    router.push({ pathname: '/chi-tiet-can-nang', params: { id } })
+                  }
+                />
+              </Rise>
+              <Rise delay={180}>
+                <KhoiChiSo
+                  buoiTap={chiTiet.tienDo.buoiTap}
+                  buaAn={chiTiet.tienDo.buaAn}
+                  tuanThu={chiTiet.loTrinh.tuanThu}
+                />
+              </Rise>
+              <Rise delay={270}>
+                <KhoiAnhMoc
+                  anh={chiTiet.tienDo.anhMoc}
+                  onXemTatCa={() => router.push({ pathname: '/anh-theo-moc', params: { id } })}
+                />
+              </Rise>
+              {chiTiet.tienDo.danhGia ? (
+                <Rise delay={360}>
+                  <KhoiDanhGiaPt danhGia={chiTiet.tienDo.danhGia} />
+                </Rise>
+              ) : null}
+            </>
+          )}
         </ScrollView>
       ) : (
         <View className="items-center p-8">

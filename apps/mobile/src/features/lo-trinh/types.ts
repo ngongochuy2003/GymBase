@@ -311,3 +311,15 @@ export interface ChiTietQuanLy {
   hoatDong: HoatDongGanDay[];
   keHoach: KeHoachLoTrinh;
 }
+
+/** Lời mời tham gia lộ trình PT gửi cho học viên, chờ chấp nhận hoặc từ chối (N23). */
+export interface LoiMoiLoTrinh {
+  /** Lộ trình sẽ vào "Lộ trình của tôi" nếu học viên tham gia; `id` của nó cũng là id lời mời. */
+  loTrinh: LoTrinhCuaToi;
+  loiNhan?: string;
+  keHoach: KeHoachLoTrinh;
+  /** Số lần cân mỗi tuần. */
+  canMoiTuan: number;
+  /** Chu kỳ chụp ảnh cơ thể, tính bằng tuần. */
+  chuKyAnhTuan: number;
+}
