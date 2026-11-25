@@ -7,15 +7,19 @@ import {
 } from '../data/check-in-store';
 import { useDanhGiaCheckIn } from '../data/danh-gia-check-in-store';
 import { useLoTrinhDaDong } from '../data/dong-lo-trinh-store';
+import { taoLichSuMau } from '../data/lich-su-check-in';
 import { useLoiMoiDaTraLoi } from '../data/loi-moi-store';
 import { taoChiTietQuanLyMau, taoDuLieuMau, taoLoiMoiMau, taoTienDoMau } from '../data/seed';
 import { apDanhGia, demDaDanhGia } from '../utils/danh-gia-check-in';
 import type {
   CheckInBuaAn,
   CheckInBuoiTap,
+  CheckInQuanLy,
+  ChiTietQuanLy,
   GhiAnhCoThe,
   GhiCanNang,
   LoTrinhCuaToi,
+  LoTrinhQuanLy,
   NhiemVuHomNay,
   TienDoLoTrinh,
   TrangThaiNhiemVu,
@@ -136,6 +140,42 @@ export function useChiTietLoTrinh(id: string | undefined) {
   }, [homNay, cuaToi, moi, id]);
 }
 
+/** Chi tiết góc nhìn PT của một thẻ lộ trình, đã áp các đánh giá vừa gửi. */
+function chiTietCua(
+  lo: LoTrinhQuanLy,
+  homNay: Date,
+  danhGia: ReturnType<typeof useDanhGiaCheckIn>,
+): ChiTietQuanLy {
+  // Dữ liệu mẫu sinh danh sách check-in từ số bản chờ duyệt gốc; trả lại số gốc rồi mới áp đánh giá, để id không đổi.
+  const goc = { ...lo, soCheckInChoDuyet: lo.soCheckInChoDuyet + demDaDanhGia(danhGia, lo.id) };
+  return { ...apDanhGia(taoChiTietQuanLyMau(goc, homNay), danhGia), loTrinh: lo };
+}
+
+/** Một check-in đang chờ duyệt kèm lộ trình của nó (PT-05). */
+export interface CheckInChoDuyet {
+  loTrinhId: string;
+  tenLoTrinh: string;
+  checkIn: CheckInQuanLy;
+}
+
+/** Mọi check-in chờ duyệt của các lộ trình PT đang chạy; có `loTrinhId` thì chỉ lộ trình đó (N43). */
+// TODO(ROUTE): chuyển sang useQuery gọi API check-in chờ duyệt của PT (phân trang; adr.md, N43).
+export function useCheckInChoDuyet(loTrinhId?: string): CheckInChoDuyet[] {
+  const { homNay, quanLy } = useLoTrinh();
+  const danhGia = useDanhGiaCheckIn();
+  return useMemo(
+    () =>
+      quanLy
+        .filter((lo) => lo.trangThai === 'dang_hoat_dong' && (!loTrinhId || lo.id === loTrinhId))
+        .flatMap((lo) =>
+          chiTietCua(lo, homNay, danhGia)
+            .checkIn.filter((c) => c.trangThai === 'cho_duyet')
+            .map((checkIn) => ({ loTrinhId: lo.id, tenLoTrinh: lo.ten, checkIn })),
+        ),
+    [quanLy, homNay, danhGia, loTrinhId],
+  );
+}
+
 /** Chi tiết một lộ trình ở góc nhìn PT (PT-03); trả `null` khi không có lộ trình mang id đó. */
 // TODO(ROUTE): chuyển sang useQuery gọi API chi tiết lộ trình của PT theo id; thêm isPending, isError.
 export function useChiTietQuanLy(id: string | undefined) {
@@ -143,10 +183,7 @@ export function useChiTietQuanLy(id: string | undefined) {
   const danhGia = useDanhGiaCheckIn();
   return useMemo(() => {
     const lo = quanLy.find((l) => l.id === id);
-    if (!lo) return null;
-    // Dữ liệu mẫu sinh danh sách check-in từ số bản chờ duyệt gốc; trả lại số gốc rồi mới áp đánh giá, để id không đổi.
-    const goc = { ...lo, soCheckInChoDuyet: lo.soCheckInChoDuyet + demDaDanhGia(danhGia, lo.id) };
-    return { ...apDanhGia(taoChiTietQuanLyMau(goc, homNay), danhGia), loTrinh: lo };
+    return lo ? chiTietCua(lo, homNay, danhGia) : null;
   }, [homNay, quanLy, id, danhGia]);
 }
 
@@ -158,26 +195,44 @@ export function useCheckInQuanLy(loTrinhId: string | undefined, checkInId: strin
   return chiTiet && checkIn ? { chiTiet, checkIn } : null;
 }
 
+/** Lịch sử check-in của một lộ trình học viên (N42); `null` khi không có lộ trình mang id đó. */
+export function useLichSuCheckIn(id: string | undefined) {
+  const chiTiet = useChiTietLoTrinh(id);
+  return useMemo(
+    () =>
+      chiTiet
+        ? {
+            loTrinh: chiTiet.loTrinh,
+            tienDo: chiTiet.tienDo,
+            muc: taoLichSuMau(chiTiet.loTrinh, chiTiet.tienDo, chiTiet.homNay),
+          }
+        : null,
+    [chiTiet],
+  );
+}
+
+/** Tìm nhiệm vụ trong hôm nay, không có thì trong lịch sử (mở check-in cũ từ màn Lịch sử). */
+function useNhiemVu(loTrinhId: string | undefined, nhiemVuId: string | undefined) {
+  const lichSu = useLichSuCheckIn(loTrinhId);
+  const loTrinh = lichSu?.loTrinh;
+  const nhiemVu =
+    loTrinh?.nhiemVuHomNay.find((nv) => nv.id === nhiemVuId) ??
+    lichSu?.muc.find((m) => m.nhiemVu.id === nhiemVuId)?.nhiemVu;
+  return { loTrinh, nhiemVu };
+}
+
 /** Nhiệm vụ bữa ăn của một lộ trình (kế hoạch và check-in nếu có); `null` khi không tìm thấy hoặc không phải bữa ăn. */
 // TODO(ROUTE): chuyển sang useQuery gọi API chi tiết nhiệm vụ (kế hoạch của đúng ngày, N31) theo id.
 export function useNhiemVuBuaAn(loTrinhId: string | undefined, nhiemVuId: string | undefined) {
-  const { cuaToi } = useLoTrinh();
-  return useMemo(() => {
-    const loTrinh = cuaToi.find((lo) => lo.id === loTrinhId);
-    const nhiemVu = loTrinh?.nhiemVuHomNay.find((nv) => nv.id === nhiemVuId);
-    return loTrinh && nhiemVu?.buaAn ? { loTrinh, nhiemVu, buaAn: nhiemVu.buaAn } : null;
-  }, [cuaToi, loTrinhId, nhiemVuId]);
+  const { loTrinh, nhiemVu } = useNhiemVu(loTrinhId, nhiemVuId);
+  return loTrinh && nhiemVu?.buaAn ? { loTrinh, nhiemVu, buaAn: nhiemVu.buaAn } : null;
 }
 
 /** Nhiệm vụ buổi tập của một lộ trình (kế hoạch và check-in nếu có); `null` khi không tìm thấy hoặc không phải buổi tập. */
 // TODO(ROUTE): chuyển sang useQuery gọi API chi tiết nhiệm vụ (bài tập của đúng ngày, N31) theo id.
 export function useNhiemVuBuoiTap(loTrinhId: string | undefined, nhiemVuId: string | undefined) {
-  const { cuaToi } = useLoTrinh();
-  return useMemo(() => {
-    const loTrinh = cuaToi.find((lo) => lo.id === loTrinhId);
-    const nhiemVu = loTrinh?.nhiemVuHomNay.find((nv) => nv.id === nhiemVuId);
-    return loTrinh && nhiemVu?.buoiTap ? { loTrinh, nhiemVu, buoiTap: nhiemVu.buoiTap } : null;
-  }, [cuaToi, loTrinhId, nhiemVuId]);
+  const { loTrinh, nhiemVu } = useNhiemVu(loTrinhId, nhiemVuId);
+  return loTrinh && nhiemVu?.buoiTap ? { loTrinh, nhiemVu, buoiTap: nhiemVu.buoiTap } : null;
 }
 
 /**

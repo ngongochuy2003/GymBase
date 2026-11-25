@@ -2,9 +2,11 @@ import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import type { ChiTietQuanLy } from '../../types';
+import { tenBua, xepTheoGio } from '../../utils/bua-an';
 import { buoiTapCuaTuan, tenThu } from '../../utils/lich-tap';
 import { ChonTuan } from '../chon-tuan';
 import { KhungThe } from '../khung-the';
+import { NutHuongDan } from '../nut-huong-dan';
 
 /**
  * Tab Kế hoạch của chi tiết lộ trình PT (PT-03), cũng dùng ở màn lời mời của học viên; chỉ xem: các bữa ăn đang bật (giờ, kcal, món) và lịch tập của tuần hiện
@@ -19,7 +21,7 @@ export function TabKeHoach({
   chonTuan?: { soTuan: number; onDoiTuan(tuan: number): void };
 }) {
   const { keHoach, tuanHienTai } = chiTiet;
-  const buaAn = keHoach.buaAn.filter((b) => b.bat);
+  const buaAn = xepTheoGio(keHoach.buaAn.filter((b) => b.bat));
   const buoiTap = [...buoiTapCuaTuan(keHoach.lichTap, tuanHienTai)].sort((a, b) => a.thu - b.thu);
 
   return (
@@ -34,7 +36,7 @@ export function TabKeHoach({
             {buaAn.map((b, i) => (
               <View key={b.id} className={cn('gap-0.5 py-3', i > 0 && 'border-t border-border')}>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-base font-bold">{b.ten}</Text>
+                  <Text className="text-base font-bold">{tenBua(b)}</Text>
                   <Text variant="muted" className="text-sm">
                     {b.gio}
                     {b.kcal ? ` • ~${b.kcal} kcal` : ''}
@@ -82,9 +84,14 @@ export function TabKeHoach({
                 {b.baiTap && b.baiTap.length > 0 ? (
                   <View className="mt-1 gap-0.5">
                     {b.baiTap.map((bt) => (
-                      <Text key={bt.id} className="text-sm leading-5">
-                        • {bt.ten} — {bt.soSet} set × {bt.soLan}
-                      </Text>
+                      <View key={bt.id}>
+                        <Text className="text-sm leading-5">
+                          • {bt.ten} — {bt.soSet} set × {bt.soLan}
+                        </Text>
+                        <View className="pl-3">
+                          <NutHuongDan tenBai={bt.ten} link={bt.link} />
+                        </View>
+                      </View>
                     ))}
                   </View>
                 ) : (

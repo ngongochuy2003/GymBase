@@ -186,6 +186,8 @@ export interface BaiTap {
   /** Số lần mỗi set kèm đơn vị, ví dụ "8–10 rep", "45 giây", "20 phút". */
   soLan: string;
   anh?: string;
+  /** Link `https` hướng dẫn động tác (adr.md, N41). */
+  link?: string;
 }
 
 /** Buổi tập PT đặt trong kế hoạch của ngày (snapshot, K5). */
@@ -239,6 +241,18 @@ export interface GhiAnhCoThe {
   quyenXem: QuyenXemAnh;
   /** `HH:mm` lúc ghi. */
   gioGhi: string;
+}
+
+/** Loại nhiệm vụ có check-in (cân nặng, ảnh cơ thể chỉ ghi nhận, N16). */
+export type LoaiCheckIn = 'bua_an' | 'buoi_tap';
+
+/** Một dòng lịch sử check-in (N42): nhiệm vụ của một ngày, kể cả bỏ lỡ. */
+export interface MucLichSu {
+  /** `yyyy-MM-dd`. */
+  ngay: string;
+  /** Tuần thứ mấy của lộ trình. */
+  tuan: number;
+  nhiemVu: NhiemVuHomNay;
 }
 
 /** Trạng thái lượt tham gia của một học viên trong lộ trình (K9, N23). */

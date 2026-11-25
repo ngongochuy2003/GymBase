@@ -15,7 +15,7 @@ import { TabTienDo } from '../components/quan-ly/tab-tien-do';
 import { useThongBaoDanhGia, xoaThongBaoDanhGia } from '../data/danh-gia-check-in-store';
 import { dongLoTrinh } from '../data/dong-lo-trinh-store';
 import { useChiTietQuanLy, useLoTrinh } from '../hooks/use-lo-trinh';
-import type { CheckInQuanLy } from '../types';
+import type { CheckInQuanLy, LoaiCheckIn } from '../types';
 
 type Tab = 'hom_nay' | 'ke_hoach' | 'tien_do' | 'check_in';
 
@@ -74,6 +74,8 @@ export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
   const [tab, setTab] = useState<Tab>('hom_nay');
   const [moMenu, setMoMenu] = useState(false);
   const [moDong, setMoDong] = useState(false);
+  // Loại lọc sẵn cho tab Check-in khi đi từ ô chỉ số ở tab Tiến độ (N42).
+  const [loaiCheckIn, setLoaiCheckIn] = useState<'tat_ca' | LoaiCheckIn>('tat_ca');
   const thongBao = useThongBaoDanhGia();
 
   const moCheckIn = (c: CheckInQuanLy) =>
@@ -144,7 +146,10 @@ export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
                     key={t.gia}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: dangChon }}
-                    onPress={() => setTab(t.gia)}
+                    onPress={() => {
+                      setLoaiCheckIn('tat_ca');
+                      setTab(t.gia);
+                    }}
                     className={cn(
                       'rounded-full border px-4 py-2',
                       dangChon ? 'border-transparent bg-primary' : 'border-border bg-card',
@@ -163,14 +168,34 @@ export function ChiTietLoTrinhHocVienScreen({ id }: { id?: string }) {
               })}
             </View>
 
-            {tab === 'hom_nay' ? <TabHomNay chiTiet={chiTiet} onXemCheckIn={moCheckIn} /> : null}
+            {tab === 'hom_nay' ? (
+              <TabHomNay
+                chiTiet={chiTiet}
+                onXemCheckIn={moCheckIn}
+                onDuyetNhanh={
+                  dangChay
+                    ? () => router.push({ pathname: '/duyet-nhanh', params: { loTrinhId: id } })
+                    : undefined
+                }
+              />
+            ) : null}
             {tab === 'ke_hoach' ? <TabKeHoach chiTiet={chiTiet} /> : null}
-            {tab === 'tien_do' ? <TabTienDo chiTiet={chiTiet} homNay={homNay} /> : null}
+            {tab === 'tien_do' ? (
+              <TabTienDo
+                chiTiet={chiTiet}
+                homNay={homNay}
+                onXemCheckIn={(loai) => {
+                  setLoaiCheckIn(loai);
+                  setTab('check_in');
+                }}
+              />
+            ) : null}
             {tab === 'check_in' ? (
               <TabCheckIn
                 checkIn={chiTiet.checkIn}
                 laNhom={chiTiet.loTrinh.loai === 'nhom'}
                 onMo={moCheckIn}
+                loaiBanDau={loaiCheckIn}
               />
             ) : null}
           </ScrollView>

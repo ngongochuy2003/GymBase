@@ -70,7 +70,7 @@ export function ChiTietCheckInBuoiTapScreen({
 
             <View className="gap-1">
               <Text accessibilityRole="header" className="text-xl font-bold">
-                Bài tập hôm nay
+                {du.nhiemVu.id.startsWith('ls-') ? 'Bài tập' : 'Bài tập hôm nay'}
               </Text>
               <Text variant="muted" className="text-sm">
                 Đã hoàn thành {checkIn.baiTapXong.length}/{du.buoiTap.keHoach.baiTap.length} bài

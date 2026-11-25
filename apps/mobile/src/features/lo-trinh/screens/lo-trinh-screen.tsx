@@ -104,10 +104,27 @@ function TrangThaiTrong({ icon, tieuDe, moTa }: { icon: string; tieuDe: string; 
   );
 }
 
-function ONumThongKe({ giaTri, nhan, icon }: { giaTri: number; nhan: string; icon: string }) {
+function ONumThongKe({
+  giaTri,
+  nhan,
+  icon,
+  onPress,
+}: {
+  giaTri: number;
+  nhan: string;
+  icon: string;
+  /** Có thì ô bấm được. */
+  onPress?(): void;
+}) {
   const { colors } = useTheme();
+  const Khung = onPress ? Pressable : View;
   return (
-    <View className="flex-1 flex-row items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-3">
+    <Khung
+      {...(onPress
+        ? { accessibilityRole: 'button' as const, accessibilityLabel: `${giaTri} ${nhan}`, onPress }
+        : {})}
+      className="flex-1 flex-row items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-3"
+    >
       <Icon name={icon} size={26} color={colors.text} />
       <View className="flex-1">
         <Text className="text-[22px] font-bold leading-7 text-foreground">{giaTri}</Text>
@@ -115,7 +132,7 @@ function ONumThongKe({ giaTri, nhan, icon }: { giaTri: number; nhan: string; ico
           {nhan}
         </Text>
       </View>
-    </View>
+    </Khung>
   );
 }
 
@@ -201,7 +218,12 @@ export function LoTrinhScreen() {
             <>
               <View className="flex-row gap-3">
                 <ONumThongKe giaTri={soHocVien} nhan="học viên" icon="route-manage" />
-                <ONumThongKe giaTri={soChoDuyet} nhan="check‑in cần duyệt" icon="clipboard-check" />
+                <ONumThongKe
+                  giaTri={soChoDuyet}
+                  nhan="check‑in cần duyệt"
+                  icon="clipboard-check"
+                  onPress={() => router.push('/duyet-nhanh')}
+                />
                 <ONumThongKe giaTri={soLichTap} nhan="lịch tập hôm nay" icon="calendar" />
               </View>
               <Button

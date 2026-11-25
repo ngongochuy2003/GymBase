@@ -77,6 +77,9 @@ export function ChiTietLoTrinhScreen({ id }: { id?: string }) {
                   buoiTap={chiTiet.tienDo.buoiTap}
                   buaAn={chiTiet.tienDo.buaAn}
                   tuanThu={chiTiet.loTrinh.tuanThu}
+                  onMoLichSu={(loai) =>
+                    router.push({ pathname: '/lich-su-check-in', params: { id, loai } })
+                  }
                 />
               </Rise>
               <Rise delay={270}>

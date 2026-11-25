@@ -44,6 +44,8 @@ export default function ProtectedLayout() {
         <Stack.Screen name="dat-buoi-tap" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chi-tiet-lo-trinh" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="loi-moi-lo-trinh" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="lich-su-check-in" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="duyet-nhanh" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chi-tiet-hoc-vien" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="danh-gia-check-in" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chi-tiet-can-nang" options={{ animation: 'slide_from_right' }} />

@@ -25,6 +25,9 @@ const nguoi = (id: string, ten: string, imgId: number): NguoiLoTrinh => ({
   anh: anh(imgId),
 });
 
+// TODO(ROUTE): link giữ chỗ, bỏ cùng dữ liệu mẫu.
+const LINK_HUONG_DAN_MAU = 'https://example.com/huong-dan-dong-tac';
+
 const ptTranDucAnh = nguoi('pt-1', 'Trần Đức Anh', 33);
 
 /**
@@ -150,7 +153,13 @@ export function taoDuLieuMau(homNay: Date): {
               thoiLuongPhut: 60,
               anh: bia('upper-a'),
               baiTap: [
-                { id: 'bt-1', ten: 'Bench Press', soSet: 4, soLan: '8–10 rep' },
+                {
+                  id: 'bt-1',
+                  ten: 'Bench Press',
+                  soSet: 4,
+                  soLan: '8–10 rep',
+                  link: LINK_HUONG_DAN_MAU,
+                },
                 { id: 'bt-2', ten: 'Incline Dumbbell Press', soSet: 4, soLan: '10–12 rep' },
                 { id: 'bt-3', ten: 'Shoulder Press', soSet: 3, soLan: '10 rep' },
                 { id: 'bt-4', ten: 'Triceps Pushdown', soSet: 3, soLan: '12 rep' },
@@ -456,7 +465,13 @@ export function taoKeHoachMau(): KeHoachLoTrinh {
           nhomCo: 'Ngực, vai, tay sau',
           thoiLuongPhut: 60,
           baiTap: [
-            { id: 'ua-1', ten: 'Đẩy ngực với tạ đòn', soSet: 4, soLan: '8–10 rep' },
+            {
+              id: 'ua-1',
+              ten: 'Đẩy ngực với tạ đòn',
+              soSet: 4,
+              soLan: '8–10 rep',
+              link: LINK_HUONG_DAN_MAU,
+            },
             { id: 'ua-2', ten: 'Đẩy vai với tạ đơn', soSet: 3, soLan: '10 rep' },
             { id: 'ua-3', ten: 'Đẩy tay sau với dây cáp', soSet: 3, soLan: '12 rep' },
           ],
