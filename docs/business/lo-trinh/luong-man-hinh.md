@@ -240,7 +240,7 @@ Nội dung: ba ô thống kê (số học viên, số check-in cần duyệt, s�
 | --- | --- |
 | "Tạo lộ trình" | PT-02; nếu PT đang có bản nháp thì PT-02 nạp sẵn nháp (N22) |
 | "Xem chi tiết" trên thẻ | PT-03 |
-| Bấm ô "check-in cần duyệt" | PT-05 Duyệt nhanh, mọi lộ trình đang chạy (N43) |
+| Bấm ô "check-in cần duyệt" (có viền màu và mũi tên để biết bấm được) | PT-05 Duyệt nhanh, mọi lộ trình đang chạy (N43) |
 | Bấm ô "lịch tập hôm nay" | Chưa có thiết kế |
 | Menu `...` trên thẻ | Chưa có thiết kế |
 | Chuyển sub-tab "Lộ trình của tôi" | HV-01 |
@@ -383,7 +383,8 @@ Mỗi thẻ: ô chọn, học viên, lộ trình, tên bữa hoặc buổi, gi�
 | --- | --- |
 | "Duyệt" | Duyệt ngay, thẻ biến mất |
 | "Cần bổ sung" | Hiện ô nhận xét bắt buộc, gửi thì thẻ biến mất |
-| Chọn nhiều (hoặc "Chọn tất cả") rồi "Duyệt (n)" | Hộp xác nhận, duyệt các bản đã chọn; bản học viên vừa sửa bị bỏ qua và báo lại |
+| Chọn nhiều rồi "Duyệt (n)" ở thanh cuối màn | Hộp xác nhận, duyệt các bản đã chọn; bản học viên vừa sửa bị bỏ qua và báo lại. Chưa chọn thì nút khóa |
+| "Duyệt tất cả" cạnh "Duyệt (n)" | Hộp xác nhận, duyệt mọi bản đang hiện theo bộ lọc |
 | Bấm ảnh | Xem toàn màn hình |
 | "Xem chi tiết" | PT-04 |
 
