@@ -133,11 +133,21 @@ describe('duyệt nhanh (N43)', () => {
     expect(soCho()).toBe(1);
   });
 
-  test('chọn tất cả rồi duyệt phải xác nhận; bản học viên vừa sửa không ghi', async () => {
+  test('Duyệt (n) khóa khi chưa chọn, chọn một bản thì chỉ duyệt bản đó', async () => {
+    await ve(<DuyetNhanhScreen loTrinhId="ql-1" />);
+    expect(
+      screen.getByLabelText('Duyệt 0 check-in đã chọn').props.accessibilityState.disabled,
+    ).toBe(true);
+    await fireEvent.press(screen.getAllByRole('checkbox')[0]!);
+    await fireEvent.press(screen.getByLabelText('Duyệt 1 check-in đã chọn'));
+    await fireEvent.press(screen.getByLabelText('Xác nhận duyệt'));
+    expect(soCho()).toBe(1);
+  });
+
+  test('duyệt tất cả phải xác nhận; bản học viên vừa sửa không ghi', async () => {
     await ve(<DuyetNhanhScreen loTrinhId="ql-1" />);
     await act(() => datPhienBanCheckIn('ci-ql-1-1', 2));
-    await fireEvent.press(screen.getByLabelText('Chọn tất cả'));
-    await fireEvent.press(screen.getByLabelText('Duyệt 2 check-in đã chọn'));
+    await fireEvent.press(screen.getByLabelText('Duyệt tất cả 2 check-in'));
     expect(soCho()).toBe(2);
     await fireEvent.press(screen.getByLabelText('Xác nhận duyệt'));
     expect(soCho()).toBe(1);

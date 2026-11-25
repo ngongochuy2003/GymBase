@@ -29,7 +29,7 @@ const LOAI: readonly { gia: LocLoai; nhan: string }[] = [
 
 /**
  * PT-05 Duyệt nhanh check-in (N43): ảnh lớn của nhiều học viên trên một màn, duyệt hoặc yêu cầu bổ sung ngay trên thẻ, hoặc
- * chọn nhiều bản rồi duyệt một lần. Bản học viên vừa sửa thì không ghi, báo PT xem lại (N13). Có `loTrinhId` thì chỉ lộ
+ * chọn nhiều bản hoặc duyệt tất cả bản đang hiện một lần. Bản học viên vừa sửa thì không ghi, báo PT xem lại (N13). Có `loTrinhId` thì chỉ lộ
  * trình đó.
  */
 // TODO(ROUTE): PT-05 chưa có bản thiết kế; ảnh phóng to chưa kéo, thu phóng được.
@@ -39,7 +39,8 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
   const tatCa = useCheckInChoDuyet(loTrinhId);
   const [loai, setLoai] = useState<LocLoai>('tat_ca');
   const [daChon, setDaChon] = useState<readonly string[]>([]);
-  const [hoi, setHoi] = useState(false);
+  // Các bản đang chờ xác nhận duyệt; `null` là chưa hỏi.
+  const [hoi, setHoi] = useState<readonly CheckInChoDuyet[] | null>(null);
   const [anh, setAnh] = useState<string | null>(null);
   const [thongBao, setThongBao] = useState<string>();
   // Phiên bản PT đã thấy của từng bản; chỉ cập nhật sau khi đã báo là bản đó vừa đổi.
@@ -48,7 +49,6 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
   const danhSach = tatCa.filter((m) => loai === 'tat_ca' || m.checkIn.loai === loai);
   // Chỉ tính các bản đang hiện, để không duyệt nhầm bản đã bị bộ lọc giấu đi.
   const chonDuoc = danhSach.filter((m) => daChon.includes(m.checkIn.id));
-  const chonHet = danhSach.length > 0 && chonDuoc.length === danhSach.length;
 
   const gui = (
     cacMuc: readonly CheckInChoDuyet[],
@@ -109,16 +109,6 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
           </Text>
         ) : (
           <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={chonHet ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-              onPress={() => setDaChon(chonHet ? [] : danhSach.map((m) => m.checkIn.id))}
-              className="self-end py-1"
-            >
-              <Text className="text-sm font-bold text-primary">
-                {chonHet ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-              </Text>
-            </Pressable>
             {danhSach.map((m) => (
               <TheDuyetNhanh
                 key={m.checkIn.id}
@@ -146,15 +136,26 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
         )}
       </ScrollView>
 
-      {chonDuoc.length > 0 ? (
+      {danhSach.length > 0 ? (
         <View
-          className="border-t border-border bg-background px-4 pt-3"
+          className="flex-row gap-3 border-t border-border bg-background px-4 pt-3"
           style={{ paddingBottom: 12 + insets.bottom }}
         >
           <Button
+            variant="outline"
+            shape="pill"
+            accessibilityLabel={`Duyệt tất cả ${danhSach.length} check-in`}
+            onPress={() => setHoi(danhSach)}
+            className="flex-1"
+          >
+            <Text>Duyệt tất cả</Text>
+          </Button>
+          <Button
             shape="pill"
             accessibilityLabel={`Duyệt ${chonDuoc.length} check-in đã chọn`}
-            onPress={() => setHoi(true)}
+            disabled={chonDuoc.length === 0}
+            onPress={() => setHoi(chonDuoc)}
+            className="flex-1"
           >
             <Text>Duyệt ({chonDuoc.length})</Text>
           </Button>
@@ -162,14 +163,14 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
       ) : null}
 
       {hoi ? (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setHoi(false)}>
+        <Modal visible transparent animationType="fade" onRequestClose={() => setHoi(null)}>
           <View className="flex-1 items-center justify-center bg-black/40 px-5">
             <View
               accessibilityViewIsModal
               className="w-full max-w-[420px] gap-4 rounded-3xl bg-background p-5"
             >
               <Text accessibilityRole="header" className="text-xl font-bold">
-                Duyệt {chonDuoc.length} check-in?
+                Duyệt {hoi.length} check-in?
               </Text>
               <Text variant="muted" className="text-sm leading-5">
                 Duyệt rồi thì học viên không sửa được nữa.
@@ -179,7 +180,7 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
                   variant="outline"
                   shape="pill"
                   accessibilityLabel="Hủy"
-                  onPress={() => setHoi(false)}
+                  onPress={() => setHoi(null)}
                   className="flex-1"
                 >
                   <Text>Hủy</Text>
@@ -188,8 +189,8 @@ export function DuyetNhanhScreen({ loTrinhId }: { loTrinhId?: string }) {
                   shape="pill"
                   accessibilityLabel="Xác nhận duyệt"
                   onPress={() => {
-                    setHoi(false);
-                    gui(chonDuoc, 'da_duyet');
+                    setHoi(null);
+                    gui(hoi, 'da_duyet');
                   }}
                   className="flex-1"
                 >

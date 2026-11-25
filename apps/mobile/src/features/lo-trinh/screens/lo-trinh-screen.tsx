@@ -123,7 +123,10 @@ function ONumThongKe({
       {...(onPress
         ? { accessibilityRole: 'button' as const, accessibilityLabel: `${giaTri} ${nhan}`, onPress }
         : {})}
-      className="flex-1 flex-row items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-3"
+      className={cn(
+        'flex-1 flex-row items-center gap-2 rounded-2xl border bg-card px-2.5 py-3',
+        onPress ? 'border-primary active:opacity-75' : 'border-border',
+      )}
     >
       <Icon name={icon} size={26} color={colors.text} />
       <View className="flex-1">
@@ -132,6 +135,12 @@ function ONumThongKe({
           {nhan}
         </Text>
       </View>
+      {/* Viền màu chính và mũi tên để biết ô này bấm được, khác hai ô chỉ hiển thị. */}
+      {onPress ? (
+        <View className="absolute right-1.5 top-1.5">
+          <Icon name="chevron-right" size={16} color={colors.primary} />
+        </View>
+      ) : null}
     </Khung>
   );
 }
