@@ -1,6 +1,6 @@
 # Thông báo: hộp thư, đăng ký thiết bị và push FCM
 
-> **Ngày viết:** 24/11/2026 · **Cập nhật:** 24/11/2026 · **Trạng thái:** đã triển khai (hộp thư, đăng ký thiết bị, worker đẩy push, FcmPushSender, nhắc ăn và nhắc tập local, màn thông báo và chuông trên mobile); chưa làm cài đặt kênh, push dự phòng, iOS; nhắc local đang chạy trên dữ liệu lộ trình mẫu · **Đối chiếu code:** de49c59
+> **Ngày viết:** 24/11/2026 · **Cập nhật:** 25/11/2026 · **Trạng thái:** đã triển khai (hộp thư, đăng ký thiết bị, worker đẩy push, FcmPushSender, nhắc ăn và nhắc tập local, màn thông báo và chuông trên mobile); chưa làm cài đặt kênh, push dự phòng, iOS; nhắc local đang chạy trên dữ liệu lộ trình mẫu · **Đối chiếu code:** de49c59
 
 Tài liệu này mô tả phần thông báo đã có trong code và cách thiết lập Firebase Cloud Messaging (FCM) để push tới máy thật.
 Lý do thiết kế nằm ở [ADR-2](../adr/0002-thong-bao-day-bang-fcm-truc-tiep-outbox.md); tài liệu này không lặp lại, chỉ nói "đang chạy thế nào" và "làm gì tiếp".
@@ -114,7 +114,7 @@ Không cần thẻ thanh toán: FCM miễn phí trên gói Spark. Bỏ qua mọi
 5. **Expo Go không nhận push** (từ SDK 53). Máy ảo phải là image có **Google Play**.
 6. Service account cho backend: Project settings → Service accounts → Generate new private key. Tab Cloud Messaging phải thấy **Firebase Cloud Messaging API (V1)** ở trạng thái Enabled. Cất file JSON ngoài repo, không commit, không dán vào chat hay issue.
 
-`google-services.json` chứa khóa API của app Android (không phải bí mật như service account, nhưng gắn với project). Cần quyết định có commit hay không; hiện nó chưa được theo dõi bởi git.
+`google-services.json` chứa khóa API của app Android (không phải bí mật như service account, nhưng gắn với project). Repo công khai nên file này **không commit** (đã có trong `.gitignore`): ai build Android thì tự tải từ Firebase console và đặt vào đúng chỗ, thiếu file thì prebuild báo lỗi.
 
 ## 8. Chạy thử
 
