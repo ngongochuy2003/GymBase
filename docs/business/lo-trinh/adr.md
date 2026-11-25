@@ -4,7 +4,7 @@ status: in-progress
 
 # Lộ trình: các quyết định đã chốt và còn mở
 
-Ngày 21/11/2026, cập nhật 22/11/2026 (thêm thông tin từ sếp, mục 1b). Ghi lại từng câu hỏi trong lúc chốt phạm vi và mâu thuẫn thiết kế của màn Lộ trình (xem
+Ngày 21/11/2026, cập nhật 22/11/2026 (thêm thông tin từ sếp, mục 1b), 25/11/2026 (mục 1c). Ghi lại từng câu hỏi trong lúc chốt phạm vi và mâu thuẫn thiết kế của màn Lộ trình (xem
 [luong-man-hinh.md](luong-man-hinh.md)), cùng câu trả lời. Chia hai phần: quyết định nghiệp vụ (người dùng chốt) và
 quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). Mục nào do Claude suy ra, chưa được người dùng xác nhận, ghi rõ
 "chờ xác nhận".
@@ -341,6 +341,39 @@ Chi tiết giao diện chưa viết vào `luong-man-hinh.md`.
 - **Hệ quả:** backend cần cột phiên bản (hoặc thời điểm sửa cuối) ở check-in và kiểm khi lưu đánh giá, trả lỗi để app báo PT. Ví dụ
   này nằm trong các ca ngoại lệ bắt buộc kiểm thử của SRS (mục 6.4).
 
+## 1c. Bổ sung (25/11/2026)
+
+Nguồn: bốn yêu cầu người dùng đưa ngày 25/11/2026. Yêu cầu là của người dùng; **cách làm** dưới đây do Claude đề xuất, người dùng
+bảo làm luôn mà chưa trả lời các câu hỏi đi kèm, nên những chỗ đó ghi ở mục 4 (M25 đến M28) là "chờ xác nhận".
+
+### N40. Kế hoạch dinh dưỡng thêm được bữa
+
+- **Yêu cầu:** khi tạo lộ trình, kế hoạch dinh dưỡng thêm được buổi.
+- **Chốt (cách hiểu "buổi" là bữa/ca ăn, M25):** ba bữa sáng, trưa, tối vẫn là mặc định. Nút "Thêm bữa" tạo bữa mới và mở
+  PT-02a; PT đặt tên bữa (tối đa 40 ký tự) và xóa được bữa. Tối đa **6 bữa** (mỗi bữa tốn lượt nhắc trên máy). Danh sách xếp
+  theo giờ.
+
+### N41. Bài tập gắn được link hướng dẫn
+
+- **Yêu cầu:** đặt buổi tập thì gắn được video hoặc link hướng dẫn (nhắc lại N29).
+- **Chốt (M26, M27):** mỗi **bài tập** có tối đa một link `https`; học viên mở bằng "Xem hướng dẫn", link mở ngoài app.
+  **Tải video lên chưa làm.**
+- **Hệ quả:** thay phần "Video chưa làm" của N37 một phần (đã có link, chưa có tệp video).
+
+### N42. Bấm thông số tiến độ mở lịch sử check-in
+
+- **Yêu cầu:** ở chi tiết lộ trình, bấm các thông số thì mở màn xem lịch sử check-in.
+- **Chốt:** học viên bấm "Buổi tập hoàn thành" hoặc "Bữa ăn đã check" mở màn Lịch sử check-in lọc sẵn theo loại, gồm cả bữa,
+  buổi bỏ lỡ, nhóm theo ngày; bấm một check-in để xem chi tiết. PT bấm hai ô đó ở tab Tiến độ của PT-03 thì sang tab Check-in
+  lọc sẵn theo loại. Ô "Tuân thủ kế hoạch" **chưa làm**.
+
+### N43. PT duyệt nhanh check-in
+
+- **Yêu cầu:** màn duyệt nhanh check-in, xem nhanh ảnh của nhiều người và duyệt xong nhanh.
+- **Chốt (M28):** vào từ ô "check-in cần duyệt" ở PT-01 (mọi lộ trình đang chạy) hoặc từ PT-03 (một lộ trình). Thẻ có ảnh lớn,
+  bấm ảnh xem toàn màn hình; mỗi thẻ có "Duyệt" và "Cần bổ sung" (bắt buộc nhận xét, như N39); chọn nhiều bản rồi duyệt một lần
+  có hộp xác nhận. Bản học viên vừa sửa thì không ghi và báo lại (N13). Cân nặng, ảnh cơ thể không có ở đây (N16).
+
 ## 2. Quyết định kỹ thuật
 
 Các mục này suy ra từ quyết định nghiệp vụ ở trên, chưa có câu hỏi riêng. Cần người dùng xác nhận trước khi thiết kế schema.
@@ -465,6 +498,10 @@ Các câu hỏi chưa hỏi hoặc chưa trả lời:
 | M22 | Calo bữa ăn nhập tay: còn hiển thị P, C, F (đạm, tinh bột, béo) không, hay chỉ calo? Đang làm chỉ calo (N37), chờ xác nhận. | N30, N37 |
 | M23 | "Lộ trình của tôi, ai là chủ đều được sửa": học viên tự tạo lộ trình cho mình được không (N1 chỉ nói PT tạo)? Nếu được thì khác gì lộ trình PT tạo? | N32 |
 | M24 | Ảnh cơ thể mặc định "chỉ mình tôi"; chế độ chọn theo từng ảnh hay một cài đặt chung cho lộ trình? | N33 |
+| M25 | "Kế hoạch dinh dưỡng thêm buổi" có đúng là thêm bữa/ca ăn không? Giới hạn 6 bữa có ổn không? | N40 |
+| M26 | Hướng dẫn gắn theo từng bài tập (đang làm) hay cho cả buổi? | N41 |
+| M27 | Có cần PT tải video lên không, hay link là đủ? | N41 |
+| M28 | Có cho duyệt hàng loạt (đang làm, có xác nhận) hay bắt xem từng bản? | N43 |
 
 Đã chốt từ các câu hỏi trước: M13 (N30, ngày 22/11/2026), M1 (N2 và N8 xác nhận ngày 21/11/2026), M2 (N2 sau sửa), M3 (N12), M4 (N13), M5 (N14), M7 (N16, N17, K7), M8 (N15), M10 (N19), M11 (N18).
 
