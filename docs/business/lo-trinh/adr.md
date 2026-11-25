@@ -4,7 +4,7 @@ status: in-progress
 
 # Lộ trình: các quyết định đã chốt và còn mở
 
-Ngày 21/11/2026, cập nhật 22/11/2026 (thêm thông tin từ sếp, mục 1b), 25/11/2026 (mục 1c). Ghi lại từng câu hỏi trong lúc chốt phạm vi và mâu thuẫn thiết kế của màn Lộ trình (xem
+Ngày 21/11/2026, cập nhật 22/11/2026 (thêm thông tin từ sếp, mục 1b), 25/11/2026 (mục 1c), 26/11/2026 (mục 1d). Ghi lại từng câu hỏi trong lúc chốt phạm vi và mâu thuẫn thiết kế của màn Lộ trình (xem
 [luong-man-hinh.md](luong-man-hinh.md)), cùng câu trả lời. Chia hai phần: quyết định nghiệp vụ (người dùng chốt) và
 quyết định kỹ thuật (hệ quả của quyết định nghiệp vụ). Mục nào do Claude suy ra, chưa được người dùng xác nhận, ghi rõ
 "chờ xác nhận".
@@ -291,6 +291,7 @@ Chi tiết giao diện chưa viết vào `luong-man-hinh.md`.
 - **Yêu cầu:** gói Free chỉ cho một PT tạo tối đa 5 lộ trình đang hoạt động; V2 mới làm.
 - **Hệ quả:** V1 chưa giới hạn, nhưng nên gom việc đếm lộ trình đang hoạt động theo PT vào một hàm để V2 bổ sung mà không sửa
   nhiều nơi. Schema chưa có khái niệm gói. Đề xuất cho M12 ở V1: không chặn.
+- **Bổ sung 26/11/2026:** cách đếm và hạn mức của học viên xem N44 đến N47.
 
 ### N37. PT-02a, PT-02b: bài tập theo buổi và theo tuần, bữa ăn lặp mỗi ngày
 
@@ -373,6 +374,44 @@ bảo làm luôn mà chưa trả lời các câu hỏi đi kèm, nên những ch
 - **Chốt (M28):** vào từ ô "check-in cần duyệt" ở PT-01 (mọi lộ trình đang chạy) hoặc từ PT-03 (một lộ trình). Thẻ có ảnh lớn,
   bấm ảnh xem toàn màn hình; mỗi thẻ có "Duyệt" và "Cần bổ sung" (bắt buộc nhận xét, như N39); chọn nhiều bản rồi duyệt một lần
   có hộp xác nhận. Bản học viên vừa sửa thì không ghi và báo lại (N13). Cân nặng, ảnh cơ thể không có ở đây (N16).
+
+## 1d. Chuẩn bị cho V2: gói và hạn mức (26/11/2026)
+
+Nguồn: người dùng đưa yêu cầu và trả lời các câu hỏi ngày 26/11/2026. **Chưa làm phần nào trong code.** Chỗ do Claude suy ra
+ghi "chờ xác nhận".
+
+### N44. PT gói Free: tối đa 5 lộ trình đang hoạt động, tính cả đang mời
+
+- **Chốt:** làm rõ N36. Hạn mức 5 đếm lộ trình đang hoạt động **và lộ trình đang chờ học viên nhận lời mời** (N23). Bản hiện tại
+  cho tạo không giới hạn, nhưng số lượng phải là giá trị đặt được.
+- **Cách hiểu của Claude, chờ xác nhận:** lộ trình nhóm tính là 1 dù mời nhiều người; mọi người được mời đều từ chối thì không
+  còn chiếm suất; nháp không tính.
+
+### N45. Học viên gói Free được tự tạo một lộ trình, tối đa 1 tháng, một lần duy nhất
+
+- **Chốt:** học viên **tự tạo được lộ trình** cho mình (trả lời một phần M23). Gói Free được 1 lộ trình, dài tối đa 1 tháng, một
+  lần duy nhất. Bản hiện tại phần chọn thời gian chỉ hiện đến 1 tháng; bản sau hiện cả mốc dài hơn nhưng khóa, cần Premium.
+- **Phạm vi:** giới hạn thời gian và số lần chỉ áp cho lộ trình học viên tự tạo, không áp cho lộ trình PT tạo cho học viên.
+- **Cách hiểu của Claude, chờ xác nhận:** 1 tháng là 4 tuần; nháp không tính là đã dùng lượt.
+- **Hệ quả:** `ke_hoach.ket_noi_pt_id NOT NULL` không chứa được lộ trình không có PT; cần sửa khi viết schema lộ trình, cùng K9.
+
+### N46. Không ai được xóa lộ trình; vượt hạn mức chỉ chặn tạo mới
+
+- **Chốt:** không vai trò nào có quyền xóa lộ trình. Khi vượt hạn mức (ví dụ hết Premium), chỉ chặn tạo mới; lộ trình đang có vẫn
+  chạy bình thường.
+- **Hệ quả:** lượt "một lần duy nhất" (N45) suy ra được bằng cách đếm lộ trình học viên đã tự tạo, trừ nháp, kể cả đã kết thúc;
+  không cần cờ "đã dùng lượt". Xóa nháp (M15) chưa thuộc quyết định này.
+
+### N47. Hạn mức nằm trong bảng, chưa tạo ở bản này
+
+- **Người dùng nêu:** chuẩn bị sẵn bảng cho gói cũng không thừa. Ngày 26/11/2026 người dùng chốt **chưa tạo** bảng, chỉ ghi ADR.
+- **Đề xuất của Claude, chờ xác nhận:**
+  - `goi_dich_vu`: `ma` (`free`, `premium`), `ten`, `so_lo_trinh_pt_toi_da`, `so_lo_trinh_tu_tao_toi_da`,
+    `so_tuan_tu_tao_toi_da`; `NULL` là không giới hạn.
+  - `tai_khoan_goi`: `tai_khoan_id`, `goi_dich_vu_id`, `ngay_bat_dau`, `ngay_ket_thuc`; không có dòng còn hiệu lực thì là Free.
+  - Backend gom việc kiểm hạn mức vào một chỗ và trả mã lỗi riêng; mobile nhận danh sách thời gian kèm cờ khóa từ API.
+  - Chưa thiết kế bảng giao dịch, thanh toán.
+- **Hệ quả:** thêm hai bảng thì phải sửa quyết định "V1 chỉ làm 21 bảng" trong `database/diagrams/README.md`.
 
 ## 2. Quyết định kỹ thuật
 
@@ -496,12 +535,14 @@ Các câu hỏi chưa hỏi hoặc chưa trả lời:
 | M20 | Lộ trình "sắp hết" là còn bao nhiêu ngày? | N27 |
 | M21 | Sửa tuần 1 sau khi đã sửa riêng tuần khác: ghi đè các tuần sau hay chỉ tuần chưa sửa riêng? Đang làm theo "chỉ tuần chưa sửa riêng" (N37), chờ xác nhận. | N29, N37 |
 | M22 | Calo bữa ăn nhập tay: còn hiển thị P, C, F (đạm, tinh bột, béo) không, hay chỉ calo? Đang làm chỉ calo (N37), chờ xác nhận. | N30, N37 |
-| M23 | "Lộ trình của tôi, ai là chủ đều được sửa": học viên tự tạo lộ trình cho mình được không (N1 chỉ nói PT tạo)? Nếu được thì khác gì lộ trình PT tạo? | N32 |
+| M23 | Học viên tự tạo lộ trình được (đã chốt ở N45). Còn mở: khác gì lộ trình PT tạo; không có PT thì check-in có cần duyệt không (đề xuất: gửi là hoàn thành). | N32, N45 |
 | M24 | Ảnh cơ thể mặc định "chỉ mình tôi"; chế độ chọn theo từng ảnh hay một cài đặt chung cho lộ trình? | N33 |
 | M25 | "Kế hoạch dinh dưỡng thêm buổi" có đúng là thêm bữa/ca ăn không? Giới hạn 6 bữa có ổn không? | N40 |
 | M26 | Hướng dẫn gắn theo từng bài tập (đang làm) hay cho cả buổi? | N41 |
 | M27 | Có cần PT tải video lên không, hay link là đủ? | N41 |
 | M28 | Có cho duyệt hàng loạt (đang làm, có xác nhận) hay bắt xem từng bản? | N43 |
+| M29 | Bản hiện tại, học viên tự tạo lộ trình có bị giới hạn một lần chưa, hay chỉ giới hạn thời gian 1 tháng? | N45 |
+| M30 | Hạn mức của gói Premium (số lộ trình, độ dài) là bao nhiêu? | N44, N45, N47 |
 
 Đã chốt từ các câu hỏi trước: M13 (N30, ngày 22/11/2026), M1 (N2 và N8 xác nhận ngày 21/11/2026), M2 (N2 sau sửa), M3 (N12), M4 (N13), M5 (N14), M7 (N16, N17, K7), M8 (N15), M10 (N19), M11 (N18).
 
