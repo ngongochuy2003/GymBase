@@ -2,11 +2,19 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import type { CheckInQuanLy, TrangThaiDuyet } from '../../types';
+import type { CheckInQuanLy, LoaiCheckIn, TrangThaiDuyet } from '../../types';
+import { ChipLoc } from '../chip-loc';
 import { KhungThe } from '../khung-the';
 import { DongCheckIn } from './thanh-phan';
 
 type Loc = 'tat_ca' | TrangThaiDuyet;
+type LocLoai = 'tat_ca' | LoaiCheckIn;
+
+const LOAI: readonly { gia: LocLoai; nhan: string }[] = [
+  { gia: 'tat_ca', nhan: 'Mọi loại' },
+  { gia: 'bua_an', nhan: 'Bữa ăn' },
+  { gia: 'buoi_tap', nhan: 'Buổi tập' },
+];
 
 const BO_LOC: readonly { gia: Loc; nhan: string }[] = [
   { gia: 'tat_ca', nhan: 'Tất cả' },
@@ -23,19 +31,25 @@ export function TabCheckIn({
   checkIn,
   laNhom,
   onMo,
+  loaiBanDau = 'tat_ca',
 }: {
   checkIn: readonly CheckInQuanLy[];
   laNhom: boolean;
   onMo(checkIn: CheckInQuanLy): void;
+  /** Loại lọc sẵn khi mở tab từ ô chỉ số tiến độ (N42). */
+  loaiBanDau?: LocLoai;
 }) {
   const [loc, setLoc] = useState<Loc>('tat_ca');
-  const danhSach = checkIn.filter((c) => loc === 'tat_ca' || c.trangThai === loc);
+  const [loai, setLoai] = useState<LocLoai>(loaiBanDau);
+  const theoLoai = checkIn.filter((c) => loai === 'tat_ca' || c.loai === loai);
+  const danhSach = theoLoai.filter((c) => loc === 'tat_ca' || c.trangThai === loc);
   return (
     <View className="gap-4">
+      <ChipLoc nhom="loại" luaChon={LOAI} chon={loai} onChon={setLoai} />
       <View accessibilityRole="radiogroup" className="flex-row flex-wrap gap-2">
         {BO_LOC.map((b) => {
           const dangChon = loc === b.gia;
-          const so = checkIn.filter((c) => b.gia === 'tat_ca' || c.trangThai === b.gia).length;
+          const so = theoLoai.filter((c) => b.gia === 'tat_ca' || c.trangThai === b.gia).length;
           return (
             <Pressable
               key={b.gia}

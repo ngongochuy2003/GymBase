@@ -5,6 +5,7 @@ import type {
   ChiTietQuanLy,
   CheckInQuanLy,
   KeHoachLoTrinh,
+  LoiMoiLoTrinh,
   LoTrinhCuaToi,
   LoTrinhQuanLy,
   NguoiLoTrinh,
@@ -23,6 +24,9 @@ const nguoi = (id: string, ten: string, imgId: number): NguoiLoTrinh => ({
   ten,
   anh: anh(imgId),
 });
+
+// TODO(ROUTE): link giữ chỗ, bỏ cùng dữ liệu mẫu.
+const LINK_HUONG_DAN_MAU = 'https://example.com/huong-dan-dong-tac';
 
 const ptTranDucAnh = nguoi('pt-1', 'Trần Đức Anh', 33);
 
@@ -149,7 +153,13 @@ export function taoDuLieuMau(homNay: Date): {
               thoiLuongPhut: 60,
               anh: bia('upper-a'),
               baiTap: [
-                { id: 'bt-1', ten: 'Bench Press', soSet: 4, soLan: '8–10 rep' },
+                {
+                  id: 'bt-1',
+                  ten: 'Bench Press',
+                  soSet: 4,
+                  soLan: '8–10 rep',
+                  link: LINK_HUONG_DAN_MAU,
+                },
                 { id: 'bt-2', ten: 'Incline Dumbbell Press', soSet: 4, soLan: '10–12 rep' },
                 { id: 'bt-3', ten: 'Shoulder Press', soSet: 3, soLan: '10 rep' },
                 { id: 'bt-4', ten: 'Triceps Pushdown', soSet: 3, soLan: '12 rep' },
@@ -323,6 +333,39 @@ export function taoDuLieuMau(homNay: Date): {
   return { cuaToi, quanLy };
 }
 
+/** Lời mời đang chờ học viên trả lời; lộ trình bắt đầu sau `homNay` nên chưa có nhiệm vụ. */
+// TODO(ROUTE): thay bằng API lời mời của học viên (bảng lượt tham gia, adr.md, N23, K9).
+export function taoLoiMoiMau(homNay: Date): LoiMoiLoTrinh[] {
+  const keHoach = taoKeHoachMau();
+  // Tuần 4 giảm tải: chỉ giữ hai buổi đầu.
+  keHoach.lichTap.rieng[4] = keHoach.lichTap.chung.slice(0, 2);
+  return [
+    {
+      loTrinh: {
+        id: 'lm-1',
+        ten: 'Săn chắc toàn thân 8 tuần',
+        loai: 'don',
+        trangThai: 'dang_hoat_dong',
+        ngayBatDau: layNgayLech(homNay, 3),
+        ngayKetThuc: layNgayLech(homNay, 59),
+        tongTuan: 8,
+        tienDo: 0,
+        anhBia: bia('san-chac'),
+        pt: nguoi('pt-4', 'Nguyễn Thu Trang', 32),
+        tuanHienTai: 1,
+        mucTieu: { tu: 64, den: 60, donVi: 'kg' },
+        tuanThu: 0,
+        checkInTiepTheo: 'Khi lộ trình bắt đầu',
+        nhiemVuHomNay: [],
+      },
+      loiNhan: 'Mình đã lên lộ trình theo mục tiêu bạn chia sẻ. Bạn xem kỹ rồi tham gia nhé.',
+      keHoach,
+      canMoiTuan: 2,
+      chuKyAnhTuan: 2,
+    },
+  ];
+}
+
 /**
  * Danh sách bạn của PT để mời vào lộ trình (form tạo lộ trình).
  */
@@ -422,7 +465,13 @@ export function taoKeHoachMau(): KeHoachLoTrinh {
           nhomCo: 'Ngực, vai, tay sau',
           thoiLuongPhut: 60,
           baiTap: [
-            { id: 'ua-1', ten: 'Đẩy ngực với tạ đòn', soSet: 4, soLan: '8–10 rep' },
+            {
+              id: 'ua-1',
+              ten: 'Đẩy ngực với tạ đòn',
+              soSet: 4,
+              soLan: '8–10 rep',
+              link: LINK_HUONG_DAN_MAU,
+            },
             { id: 'ua-2', ten: 'Đẩy vai với tạ đơn', soSet: 3, soLan: '10 rep' },
             { id: 'ua-3', ten: 'Đẩy tay sau với dây cáp', soSet: 3, soLan: '12 rep' },
           ],

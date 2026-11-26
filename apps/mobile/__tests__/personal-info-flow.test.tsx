@@ -87,7 +87,7 @@ async function fillValid() {
   await fireEvent.changeText(screen.getByLabelText('Tên hiển thị *'), 'Minh Anh Gym');
   await fireEvent.changeText(screen.getByLabelText('Ngày sinh'), '20051998');
   await choose('Giới tính', 'Nữ');
-  await choose('Khu vực', 'Hà Nội');
+  await choose('Tỉnh/Thành phố', 'Hà Nội');
 }
 
 beforeEach(() => {
@@ -137,7 +137,7 @@ test('a dropdown with no options says so instead of opening an empty sheet', asy
   jest.mocked(danhMucApi.get).mockResolvedValue([{ ma_dinh_danh: 'khu_vuc', items: [] }]);
   await openPersonalInfo();
 
-  await openSelect('Khu vực');
+  await openSelect('Tỉnh/Thành phố');
 
   expect(await screen.findByText('Chưa có lựa chọn nào.')).toBeTruthy();
 });
@@ -151,11 +151,11 @@ test('gender is a fixed list that never waits for the server, and areas come fro
   ).toEqual(['Nam', 'Nữ', 'Khác']);
   await fireEvent.press(screen.getByRole('radio', { name: 'Nam' }));
 
-  await openSelect('Khu vực');
+  await openSelect('Tỉnh/Thành phố');
   expect(
     (await screen.findAllByRole('radio')).map((radio) => radio.props.accessibilityLabel),
   ).toEqual(['Hà Nội', 'TP. Hồ Chí Minh']);
-  expect(danhMucApi.get).toHaveBeenCalledWith(['khu_vuc']);
+  expect(danhMucApi.get).toHaveBeenCalledWith(['khu_vuc'], undefined);
 });
 
 test('typing digits for the birth date inserts the slashes', async () => {
@@ -243,7 +243,7 @@ test('going back from the next step keeps what was typed, and no save call is ma
   expect(screen.getByRole('button', { name: 'Giới tính' })).toHaveAccessibilityValue({
     text: 'Nữ',
   });
-  expect(screen.getByRole('button', { name: 'Khu vực' })).toHaveAccessibilityValue({
+  expect(screen.getByRole('button', { name: 'Tỉnh/Thành phố' })).toHaveAccessibilityValue({
     text: 'Hà Nội',
   });
   expect(save).not.toHaveBeenCalled();
@@ -259,12 +259,12 @@ test('when the categories cannot be loaded the dropdowns say so and Retry reload
   expect(
     (await screen.findAllByText('Không tải được danh sách. Vui lòng thử lại.')).length,
   ).toBeGreaterThan(0);
-  expect(screen.getByRole('button', { name: 'Khu vực' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Tỉnh/Thành phố' })).toBeDisabled();
   // Giới tính là danh sách cố định nên vẫn chọn được dù danh mục khu vực lỗi.
   expect(screen.getByRole('button', { name: 'Giới tính' })).not.toBeDisabled();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Thử lại' }));
 
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Khu vực' })).not.toBeDisabled());
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Tỉnh/Thành phố' })).not.toBeDisabled());
   expect(screen.queryByText('Không tải được danh sách. Vui lòng thử lại.')).toBeNull();
 });

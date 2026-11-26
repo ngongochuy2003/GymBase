@@ -42,11 +42,12 @@ Hồ sơ hiện tại kèm chỉ số cơ thể mới nhất. Chưa thiết lậ
   "muc_tieu_tap_luyen": "tang_co",
   "chieu_cao_cm": 172.5,
   "can_nang_kg": 68.4,
-  "khu_vuc_hoat_dong": "ha_noi",
+  "khu_vuc_hoat_dong": "tinh_01",
   "chuyen_mon": null,
   "so_nam_kinh_nghiem": null,
   "gioi_thieu": null,
-  "chung_chi_tep_tin_id": null
+  "chung_chi_tep_tin_id": null,
+  "anh_dai_dien_tep_tin_id": null
 }
 ```
 
@@ -60,7 +61,7 @@ Trả `200` cùng DTO hồ sơ vừa lưu:
   "gioi_tinh": "nam",
   "trinh_do_tap": "co_nen_tang",
   "muc_tieu_tap_luyen": "tang_co",
-  "khu_vuc_hoat_dong": "ha_noi",
+  "khu_vuc_hoat_dong": "tinh_01",
   "chuyen_mon": null,
   "so_nam_kinh_nghiem": null,
   "gioi_thieu": null,
@@ -87,6 +88,10 @@ Khối PT có một chứng chỉ tùy chọn (nhãn trên app: "Chứng chỉ (
 Kết quả trả ở `chung_chi`: `{ "file_id", "ten_tep", "kich_thuoc_byte" }` hoặc `null`. `PUT` thay thế toàn bộ: không gửi `chung_chi_tep_tin_id` (hoặc đổi
 sang `hoc_vien`) thì chứng chỉ đang có bị gỡ, tệp đánh dấu `da_xoa` và xóa khỏi kho lưu trữ. Gửi tệp khác thì tệp cũ bị gỡ như trên. Tệp không hợp lệ:
 `400 VALIDATION_FAILED` ở `chung_chi_tep_tin_id`; `hoc_vien` gửi trường này: `400 ROLE_INVALID`.
+
+**Ảnh đại diện** (mọi vai trò, tùy chọn): app tải ảnh lên bằng `POST /files` với `purpose = avatar`, rồi gửi `file_id` ở
+`anh_dai_dien_tep_tin_id`. Không gửi thì giữ ảnh đang có; gửi ảnh mới thì ảnh cũ bị xóa. Tệp không phải của chính chủ, không phải
+ảnh `avatar` hoặc đã bị xóa: `400 VALIDATION_FAILED` ở `anh_dai_dien_tep_tin_id`.
 
 Phía mobile: tab PT của màn thiết lập có ô "Chứng chỉ (nếu có)" ngay dưới số năm kinh nghiệm (chọn PDF bằng `expo-document-picker`, tải lên ngay,
 bấm × để bỏ). Tệp đã tải lên mà không gắn vào hồ sơ nằm lại ở `da_tai_len`; chưa có job dọn file nên các tệp này tồn tại tới khi có job.

@@ -5,7 +5,7 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/shared/icons';
 import { useTheme } from '@/shared/theme/theme';
-import type { AnhCoTheMoc, DanhGiaTuPt, DiemCanNang, LoTrinhCuaToi } from '../types';
+import type { AnhCoTheMoc, DanhGiaTuPt, DiemCanNang, LoaiCheckIn, LoTrinhCuaToi } from '../types';
 import { useChayLen } from '../hooks/use-chay-len';
 import { useSoDemLen } from '../hooks/use-so-dem-len';
 import { phanTramMucTieu, soThapPhan } from '../utils/tien-do';
@@ -114,20 +114,21 @@ function ChiSo({
   nhan,
   giaTri,
   ngan = false,
+  onPress,
 }: {
   icon: string;
   /** Đúng hai dòng chữ, mỗi phần tử một dòng. */
   nhan: readonly [string, string];
   giaTri: ReactNode;
   ngan?: boolean;
+  onPress?(): void;
 }) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={nhan.join(' ')}
-      // TODO(ROUTE): mở tab Check-in của HV-07 lọc theo loại; "Tuân thủ kế hoạch" chưa có thiết kế.
-      onPress={() => undefined}
+      onPress={onPress}
       className={cn('flex-1 items-center gap-1.5 px-2 py-4', ngan && 'border-l border-border')}
     >
       <View className="size-11 items-center justify-center rounded-full bg-secondary">
@@ -150,10 +151,13 @@ export function KhoiChiSo({
   buoiTap,
   buaAn,
   tuanThu,
+  onMoLichSu,
 }: {
   buoiTap: { xong: number; tong: number };
   buaAn: { xong: number; tong: number };
   tuanThu: number;
+  /** Bấm ô buổi tập hoặc bữa ăn thì mở lịch sử check-in loại đó (N42). */
+  onMoLichSu?(loai: LoaiCheckIn): void;
 }) {
   // Các số đếm lên từ 0 khi vào màn; số tổng (mẫu số) đứng yên.
   const buoiTapHien = useSoDemLen(buoiTap.xong, 0, 900, 450);
@@ -164,6 +168,7 @@ export function KhoiChiSo({
       <ChiSo
         icon="dumbbell"
         nhan={['Buổi tập', 'hoàn thành']}
+        onPress={() => onMoLichSu?.('buoi_tap')}
         giaTri={
           <>
             {buoiTapHien}
@@ -177,6 +182,7 @@ export function KhoiChiSo({
         ngan
         icon="meal"
         nhan={['Bữa ăn', 'đã check']}
+        onPress={() => onMoLichSu?.('bua_an')}
         giaTri={
           <>
             {buaAnHien}
@@ -186,6 +192,7 @@ export function KhoiChiSo({
           </>
         }
       />
+      {/* TODO(ROUTE): ô "Tuân thủ kế hoạch" chưa có màn (adr.md, N42). */}
       <ChiSo ngan icon="check-circle" nhan={['Tuân thủ', 'kế hoạch']} giaTri={`${tuanThuHien}%`} />
     </View>
   );

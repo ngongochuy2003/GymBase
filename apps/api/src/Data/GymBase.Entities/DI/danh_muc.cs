@@ -20,12 +20,11 @@ public sealed class danh_muc : BaseAuditableEntity
     public string? mo_ta { get; set; }
 
     /// <summary>
-    /// Đường dẫn của mục trong cây, theo tên hiển thị. Đợt này danh mục phẳng nên bằng <see cref="ma"/>.
-    /// TODO(DANH-MUC): chốt định dạng đường dẫn trước khi dùng cho danh mục nhiều cấp (khu vực → quận/huyện).
+    /// Đường dẫn của mục trong cây, theo tên hiển thị, ví dụ <c>Hà Nội/Phường Ba Đình</c>. Danh mục phẳng thì bằng <see cref="ma"/>.
     /// </summary>
     public string? muc_luc { get; set; }
 
-    /// <summary>Như <see cref="muc_luc"/> nhưng theo mã, ví dụ <c>khu_vuc/ha_noi</c>. Có index để lọc cây con.</summary>
+    /// <summary>Như <see cref="muc_luc"/> nhưng theo mã, ví dụ <c>khu_vuc/tinh_01</c>. Có index để lọc cây con.</summary>
     public string? muc_luc_ma { get; set; }
 
     /// <summary>Độ sâu trong cây; cấp gốc là 1.</summary>

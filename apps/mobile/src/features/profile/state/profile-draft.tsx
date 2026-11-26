@@ -7,6 +7,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 import type { ChungChiPt } from '../api/profile-api';
+import type { AnhDaiDien } from '../components/anh-dai-dien-field';
 
 /**
  * Bản nháp thiết lập hồ sơ: gom dữ liệu các bước (thông tin cá nhân, rồi thông tin theo vai trò) để gửi
@@ -17,7 +18,11 @@ export type ProfileDraft = {
   /** Giữ đúng chuỗi người dùng gõ (`dd/MM/yyyy`); đổi sang `yyyy-MM-dd` khi gửi. */
   ngay_sinh: string;
   gioi_tinh: string;
+  /** Mã tỉnh/thành đã chọn. */
   khu_vuc_hoat_dong: string;
+  /** Mã phường/xã thuộc tỉnh đã chọn; khi gửi, có mã này thì nó là khu vực của hồ sơ. */
+  phuong_xa: string;
+  anh_dai_dien: AnhDaiDien | null;
   // Khối học viên (màn 03B). Chiều cao và cân nặng giữ đúng chuỗi người dùng gõ.
   muc_tieu_tap_luyen: string;
   trinh_do_tap: string;
@@ -36,6 +41,8 @@ const EMPTY: ProfileDraft = {
   ngay_sinh: '',
   gioi_tinh: '',
   khu_vuc_hoat_dong: '',
+  phuong_xa: '',
+  anh_dai_dien: null,
   muc_tieu_tap_luyen: '',
   trinh_do_tap: '',
   chieu_cao_cm: '',

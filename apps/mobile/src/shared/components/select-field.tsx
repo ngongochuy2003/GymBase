@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { cn } from '@/lib/utils';
 import { Icon } from '../icons';
 import { useTheme } from '../theme/theme';
@@ -8,6 +8,14 @@ import { FieldLabel } from './field-label';
 import { Button } from './ui';
 
 export type SelectOption = { ma: string; ten: string };
+
+/** Chữ thường, bỏ dấu, để gõ "ba dinh" vẫn tìm ra "Phường Ba Đình". */
+const boDau = (chu: string) =>
+  chu
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase();
 
 /**
  * Ô chọn một giá trị từ danh sách (danh mục): hiển thị `ten`, giữ và trả `ma`. Bấm vào mở bảng chọn, mục đang chọn có dấu
@@ -28,6 +36,8 @@ export function SelectField({
   triggerClassName,
   valueClassName,
   singleLine = false,
+  disabled = false,
+  searchable = false,
 }: {
   /** Tên ô: hiện phía trên ô và là nhãn truy cập. */
   label: string;
@@ -51,12 +61,24 @@ export function SelectField({
   valueClassName?: string;
   /** Cắt giá trị dài thành một dòng (mặc định cho xuống dòng). */
   singleLine?: boolean;
+  /** Khóa ô, ví dụ khi chưa chọn mục cha. */
+  disabled?: boolean;
+  /** Có ô tìm theo tên trong bảng chọn, dùng cho danh sách dài. */
+  searchable?: boolean;
 }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
+  const [tuKhoa, setTuKhoa] = useState('');
+  const hienThi = tuKhoa
+    ? options.filter((option) => boDau(option.ten).includes(boDau(tuKhoa.trim())))
+    : options;
+  const dong = () => {
+    setOpen(false);
+    setTuKhoa('');
+  };
   const selected = options.find((option) => option.ma === value);
   const display = loading ? 'Đang tải…' : (selected?.ten ?? placeholder);
-  const unavailable = loading || Boolean(loadError);
+  const unavailable = disabled || loading || Boolean(loadError);
 
   return (
     <View className="gap-2">
@@ -101,19 +123,38 @@ export function SelectField({
           {onRetry ? <Button label="Thử lại" secondary onPress={onRetry} /> : null}
         </View>
       ) : null}
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={dong}>
         <Pressable
           accessibilityLabel="Đóng"
-          onPress={() => setOpen(false)}
+          onPress={dong}
           className="flex-1 justify-end bg-black/40"
         >
-          <Pressable className="max-h-[70%] rounded-t-3xl bg-background px-5 pb-8 pt-5">
+          {/* Có ô tìm thì bảng cao hơn và cố định, để ô và vài kết quả không bị bàn phím che. */}
+          <Pressable
+            className={cn(
+              'rounded-t-3xl bg-background px-5 pb-8 pt-5',
+              searchable ? 'h-[85%]' : 'max-h-[70%]',
+            )}
+          >
             <FieldLabel label={label} className="pb-3 text-lg font-bold" />
-            {options.length === 0 ? (
-              <Text className="py-4 text-muted-foreground">Chưa có lựa chọn nào.</Text>
+            {searchable ? (
+              <TextInput
+                accessibilityLabel={`Tìm ${label}`}
+                placeholder="Tìm theo tên"
+                placeholderTextColor={colors.muted}
+                value={tuKhoa}
+                onChangeText={setTuKhoa}
+                autoCorrect={false}
+                className="mb-2 h-[52px] rounded-xl border border-input bg-card px-4 text-base text-foreground"
+              />
             ) : null}
-            <ScrollView accessibilityRole="radiogroup">
-              {options.map((option) => {
+            {hienThi.length === 0 ? (
+              <Text className="py-4 text-muted-foreground">
+                {tuKhoa ? 'Không tìm thấy.' : 'Chưa có lựa chọn nào.'}
+              </Text>
+            ) : null}
+            <ScrollView accessibilityRole="radiogroup" keyboardShouldPersistTaps="handled">
+              {hienThi.map((option) => {
                 const checked = option.ma === value;
                 return (
                   <Pressable
@@ -123,7 +164,7 @@ export function SelectField({
                     accessibilityState={{ checked }}
                     onPress={() => {
                       onChange(option.ma);
-                      setOpen(false);
+                      dong();
                     }}
                     className="min-h-12 flex-row items-center gap-3 border-b border-border py-3"
                   >

@@ -37,7 +37,7 @@ public sealed class HoSoTests : IAsyncLifetime
 
     private static object BodyHocVien(
         string mucTieu = "tang_co",
-        string khuVuc = "ha_noi",
+        string khuVuc = "tinh_01",
         decimal chieuCao = 172.5m,
         decimal canNang = 68.4m,
         string loaiNguoiDung = "hoc_vien",
@@ -67,7 +67,7 @@ public sealed class HoSoTests : IAsyncLifetime
         ["loai_nguoi_dung"] = loai,
         ["ngay_sinh"] = "1990-03-10",
         ["gioi_tinh"] = "nam",
-        ["khu_vuc_hoat_dong"] = "tp_hcm",
+        ["khu_vuc_hoat_dong"] = "tinh_29",
         ["chuyen_mon"] = chuyenMon ?? ["tang_co", "dinh_duong"],
         ["so_nam_kinh_nghiem"] = soNam,
         ["gioi_thieu"] = gioiThieu,
@@ -112,7 +112,7 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Equal("Ngô Ngọc Huy", body.GetProperty("ten_hien_thi").GetString());
         Assert.Equal("chua_xac_minh", body.GetProperty("trang_thai_xac_minh").GetString());
         Assert.Equal("tang_co", body.GetProperty("muc_tieu_tap_luyen").GetString());
-        Assert.Equal("ha_noi", body.GetProperty("khu_vuc_hoat_dong").GetString());
+        Assert.Equal("tinh_01", body.GetProperty("khu_vuc_hoat_dong").GetString());
 
         var chiSo = body.GetProperty("chi_so_co_the");
         Assert.Equal(172.5m, chiSo.GetProperty("chieu_cao_cm").GetDecimal());
@@ -180,7 +180,7 @@ public sealed class HoSoTests : IAsyncLifetime
             muc_tieu_tap_luyen = "tang_co",
             chieu_cao_cm = 178m,
             can_nang_kg = 75m,
-            khu_vuc_hoat_dong = "tp_hcm",
+            khu_vuc_hoat_dong = "tinh_29",
             chuyen_mon = new[] { "tang_co", "dinh_duong" },
             so_nam_kinh_nghiem = 4,
             gioi_thieu = "HLV 4 năm kinh nghiệm.",
@@ -232,7 +232,7 @@ public sealed class HoSoTests : IAsyncLifetime
             muc_tieu_tap_luyen = "tang_co",
             chieu_cao_cm = 172.5m,
             can_nang_kg = 68.4m,
-            khu_vuc_hoat_dong = "ha_noi",
+            khu_vuc_hoat_dong = "tinh_01",
             chuyen_mon = new[] { "tang_co" },
         });
 
@@ -715,6 +715,59 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(fileId)!.trang_thai);
         Assert.Empty(Storage.Deleted);
+    }
+
+    // ---- Ảnh đại diện
+
+    private Guid GivenAnhDaiDienDaTaiLen(Guid chuSoHuu)
+    {
+        var id = GivenChungChiDaTaiLen(chuSoHuu, "image/jpeg", "avatar");
+        TepTinStore.Find(id)!.loai_doi_tuong = null;
+        return id;
+    }
+
+    [Fact]
+    public async Task Gui_anh_dai_dien_thi_gan_anh_moi_va_xoa_anh_cu()
+    {
+        using var client = Client(Pt);
+        var cu = GivenAnhDaiDienDaTaiLen(Pt);
+        var body = BodyPt();
+        body["anh_dai_dien_tep_tin_id"] = cu;
+        Assert.Equal(HttpStatusCode.OK, (await Luu(client, body)).StatusCode);
+        var moi = GivenAnhDaiDienDaTaiLen(Pt);
+        body["anh_dai_dien_tep_tin_id"] = moi;
+
+        var response = await Luu(client, body);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(moi)!.trang_thai);
+        Assert.Equal(TrangThaiTepTin.da_xoa, TepTinStore.Find(cu)!.trang_thai);
+    }
+
+    [Fact]
+    public async Task Khong_gui_anh_dai_dien_thi_giu_anh_dang_co()
+    {
+        using var client = Client(Pt);
+        var anh = GivenAnhDaiDienDaTaiLen(Pt);
+        var body = BodyPt();
+        body["anh_dai_dien_tep_tin_id"] = anh;
+        await Luu(client, body);
+
+        var response = await Luu(client, BodyPt());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(anh)!.trang_thai);
+        Assert.Empty(Storage.Deleted);
+    }
+
+    [Fact]
+    public async Task Anh_dai_dien_cua_nguoi_khac_tra_400()
+    {
+        using var client = Client(Pt);
+        var body = BodyPt();
+        body["anh_dai_dien_tep_tin_id"] = GivenAnhDaiDienDaTaiLen(HocVien);
+
+        await AssertLoiTruongAsync(await Luu(client, body), "anh_dai_dien_tep_tin_id");
     }
 
     private static Dictionary<string, object?> ToDictionary(object body) =>

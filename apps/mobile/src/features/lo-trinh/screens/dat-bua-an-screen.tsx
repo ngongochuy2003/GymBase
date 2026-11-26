@@ -9,13 +9,15 @@ import { DauManCheckIn } from '../components/check-in-bua-an';
 import { ChonMotAnh } from '../components/chon-mot-anh';
 import { ChonGio } from '../components/form/chon-gio';
 import { KhungThe } from '../components/khung-the';
-import { datBuaAn, layBanNhap, useBanNhapLoTrinh } from '../data/ban-nhap-lo-trinh-store';
+import { datBuaAn, layBanNhap, useBanNhapLoTrinh, xoaBua } from '../data/ban-nhap-lo-trinh-store';
 import { layMotAnh } from '../hooks/use-chon-mot-anh';
 import type { BuaAnKeHoach } from '../types';
+import { tenBua } from '../utils/bua-an';
 
 /** Độ dài tối đa của mô tả món (cùng giới hạn N6 với các ghi chú khác). */
 const TOI_DA_KY_TU_MO_TA = 300;
 const TOI_DA_CHU_SO_KCAL = 4;
+const TOI_DA_KY_TU_TEN = 40;
 
 /**
  * PT-02a Chi tiết bữa ăn (màn con của PT-02): PT đặt giờ ăn, món ăn kèm ghi chú món ưu tiên, năng lượng nhập tay (N30) và
@@ -48,7 +50,7 @@ export function DatBuaAnScreen({ buaId }: { buaId?: string }) {
     >
       <DauManCheckIn
         tieuDe="Chi tiết bữa ăn"
-        phuDe={bua ? bua.ten : 'Không tìm thấy bữa ăn'}
+        phuDe={bua ? tenBua(bua) : 'Không tìm thấy bữa ăn'}
         onQuayLai={() => router.back()}
       />
       {bua ? (
@@ -59,12 +61,28 @@ export function DatBuaAnScreen({ buaId }: { buaId?: string }) {
             contentContainerClassName="w-full max-w-[680px] gap-4 self-center px-4"
             contentContainerStyle={{ paddingBottom: 24 }}
           >
+            <KhungThe icon="edit" tieuDe="Tên bữa">
+              <TextField
+                hideLabel
+                label="Tên bữa"
+                placeholder="Ví dụ: Bữa phụ chiều"
+                value={bua.ten}
+                onChangeText={(ten) => sua({ ten })}
+                maxLength={TOI_DA_KY_TU_TEN}
+                containerClassName="h-11 px-3"
+              />
+            </KhungThe>
+
             <KhungThe icon="clock" tieuDe="Thời gian ăn">
               <View className="flex-row items-center justify-between gap-3">
                 <Text variant="muted" className="flex-1 text-sm">
                   Học viên nhận nhắc check-in vào giờ này mỗi ngày.
                 </Text>
-                <ChonGio gio={bua.gio} tieuDe={`Giờ ${bua.ten}`} onDoi={(gio) => sua({ gio })} />
+                <ChonGio
+                  gio={bua.gio}
+                  tieuDe={`Giờ ${tenBua(bua)}`}
+                  onDoi={(gio) => sua({ gio })}
+                />
               </View>
             </KhungThe>
 
@@ -128,6 +146,18 @@ export function DatBuaAnScreen({ buaId }: { buaId?: string }) {
                 </Text>
               ) : null}
             </KhungThe>
+
+            <Button
+              variant="outline"
+              shape="pill"
+              accessibilityLabel="Xóa bữa"
+              onPress={() => {
+                router.back();
+                xoaBua(bua.id);
+              }}
+            >
+              <Text className="text-destructive">Xóa bữa</Text>
+            </Button>
           </ScrollView>
 
           <View

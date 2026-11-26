@@ -1,3 +1,4 @@
+import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import * as RootLayout from '@/app/_layout';
@@ -41,6 +42,11 @@ const item = (ma: string, ten: string) => ({
   cap: 1,
   danh_muc_cap_tren_id: null,
 });
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+}));
+
 const categories: DanhMucNhom[] = [
   { ma_dinh_danh: 'khu_vuc', items: [item('ha_noi', 'Hà Nội'), item('tp_hcm', 'TP. Hồ Chí Minh')] },
   {
@@ -124,7 +130,7 @@ async function openDetail(loai = 'hoc_vien') {
   expect(await screen.findByText('Thông tin cá nhân')).toBeTruthy();
   await fireEvent.changeText(screen.getByLabelText('Ngày sinh'), '20051998');
   await choose('Giới tính', 'Nữ');
-  await choose('Khu vực', 'Hà Nội');
+  await choose('Tỉnh/Thành phố', 'Hà Nội');
   await fireEvent.press(screen.getByRole('button', { name: 'Tiếp tục' }));
   await waitFor(() => expect(screen).toHavePathname('/profile-setup/chi-tiet'));
   expect(await screen.findByText('Thiết lập hồ sơ')).toBeTruthy();
@@ -267,6 +273,57 @@ test('a learner saving sends one request with the personal and learner data, the
     can_nang_kg: 68.4,
   });
   expect(screen.queryByText('Thiết lập hồ sơ')).toBeNull();
+});
+
+test('the ward is found by typing without accents, and it is saved with the uploaded avatar', async () => {
+  jest.mocked(danhMucApi.get).mockImplementation(async (_loai, maCapTren) =>
+    maCapTren
+      ? [
+          {
+            ma_dinh_danh: 'khu_vuc',
+            items: [item('px_1', 'Phường Ba Đình'), item('px_2', 'Phường Cửa Nam')],
+          },
+        ]
+      : categories,
+  );
+  jest
+    .mocked(ImagePicker.requestMediaLibraryPermissionsAsync)
+    .mockResolvedValue({ granted: true } as never);
+  jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValue({
+    canceled: false,
+    assets: [{ uri: 'file:///anh.jpg' }],
+  } as never);
+  const upload = jest.spyOn(uploader, 'uploadMultipartFile').mockResolvedValue({
+    file_id: 'anh-1',
+    original_name: 'anh.jpg',
+    content_type: 'image/jpeg',
+    size: 10,
+    purpose: 'avatar',
+  });
+  const save = jest.spyOn(profileApi, 'save').mockResolvedValue(saved);
+  await signedIn('/profile-setup/ca-nhan?loai=hoc_vien');
+  expect(await screen.findByText('Thông tin cá nhân')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Phường/Xã' })).toBeDisabled();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Thêm ảnh đại diện' }));
+  expect(await screen.findByRole('button', { name: 'Đổi ảnh đại diện' })).toBeTruthy();
+  await choose('Tỉnh/Thành phố', 'Hà Nội');
+  await openSelect('Phường/Xã');
+  await fireEvent.changeText(screen.getByLabelText('Tìm Phường/Xã'), 'ba dinh');
+  expect(screen.queryByRole('radio', { name: 'Phường Cửa Nam' })).toBeNull();
+  await fireEvent.press(screen.getByRole('radio', { name: 'Phường Ba Đình' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Tiếp tục' }));
+  await waitFor(() => expect(screen).toHavePathname('/profile-setup/chi-tiet'));
+  await fillValid();
+  await fireEvent.press(screen.getByRole('button', SAVE));
+
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  expect(upload).toHaveBeenCalledWith('file:///anh.jpg', 'avatar');
+  expect(danhMucApi.get).toHaveBeenCalledWith(['khu_vuc'], 'ha_noi');
+  expect(save.mock.calls[0]![0]).toMatchObject({
+    khu_vuc_hoat_dong: 'px_1',
+    anh_dai_dien_tep_tin_id: 'anh-1',
+  });
 });
 
 test('going back to the personal info keeps both steps, and forward again keeps the learner fields', async () => {

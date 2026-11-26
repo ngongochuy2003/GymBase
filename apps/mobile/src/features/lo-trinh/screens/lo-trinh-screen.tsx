@@ -20,6 +20,7 @@ import { useThongBaoHeader } from '@/shared/notifications';
 import { useTheme } from '@/shared/theme/theme';
 import { BoLocQuanLy } from '../components/bo-loc-quan-ly';
 import { KhoiHomNay } from '../components/khoi-hom-nay';
+import { TheLoiMoi } from '../components/the-loi-moi';
 import { TheLoTrinhCuaToi } from '../components/the-lo-trinh-cua-toi';
 import { TheLoTrinhQuanLy } from '../components/the-lo-trinh-quan-ly';
 import { useLoTrinh } from '../hooks/use-lo-trinh';
@@ -103,10 +104,30 @@ function TrangThaiTrong({ icon, tieuDe, moTa }: { icon: string; tieuDe: string; 
   );
 }
 
-function ONumThongKe({ giaTri, nhan, icon }: { giaTri: number; nhan: string; icon: string }) {
+function ONumThongKe({
+  giaTri,
+  nhan,
+  icon,
+  onPress,
+}: {
+  giaTri: number;
+  nhan: string;
+  icon: string;
+  /** Có thì ô bấm được. */
+  onPress?(): void;
+}) {
   const { colors } = useTheme();
+  const Khung = onPress ? Pressable : View;
   return (
-    <View className="flex-1 flex-row items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-3">
+    <Khung
+      {...(onPress
+        ? { accessibilityRole: 'button' as const, accessibilityLabel: `${giaTri} ${nhan}`, onPress }
+        : {})}
+      className={cn(
+        'flex-1 flex-row items-center gap-2 rounded-2xl border bg-card px-2.5 py-3',
+        onPress ? 'border-primary active:opacity-75' : 'border-border',
+      )}
+    >
       <Icon name={icon} size={26} color={colors.text} />
       <View className="flex-1">
         <Text className="text-[22px] font-bold leading-7 text-foreground">{giaTri}</Text>
@@ -114,7 +135,13 @@ function ONumThongKe({ giaTri, nhan, icon }: { giaTri: number; nhan: string; ico
           {nhan}
         </Text>
       </View>
-    </View>
+      {/* Viền màu chính và mũi tên để biết ô này bấm được, khác hai ô chỉ hiển thị. */}
+      {onPress ? (
+        <View className="absolute right-1.5 top-1.5">
+          <Icon name="chevron-right" size={16} color={colors.primary} />
+        </View>
+      ) : null}
+    </Khung>
   );
 }
 
@@ -124,7 +151,7 @@ export function LoTrinhScreen() {
   const { user } = useSession();
   const thongBao = useThongBaoHeader();
   const { colors } = useTheme();
-  const { homNay, cuaToi, quanLy } = useLoTrinh();
+  const { homNay, cuaToi, quanLy, loiMoi } = useLoTrinh();
   const toast = useToastCheckIn();
   const [subTab, setSubTab] = useState<SubTab>('cua_toi');
   const [trangThai, setTrangThai] = useState<TrangThaiLoTrinh>('dang_hoat_dong');
@@ -164,12 +191,15 @@ export function LoTrinhScreen() {
         <Animated.View key={subTab} entering={FadeInDown.duration(250)} className="gap-4">
           {subTab === 'cua_toi' ? (
             <>
+              {loiMoi.map((m) => (
+                <TheLoiMoi key={m.loTrinh.id} loiMoi={m} />
+              ))}
               {dangChay.length > 0 ? (
                 <>
                   {dangChay.map((lo) => (
                     <TheLoTrinhCuaToi key={lo.id} loTrinh={lo} />
                   ))}
-                  {dangChay[0] ? (
+                  {dangChay[0] && nhiemVuHomNay.length > 0 ? (
                     <KhoiHomNay
                       loTrinhId={dangChay[0].id}
                       nhiemVu={nhiemVuHomNay}
@@ -197,7 +227,12 @@ export function LoTrinhScreen() {
             <>
               <View className="flex-row gap-3">
                 <ONumThongKe giaTri={soHocVien} nhan="học viên" icon="route-manage" />
-                <ONumThongKe giaTri={soChoDuyet} nhan="check‑in cần duyệt" icon="clipboard-check" />
+                <ONumThongKe
+                  giaTri={soChoDuyet}
+                  nhan="check‑in cần duyệt"
+                  icon="clipboard-check"
+                  onPress={() => router.push('/duyet-nhanh')}
+                />
                 <ONumThongKe giaTri={soLichTap} nhan="lịch tập hôm nay" icon="calendar" />
               </View>
               <Button

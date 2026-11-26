@@ -60,6 +60,7 @@ public static class FileBusinessExtensions
         services.AddScoped<IFileLienKet>(sp => sp.GetRequiredService<ITepTinService>());
         services.AddScoped<IFileUrlProvider>(sp => sp.GetRequiredService<ITepTinService>());
         services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
+        services.AddScoped<IAnhDaiDienLienKet, AnhDaiDienService>();
 
         return services;
     }
