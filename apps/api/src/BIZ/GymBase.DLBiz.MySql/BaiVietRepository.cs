@@ -253,10 +253,19 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
             .Where(t => fileIds.Contains(t.Id) && t.trang_thai != TrangThaiTepTin.da_xoa)
             .ToListAsync(cancellationToken);
 
-        return files.ToDictionary(t => t.Id, ResolveFileUrl);
+        return files
+            .Select(t => (t.Id, Url: ExternalUrl(t)))
+            .Where(x => x.Url != null)
+            .ToDictionary(x => x.Id, x => x.Url!);
     }
 
-    private static string ResolveFileUrl(tep_tin file)
+    public async Task<IReadOnlyList<bai_viet>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        ids.Count == 0
+            ? []
+            : await Db.Set<bai_viet>().AsNoTracking().Where(b => ids.Contains(b.Id)).ToListAsync(cancellationToken);
+
+    /// <summary>URL ngoài của dòng "external"; dòng khác (tệp ở MinIO/S3) trả null.</summary>
+    private static string? ExternalUrl(tep_tin file)
     {
         var key = file.s3_key;
         var hashIndex = key.IndexOf("#tep=", StringComparison.Ordinal);
@@ -265,12 +274,9 @@ public sealed class BaiVietRepository(AppDbContext db) : BaseRepository<bai_viet
             key = key[..hashIndex];
         }
 
-        if (key.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-            || key.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return key;
-        }
-
-        return $"/api/v1/mob/files/{file.Id}/content";
+        return key.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+               || key.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            ? key
+            : null;
     }
 }

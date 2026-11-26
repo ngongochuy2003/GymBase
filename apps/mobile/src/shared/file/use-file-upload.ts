@@ -37,10 +37,8 @@ export function useFileUpload(): UseFileUploadReturn {
       options?: UploadOptions,
     ): Promise<FileUploadResult> => {
       try {
-        setState('compressing');
-        setProgress(10);
-
         setState('uploading');
+        setProgress(0);
         const uploadRes = await uploadMultipartFile(localUri, purpose, {
           ...options,
           onProgress: (p) => {

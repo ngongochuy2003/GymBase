@@ -20,6 +20,9 @@ erDiagram
         bigint kich_thuoc_byte
         string che_do_truy_cap "cong_khai, rieng_tu"
         string trang_thai
+        string trang_thai_xu_ly "khong_can, cho_xu_ly, dang_xu_ly, xong, loi"
+        datetime ngay_bat_dau_xu_ly
+        string blurhash
         int thu_tu_hien_thi
         datetime ngay_tao
         datetime ngay_xac_nhan
@@ -41,9 +44,9 @@ stateDiagram-v2
     cho_tai_len --> da_tai_len : backend kiểm tra object trên S3
     cho_tai_len --> loi : upload hỏng hoặc quá hạn
     da_tai_len --> da_lien_ket : gắn vào bài viết, tin nhắn, nhật ký, avatar
-    da_lien_ket --> da_xoa
-    da_tai_len --> da_xoa : job dọn file mồ côi
-    loi --> da_xoa
+    da_lien_ket --> da_xoa : chứng chỉ PT bị thay hoặc gỡ
+    da_tai_len --> [*] : job dọn file mồ côi hoặc DELETE xóa dòng
+    loi --> [*] : job dọn xóa dòng
     da_xoa --> [*]
 ```
 
@@ -58,17 +61,19 @@ sequenceDiagram
     M->>B: 1. Xin upload (loại file, kích thước, đích)
     B->>B: Kiểm tra đăng nhập, quyền, MIME, dung lượng
     B->>D: Tạo tep_tin (cho_tai_len) với s3_key duy nhất
-    B-->>M: Presigned PUT hoặc POST ngắn hạn
-    M->>S: 2. Upload trực tiếp
+    B-->>M: Form presigned POST có policy (đúng key, Content-Type, 1 đến tối đa byte)
+    M->>S: 2. POST form lên key tạm tmp/{id}
     M->>B: 3. Báo upload xong
-    B->>S: HEAD object, đối chiếu kích thước và kiểu file
-    B->>D: tep_tin = da_tai_len
+    B->>S: HEAD key tạm, đọc đầu file kiểm magic bytes, copy sang key chính
+    B->>D: tep_tin = da_tai_len, trang_thai_xu_ly = cho_xu_ly, kich_thuoc_byte = số thật
     M->>B: 4. Tạo bài viết, tin nhắn, nhật ký hoặc avatar
     B->>D: tep_tin = da_lien_ket (loai_doi_tuong, doi_tuong_id)
     M->>B: 5. Đọc file riêng tư
     B->>B: Kiểm tra quyền trên đối tượng đích
     B-->>M: Presigned GET ngắn hạn
 ```
+
+> Thiết kế chi tiết, quyền xem, xử lý nền và job dọn file: [docs/architecture/upload-file.md](../../docs/architecture/upload-file.md) và ADR-0003.
 
 ## Ghi chú
 

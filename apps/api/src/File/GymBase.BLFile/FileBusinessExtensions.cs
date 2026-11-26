@@ -54,9 +54,14 @@ public static class FileBusinessExtensions
         services.AddSingleton<IStorageResolver, StorageResolver>();
 
         // 4. File Services
-        services.AddScoped<IFileService, FileService>();
+        services.AddScoped<ITepTinService, TepTinService>();
+        services.AddScoped<TepTinXuLyService>();
+        services.AddHostedService<TepTinXuLyWorker>();
+        services.AddScoped<TepTinDonDepService>();
+        services.AddHostedService<TepTinDonDepWorker>();
+        services.AddScoped<IFileLienKet>(sp => sp.GetRequiredService<ITepTinService>());
+        services.AddScoped<IFileUrlProvider>(sp => sp.GetRequiredService<ITepTinService>());
         services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
-        services.AddScoped<IFileMigrationService, FileMigrationService>();
 
         // 5. Notification Services
         services.AddSingleton<IPushNotificationService, FcmV1PushNotificationService>();

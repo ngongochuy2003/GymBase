@@ -1197,6 +1197,10 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
+                    b.Property<string>("blurhash")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
                     b.Property<string>("che_do_truy_cap")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -1221,6 +1225,9 @@ namespace GymBase.Persistence.Migrations
                     b.Property<string>("muc_dich")
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
+
+                    b.Property<DateTime?>("ngay_bat_dau_xu_ly")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("ngay_tao")
                         .HasColumnType("datetime(6)");
@@ -1256,6 +1263,13 @@ namespace GymBase.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<string>("trang_thai_xu_ly")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)")
+                        .HasDefaultValue("khong_can");
+
                     b.HasKey("Id");
 
                     b.HasIndex("s3_key")
@@ -1266,6 +1280,8 @@ namespace GymBase.Persistence.Migrations
                     b.HasIndex("nguoi_tai_len_id", "ngay_tao")
                         .IsDescending(false, true);
 
+                    b.HasIndex("trang_thai_xu_ly", "ngay_tao");
+
                     b.ToTable("tep_tin", null, t =>
                         {
                             t.HasCheckConstraint("CK_tep_tin_che_do_truy_cap", "`che_do_truy_cap` IN ('cong_khai', 'rieng_tu')");
@@ -1275,6 +1291,8 @@ namespace GymBase.Persistence.Migrations
                             t.HasCheckConstraint("CK_tep_tin_loai_doi_tuong", "`loai_doi_tuong` IN ('bai_viet', 'tin_nhan', 'nhat_ky_hoat_dong', 'ho_so_nguoi_dung')");
 
                             t.HasCheckConstraint("CK_tep_tin_trang_thai", "`trang_thai` IN ('cho_tai_len', 'da_tai_len', 'da_lien_ket', 'loi', 'da_xoa')");
+
+                            t.HasCheckConstraint("CK_tep_tin_trang_thai_xu_ly", "`trang_thai_xu_ly` IN ('khong_can', 'cho_xu_ly', 'dang_xu_ly', 'xong', 'loi')");
                         });
                 });
 

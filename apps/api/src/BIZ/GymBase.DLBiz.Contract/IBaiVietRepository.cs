@@ -22,7 +22,10 @@ public interface IBaiVietRepository : IBaseRepository<bai_viet>
         IReadOnlyCollection<Guid> postIds,
         CancellationToken cancellationToken);
 
-    /// <summary>Lưu danh sách đường dẫn ảnh/video đính kèm của bài viết vào bảng <c>tep_tin</c>.</summary>
+    /// <summary>
+    /// Lưu danh sách URL ngoài (http/https) của nội dung mẫu vào bảng <c>tep_tin</c> (dòng "external"). Tệp người dùng tải lên được gắn
+    /// bằng <c>IFileLienKet</c>, không đi qua đây.
+    /// </summary>
     Task DLAttachMediaUrlsAsync(
         bai_viet post,
         IReadOnlyList<string> mediaUrls,
@@ -35,7 +38,13 @@ public interface IBaiVietRepository : IBaseRepository<bai_viet>
         IReadOnlyCollection<Guid> accountIds,
         CancellationToken cancellationToken);
 
-    /// <summary>Đọc đường dẫn ảnh đại diện từ bảng <c>tep_tin</c> theo danh sách Id tệp tin.</summary>
+    /// <summary>Các bài viết theo danh sách Id, bỏ qua Id không có. Không bảo đảm thứ tự.</summary>
+    Task<IReadOnlyList<bai_viet>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Đọc URL ngoài (http/https) của ảnh đại diện lưu dạng dòng "external" trong <c>tep_tin</c>. Tệp lưu ở MinIO/S3 không có trong kết quả:
+    /// lấy URL ký qua <c>IFileUrlProvider</c>.
+    /// </summary>
     Task<IReadOnlyDictionary<Guid, string>> DLGetAvatarUrlsByFileIdsAsync(
         IReadOnlyCollection<Guid> fileIds,
         CancellationToken cancellationToken);

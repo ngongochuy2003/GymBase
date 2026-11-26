@@ -16,14 +16,52 @@ public sealed class InMemoryTepTinRepository : InMemoryBaseRepository<tep_tin>, 
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
-    public Task<IReadOnlyList<tep_tin>> DLGetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
+    public Task<IReadOnlyList<tep_tin>> DLFindPendingProcessingAsync(DateTime nhanTruoc, int soLuong, CancellationToken ct = default)
     {
         var list = Store.All()
-            .Where(t => (t.s3_bucket == provider || t.s3_bucket == "LOCAL") && t.trang_thai == TrangThaiTepTin.da_tai_len)
+            .Where(t => t.trang_thai_xu_ly == TrangThaiXuLyTepTin.cho_xu_ly
+                        || (t.trang_thai_xu_ly == TrangThaiXuLyTepTin.dang_xu_ly && t.ngay_bat_dau_xu_ly < nhanTruoc))
             .OrderBy(t => t.ngay_tao)
-            .Take(limit)
+            .Take(soLuong)
             .ToList();
+        return Task.FromResult<IReadOnlyList<tep_tin>>(list);
+    }
 
+    public Task<bool> DLTryClaimProcessingAsync(tep_tin daThay, DateTime now, CancellationToken ct = default)
+    {
+        lock (Store)
+        {
+            var hienTai = Store.Find(daThay.Id);
+            if (hienTai == null || hienTai.trang_thai_xu_ly != daThay.trang_thai_xu_ly || hienTai.ngay_bat_dau_xu_ly != daThay.ngay_bat_dau_xu_ly)
+            {
+                return Task.FromResult(false);
+            }
+
+            hienTai.trang_thai_xu_ly = TrangThaiXuLyTepTin.dang_xu_ly;
+            hienTai.ngay_bat_dau_xu_ly = now;
+            return Task.FromResult(Store.TryReplace(hienTai));
+        }
+    }
+
+    public Task<IReadOnlyList<tep_tin>> DLFindStaleAsync(
+        DateTime choTaiLenTruoc, DateTime daTaiLenTruoc, int soLuong, CancellationToken ct = default)
+    {
+        var list = Store.All()
+            .Where(t => ((t.trang_thai is TrangThaiTepTin.cho_tai_len or TrangThaiTepTin.loi) && t.ngay_tao < choTaiLenTruoc)
+                        || (t.trang_thai == TrangThaiTepTin.da_tai_len && (t.ngay_xac_nhan ?? t.ngay_tao) < daTaiLenTruoc))
+            .OrderBy(t => t.ngay_tao)
+            .Take(soLuong)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<tep_tin>>(list);
+    }
+
+    public Task<IReadOnlyList<tep_tin>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<tep_tin>>(Store.All().Where(t => ids.Contains(t.Id)).ToList());
+
+    public Task<IReadOnlyList<tep_tin>> DLFindByUploaderSinceAsync(
+        Guid nguoiTaiLenId, DateTime tuNgayUtc, CancellationToken ct = default)
+    {
+        var list = Store.All().Where(t => t.nguoi_tai_len_id == nguoiTaiLenId && t.ngay_tao >= tuNgayUtc).ToList();
         return Task.FromResult<IReadOnlyList<tep_tin>>(list);
     }
 

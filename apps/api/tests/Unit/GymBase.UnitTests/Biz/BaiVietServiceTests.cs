@@ -5,12 +5,43 @@ using GymBase.Base.Paging;
 using GymBase.BLBiz.BaiViet;
 using GymBase.Entities.Biz;
 using GymBase.Entities.Biz.Enums;
+using GymBase.ModuleContracts.TepTin;
 using GymBase.TestDoubles;
 
 namespace GymBase.UnitTests.Biz;
 
+/// <summary>Ghi lại các lần gắn tệp để test kiểm; có thể ép lỗi như khi tệp không hợp lệ.</summary>
+internal sealed class FakeFileLienKet : IFileLienKet
+{
+    public List<(Guid NguoiDungId, IReadOnlyCollection<Guid> FileIds, string LoaiDoiTuong, Guid DoiTuongId, IReadOnlyCollection<string> MucDich)> Calls { get; } = [];
+
+    public Exception? Throw { get; set; }
+
+    public Task BLGanAsync(
+        Guid nguoiDungId, IReadOnlyCollection<Guid> fileIds, string loaiDoiTuong, Guid doiTuongId,
+        IReadOnlyCollection<string> mucDichChoPhep, CancellationToken ct = default)
+    {
+        if (Throw != null) throw Throw;
+        Calls.Add((nguoiDungId, fileIds, loaiDoiTuong, doiTuongId, mucDichChoPhep));
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeFileUrlProvider : IFileUrlProvider
+{
+    public Dictionary<Guid, FileUrlDto> Urls { get; } = new();
+
+    public Task<IReadOnlyDictionary<Guid, FileUrlDto>> BLLayUrlsAsync(
+        Guid nguoiXemId, IReadOnlyCollection<Guid> fileIds, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyDictionary<Guid, FileUrlDto>>(
+            fileIds.Where(Urls.ContainsKey).ToDictionary(id => id, id => Urls[id]));
+}
+
 public sealed class BaiVietServiceTests
 {
+    private readonly FakeFileLienKet _fileLienKet = new();
+    private readonly FakeFileUrlProvider _fileUrls = new();
+
     private static readonly Guid TestUserId = Guid.Parse("0193f0a0-0000-7000-8000-000000000002");
     private readonly InMemoryStore<bai_viet> _postStore = new();
     private readonly InMemoryStore<tuong_tac_bai_viet> _interactionStore = new();
@@ -30,7 +61,116 @@ public sealed class BaiVietServiceTests
         new FakeCurrentUser(userName, userId ?? TestUserId),
         new BaiVietCreateValidator(),
         new BaiVietUpdateValidator(),
-        new BinhLuanCreateValidator());
+        new BinhLuanCreateValidator(),
+        _fileLienKet,
+        _fileUrls);
+
+    [Fact]
+    public async Task Create_with_file_ids_links_files_to_the_new_post_and_returns_signed_urls()
+    {
+        var service = CreateService();
+        var fileA = Guid.NewGuid();
+        var fileB = Guid.NewGuid();
+        _fileUrls.Urls[fileA] = new FileUrlDto(fileA, "https://minio.test/get/post/a.jpg?sig=1", DateTime.UtcNow, "image/jpeg");
+        _fileUrls.Urls[fileB] = new FileUrlDto(fileB, "https://minio.test/get/post/b.mp4?sig=2", DateTime.UtcNow, "video/mp4");
+
+        var created = await service.BLCreateAsync(
+            new BaiVietCreateDto { noi_dung = "Buổi tập", file_ids = [fileA, fileB] },
+            CancellationToken.None);
+
+        var call = Assert.Single(_fileLienKet.Calls);
+        Assert.Equal(TestUserId, call.NguoiDungId);
+        Assert.Equal([fileA, fileB], call.FileIds);
+        Assert.Equal("bai_viet", call.LoaiDoiTuong);
+        Assert.Equal(created.Id, call.DoiTuongId);
+        Assert.Equal(["post"], call.MucDich);
+        Assert.NotNull(await _postRepository.DLGetByIdAsync(created.Id, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Create_with_only_file_ids_is_valid_and_is_typed_as_media_post()
+    {
+        var service = CreateService();
+
+        var created = await service.BLCreateAsync(
+            new BaiVietCreateDto { file_ids = [Guid.NewGuid()] }, CancellationToken.None);
+
+        Assert.Equal("hinh_anh", created.loai_bai_viet);
+    }
+
+    [Fact]
+    public async Task Create_when_linking_files_fails_does_not_create_the_post()
+    {
+        _fileLienKet.Throw = new ValidationFailedException("file_ids", "Tệp đính kèm không tồn tại hoặc không phải của bạn.");
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLCreateAsync(
+            new BaiVietCreateDto { noi_dung = "Có ảnh", file_ids = [Guid.NewGuid()] }, CancellationToken.None));
+
+        Assert.Empty(_postStore.All());
+    }
+
+    [Fact]
+    public async Task Feed_returns_signed_urls_for_uploaded_files_and_skips_files_the_viewer_may_not_see()
+    {
+        var service = CreateService();
+        var visible = Guid.NewGuid();
+        var hidden = Guid.NewGuid();
+        var created = await service.BLCreateAsync(
+            new BaiVietCreateDto { noi_dung = "Bài có hai tệp", file_ids = [visible, hidden] }, CancellationToken.None);
+        _postRepository.AddUploadedFile(created.Id, visible, 1);
+        _postRepository.AddUploadedFile(created.Id, hidden, 2);
+        _fileUrls.Urls[visible] = new FileUrlDto(visible, "https://minio.test/get/post/a.mp4?sig=1", DateTime.UtcNow, "video/mp4");
+
+        var detail = await service.BLGetByIdAsync(created.Id, CancellationToken.None);
+
+        Assert.Equal(["https://minio.test/get/post/a.mp4?sig=1"], detail.hinh_anh_urls);
+        // hinh_anh_meta cùng thứ tự với hinh_anh_urls: tệp không được xem không để lại dấu ở cả hai danh sách.
+        var meta = Assert.Single(detail.hinh_anh_meta!);
+        Assert.Equal(visible, meta.file_id);
+    }
+
+    [Fact]
+    public async Task Feed_returns_file_id_and_blurhash_alongside_each_uploaded_image()
+    {
+        var service = CreateService();
+        var image = Guid.NewGuid();
+        var created = await service.BLCreateAsync(
+            new BaiVietCreateDto { noi_dung = "Bài có ảnh", file_ids = [image] }, CancellationToken.None);
+        _postRepository.AddUploadedFile(created.Id, image, 1);
+        _fileUrls.Urls[image] = new FileUrlDto(image, "https://minio.test/get/post/a.jpg?sig=1", DateTime.UtcNow, "image/jpeg", "LEHV6nWB2yk8pyo0adR*.7kCMdnj");
+
+        var detail = await service.BLGetByIdAsync(created.Id, CancellationToken.None);
+
+        var meta = Assert.Single(detail.hinh_anh_meta!);
+        Assert.Equal(image, meta.file_id);
+        Assert.Equal("LEHV6nWB2yk8pyo0adR*.7kCMdnj", meta.blurhash);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/mob/files/abc/content")]
+    [InlineData("file:///local/anh.jpg")]
+    public async Task Create_rejects_non_http_media_urls(string url)
+    {
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLCreateAsync(
+            new BaiVietCreateDto { noi_dung = "x", hinh_anh_urls = [url] }, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Create_rejects_more_than_ten_attachments_across_urls_and_file_ids()
+    {
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ValidationFailedException>(() => service.BLCreateAsync(
+            new BaiVietCreateDto
+            {
+                noi_dung = "x",
+                hinh_anh_urls = Enumerable.Range(0, 6).Select(i => $"https://cdn.test/{i}.jpg").ToList(),
+                file_ids = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToList(),
+            }, CancellationToken.None));
+    }
 
     [Fact]
     public async Task Create_with_text_and_media_saves_post_and_returns_enriched_dto()

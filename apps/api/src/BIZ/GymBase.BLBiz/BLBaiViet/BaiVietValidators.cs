@@ -53,16 +53,24 @@ public sealed class BaiVietCreateValidator : AppValidator<BaiVietCreateDto>
             .MaximumLength(32)
             .WithName("Chủ đề");
 
-        RuleFor(x => x.hinh_anh_urls)
-            .Must(list => list is null || list.Count <= MaxMediaCount)
+        RuleFor(x => x)
+            .Must(x => (x.hinh_anh_urls?.Count ?? 0) + (x.file_ids?.Count ?? 0) <= MaxMediaCount)
             .WithMessage($"Chỉ được đính kèm tối đa {MaxMediaCount} ảnh/video.")
+            .OverridePropertyName(nameof(BaiVietCreateDto.file_ids));
+
+        RuleFor(x => x.hinh_anh_urls)
+            .Must(list => list is null || list.All(u =>
+                string.IsNullOrWhiteSpace(u) || u.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || u.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+            .WithMessage("Đường dẫn ảnh/video phải bắt đầu bằng http hoặc https. Tệp tải lên dùng file_ids.")
             .WithName("Ảnh/video đính kèm");
     }
 
     private static bool HasContentOrMedia(BaiVietCreateDto dto)
     {
         var hasText = !string.IsNullOrWhiteSpace(dto.noi_dung);
-        var hasMedia = dto.hinh_anh_urls is { Count: > 0 } && dto.hinh_anh_urls.Any(u => !string.IsNullOrWhiteSpace(u));
+        var hasMedia = (dto.hinh_anh_urls is { Count: > 0 } && dto.hinh_anh_urls.Any(u => !string.IsNullOrWhiteSpace(u)))
+                       || dto.file_ids is { Count: > 0 };
         return hasText || hasMedia;
     }
 }

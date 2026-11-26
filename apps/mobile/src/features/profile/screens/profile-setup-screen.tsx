@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { AuthHeader } from '@/features/auth';
-import { Button, Screen } from '@/shared/components/ui';
+import { Screen } from '@/shared/components/ui';
 import { useTheme } from '@/shared/theme/theme';
 import { cn } from '@/lib/utils';
 
@@ -39,10 +41,10 @@ export function ProfileSetupScreen() {
     <Screen bottomInset>
       <AuthHeader onBack={() => router.back()} />
       <View className="gap-3 py-4">
-        <Text className="text-[28px] font-bold leading-9 text-foreground text-center">
+        <Text variant="h1" className="text-center">
           Bạn muốn sử dụng GymBase như thế nào?
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground text-center">
+        <Text variant="muted" className="text-center">
           Chọn vai trò phù hợp với nhu cầu của bạn.
         </Text>
       </View>
@@ -65,8 +67,10 @@ export function ProfileSetupScreen() {
                 <Ionicons name={role.icon} size={24} color={colors.text} />
               </View>
               <View className="flex-1 gap-2">
-                <Text className="text-base font-bold text-foreground">{role.title}</Text>
-                <Text className="text-sm leading-5 text-muted-foreground">{role.description}</Text>
+                <Text className="font-bold">{role.title}</Text>
+                <Text variant="muted" className="text-sm leading-5">
+                  {role.description}
+                </Text>
               </View>
             </Pressable>
           );
@@ -74,20 +78,22 @@ export function ProfileSetupScreen() {
       </View>
       <View className="flex-row items-center gap-3 rounded-2xl bg-secondary p-4">
         <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
-        <Text className="flex-1 text-sm leading-5 text-muted-foreground">
+        <Text variant="muted" className="flex-1 text-sm leading-5">
           Một tài khoản, một hồ sơ chung.
         </Text>
       </View>
       <Button
-        pill
-        label="Tiếp tục"
-        trailingIcon="chevron-forward"
+        shape="pill"
+        accessibilityLabel="Tiếp tục"
         disabled={selected === null}
         onPress={() => {
           // TODO(PROFILE-PT): hiện cả 3 vai trò dùng chung form học viên; sau này rẽ nhánh theo `loai`.
           if (selected) router.push(`/profile-setup/ca-nhan?loai=${selected}`);
         }}
-      />
+      >
+        <Text>Tiếp tục</Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
+      </Button>
     </Screen>
   );
 }

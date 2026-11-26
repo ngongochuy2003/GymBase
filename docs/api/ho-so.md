@@ -76,9 +76,10 @@ Dùng `PUT` vì mỗi tài khoản chỉ có một hồ sơ; lần lưu đầu t
 
 Khối PT có một chứng chỉ tùy chọn (nhãn trên app: "Chứng chỉ (nếu có)"), lưu dưới dạng tệp PDF theo hai bước:
 
-1. App tải tệp lên bằng `POST /api/v1/mob/files` với `purpose = chung_chi_pt`. Tệp phải là PDF thật (backend kiểm tra phần đầu tệp là
-   `%PDF-`, không tin đuôi tệp), tối đa `Storage:MaxUploadBytes` (mặc định 10 MB). Tệp ở chế độ **riêng tư**: chỉ người tải lên đọc được qua
-   `GET /files/{id}/content`. Kết quả có `file_id`.
+1. App tải tệp lên theo ba bước của [upload-file.md](../architecture/upload-file.md): xin form (`POST /api/v1/mob/files/upload-url` với
+   `muc_dich = chung_chi_pt`, `loai_mime = application/pdf`), gửi thẳng lên storage, rồi `POST /api/v1/mob/files/{id}/confirm`. Tệp phải là PDF thật
+   (lúc confirm backend kiểm phần đầu tệp là `%PDF`, không tin đuôi tệp), tối đa `Storage:MaxDocumentBytes` (mặc định 10 MB). Tệp ở chế độ **riêng tư**:
+   chỉ người tải lên đọc được, qua URL ký `GET /api/v1/mob/files/{id}/url`. Kết quả có `file_id`.
 2. App gửi `file_id` đó ở `chung_chi_tep_tin_id` của `PUT /ho-so`. Backend kiểm tra tệp là của chính chủ, `muc_dich = chung_chi_pt`, kiểu PDF
    và chưa bị gỡ, rồi gắn vào hồ sơ: `tep_tin.loai_doi_tuong = ho_so_nguoi_dung`, `doi_tuong_id = tai_khoan_id`, `trang_thai = da_lien_ket`
    (theo thiết kế ở [02-tep-tin.md](../../database/diagrams/02-tep-tin.md), không thêm cột hay bảng).
@@ -145,5 +146,5 @@ nửa chừng. Đăng ký: `AddBizBusiness()` (BL) và `AddBizData()` (DL.MySql,
   thêm dòng; đổi số đo thêm đúng một dòng; giữ `ten_hien_thi`/trạng thái xác minh; PT gửi chuyên môn hợp lệ; mã danh mục
   sai; chiều cao ngoài khoảng; thiếu hoặc ngoài khoảng ngày sinh, giới tính ngoài danh sách cố định, mã trình độ sai; gửi hoặc bỏ `ten_hien_thi`;
   hồ sơ cũ trả `null` cho trường mới; học viên gửi thông tin PT; vai trò sai; `GET` khi chưa có hồ sơ; 401 khi chưa đăng nhập; chứng chỉ PT
-  (gắn và đọc lại, tệp của người khác hoặc sai mục đích hoặc kiểu bị từ chối, thay và gỡ chứng chỉ, học viên gửi chứng chỉ). `FileServiceTests`
-  phủ upload PDF (riêng tư, giữ nguyên nội dung, từ chối tệp giả PDF).
+  (gắn và đọc lại, tệp của người khác hoặc sai mục đích hoặc kiểu bị từ chối, thay và gỡ chứng chỉ, học viên gửi chứng chỉ). `TepTinServiceTests`
+  phủ upload (xin form, confirm, từ chối tệp giả PDF qua magic bytes, URL riêng tư); xem [upload-file.md](../architecture/upload-file.md) mục 10.

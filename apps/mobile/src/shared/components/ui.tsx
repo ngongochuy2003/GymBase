@@ -20,6 +20,11 @@ import {
 import { cssInterop } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cn } from '@/lib/utils';
+import { Button as UiButton } from '@/components/ui/button';
+import { Card as UiCard } from '@/components/ui/card';
+import { Checkbox as UiCheckbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Text as UiText } from '@/components/ui/text';
 import { useTheme } from '../theme/theme';
 import { FieldLabel } from './field-label';
 
@@ -73,23 +78,17 @@ export function AppText({
   className,
 }: PropsWithChildren<{ muted?: boolean; title?: boolean; className?: string }>) {
   return (
-    <Text
-      className={cn(
-        'text-base leading-6',
-        muted ? 'text-muted-foreground' : 'text-foreground',
-        title && 'text-[28px] font-bold leading-9 tracking-[-0.8px]',
-        className,
-      )}
+    <UiText
+      variant={title ? 'h1' : muted ? 'muted' : 'default'}
+      className={cn(title && muted && 'text-muted-foreground', className)}
     >
       {children}
-    </Text>
+    </UiText>
   );
 }
 
 export function Card({ children }: PropsWithChildren) {
-  return (
-    <View className="gap-3.5 rounded-[20px] border border-border bg-card p-5">{children}</View>
-  );
+  return <UiCard>{children}</UiCard>;
 }
 
 export function Button({
@@ -115,39 +114,20 @@ export function Button({
   trailingIcon?: IconName;
 }) {
   const { colors } = useTheme();
-  const inactive = disabled || loading;
   const textColor = secondary ? colors.text : colors.onPrimary;
   return (
-    <Pressable
-      accessibilityRole="button"
+    <UiButton
       accessibilityLabel={label}
-      accessibilityState={{ disabled: inactive, busy: loading }}
-      disabled={inactive}
+      disabled={disabled}
+      loading={loading}
       onPress={onPress}
-      className={cn(
-        'min-h-[50px] items-center justify-center border px-5 py-3.5',
-        pill ? 'rounded-full' : 'rounded-[14px]',
-        secondary ? 'border-input bg-card' : 'border-primary bg-primary',
-        inactive ? 'opacity-50' : 'active:opacity-75',
-      )}
+      variant={secondary ? 'outline' : 'default'}
+      shape={pill ? 'pill' : 'default'}
     >
-      {loading ? (
-        <ActivityIndicator color={secondary ? colors.primary : colors.onPrimary} />
-      ) : (
-        <View className="flex-row items-center justify-center gap-2.5">
-          {leading}
-          <Text
-            className={cn(
-              'text-base font-bold',
-              secondary ? 'text-foreground' : 'text-primary-foreground',
-            )}
-          >
-            {label}
-          </Text>
-          {trailingIcon ? <Ionicons name={trailingIcon} size={18} color={textColor} /> : null}
-        </View>
-      )}
-    </Pressable>
+      {leading}
+      <UiText>{label}</UiText>
+      {trailingIcon ? <Ionicons name={trailingIcon} size={18} color={textColor} /> : null}
+    </UiButton>
   );
 }
 
@@ -160,6 +140,7 @@ export function TextField({
   trailing,
   inputRef,
   errorAction,
+  containerClassName,
   ...props
 }: TextInputProps & {
   /** Tên ô: hiện phía trên ô, và luôn là nhãn truy cập cho trình đọc màn hình. */
@@ -177,6 +158,8 @@ export function TextField({
   icon?: IconName;
   /** Thêm nút hiện/ẩn nội dung, dùng cho ô mật khẩu. */
   passwordToggle?: boolean;
+  /** Class thêm vào khung ô, ghi đè kích thước mặc định (ví dụ `h-11 gap-2 px-3` cho ô gọn trong form). */
+  containerClassName?: string;
 }) {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
@@ -189,21 +172,20 @@ export function TextField({
           'flex-row gap-3 rounded-xl border bg-card px-4',
           // Ô nhiều dòng (giới thiệu bản thân...) cao hơn và chữ bắt đầu từ trên; ô một dòng cố định 52px, chữ căn giữa.
           props.multiline ? 'min-h-[132px] items-start py-3' : 'h-[52px] items-center',
+          containerClassName,
           error ? 'border-destructive' : 'border-input',
         )}
       >
         {icon ? <Ionicons name={icon} size={20} color={colors.muted} /> : null}
-        <TextInput
+        <Input
           {...props}
           ref={inputRef}
           placeholder={props.placeholder ?? (hideLabel ? label : undefined)}
           secureTextEntry={passwordToggle ? !visible : props.secureTextEntry}
           accessibilityLabel={label}
           placeholderTextColor={colors.muted}
-          // iOS: ô một dòng có lineHeight (text-base = 24px) và padding dọc thì chữ bị lệch khỏi giữa ô.
-          // Bỏ cả hai, để ô tự giãn đủ chiều cao của khung (self-stretch) và UITextField tự căn giữa chữ.
-          className="flex-1 self-stretch py-0 text-base text-foreground"
-          style={[props.style, { lineHeight: undefined }]}
+          // Khung viền, nền, chiều cao do View bọc ngoài lo (để chứa biểu tượng), nên bỏ những thứ đó của Input.
+          className="h-auto flex-1 self-stretch rounded-none border-0 bg-transparent px-0 py-0"
         />
         {passwordToggle ? (
           <Pressable
@@ -246,24 +228,17 @@ export function Checkbox({
   error?: string;
   children: ReactNode;
 }) {
-  const { colors } = useTheme();
   return (
     <View className="gap-2">
       <View className="flex-row items-start gap-3">
-        <Pressable
-          accessibilityRole="checkbox"
+        <UiCheckbox
           accessibilityLabel={label}
-          accessibilityState={{ checked }}
-          hitSlop={8}
-          onPress={() => onChange(!checked)}
-          className={cn(
-            'mt-0.5 size-6 items-center justify-center rounded-md border',
-            checked ? 'border-primary bg-primary' : error ? 'border-destructive' : 'border-input',
-          )}
-        >
-          {checked ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
-        </Pressable>
-        <Text className="flex-1 text-base leading-6 text-foreground">{children}</Text>
+          checked={checked}
+          onCheckedChange={onChange}
+          invalid={Boolean(error)}
+          className="mt-0.5"
+        />
+        <UiText className="flex-1">{children}</UiText>
       </View>
       {error ? (
         <Text accessibilityRole="alert" className="text-destructive">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { cn } from '@/lib/utils';
+import { Icon } from '../icons';
 import { useTheme } from '../theme/theme';
 import { FieldLabel } from './field-label';
 import { Button } from './ui';
@@ -22,6 +23,11 @@ export function SelectField({
   loading = false,
   loadError,
   onRetry,
+  hideLabel = false,
+  icon,
+  triggerClassName,
+  valueClassName,
+  singleLine = false,
 }: {
   /** Tên ô: hiện phía trên ô và là nhãn truy cập. */
   label: string;
@@ -35,6 +41,16 @@ export function SelectField({
   /** Thông báo khi không tải được danh sách; có thì hiện kèm nút "Thử lại". */
   loadError?: string;
   onRetry?(): void;
+  /** Không hiện nhãn phía trên (nhãn vẫn là tên bảng chọn và nhãn truy cập), dùng khi ô nằm trong một hàng có nhãn riêng. */
+  hideLabel?: boolean;
+  /** Icon (tên trong `shared/icons`) đặt đầu ô. */
+  icon?: string;
+  /** Class thêm vào ô bấm, ghi đè kích thước và nền mặc định (ví dụ `min-h-0 h-10 rounded-full`). */
+  triggerClassName?: string;
+  /** Class thêm vào chữ giá trị (ví dụ `text-sm`). */
+  valueClassName?: string;
+  /** Cắt giá trị dài thành một dòng (mặc định cho xuống dòng). */
+  singleLine?: boolean;
 }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -44,7 +60,7 @@ export function SelectField({
 
   return (
     <View className="gap-2">
-      <FieldLabel label={label} />
+      {hideLabel ? null : <FieldLabel label={label} />}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -54,12 +70,19 @@ export function SelectField({
         onPress={() => setOpen(true)}
         className={cn(
           'min-h-[52px] flex-row items-center gap-3 rounded-xl border bg-card px-4',
+          triggerClassName,
           error ? 'border-destructive' : 'border-input',
           unavailable && 'opacity-60',
         )}
       >
+        {icon ? <Icon name={icon} size={20} color={colors.primary} /> : null}
         <Text
-          className={cn('flex-1 text-base', selected ? 'text-foreground' : 'text-muted-foreground')}
+          numberOfLines={singleLine ? 1 : undefined}
+          className={cn(
+            'flex-1 text-base',
+            selected ? 'text-foreground' : 'text-muted-foreground',
+            valueClassName,
+          )}
         >
           {display}
         </Text>
