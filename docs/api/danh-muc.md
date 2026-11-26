@@ -58,6 +58,13 @@ VALUES (UUID(), 'khu_vuc', 'hue', 'Huế', 'hue', 'khu_vuc/hue', 1, 1, UTC_TIMES
 | --- | --- | --- |
 | `ma_dinh_danh` | không | Một hoặc nhiều loại, cách nhau bằng dấu phẩy: `muc_tieu_tap_luyen,khu_vuc`. Bỏ trống thì trả mọi loại |
 
+| `ma_cap_tren` | không | Mã mục cha, trả mục con trực tiếp, ví dụ `ma_dinh_danh=khu_vuc&ma_cap_tren=ha_noi`. Phải kèm đúng một `ma_dinh_danh`, nếu không trả `400` |
+
+Không có `ma_cap_tren` thì **chỉ trả mục cấp 1**. Mã cha không tồn tại hoặc chưa có mục con thì trả mảng rỗng. Mỗi mục
+chỉ xét `tinh_trang` của chính nó: ẩn một tỉnh thì ẩn cả mục con của tỉnh đó.
+
+<!-- TODO(DANH-MUC): chưa nạp dữ liệu xã/phường (cấp 2 của khu_vuc); cần danh mục hành chính chính thức và migration. -->
+
 Chỉ trả mục có `tinh_trang = 1`; loại không có mục nào đang dùng thì không xuất hiện trong kết quả. Trong mỗi loại,
 mục sắp theo `ten` (bảng chưa có cột thứ tự).
 

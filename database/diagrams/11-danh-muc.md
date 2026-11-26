@@ -48,6 +48,8 @@ erDiagram
 - Đợt này danh mục **phẳng**: `cap = 1`, `danh_muc_cap_tren_id = NULL`, `muc_luc = ma`,
   `muc_luc_ma = '<ma_dinh_danh>/<ma>'`. Cây nhiều cấp (khu vực → quận/huyện) chưa chốt định dạng đường dẫn; xem
   `// TODO(DANH-MUC)` trong entity.
+- API đã đọc được mục con theo `ma_cap_tren` (xem [docs/api/danh-muc.md](../../docs/api/danh-muc.md)); dữ liệu cấp 2
+  chưa được nạp.
 
 ## 3. Truy vấn thường dùng
 
