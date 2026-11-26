@@ -18,17 +18,24 @@ public sealed class InMemoryDanhMucRepository : InMemoryBaseRepository<danh_muc>
     protected override IEnumerable<string?>? GetSearchValues(danh_muc entity) => [entity.ten, entity.ma];
 
     public Task<IReadOnlyList<danh_muc>> DLFindDangDungAsync(
-        IReadOnlyCollection<string>? maDinhDanhs, CancellationToken cancellationToken)
+        IReadOnlyCollection<string>? maDinhDanhs, string? maCapTren, CancellationToken cancellationToken)
     {
-        IReadOnlyList<danh_muc> rows = Store.All()
+        var tatCa = Store.All().ToList();
+        IReadOnlyList<danh_muc> rows = tatCa
             .Where(e => e.tinh_trang)
             .Where(e => maDinhDanhs is not { Count: > 0 } || maDinhDanhs.Contains(e.ma_dinh_danh, StringComparer.Ordinal))
+            .Where(e => maCapTren == null
+                ? e.danh_muc_cap_tren_id == null
+                : tatCa.Any(cha => cha.Id == e.danh_muc_cap_tren_id && cha.ma_dinh_danh == e.ma_dinh_danh && cha.ma == maCapTren))
             .OrderBy(e => e.ma_dinh_danh, StringComparer.Ordinal)
             .ThenBy(e => e.ten, StringComparer.Ordinal)
             .ToList();
 
         return Task.FromResult(rows);
     }
+
+    public Task<bool> DLExistsByMaAsync(string maDinhDanh, string ma, CancellationToken cancellationToken) =>
+        Task.FromResult(Store.All().Any(e => e.ma_dinh_danh == maDinhDanh && e.ma == ma && e.tinh_trang));
 
     private static IEnumerable<danh_muc> CreateMockCategories() =>
     [

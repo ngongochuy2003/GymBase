@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using GymBase.Base.Auth;
+using GymBase.DLDI.Contract.DLDanhMuc;
 using GymBase.Entities.DI;
+using GymBase.ModuleContracts.DanhMuc;
 using GymBase.TestDoubles;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -78,6 +80,73 @@ public sealed class DanhMucTests : IAsyncLifetime
         var items = body.EnumerateArray().Single().GetProperty("items").EnumerateArray().ToList();
         Assert.DoesNotContain(items, i => i.GetProperty("ma").GetString() == "yoga");
         Assert.Equal(5, items.Count);
+    }
+
+    [Fact]
+    public async Task Khong_co_ma_cap_tren_thi_chi_tra_cap_1()
+    {
+        ThemPhuongCuaHaNoi();
+        var client = TestApp.ClientWithRole(_app, AppRoles.User);
+
+        var body = await client.GetFromJsonAsync<JsonElement>($"{DanhMuc}?ma_dinh_danh=khu_vuc");
+
+        var items = body.EnumerateArray().Single().GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(5, items.Count);
+        Assert.DoesNotContain(items, i => i.GetProperty("ma").GetString() == "px_00004");
+    }
+
+    [Fact]
+    public async Task Co_ma_cap_tren_thi_tra_muc_con_truc_tiep()
+    {
+        ThemPhuongCuaHaNoi();
+        var client = TestApp.ClientWithRole(_app, AppRoles.User);
+
+        var body = await client.GetFromJsonAsync<JsonElement>($"{DanhMuc}?ma_dinh_danh=khu_vuc&ma_cap_tren=ha_noi");
+
+        var item = body.EnumerateArray().Single().GetProperty("items").EnumerateArray().Single();
+        Assert.Equal("px_00004", item.GetProperty("ma").GetString());
+        Assert.Equal(2, item.GetProperty("cap").GetInt32());
+    }
+
+    [Theory]
+    [InlineData("?ma_cap_tren=ha_noi")]
+    [InlineData("?ma_dinh_danh=khu_vuc,chuyen_mon_pt&ma_cap_tren=ha_noi")]
+    public async Task Tra_400_khi_co_ma_cap_tren_ma_khong_dung_mot_loai(string query)
+    {
+        var client = TestApp.ClientWithRole(_app, AppRoles.User);
+
+        var response = await client.GetAsync($"{DanhMuc}{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Tra_cuu_ma_nhan_ca_muc_cap_2()
+    {
+        ThemPhuongCuaHaNoi();
+        using var scope = _app.Services.CreateScope();
+        var traCuu = scope.ServiceProvider.GetRequiredService<IDanhMucTraCuu>();
+
+        Assert.True(await traCuu.BLKiemTraDangDungAsync("khu_vuc", "px_00004", CancellationToken.None));
+        Assert.False(await traCuu.BLKiemTraDangDungAsync("khu_vuc", "px_99999", CancellationToken.None));
+    }
+
+    private void ThemPhuongCuaHaNoi()
+    {
+        using var scope = _app.Services.CreateScope();
+        // Dựng repository trước để dữ liệu tham chiếu được nạp vào store.
+        scope.ServiceProvider.GetRequiredService<IDanhMucRepository>();
+        var store = _app.Services.GetRequiredService<InMemoryStore<danh_muc>>();
+        var haNoi = store.All().Single(e => e.ma_dinh_danh == "khu_vuc" && e.ma == "ha_noi");
+        store.TryAdd(new danh_muc
+        {
+            ma_dinh_danh = "khu_vuc",
+            ma = "px_00004",
+            ten = "Phường Ba Đình",
+            cap = 2,
+            danh_muc_cap_tren_id = haNoi.Id,
+            tinh_trang = true,
+        });
     }
 
     [Fact]
