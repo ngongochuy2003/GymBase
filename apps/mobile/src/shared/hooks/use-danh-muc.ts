@@ -5,13 +5,18 @@ import { danhMucApi, type DanhMucItem } from '@/shared/api/danh-muc-api';
  * Danh mục cho dropdown, nhóm theo `ma_dinh_danh`. Loại chưa có mục nào đang dùng không xuất hiện trong kết quả nên
  * `items(ma)` luôn trả mảng (có thể rỗng). Dùng `staleTime` mặc định của app.
  */
-export function useDanhMuc(maDinhDanhs: readonly string[]) {
+export function useDanhMuc(
+  maDinhDanhs: readonly string[],
+  { maCapTren, enabled = true }: { maCapTren?: string; enabled?: boolean } = {},
+) {
   const query = useQuery({
-    queryKey: ['danh-muc', ...maDinhDanhs],
-    queryFn: () => danhMucApi.get(maDinhDanhs),
+    queryKey: ['danh-muc', ...maDinhDanhs, maCapTren ?? null],
+    queryFn: () => danhMucApi.get(maDinhDanhs, maCapTren),
+    enabled,
   });
   return {
-    isPending: query.isPending,
+    // Truy vấn đang tắt (chưa chọn mục cha) không tính là đang tải.
+    isPending: enabled && query.isPending,
     isError: query.isError,
     retry: () => void query.refetch(),
     items: (maDinhDanh: string): DanhMucItem[] =>

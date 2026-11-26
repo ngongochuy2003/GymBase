@@ -49,6 +49,7 @@ export const personalInfoSchema = z
     ngay_sinh: z.string(),
     gioi_tinh: z.string(),
     khu_vuc_hoat_dong: z.string(),
+    phuong_xa: z.string(),
   })
   .superRefine((form, ctx) => {
     const fail = (message: string) =>

@@ -10,7 +10,10 @@ export type HoSoLuuInput = {
   /** `yyyy-MM-dd`; bỏ trống thì không gửi. */
   ngay_sinh?: string;
   gioi_tinh?: string;
+  /** Mã phường/xã, hoặc mã tỉnh/thành nếu không chọn phường/xã. */
   khu_vuc_hoat_dong?: string;
+  /** `file_id` ảnh đại diện đã tải lên; bỏ trống thì giữ ảnh đang có. */
+  anh_dai_dien_tep_tin_id?: string;
   // Khối học viên.
   muc_tieu_tap_luyen?: string;
   trinh_do_tap?: string;
