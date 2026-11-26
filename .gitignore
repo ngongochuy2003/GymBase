@@ -6,6 +6,8 @@
 **/appsettings.Local.json
 **/appsettings.*.Local.json
 **/secrets.json
+# Cấu hình Firebase của app Android (có API key): mỗi người tự đặt, xem docs/onboarding/thong-bao-fcm.md
+apps/mobile/google-services.json
 **/credentials.json
 *.pem
 *.key

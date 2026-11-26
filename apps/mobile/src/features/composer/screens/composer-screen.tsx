@@ -3,7 +3,7 @@ import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/core/auth/session';
 import { resolveMediaUrl, UploadError } from '@/shared/file';
-import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
+import { useHeaderActions, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
 import { useToast } from '@/shared/ui-kit';
 import { ComposerCard } from '../components/composer-card';
@@ -28,6 +28,7 @@ export function ComposerScreen() {
   const { user } = useSession();
   const router = useRouter();
   const onTabPress = useTabNavigation();
+  const headerActions = useHeaderActions();
   const { toast, show } = useToast();
   const createPostMutation = useCreatePostMutation();
   const state = useComposerState({
@@ -71,7 +72,7 @@ export function ComposerScreen() {
     return {
       id: 'composer',
       header: {
-        rightActions: DEFAULT_HEADER_ACTIONS,
+        ...headerActions,
         avatarUri,
         onAvatarPress: () => router.navigate('/profile'),
       },
@@ -149,7 +150,7 @@ export function ComposerScreen() {
       bottomTabs: composerTabs,
       activeTabId: undefined,
     };
-  }, [state, show, router, authorName, visibility, createPostMutation, avatarUri]);
+  }, [state, show, router, authorName, visibility, createPostMutation, avatarUri, headerActions]);
 
   return <ScreenRenderer config={config} onTabPress={onTabPress} overlay={toast} />;
 }

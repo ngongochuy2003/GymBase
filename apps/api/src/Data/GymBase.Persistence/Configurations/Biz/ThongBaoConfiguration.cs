@@ -17,6 +17,7 @@ public sealed class ThongBaoConfiguration : IEntityTypeConfiguration<thong_bao>
         {
             table.HasEnumCheck(e => e.loai_thong_bao);
             table.HasEnumCheck(e => e.trang_thai_gui);
+            table.HasEnumCheck(e => e.kenh);
         });
 
         builder.Property(e => e.loai_thong_bao).AsEnumString(32);
@@ -24,10 +25,11 @@ public sealed class ThongBaoConfiguration : IEntityTypeConfiguration<thong_bao>
         builder.Property(e => e.noi_dung).AsText();
         builder.Property(e => e.loai_doi_tuong).HasMaxLength(32);
         builder.Property(e => e.trang_thai_gui).AsEnumString(16);
+        builder.Property(e => e.kenh).AsEnumString(16);
         builder.Property(e => e.ma_chong_trung).HasMaxLength(160);
 
         builder.HasIndex(e => new { e.tai_khoan_id, e.ma_chong_trung }).IsUnique();
-        builder.HasIndex(e => new { e.trang_thai_gui, e.thoi_diem_du_kien });
+        builder.HasIndex(e => new { e.kenh, e.trang_thai_gui, e.thoi_diem_du_kien });
         builder.HasIndex(e => new { e.tai_khoan_id, e.ngay_tao }).IsDescending(false, true);
 
         builder.HasRestrictForeignKey(typeof(tai_khoan), e => e.tai_khoan_id);

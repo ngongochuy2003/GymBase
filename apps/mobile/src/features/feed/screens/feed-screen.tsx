@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/core/auth/session';
-import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
+import { useHeaderActions, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
 import { resolveMediaUrl } from '../api/feed-api';
 import { CommentBottomSheet } from '../components/comment-bottom-sheet';
@@ -18,6 +18,7 @@ registerSection('postList', PostList);
 export function FeedScreen() {
   const router = useRouter();
   const onTabPress = useTabNavigation();
+  const headerActions = useHeaderActions();
   const { user } = useSession();
   const [activeFilter, setActiveFilter] = useState(feedFilters[0]?.id ?? 'for-you');
   const feed = useFeedPosts(activeFilter);
@@ -103,7 +104,7 @@ export function FeedScreen() {
       id: 'feed',
       scrollable: false, // Dùng FlatList ảo hóa trong PostList làm scroll view chính
       header: {
-        rightActions: DEFAULT_HEADER_ACTIONS,
+        ...headerActions,
       },
       sections: [
         {
@@ -145,6 +146,7 @@ export function FeedScreen() {
       handleOpenPostDetail,
       handleRefresh,
       handleRetry,
+      headerActions,
       isLoading,
       postsWithSaved,
     ],

@@ -1,160 +1,70 @@
-import {
-  AlarmScheduleOptions,
-  LockScreenNotificationOptions,
-  NotificationChannelId,
-} from './notification.types';
+import { Platform } from 'react-native';
+import { layNotificationAdapter, type NotificationAdapter } from './notification-adapter';
+import { LOAI_THONG_BAO, type LoaiThongBao } from './notification.types';
 
-export interface NotificationAdapter {
-  setNotificationChannelAsync(
-    channelId: string,
-    channel: Record<string, unknown>,
-  ): Promise<unknown>;
-  scheduleNotificationAsync(request: Record<string, unknown>): Promise<string>;
-  requestPermissionsAsync(
-    permissions?: Record<string, unknown>,
-  ): Promise<{ status: string; granted: boolean }>;
-  setNotificationHandler(handler: Record<string, unknown>): void;
-}
-
-let activeAdapter: NotificationAdapter | null = null;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const ExpoNotifications = require('expo-notifications');
-  activeAdapter = ExpoNotifications;
-} catch {
-  // Môi trường Node.js / Jest
-}
-
-export function setCustomNotificationAdapter(adapter: NotificationAdapter) {
-  activeAdapter = adapter;
-}
+/** Mức quan trọng của kênh Android: 5 là MAX (hiện banner, bật sáng màn hình), 3 là mặc định. */
+const MAX = 5;
+const MAC_DINH = 3;
 
 /**
- * 1. Khởi tạo Notification Channels trên Android để thông báo bật sáng màn hình khóa.
- * - gymbase_urgent_messages: IMPORTANCE_MAX (5), visibility PUBLIC (1), rung mạnh.
- * - gymbase_alarms: IMPORTANCE_MAX (5), âm thanh báo thức riêng.
+ * Mỗi loại thông báo là một kênh Android cùng id, để người dùng chỉnh được từng loại trong cài đặt hệ thống (ADR-2, quyết định 19).
+ * Server đặt `channel_id` của push bằng đúng `loai_thong_bao`.
  */
-export async function setupNotificationChannelsAsync(adapter?: NotificationAdapter): Promise<void> {
-  const current = adapter || activeAdapter;
-  if (!current) return;
+export const KENH_ANDROID: Record<LoaiThongBao, { name: string; importance: number; vibrationPattern?: number[] }> = {
+  tin_nhan: { name: 'Tin nhắn', importance: MAX, vibrationPattern: [0, 250, 250, 250] },
+  nhac_tap: { name: 'Nhắc tập', importance: MAX, vibrationPattern: [0, 500, 250, 500] },
+  nhac_an: { name: 'Nhắc ăn', importance: MAX, vibrationPattern: [0, 500, 250, 500] },
+  ket_noi_pt: { name: 'Kết nối PT', importance: MAC_DINH },
+  danh_gia: { name: 'Đánh giá', importance: MAC_DINH },
+};
 
-  current.setNotificationHandler({
+/**
+ * Cài cách hiện thông báo khi app đang mở và tạo kênh trên Android. Gọi một lần khi vào app.
+ * Không đặt `sound`: bỏ khóa này thì Android dùng âm mặc định; chuỗi 'default' bị coi là tên file âm thanh tùy chỉnh.
+ */
+export async function setupNotificationChannelsAsync(
+  adapter: NotificationAdapter | null = layNotificationAdapter(),
+  os: string = Platform.OS,
+): Promise<void> {
+  if (!adapter) return;
+
+  adapter.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
-      shouldSetBadge: true,
+      shouldSetBadge: false,
     }),
   });
 
-  // 1. Channel Tin nhắn khẩn cấp (PT <-> Học viên)
-  await current.setNotificationChannelAsync('gymbase_urgent_messages', {
-    name: 'Tin nhắn khẩn cấp (PT & Học viên)',
-    importance: 5, // AndroidImportance.MAX -> Bật sáng màn hình & thả heads-up banner
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#FF231F7C',
-    lockscreenVisibility: 1, // AndroidNotificationVisibility.PUBLIC
-    // Không đặt `sound`: bỏ khóa này thì Android dùng âm mặc định của hệ thống. Chuỗi 'default' bị coi là tên file âm
-    // thanh tùy chỉnh và báo "Custom sound 'default' not found".
-    enableLights: true,
-    enableVibrate: true,
-    bypassDnd: true,
-  });
-
-  // 2. Channel Báo thức giờ tập / Giờ ăn
-  await current.setNotificationChannelAsync('gymbase_alarms', {
-    name: 'Báo thức lịch tập & Dinh dưỡng',
-    importance: 5,
-    vibrationPattern: [0, 500, 250, 500, 250, 500],
-    lockscreenVisibility: 1,
-    enableLights: true,
-    enableVibrate: true,
-    bypassDnd: true,
-  });
+  if (os !== 'android') return;
+  for (const loai of LOAI_THONG_BAO) {
+    const kenh = KENH_ANDROID[loai];
+    await adapter.setNotificationChannelAsync(loai, {
+      name: kenh.name,
+      importance: kenh.importance,
+      lockscreenVisibility: 1, // PUBLIC: nội dung push đã trung tính (ADR-2, quyết định 7)
+      enableVibrate: true,
+      ...(kenh.vibrationPattern ? { vibrationPattern: kenh.vibrationPattern } : {}),
+    });
+  }
 }
 
 /**
- * 2. Xin cấp quyền hiển thị thông báo (Android 13+ POST_NOTIFICATIONS & iOS)
+ * Xin quyền hiện thông báo của hệ điều hành (Android 13+ và iOS). Đã có quyền thì không hỏi lại; người dùng đã từ chối hẳn
+ * thì không hỏi nữa. Trả `true` khi đang có quyền.
  */
-export async function requestNotificationPermissionsAsync(
-  adapter?: NotificationAdapter,
+export async function xinQuyenThongBaoAsync(
+  adapter: NotificationAdapter | null = layNotificationAdapter(),
 ): Promise<boolean> {
-  const current = adapter || activeAdapter;
-  if (!current) return false;
+  if (!adapter) return false;
 
-  const result = await current.requestPermissionsAsync({
-    ios: {
-      allowAlert: true,
-      allowBadge: true,
-      allowSound: true,
-      allowAnnouncements: true,
-    },
+  const hienTai = await adapter.getPermissionsAsync();
+  if (hienTai.granted) return true;
+  if (hienTai.canAskAgain === false) return false;
+
+  const ketQua = await adapter.requestPermissionsAsync({
+    ios: { allowAlert: true, allowBadge: true, allowSound: true },
   });
-
-  return result.granted || result.status === 'granted';
-}
-
-/**
- * 3. Bắn thông báo khẩn cấp lên Màn hình khóa (Lock Screen Heads-up Notification)
- */
-export async function displayUrgentMessageAsync(
-  options: LockScreenNotificationOptions,
-  adapter?: NotificationAdapter,
-): Promise<string> {
-  const current = adapter || activeAdapter;
-  if (!current) {
-    throw new Error('Notification adapter chưa được khởi tạo.');
-  }
-
-  const channelId: NotificationChannelId = options.channelId || 'gymbase_urgent_messages';
-
-  const notificationId = await current.scheduleNotificationAsync({
-    content: {
-      title: options.title,
-      body: options.body,
-      data: options.data || {},
-      sound: true,
-      vibrate: [0, 250, 250, 250],
-      priority: 'max',
-    },
-    trigger: {
-      channelId,
-      seconds: 1,
-    },
-  });
-
-  return notificationId;
-}
-
-/**
- * 4. Lên lịch Báo thức nhắc giờ tập (Alarm Style)
- */
-export async function scheduleWorkoutAlarmAsync(
-  options: AlarmScheduleOptions,
-  adapter?: NotificationAdapter,
-): Promise<string> {
-  const current = adapter || activeAdapter;
-  if (!current) {
-    throw new Error('Notification adapter chưa được khởi tạo.');
-  }
-
-  const notificationId = await current.scheduleNotificationAsync({
-    content: {
-      title: options.title,
-      body: options.body,
-      sound: true,
-      vibrate: [0, 500, 250, 500],
-      priority: 'max',
-      data: {
-        type: 'alarm',
-        workout_session_id: options.workoutSessionId,
-      },
-    },
-    trigger: {
-      channelId: 'gymbase_alarms',
-      date: options.triggerDate,
-    },
-  });
-
-  return notificationId;
+  return ketQua.granted;
 }

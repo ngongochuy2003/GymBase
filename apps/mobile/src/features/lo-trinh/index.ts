@@ -1,4 +1,5 @@
 export { LoTrinhScreen } from './screens/lo-trinh-screen';
+export { NhacGioSync } from './components/nhac-gio-sync';
 export { TaoLoTrinhScreen } from './screens/tao-lo-trinh-screen';
 export { DatBuaAnScreen } from './screens/dat-bua-an-screen';
 export { DatBuoiTapScreen } from './screens/dat-buoi-tap-screen';

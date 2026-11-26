@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { MainHeader } from '@/shared/components/main-header';
 import { MainTabBar } from '@/shared/components/main-tab-bar';
 import { Icon } from '@/shared/icons';
+import { useThongBaoHeader } from '@/shared/notifications';
 import { useTheme } from '@/shared/theme/theme';
 import { BoLocQuanLy } from '../components/bo-loc-quan-ly';
 import { KhoiHomNay } from '../components/khoi-hom-nay';
@@ -121,6 +122,7 @@ export function LoTrinhScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useSession();
+  const thongBao = useThongBaoHeader();
   const { colors } = useTheme();
   const { homNay, cuaToi, quanLy } = useLoTrinh();
   const toast = useToastCheckIn();
@@ -147,7 +149,11 @@ export function LoTrinhScreen() {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <MainHeader ten={user?.ho_ten} badgeThongBao />
+      <MainHeader
+        ten={user?.ho_ten}
+        badgeThongBao={thongBao.coChuaDoc}
+        onNotifications={thongBao.moThongBao}
+      />
       <ScrollView
         className="flex-1"
         contentContainerClassName="w-full max-w-[680px] gap-4 self-center px-4 pb-8 pt-2"
