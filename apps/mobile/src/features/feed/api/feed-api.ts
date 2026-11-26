@@ -1,7 +1,7 @@
-import type { AxiosInstance } from 'axios';
+import { isAxiosError, type AxiosInstance } from 'axios';
 import { getMobClient } from '@/core/api/mobile-client';
 import { resolveMediaUrl } from '@/shared/file';
-import type { FeedPostData } from '../types';
+import type { FeedPostData, ReportReasonId } from '../types';
 
 export { resolveMediaUrl };
 
@@ -90,6 +90,7 @@ export function mapBaiVietDtoToFeedPost(dto: BaiVietDto, now?: Date): FeedPostDa
 
   return {
     id: dto.id,
+    authorId: dto.tac_gia_id,
     author: {
       name: dto.tac_gia?.ten_hien_thi || 'Tài khoản GymBase',
       avatarUri: resolveMediaUrl(dto.tac_gia?.anh_dai_dien_url),
@@ -125,6 +126,8 @@ export interface FeedRepository {
   toggleLike(postId: string): Promise<KetQuaThichBaiVietDto>;
   getComments(postId: string): Promise<BinhLuanDto[]>;
   addComment(postId: string, dto: BinhLuanCreateDto): Promise<BinhLuanDto>;
+  deletePost(postId: string): Promise<void>;
+  reportPost(postId: string, reason: ReportReasonId, description?: string): Promise<void>;
 }
 
 export function createFeedRepository(
@@ -195,6 +198,25 @@ export function createFeedRepository(
     async addComment(postId: string, dto: BinhLuanCreateDto): Promise<BinhLuanDto> {
       const response = await client.post<BinhLuanDto>(`/baiviet/${postId}/binh-luan`, dto);
       return response.data;
+    },
+
+    async deletePost(postId: string): Promise<void> {
+      await client.delete(`/baiviet/${postId}`);
+    },
+
+    async reportPost(postId: string, reason: ReportReasonId, description?: string): Promise<void> {
+      try {
+        await client.post(`/baiviet/${postId}/bao-cao`, {
+          ly_do: reason,
+          mo_ta: description?.trim() || null,
+        });
+      } catch (error) {
+        // TODO(BAO_CAO_BAI_VIET): Bỏ fallback 404/405 khi backend bổ sung endpoint POST /baiviet/{id}/bao-cao.
+        if (isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
+          return;
+        }
+        throw error;
+      }
     },
   };
 }

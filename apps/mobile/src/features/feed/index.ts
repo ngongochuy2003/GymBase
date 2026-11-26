@@ -26,6 +26,10 @@ export {
   type PostMediaGridProps,
 } from './components/post-card';
 export { PostList, type PostListProps } from './components/post-list';
+export {
+  PostOptionsSheet,
+  type PostOptionsSheetProps,
+} from './components/post-options-sheet';
 export { feedFilters, postActionTemplates } from './config/feed-config';
 export {
   createFeedRepository,
@@ -43,7 +47,9 @@ export {
 export {
   DEFAULT_FEED_PAGE_SIZE,
   FEED_QUERY_KEY,
+  useDeletePostMutation,
   useFeedPosts,
+  useReportPostMutation,
   useToggleLikeMutation,
 } from './hooks/use-feed-posts';
 export {
@@ -53,4 +59,4 @@ export {
 } from './hooks/use-post-comments';
 export { savedPostsStorage } from './storage/saved-posts-storage';
 export { useSavedPosts } from './hooks/use-saved-posts';
-export type { FeedPostData, PostActionTemplate } from './types';
+export type { FeedPostData, PostActionTemplate, ReportReasonId } from './types';

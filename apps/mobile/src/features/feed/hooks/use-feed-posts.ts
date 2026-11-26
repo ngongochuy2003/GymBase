@@ -1,5 +1,11 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { feedRepository, type FeedRepository } from '../api/feed-api';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  type InfiniteData,
+} from '@tanstack/react-query';
+import { feedRepository, type FeedPageResult, type FeedRepository } from '../api/feed-api';
+import type { ReportReasonId } from '../types';
 
 export const FEED_QUERY_KEY = ['feed', 'posts'] as const;
 export const DEFAULT_FEED_PAGE_SIZE = 10;
@@ -31,8 +37,66 @@ export function useToggleLikeMutation(repository: FeedRepository = feedRepositor
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (postId: string) => repository.toggleLike(postId),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      queryClient.setQueriesData<InfiniteData<FeedPageResult>>(
+        { queryKey: FEED_QUERY_KEY },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((post) =>
+                post.id === result.bai_viet_id
+                  ? {
+                      ...post,
+                      counts: { ...post.counts, like: result.so_luot_thich },
+                      initialActive: { ...post.initialActive, like: result.da_thich },
+                    }
+                  : post,
+              ),
+            })),
+          };
+        },
+      );
+      void queryClient.invalidateQueries({ queryKey: ['post-detail', result.bai_viet_id] });
+    },
+  });
+}
+
+export function useDeletePostMutation(repository: FeedRepository = feedRepository) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => repository.deletePost(postId),
+    onSuccess: (_data, postId) => {
+      queryClient.setQueriesData<InfiniteData<FeedPageResult>>(
+        { queryKey: FEED_QUERY_KEY },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              posts: page.posts.filter((post) => post.id !== postId),
+            })),
+          };
+        },
+      );
       void queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY });
     },
+  });
+}
+
+export function useReportPostMutation(repository: FeedRepository = feedRepository) {
+  return useMutation({
+    mutationFn: ({
+      postId,
+      reason,
+      description,
+    }: {
+      postId: string;
+      reason: ReportReasonId;
+      description?: string;
+    }) => repository.reportPost(postId, reason, description),
   });
 }

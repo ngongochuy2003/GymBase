@@ -32,17 +32,26 @@ export interface PostListProps {
   onRetry?(): void;
   onPostPress?(post: FeedPostData): void;
   onImagePress?(post: FeedPostData, imageIndex: number): void;
+  onMorePress?(post: FeedPostData): void;
+  onDeletePress?(post: FeedPostData): void;
+}
+
+interface ActionOverrideEntry {
+  value: boolean;
+  baseInitial: boolean;
 }
 
 interface PostListItemProps {
   post: FeedPostData;
   actionTemplates: PostActionTemplate[];
-  overrides: Record<string, boolean>;
-  onToggleAction: (key: string, nextActive: boolean) => void;
+  overrides: Record<string, ActionOverrideEntry>;
+  onToggleAction: (key: string, nextActive: boolean, baseInitial: boolean) => void;
   onActionPress?(postId: string, actionId: string): void;
   renderAction?: PostCardProps['renderAction'];
   onPostPress?(post: FeedPostData): void;
   onImagePress?(post: FeedPostData, imageIndex: number): void;
+  onMorePress?(post: FeedPostData): void;
+  onDeletePress?(post: FeedPostData): void;
 }
 
 const PostListItem = memo(function PostListItem({
@@ -54,14 +63,17 @@ const PostListItem = memo(function PostListItem({
   renderAction,
   onPostPress,
   onImagePress,
+  onMorePress,
+  onDeletePress,
 }: PostListItemProps) {
   const actions: PostCardAction[] = actionTemplates.map((template) => {
     const key = `${post.id}:${template.id}`;
     const initial = post.initialActive?.[template.id] ?? false;
-    const activeOverride = overrides[key];
+    const override = overrides[key];
+    const hasValidOverride = override !== undefined && override.baseInitial === initial;
     const active = template.toggle
-      ? activeOverride !== undefined
-        ? activeOverride
+      ? hasValidOverride
+        ? override.value
         : initial
       : false;
     const base = post.counts?.[template.id];
@@ -79,7 +91,7 @@ const PostListItem = memo(function PostListItem({
       count,
       onPress: () => {
         if (template.toggle) {
-          onToggleAction(key, !active);
+          onToggleAction(key, !active, initial);
         }
         onActionPress?.(post.id, template.id);
       },
@@ -101,6 +113,16 @@ const PostListItem = memo(function PostListItem({
     [onImagePress, onPostPress, post],
   );
 
+  const handleMore = useMemo(
+    () => (onMorePress ? () => onMorePress(post) : undefined),
+    [onMorePress, post],
+  );
+
+  const handleDelete = useMemo(
+    () => (onDeletePress ? () => onDeletePress(post) : undefined),
+    [onDeletePress, post],
+  );
+
   return (
     <PostCard
       author={post.author}
@@ -112,6 +134,8 @@ const PostListItem = memo(function PostListItem({
       renderAction={renderAction}
       onPressContent={handlePressContent}
       onPressImage={handlePressImage}
+      onMorePress={handleMore}
+      onDeletePress={handleDelete}
     />
   );
 });
@@ -133,13 +157,18 @@ export function PostList({
   onRetry,
   onPostPress,
   onImagePress,
+  onMorePress,
+  onDeletePress,
 }: PostListProps) {
-  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const [overrides, setOverrides] = useState<Record<string, ActionOverrideEntry>>({});
   const { headerHeight, onScroll, isCollapsible } = useCollapsibleHeaderContext();
 
-  const handleToggleAction = useCallback((key: string, nextActive: boolean) => {
-    setOverrides((prev) => ({ ...prev, [key]: nextActive }));
-  }, []);
+  const handleToggleAction = useCallback(
+    (key: string, nextActive: boolean, baseInitial: boolean) => {
+      setOverrides((prev) => ({ ...prev, [key]: { value: nextActive, baseInitial } }));
+    },
+    [],
+  );
 
   const isFaded = Boolean(isLoading && posts.length > 0);
 
@@ -156,6 +185,8 @@ export function PostList({
             renderAction={renderAction}
             onPostPress={onPostPress}
             onImagePress={onImagePress}
+            onMorePress={onMorePress}
+            onDeletePress={onDeletePress}
           />
         </View>
       );
@@ -165,7 +196,9 @@ export function PostList({
       handleToggleAction,
       isFaded,
       onActionPress,
+      onDeletePress,
       onImagePress,
+      onMorePress,
       onPostPress,
       overrides,
       renderAction,

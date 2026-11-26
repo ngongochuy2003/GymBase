@@ -344,6 +344,7 @@ export interface PostCardProps {
   imageUris?: string[];
   actions: PostCardAction[];
   onMorePress?(): void;
+  onDeletePress?(): void;
   /** Ghi đè cách vẽ từng action. */
   renderAction?(action: PostCardAction): ReactNode;
   /** Có thu gọn nội dung dài hơn 100 ký tự hay không (mặc định: true). */
@@ -409,6 +410,7 @@ export const PostCard = memo(function PostCard({
   imageUris,
   actions,
   onMorePress,
+  onDeletePress,
   renderAction,
   truncateContent = true,
   maxContentLength = 100,
@@ -480,15 +482,30 @@ export const PostCard = memo(function PostCard({
               <Text style={styles.name}>{author.name}</Text>
               <Text style={styles.time}>{timeLabel}</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Tùy chọn"
-              onPress={onMorePress}
-              hitSlop={8}
-              style={styles.moreButton}
-            >
-              <Icon name="more" size={theme.iconSize.sm + 2} color={theme.colors.muted} />
-            </Pressable>
+            <View style={styles.headActions}>
+              <Pressable
+                testID="post-more-button"
+                accessibilityRole="button"
+                accessibilityLabel="Tùy chọn"
+                onPress={onMorePress}
+                hitSlop={8}
+                style={styles.moreButton}
+              >
+                <Icon name="more" size={theme.iconSize.sm + 2} color={theme.colors.muted} />
+              </Pressable>
+              {onDeletePress ? (
+                <Pressable
+                  testID="post-delete-button"
+                  accessibilityRole="button"
+                  accessibilityLabel="Xóa bài viết"
+                  onPress={onDeletePress}
+                  hitSlop={8}
+                  style={styles.moreButton}
+                >
+                  <Icon name="close" size={theme.iconSize.sm + 2} color={theme.colors.muted} />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
 
           {/* 2. Nội dung Text: Nhấn vào văn bản chuyển sang xem chi tiết */}
@@ -643,6 +660,11 @@ const styles = StyleSheet.create({
   },
   moreButton: {
     padding: 2,
+  },
+  headActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
     marginLeft: 'auto',
   },
   contentWrapper: {

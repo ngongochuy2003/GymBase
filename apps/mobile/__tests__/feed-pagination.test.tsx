@@ -146,6 +146,8 @@ describe('Feed Pagination & Lazy Loading', () => {
           hasNextPage: false,
         });
       }),
+      deletePost: jest.fn(),
+      reportPost: jest.fn(),
     };
 
     const { result } = await renderHook(() => useFeedPosts('for-you', 1, mockRepo), { wrapper });

@@ -1,5 +1,6 @@
 export interface FeedPostData {
   id: string;
+  authorId?: string;
   author: { name: string; avatarUri?: string };
   timeLabel: string;
   content: string;
@@ -11,6 +12,8 @@ export interface FeedPostData {
   /** Trạng thái bật ban đầu theo id action (đã thích, đã lưu...). */
   initialActive?: Record<string, boolean>;
 }
+
+export type ReportReasonId = 'spam' | 'gia_mao' | 'quay_roi' | 'noi_dung_xau' | 'khac';
 
 /** Mẫu cấu hình một action trên PostCard; thêm action mới = thêm một object. */
 export interface PostActionTemplate {
