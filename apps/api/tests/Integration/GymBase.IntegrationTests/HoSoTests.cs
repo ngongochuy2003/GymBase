@@ -37,7 +37,7 @@ public sealed class HoSoTests : IAsyncLifetime
 
     private static object BodyHocVien(
         string mucTieu = "tang_co",
-        string khuVuc = "ha_noi",
+        string khuVuc = "tinh_01",
         decimal chieuCao = 172.5m,
         decimal canNang = 68.4m,
         string loaiNguoiDung = "hoc_vien",
@@ -67,7 +67,7 @@ public sealed class HoSoTests : IAsyncLifetime
         ["loai_nguoi_dung"] = loai,
         ["ngay_sinh"] = "1990-03-10",
         ["gioi_tinh"] = "nam",
-        ["khu_vuc_hoat_dong"] = "tp_hcm",
+        ["khu_vuc_hoat_dong"] = "tinh_29",
         ["chuyen_mon"] = chuyenMon ?? ["tang_co", "dinh_duong"],
         ["so_nam_kinh_nghiem"] = soNam,
         ["gioi_thieu"] = gioiThieu,
@@ -112,7 +112,7 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Equal("Ngô Ngọc Huy", body.GetProperty("ten_hien_thi").GetString());
         Assert.Equal("chua_xac_minh", body.GetProperty("trang_thai_xac_minh").GetString());
         Assert.Equal("tang_co", body.GetProperty("muc_tieu_tap_luyen").GetString());
-        Assert.Equal("ha_noi", body.GetProperty("khu_vuc_hoat_dong").GetString());
+        Assert.Equal("tinh_01", body.GetProperty("khu_vuc_hoat_dong").GetString());
 
         var chiSo = body.GetProperty("chi_so_co_the");
         Assert.Equal(172.5m, chiSo.GetProperty("chieu_cao_cm").GetDecimal());
@@ -180,7 +180,7 @@ public sealed class HoSoTests : IAsyncLifetime
             muc_tieu_tap_luyen = "tang_co",
             chieu_cao_cm = 178m,
             can_nang_kg = 75m,
-            khu_vuc_hoat_dong = "tp_hcm",
+            khu_vuc_hoat_dong = "tinh_29",
             chuyen_mon = new[] { "tang_co", "dinh_duong" },
             so_nam_kinh_nghiem = 4,
             gioi_thieu = "HLV 4 năm kinh nghiệm.",
@@ -232,7 +232,7 @@ public sealed class HoSoTests : IAsyncLifetime
             muc_tieu_tap_luyen = "tang_co",
             chieu_cao_cm = 172.5m,
             can_nang_kg = 68.4m,
-            khu_vuc_hoat_dong = "ha_noi",
+            khu_vuc_hoat_dong = "tinh_01",
             chuyen_mon = new[] { "tang_co" },
         });
 

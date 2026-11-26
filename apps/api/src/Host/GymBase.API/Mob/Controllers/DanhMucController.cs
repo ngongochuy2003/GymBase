@@ -15,7 +15,7 @@ public sealed class DanhMucController(DanhMucService danhMucService) : BaseApiCo
     /// <summary>
     /// Danh mục đang dùng, nhóm theo loại. Truyền nhiều loại bằng dấu phẩy, ví dụ
     /// <c>?ma_dinh_danh=muc_tieu_tap_luyen,khu_vuc</c>; bỏ trống thì trả mọi loại.
-    /// Mặc định chỉ trả cấp 1; lấy mục con thì thêm <c>ma_cap_tren</c>, ví dụ <c>?ma_dinh_danh=khu_vuc&amp;ma_cap_tren=ha_noi</c>.
+    /// Mặc định chỉ trả cấp 1; lấy mục con thì thêm <c>ma_cap_tren</c>, ví dụ <c>?ma_dinh_danh=khu_vuc&amp;ma_cap_tren=tinh_01</c>.
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<DanhMucNhomDto>>> LayDanhSach(
