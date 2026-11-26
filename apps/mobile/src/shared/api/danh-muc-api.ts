@@ -13,9 +13,10 @@ export type DanhMucNhom = { ma_dinh_danh: string; items: DanhMucItem[] };
 
 /** Endpoint `/api/v1/mob/danh-muc`: dữ liệu tham chiếu cho dropdown, chỉ gồm mục đang dùng. */
 export const danhMucApi = {
-  async get(maDinhDanhs: readonly string[]): Promise<DanhMucNhom[]> {
+  /** Không có `maCapTren` thì chỉ trả mục cấp 1; có thì trả mục con trực tiếp và chỉ truyền một loại. */
+  async get(maDinhDanhs: readonly string[], maCapTren?: string): Promise<DanhMucNhom[]> {
     const { data } = await getMobClient().get<DanhMucNhom[]>('/danh-muc', {
-      params: { ma_dinh_danh: maDinhDanhs.join(',') },
+      params: { ma_dinh_danh: maDinhDanhs.join(','), ma_cap_tren: maCapTren },
     });
     return data;
   },

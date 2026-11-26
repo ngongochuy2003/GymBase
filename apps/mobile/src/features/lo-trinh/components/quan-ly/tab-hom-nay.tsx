@@ -24,9 +24,12 @@ const ICON_NHIEM_VU: Record<LoaiNhiemVu, string> = {
 export function TabHomNay({
   chiTiet,
   onXemCheckIn,
+  onDuyetNhanh,
 }: {
   chiTiet: ChiTietQuanLy;
   onXemCheckIn(checkIn: CheckInQuanLy): void;
+  /** Mở PT-05 cho lộ trình này (N43); lộ trình đã đóng thì không truyền. */
+  onDuyetNhanh?(): void;
 }) {
   const { colors } = useTheme();
   const { thanhVien, nhiemVuHomNay, checkIn, hoatDong } = chiTiet;
@@ -93,7 +96,11 @@ export function TabHomNay({
       </View>
 
       {choDuyet.length > 0 ? (
-        <KhungThe icon="calendar-check" tieuDe={`Check-in chờ duyệt (${choDuyet.length})`}>
+        <KhungThe
+          icon="calendar-check"
+          tieuDe={`Check-in chờ duyệt (${choDuyet.length})`}
+          lienKet={onDuyetNhanh ? { nhan: 'Duyệt nhanh', onPress: onDuyetNhanh } : undefined}
+        >
           <View>
             {choDuyet.map((c, i) => (
               <View key={c.id} className={cn(i > 0 && 'border-t border-border')}>

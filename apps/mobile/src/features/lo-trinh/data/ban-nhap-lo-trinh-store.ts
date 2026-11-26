@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { BuaAnKeHoach, LichTapTheoTuan } from '../types';
+import { TOI_DA_BUA } from '../utils/bua-an';
 import { taoKeHoachMau } from './seed';
 
 interface BanNhap {
@@ -42,6 +43,21 @@ export function layBanNhap(): BanNhap {
 
 export function datBuaAn(buaAn: BuaAnKeHoach[]) {
   capNhat({ ...trangThai, buaAn });
+}
+
+let demBua = 0;
+
+/** Thêm một bữa phụ vào bản nháp và trả id của nó; đã đủ số bữa tối đa thì trả `null`. */
+export function themBua(): string | null {
+  if (trangThai.buaAn.length >= TOI_DA_BUA) return null;
+  demBua += 1;
+  const id = `bua-them-${demBua}`;
+  datBuaAn([...trangThai.buaAn, { id, ten: 'Bữa phụ', gio: '15:00', bat: true }]);
+  return id;
+}
+
+export function xoaBua(id: string) {
+  datBuaAn(trangThai.buaAn.filter((b) => b.id !== id));
 }
 
 export function datLichTap(lichTap: LichTapTheoTuan) {

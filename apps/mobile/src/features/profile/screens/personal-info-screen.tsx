@@ -16,6 +16,7 @@ import {
   personalInfoSchema,
   type PersonalInfoForm,
 } from '../schemas/personal-info-schema';
+import { AnhDaiDienField } from '../components/anh-dai-dien-field';
 import { PrivateInfoModal, type PrivateField } from '../components/private-info-modal';
 import { useProfileDraft } from '../state/profile-draft';
 import { GIOI_TINH_OPTIONS } from '../types/gioi-tinh';
@@ -43,15 +44,17 @@ export function PersonalInfoScreen() {
   const vaiTro = parseVaiTro(loai);
   const { draft, update } = useProfileDraft();
   const danhMuc = useDanhMuc(['khu_vuc']);
+  const [uploadingAnh, setUploadingAnh] = useState(false);
   const [helpField, setHelpField] = useState<PrivateField | null>(null);
 
-  const { control, handleSubmit } = useForm<PersonalInfoForm>({
+  const { control, handleSubmit, setValue } = useForm<PersonalInfoForm>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
       ten_hien_thi: draft.ten_hien_thi || user?.ho_ten || '',
       ngay_sinh: draft.ngay_sinh,
       gioi_tinh: draft.gioi_tinh,
       khu_vuc_hoat_dong: draft.khu_vuc_hoat_dong,
+      phuong_xa: draft.phuong_xa,
     },
   });
 
@@ -60,6 +63,9 @@ export function PersonalInfoScreen() {
   useEffect(() => {
     update(values as Partial<PersonalInfoForm>);
   }, [values, update]);
+
+  const tinh = values.khu_vuc_hoat_dong;
+  const phuongXa = useDanhMuc(['khu_vuc'], { maCapTren: tinh, enabled: Boolean(tinh) });
 
   const next = handleSubmit((form) => {
     update(form);
@@ -78,6 +84,11 @@ export function PersonalInfoScreen() {
         </Text>
       </View>
 
+      <AnhDaiDienField
+        value={draft.anh_dai_dien}
+        onChange={(anh_dai_dien) => update({ anh_dai_dien })}
+        onUploadingChange={setUploadingAnh}
+      />
       <Controller
         control={control}
         name="ten_hien_thi"
@@ -138,10 +149,15 @@ export function PersonalInfoScreen() {
         name="khu_vuc_hoat_dong"
         render={({ field, fieldState }) => (
           <SelectField
-            label="Khu vực"
+            label="Tỉnh/Thành phố"
             value={field.value || null}
             options={danhMuc.items('khu_vuc')}
-            onChange={field.onChange}
+            searchable
+            onChange={(ma) => {
+              // Đổi tỉnh thì phường/xã đã chọn không còn thuộc tỉnh đó.
+              if (ma !== field.value) setValue('phuong_xa', '');
+              field.onChange(ma);
+            }}
             loading={danhMuc.isPending}
             loadError={loadError}
             onRetry={danhMuc.retry}
@@ -150,7 +166,32 @@ export function PersonalInfoScreen() {
         )}
       />
 
-      <Button pill label="Tiếp tục" trailingIcon="chevron-forward" onPress={() => void next()} />
+      <Controller
+        control={control}
+        name="phuong_xa"
+        render={({ field }) => (
+          <SelectField
+            label="Phường/Xã"
+            placeholder={tinh ? 'Chọn' : 'Chọn tỉnh/thành phố trước'}
+            value={field.value || null}
+            options={phuongXa.items('khu_vuc')}
+            searchable
+            disabled={!tinh}
+            onChange={field.onChange}
+            loading={phuongXa.isPending}
+            loadError={phuongXa.isError ? LOAD_ERROR : undefined}
+            onRetry={phuongXa.retry}
+          />
+        )}
+      />
+
+      <Button
+        pill
+        label="Tiếp tục"
+        trailingIcon="chevron-forward"
+        disabled={uploadingAnh}
+        onPress={() => void next()}
+      />
       <PrivateInfoModal field={helpField} onClose={() => setHelpField(null)} />
     </Screen>
   );

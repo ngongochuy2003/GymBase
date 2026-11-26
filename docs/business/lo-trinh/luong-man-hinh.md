@@ -1,6 +1,6 @@
 # Lộ trình: luồng màn hình (học viên và PT)
 
-> **Ngày viết:** 21/11/2026 · **Cập nhật:** 22/11/2026 · **Trạng thái:** thiết kế đã chốt (luồng theo [adr.md](adr.md) N1 đến N22; còn các màn chưa có thiết kế ở mục 8, chưa có code)
+> **Ngày viết:** 21/11/2026 · **Cập nhật:** 25/11/2026 · **Trạng thái:** PoC (mobile chạy dữ liệu mẫu theo [adr.md](adr.md); chưa có backend, còn các màn chưa có thiết kế ở mục 8) · **Đối chiếu code:** 078be33 (+ thay đổi chưa commit)
 
 Nguồn: `Tài liệu dự án/GymBase_V1_Workflow_Thiet_Ke.docx`, phần 05 đến 14, đã áp các quyết định trong [adr.md](adr.md). Phần chữ
 của docx rất ngắn, nội dung nằm trong ảnh storyboard nên tài liệu này đọc từ ảnh. Chỉ mô tả **đi từ đâu tới đâu**. Quy tắc nghiệp
@@ -84,6 +84,20 @@ Bản thiết kế dùng là **danh sách nhóm theo trạng thái** (phần 06,
 
 Trạng thái cần có: chưa có lộ trình (trống), đang tải, lỗi tải, nhiều lộ trình cùng lúc.
 
+Có lời mời đang chờ (N23) thì mỗi lời mời là một thẻ "Lời mời tham gia" nằm **trên** các lộ trình đang thực hiện: ảnh, tên lộ trình, tên PT, thời gian, nút "Xem chi tiết" sang HV-01a.
+
+### HV-01a Chi tiết lời mời (N23, chưa có thiết kế chính thức)
+
+Điểm vào: thẻ lời mời ở HV-01. Màn con, không có thanh dưới (N10). Từ trên xuống: thông tin lộ trình (ảnh bìa, tên, PT, thời gian, loại đơn hay nhóm), lời nhắn từ PT, mục tiêu, kế hoạch dinh dưỡng, lịch tập (hàng chip chọn tuần như PT-02, mặc định Tuần 1, tuần sửa riêng có chấm), theo dõi định kỳ. Cuối nội dung là hai nút **Từ chối** và **Tham gia**: **không ghim** ở đáy màn, phải cuộn hết mới thấy.
+
+| Thao tác | Đích |
+| --- | --- |
+| "Tham gia", rồi xác nhận | Về HV-01; thẻ lời mời mất, lộ trình vào nhóm đang thực hiện (chưa có số liệu tiến độ) |
+| "Từ chối", rồi xác nhận | Về HV-01; thẻ lời mời mất |
+| "Hủy" ở hộp xác nhận | Ở lại HV-01a, chưa trả lời |
+
+Chưa làm: báo cho PT, thông báo mời bấm vào mở màn này, lý do từ chối.
+
 ### HV-02 Chi tiết lộ trình
 
 Điểm vào: HV-01. Nội dung: ảnh bìa, tên, tuần x/12, thời gian, % hoàn thành; ba số cân nặng (hiện tại, mục tiêu, còn lại). Bốn lối tắt (chuyển từ bản tổng quan của HV-01): Kế hoạch ăn, Lịch tập, Tiến độ, Ảnh cơ thể. Bốn tab:
@@ -159,6 +173,7 @@ Ba trạng thái (N13):
 | --- | --- |
 | "Hoàn thành buổi tập" | Quay về HV-03: buổi tập chuyển "Đã gửi", toast xác nhận (chưa có thiết kế, suy ra từ HV-04) |
 | Tick bài tập | Đánh dấu tại chỗ, không đổi màn |
+| "Xem hướng dẫn" ở bài có link (N41) | Mở link ngoài app; cũng có ở chi tiết check-in, lời mời, tab Kế hoạch |
 
 Quy tắc sửa và duyệt như HV-05. Chưa có thiết kế cho trạng thái PT đã đánh giá buổi tập (thiết kế chỉ vẽ cho bữa ăn).
 
@@ -172,7 +187,7 @@ Tab Tổng quan gồm: tiến độ mục tiêu (từ x kg đến y kg, %, ngày
 | --- | --- |
 | "Chi tiết" cạnh biểu đồ | Tab Cân nặng (HV-07a) |
 | "Xem tất cả" cạnh ảnh theo mốc | Tab Ảnh cơ thể (HV-07b) |
-| Bấm ô "Buổi tập hoàn thành" hoặc "Bữa ăn đã check" | Tab Check-in, lọc theo loại (chưa có thiết kế) |
+| Bấm ô "Buổi tập hoàn thành" hoặc "Bữa ăn đã check" | HV-07c Lịch sử check-in, lọc sẵn theo loại (N42) |
 | Bấm ô "Tuân thủ kế hoạch" | Chưa có thiết kế |
 | Bấm một ảnh | Xem ảnh lớn, so sánh mốc (chưa có thiết kế) |
 
@@ -202,6 +217,13 @@ Cũng là một màn riêng, mở từ "Xem tất cả" cạnh ảnh theo mốc.
 
 Chưa có: xem ảnh lớn toàn màn hình, đổi chế độ xem của ảnh đã lưu, trạng thái chưa có ảnh nào mới chỉ là một dòng chữ.
 
+#### HV-07c Lịch sử check-in (N42, tự thiết kế)
+
+Màn riêng có nút quay lại. Trên cùng là số đã check trên tổng và hai hàng chip lọc: loại (Tất cả, Bữa ăn, Buổi tập), kết quả
+(Tất cả, Đã check, Bỏ lỡ). Dưới là danh sách nhóm theo ngày, mới nhất ở trên, mỗi nhóm ghi "Tuần n". Mỗi dòng: biểu tượng, tên,
+giờ, kết quả, trạng thái duyệt, ảnh nhỏ. Bấm dòng có check-in sang HV-05; dòng bỏ lỡ không bấm được. Chưa có màn cho ô "Tuân thủ
+kế hoạch".
+
 ### HV-08 Ghi cân nặng và ảnh cơ thể (chưa có thiết kế)
 
 HV-03 có hai nhiệm vụ này nhưng không có màn tương ứng. Theo N16, đây là **ghi nhận trực tiếp, không gửi PT duyệt**: nhập cân nặng (kg), chụp hoặc chọn ảnh cơ thể, lưu. Không có "Gửi PT đánh giá", không có "Yêu cầu bổ sung". PT xem kết quả trong tiến độ (PT-03). Chu kỳ do PT đặt ở PT-02, hệ thống tự chia ngày (N17).
@@ -218,7 +240,7 @@ Nội dung: ba ô thống kê (số học viên, số check-in cần duyệt, s�
 | --- | --- |
 | "Tạo lộ trình" | PT-02; nếu PT đang có bản nháp thì PT-02 nạp sẵn nháp (N22) |
 | "Xem chi tiết" trên thẻ | PT-03 |
-| Bấm ô "check-in cần duyệt" | Chưa có thiết kế (gợi ý: lọc danh sách theo chờ duyệt) |
+| Bấm ô "check-in cần duyệt" (có viền màu và mũi tên để biết bấm được) | PT-05 Duyệt nhanh, mọi lộ trình đang chạy (N43) |
 | Bấm ô "lịch tập hôm nay" | Chưa có thiết kế |
 | Menu `...` trên thẻ | Chưa có thiết kế |
 | Chuyển sub-tab "Lộ trình của tôi" | HV-01 |
@@ -232,7 +254,7 @@ Trạng thái cần có: chưa có học viên, PT chưa được xác minh (kh�
 | Khối | Trường | Ghi chú |
 | --- | --- | --- |
 | Thông tin cơ bản | Tên lộ trình, Mục tiêu, Thời gian, Học viên tham gia (đều bắt buộc) | Học viên chọn từ danh sách học viên có kết nối `dang_hoat_dong` **và đủ cả hai phạm vi** tập luyện, dinh dưỡng (N15). Chỉ chọn **một** học viên, hiển thị dạng chip có nút xóa (N18); lộ trình thuộc đúng một học viên (N2) |
-| Kế hoạch hằng ngày | Hộp tick và giờ cho bữa sáng, bữa trưa, bữa tối; dưới tên bữa là tóm tắt "~550 kcal • món ăn" hoặc nhắc "Chưa đặt món" | Mũi tên `>` ở mỗi bữa mở PT-02a để đặt món (N21) |
+| Kế hoạch hằng ngày | Hộp tick và giờ cho từng bữa (mặc định sáng, trưa, tối; nút "Thêm bữa", tối đa 6, xếp theo giờ, N40); dưới tên bữa là tóm tắt "~550 kcal • món ăn" hoặc nhắc "Chưa đặt món" | Mũi tên `>` ở mỗi bữa mở PT-02a để đặt món (N21) |
 | Lịch tập | Danh sách buổi tập của lộ trình, nút "Thêm buổi tập"; dưới mỗi buổi là tóm tắt "3 bài • 60 phút • nhóm cơ" hoặc nhắc "Chưa đặt bài tập" | Mỗi buổi mở PT-02b để đặt buổi tập (N20). Thay cho hàng "Buổi tập" cũ trong "Kế hoạch hằng ngày" (cách hiểu của Claude, chờ xác nhận) |
 | Theo dõi định kỳ | Cân nặng (số lần mỗi tuần), ảnh cơ thể (chu kỳ) | Chọn từ danh sách thả xuống. Gợi ý mặc định: cân nặng 2 lần/tuần, ảnh cơ thể mỗi 2 tuần (N4). PT không chọn thứ, hệ thống tự chia (N17) |
 | Ghi chú cho học viên | Văn bản, tối đa 300 ký tự | Học viên thấy ở lộ trình |
@@ -242,6 +264,7 @@ Trạng thái cần có: chưa có học viên, PT chưa được xác minh (kh�
 | "Tạo lộ trình" | Lộ trình **kích hoạt ngay**, học viên nhận thông báo (N12). Đích: PT-03 của lộ trình vừa tạo |
 | "Lưu nháp" ở góc phải | Chỉ lưu, **ở lại PT-02**, không thoát. Nháp chỉ PT thấy, học viên không thấy (N12, N22) |
 | Mũi tên `>` ở từng bữa | PT-02a |
+| "Thêm bữa" | Tạo bữa mới rồi mở PT-02a |
 | "Thêm buổi tập", hoặc chạm một buổi tập | PT-02b |
 | Quay lại khi đã nhập dở | Thoát về PT-01. Bản nháp đã lưu vẫn còn, lần sau bấm "Tạo lộ trình" sẽ nạp lại; thay đổi chưa lưu thì cần hỏi (chưa có thiết kế) |
 
@@ -253,6 +276,7 @@ Trường hợp biên: không có học viên nào đủ điều kiện (chưa k
 
 | Khối | Nội dung |
 | --- | --- |
+| Tên bữa | Tối đa 40 ký tự (N40) |
 | Thời gian ăn | Giờ của bữa, cùng một giá trị với giờ ở hàng bữa ăn của PT-02 (đổi một nơi thì cả hai cập nhật) |
 | Món ăn | Một ô nhiều dòng, tối đa 300 ký tự (N6): món ăn kèm ghi chú món ưu tiên hoặc điều cần tránh (N30). Có bộ đếm ký tự |
 | Năng lượng | Số kcal PT nhập tay, tối đa 4 chữ số, chỉ nhận chữ số (N30) |
@@ -262,6 +286,7 @@ Trường hợp biên: không có học viên nào đủ điều kiện (chưa k
 | --- | --- |
 | Sửa bất kỳ ô nào | Ghi ngay vào bản nháp của PT-02, không có nút lưu riêng |
 | "Xong" hoặc quay lại | Về PT-02; dữ liệu bữa được giữ trong form (chưa thành lộ trình cho đến khi bấm "Tạo lộ trình") |
+| "Xóa bữa" | Về PT-02, bỏ bữa khỏi kế hoạch |
 
 Dữ liệu này là "Kế hoạch bữa" học viên thấy ở HV-04: mô tả món, kcal (hiện dạng "~550 kcal" dưới tên món), ảnh. Không có P, C, F (N37).
 
@@ -273,7 +298,7 @@ Dữ liệu này là "Kế hoạch bữa" học viên thấy ở HV-04: mô tả
 | --- | --- |
 | Dải thông báo (từ Tuần 2 trở đi) | Tuần đang theo Tuần 1 ("sửa ở đây sẽ tách riêng tuần này") hoặc đã sửa riêng (N29) |
 | Thông tin buổi tập | Tên buổi (ví dụ Upper A), nhóm cơ, giờ tập, thời lượng (phút). Tên và giờ là cùng giá trị với hàng buổi tập ở PT-02 |
-| Bài tập | Danh sách đánh số. Mỗi bài: tên (PT tự gõ), số set, số lần (chữ tự do như "8–10 rep", "45 giây"), ảnh minh họa tùy chọn, nút đưa lên, đưa xuống (nút ở đầu, ở cuối bị tắt) và xóa. Nút "Thêm bài tập" (mặc định 3 set, 10 rep) |
+| Bài tập | Danh sách đánh số. Mỗi bài: tên (PT tự gõ), số set, số lần (chữ tự do như "8–10 rep", "45 giây"), ảnh minh họa tùy chọn, link hướng dẫn `https` tùy chọn (N41), nút đưa lên, đưa xuống (nút ở đầu, ở cuối bị tắt) và xóa. Nút "Thêm bài tập" (mặc định 3 set, 10 rep) |
 | Xóa buổi tập | Nút ở cuối |
 
 | Thao tác | Đích |
@@ -282,7 +307,7 @@ Dữ liệu này là "Kế hoạch bữa" học viên thấy ở HV-04: mô tả
 | "Xong" hoặc quay lại | Về PT-02, buổi tập được giữ trong form |
 | "Xóa buổi tập" | Về PT-02, bỏ buổi khỏi tuần đang sửa (tuần khác không đổi) |
 
-Chưa có: video hướng dẫn (N29), danh sách bài tập có sẵn để chọn (M14), kéo thả đổi thứ tự (đang dùng nút lên, xuống).
+Chưa có: tải tệp video hướng dẫn (N29, N41), danh sách bài tập có sẵn để chọn (M14), kéo thả đổi thứ tự (đang dùng nút lên, xuống).
 
 ### PT-03 Chi tiết lộ trình học viên
 
@@ -310,6 +335,8 @@ Chưa có: video hướng dẫn (N29), danh sách bài tập có sẵn để ch�
 | Thao tác | Đích |
 | --- | --- |
 | Bấm nút "Xem" của một check-in chờ duyệt, hoặc một dòng ở tab Check-in | PT-04 (đánh giá, hoặc xem lại nếu đã xử lý) |
+| "Duyệt nhanh" ở khối "Check-in chờ duyệt" | PT-05, chỉ lộ trình này (N43) |
+| Ô "Buổi tập hoàn thành", "Bữa ăn đã check" ở tab Tiến độ | Tab Check-in lọc sẵn theo loại (N42) |
 | Bấm vào dòng "Nhóm n người" | Mở, đóng danh sách thành viên |
 | Chip thành viên ở tab Tiến độ | Đổi sang tiến độ của người đó |
 | "Chỉnh sửa kế hoạch" | Form giống PT-02 với dữ liệu hiện có, thay đổi áp dụng từ hôm nay, check-in cũ giữ nguyên (N5); chưa có thiết kế. Khóa khi lộ trình đã đóng |
@@ -346,6 +373,20 @@ Thiết kế gốc chỉ vẽ cho bữa ăn; buổi tập dựng theo màn chi t
 - **Lộ trình đã đóng** (N28): mọi check-in chỉ xem.
 
 **Học viên sửa trong lúc PT đang xem (N13):** mỗi check-in có số phiên bản. Bấm Duyệt hoặc Yêu cầu bổ sung khi bản đã đổi thì **không ghi**, hiện "Học viên vừa sửa check-in này. Hãy xem lại nội dung mới rồi đánh giá."; sau khi PT xem lại, bấm lần nữa thì ghi. Một check-in chỉ nhận một đánh giá: gửi lần hai (ví dụ do mạng chậm) thì báo "Check-in này đã được đánh giá."
+
+### PT-05 Duyệt nhanh check-in (N43, tự thiết kế)
+
+Điểm vào: ô "check-in cần duyệt" ở PT-01, hoặc "Duyệt nhanh" ở PT-03 (lọc sẵn một lộ trình). Chip lọc Tất cả, Bữa ăn, Buổi tập.
+Mỗi thẻ: ô chọn, học viên, lộ trình, tên bữa hoặc buổi, giờ gửi, kết quả học viên báo, ảnh lớn, ghi chú.
+
+| Thao tác | Đích |
+| --- | --- |
+| "Duyệt" | Duyệt ngay, thẻ biến mất |
+| "Cần bổ sung" | Hiện ô nhận xét bắt buộc, gửi thì thẻ biến mất |
+| Chọn nhiều rồi "Duyệt (n)" ở thanh cuối màn | Hộp xác nhận, duyệt các bản đã chọn; bản học viên vừa sửa bị bỏ qua và báo lại. Chưa chọn thì nút khóa |
+| "Duyệt tất cả" cạnh "Duyệt (n)" | Hộp xác nhận, duyệt mọi bản đang hiện theo bộ lọc |
+| Bấm ảnh | Xem toàn màn hình |
+| "Xem chi tiết" | PT-04 |
 
 ## 5. Nhãn trạng thái
 
@@ -395,10 +436,10 @@ Các mâu thuẫn tìm thấy khi đọc thiết kế, và cách chốt (chi ti�
 ## 8. Màn hình chưa có thiết kế (tổng hợp)
 
 - HV-08 Ghi cân nặng và ảnh cơ thể (ghi nhận, không duyệt).
-- Tab Kế hoạch, tab Ảnh của HV-02; lọc theo Check-in của HV-07.
+- Tab Kế hoạch, tab Ảnh của HV-02; ô "Tuân thủ kế hoạch" của HV-07.
 - PT-03: tab Kế hoạch, Tiến độ, Check-in, danh sách thành viên nhóm và hộp "Đóng lộ trình" đã tự dựng ngày 22/11/2026 theo N38, chờ thiết kế chính thức.
 - PT-04: phần buổi tập, trạng thái xem lại (đã duyệt, cần bổ sung), báo học viên vừa sửa đã tự dựng ngày 22/11/2026 theo N39, chờ thiết kế chính thức. Duyệt xong thì màn học viên (HV-05) chưa tự đổi vì dữ liệu mẫu hai phía tách nhau.
-- HV-07a (Cân nặng) và HV-07b (Ảnh cơ thể theo mốc) đã tự thiết kế ở mục 3 để có màn cho "Chi tiết" và "Xem tất cả", chờ thiết kế chính thức. Tab Check-in của HV-07 vẫn chưa có.
+- HV-07a (Cân nặng) và HV-07b (Ảnh cơ thể theo mốc) đã tự thiết kế ở mục 3 để có màn cho "Chi tiết" và "Xem tất cả", chờ thiết kế chính thức. HV-07c (Lịch sử check-in) và PT-05 (Duyệt nhanh) tự thiết kế ngày 25/11/2026 theo N42, N43.
 - Trạng thái "PT yêu cầu bổ sung" phía học viên, và check-in buổi tập đã được đánh giá (PT-04 cho buổi tập).
 - PT-02a và PT-02b đã tự thiết kế ngày 22/11/2026 theo N37 (mục 3, PT-02a và PT-02b), chờ thiết kế chính thức; chưa có video bài tập. "Chỉnh sửa kế hoạch" dùng lại các màn này.
 - Menu `...` ở thẻ lộ trình, HV-02, PT-03.

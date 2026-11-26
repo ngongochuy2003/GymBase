@@ -24,7 +24,8 @@ public sealed class HoSoService(
     ICurrentUser currentUser,
     TimeProvider timeProvider,
     IValidator<HoSoLuuDto> validator,
-    IChungChiPtLienKet chungChiLienKet)
+    IChungChiPtLienKet chungChiLienKet,
+    IAnhDaiDienLienKet anhDaiDienLienKet)
 {
     private const string MucTieuTapLuyen = "muc_tieu_tap_luyen";
     private const string KhuVuc = "khu_vuc";
@@ -47,7 +48,8 @@ public sealed class HoSoService(
 
     /// <summary>
     /// Lưu hồ sơ và chỉ số cơ thể trong một transaction. Chỉ thêm dòng <c>chi_so_co_the</c> khi chiều cao hoặc cân nặng
-    /// khác bản ghi mới nhất. Không đổi <c>ten_hien_thi</c>, ảnh đại diện và trạng thái xác minh của hồ sơ đã có.
+    /// khác bản ghi mới nhất. Không gửi <c>ten_hien_thi</c>
+    /// hoặc ảnh đại diện thì giữ giá trị đang có; không đổi trạng thái xác minh.
     /// </summary>
     public async Task<HoSoDto> BLLuuHoSoAsync(HoSoLuuDto dto, CancellationToken cancellationToken)
     {
@@ -126,7 +128,20 @@ public sealed class HoSoService(
         var chungChi = await chungChiLienKet.BLDatChungChiAsync(
             taiKhoanId, laPt ? dto.chung_chi_tep_tin_id : null, cancellationToken);
 
+        if (dto.anh_dai_dien_tep_tin_id is { } anhMoiId)
+        {
+            await anhDaiDienLienKet.BLGanAnhDaiDienAsync(taiKhoanId, anhMoiId, cancellationToken);
+            hoSo.anh_dai_dien_tep_tin_id = anhMoiId;
+        }
+
         await hoSoRepository.DLUpsertAsync(hoSo, chiSoMoi, cancellationToken);
+
+        // Xóa ảnh cũ sau khi hồ sơ đã trỏ sang ảnh mới, để lưu lỗi giữa chừng không làm mất ảnh đang hiện.
+        if (dto.anh_dai_dien_tep_tin_id is { } anhGiuLaiId)
+        {
+            await anhDaiDienLienKet.BLGoAnhCuAsync(taiKhoanId, anhGiuLaiId, cancellationToken);
+        }
+
         return ToDto(hoSo, chiSoMoi ?? moiNhat, chungChi);
     }
 

@@ -10,9 +10,8 @@ namespace GymBase.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Giới tính là danh sách cố định trong code (enum GioiTinh), không còn đọc từ danh_muc: bỏ các dòng đã seed ở
-            // ThemThongTinCaNhanHoSo, và đưa giá trị lạ (nếu có) về NULL để thêm được ràng buộc CHECK.
-            migrationBuilder.Sql("DELETE FROM `danh_muc` WHERE `ma_dinh_danh` = 'gioi_tinh';");
+            // Giới tính là danh sách cố định trong code (enum GioiTinh), không đọc từ danh_muc. Đưa giá trị lạ (nếu có) về NULL
+            // để thêm được ràng buộc CHECK.
             migrationBuilder.Sql(
                 "UPDATE `ho_so_nguoi_dung` SET `gioi_tinh` = NULL WHERE `gioi_tinh` NOT IN ('nam', 'nu', 'khac', 'khong_muon_noi');");
 
@@ -54,14 +53,6 @@ namespace GymBase.Persistence.Migrations
                 oldNullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.Sql("""
-                INSERT INTO `danh_muc` (`Id`, `ma_dinh_danh`, `ma`, `ten`, `cap`, `muc_luc`, `muc_luc_ma`, `tinh_trang`, `ngay_tao`) VALUES
-                ('0193f0d4-0000-7000-8000-000000000001', 'gioi_tinh', 'nam', 'Nam', 1, 'nam', 'gioi_tinh/nam', 1, UTC_TIMESTAMP(6)),
-                ('0193f0d4-0000-7000-8000-000000000002', 'gioi_tinh', 'nu', 'Nữ', 1, 'nu', 'gioi_tinh/nu', 1, UTC_TIMESTAMP(6)),
-                ('0193f0d4-0000-7000-8000-000000000003', 'gioi_tinh', 'khac', 'Khác', 1, 'khac', 'gioi_tinh/khac', 1, UTC_TIMESTAMP(6)),
-                ('0193f0d4-0000-7000-8000-000000000004', 'gioi_tinh', 'khong_muon_noi', 'Không muốn nói', 1, 'khong_muon_noi', 'gioi_tinh/khong_muon_noi', 1, UTC_TIMESTAMP(6));
-                """);
         }
     }
 }

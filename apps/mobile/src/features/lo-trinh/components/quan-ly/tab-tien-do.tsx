@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { taoTienDoMau } from '../../data/seed';
-import type { ChiTietQuanLy } from '../../types';
+import type { ChiTietQuanLy, LoaiCheckIn } from '../../types';
 import { thanhVienDangThamGia } from '../../utils/nhiem-vu-nhom';
 import { KhoiAnhMoc, KhoiCanNang, KhoiChiSo, KhoiMucTieu } from '../chi-tiet-tien-do';
 import { AnhDaiDien } from '../anh-nguoi';
@@ -15,7 +15,16 @@ import { KhungThe } from '../khung-the';
  * PT xem mới hiện (N33).
  */
 // TODO(ROUTE): số liệu tiến độ từng thành viên lấy từ API (chi_so_co_the, nhat_ky_hoat_dong); đang dùng dữ liệu mẫu chung.
-export function TabTienDo({ chiTiet, homNay }: { chiTiet: ChiTietQuanLy; homNay: Date }) {
+export function TabTienDo({
+  chiTiet,
+  homNay,
+  onXemCheckIn,
+}: {
+  chiTiet: ChiTietQuanLy;
+  homNay: Date;
+  /** Bấm ô chỉ số thì sang tab Check-in lọc theo loại (N42). */
+  onXemCheckIn?(loai: LoaiCheckIn): void;
+}) {
   const { loTrinh, pt, mucTieu, tuanHienTai } = chiTiet;
   const nguoi = thanhVienDangThamGia(chiTiet.thanhVien);
   const laNhom = loTrinh.loai === 'nhom';
@@ -87,7 +96,12 @@ export function TabTienDo({ chiTiet, homNay }: { chiTiet: ChiTietQuanLy; homNay:
           homNay={homNay}
         />
         <KhoiCanNang diem={tienDo.canNang} donVi={mucTieu.donVi} />
-        <KhoiChiSo buoiTap={tienDo.buoiTap} buaAn={tienDo.buaAn} tuanThu={tuanThu} />
+        <KhoiChiSo
+          buoiTap={tienDo.buoiTap}
+          buaAn={tienDo.buaAn}
+          tuanThu={tuanThu}
+          onMoLichSu={onXemCheckIn}
+        />
         {anhChoPt.length > 0 ? (
           <KhoiAnhMoc anh={anhChoPt} />
         ) : (

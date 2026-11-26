@@ -24,6 +24,7 @@ import {
   datBuaAn,
   datLaiBanNhap,
   datLichTap,
+  themBua,
   useBanNhapLoTrinh,
 } from '../data/ban-nhap-lo-trinh-store';
 import { taoBanBeMau } from '../data/seed';
@@ -191,6 +192,10 @@ export function TaoLoTrinhScreen() {
           buaAn={buaAn}
           onDoi={datBuaAn}
           onMoChiTiet={(buaId) => router.push({ pathname: '/dat-bua-an', params: { buaId } })}
+          onThem={() => {
+            const buaId = themBua();
+            if (buaId) router.push({ pathname: '/dat-bua-an', params: { buaId } });
+          }}
         />
 
         <KeHoachTapLuyen

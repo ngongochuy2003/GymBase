@@ -3,7 +3,7 @@
 Danh mục là dữ liệu tham chiếu cho dropdown của app: mục tiêu tập luyện, khu vực hoạt động, chuyên môn PT. Bảng
 `danh_muc` do nhóm **DI (Danh mục)** sở hữu — DI ở đây nghĩa là danh mục, không phải dependency injection.
 
-Vì mã danh mục được kiểm tra khi lưu hồ sơ, dữ liệu tham chiếu nằm trong migration (`ThemBangDanhMuc`), không chỉ trong
+Vì mã danh mục được kiểm tra khi lưu hồ sơ, dữ liệu tham chiếu nằm trong migration (`SeedDanhMuc`, đọc SQL ở `Migrations/Sql/`), không chỉ trong
 seed của môi trường dev.
 
 ## 1. Bảng `danh_muc`
@@ -26,15 +26,19 @@ seed của môi trường dev.
 Ràng buộc: unique `(ma_dinh_danh, ma)` — cùng một mã được dùng ở nhiều loại (`tang_co` có ở cả `muc_tieu_tap_luyen`
 và `chuyen_mon_pt`).
 
-**Quy ước đợt này là danh mục phẳng:** `cap = 1`, `danh_muc_cap_tren_id = NULL`, `muc_luc = ma`,
-`muc_luc_ma = '<ma_dinh_danh>/<ma>'`. Cây nhiều cấp (khu vực → quận/huyện) để sau, xem `// TODO(DANH-MUC)` trong entity.
+**Trừ `khu_vuc`, các loại đều là danh mục phẳng:** `cap = 1`, `danh_muc_cap_tren_id = NULL`, `muc_luc = ma`,
+`muc_luc_ma = '<ma_dinh_danh>/<ma>'`.
+
+`khu_vuc` có hai cấp: `muc_luc` nối theo tên (`Hà Nội/Phường Ba Đình`), `muc_luc_ma` nối theo mã
+(`khu_vuc/tinh_01/px_10101003`). Dữ liệu do migration `SeedDanhMuc` nạp, sinh từ Excel bằng
+[tao-seed-khu-vuc.py](../../database/scripts/tao-seed-khu-vuc.py). Hồ sơ lưu một mã (phường/xã hoặc tỉnh/thành).
 
 ## 2. Dữ liệu tham chiếu
 
 | `ma_dinh_danh` | `ma` (tên hiển thị) |
 | --- | --- |
 | `muc_tieu_tap_luyen` | `tang_co` (Tăng cơ), `giam_mo` (Giảm mỡ), `duy_tri` (Duy trì vóc dáng), `tang_suc_ben` (Tăng sức bền), `linh_hoat` (Linh hoạt, giảm đau mỏi) |
-| `khu_vuc` | `ha_noi` (Hà Nội), `tp_hcm` (TP. Hồ Chí Minh), `da_nang` (Đà Nẵng), `hai_phong` (Hải Phòng), `can_tho` (Cần Thơ) |
+| `khu_vuc` | Hai cấp: 34 tỉnh/thành `tinh_<mã BNV>` (ví dụ `tinh_01` Hà Nội) và 3.321 phường/xã `px_<mã TMS 8 số>`, xem mục dưới |
 | `chuyen_mon_pt` | `tang_co` (Tăng cơ), `giam_mo` (Giảm mỡ), `cai_thien_voc_dang` (Cải thiện vóc dáng), `phuc_hoi_chuc_nang` (Phục hồi chức năng), `dinh_duong` (Dinh dưỡng) |
 | `trinh_do_tap` | `moi_bat_dau` (Mới bắt đầu), `co_nen_tang` (Có nền tảng), `lau_nam` (Tập lâu năm) |
 
@@ -45,10 +49,10 @@ Thêm một mục:
 
 ```sql
 INSERT INTO danh_muc (Id, ma_dinh_danh, ma, ten, muc_luc, muc_luc_ma, cap, tinh_trang, ngay_tao)
-VALUES (UUID(), 'khu_vuc', 'hue', 'Huế', 'hue', 'khu_vuc/hue', 1, 1, UTC_TIMESTAMP(6));
+VALUES (UUID(), 'chuyen_mon_pt', 'yoga', 'Yoga', 'yoga', 'chuyen_mon_pt/yoga', 1, 1, UTC_TIMESTAMP(6));
 ```
 
-Ẩn một mục (giữ dữ liệu hồ sơ cũ): `UPDATE danh_muc SET tinh_trang = 0 WHERE ma_dinh_danh = 'khu_vuc' AND ma = 'hue';`
+Ẩn một mục (giữ dữ liệu hồ sơ cũ): `UPDATE danh_muc SET tinh_trang = 0 WHERE ma_dinh_danh = 'chuyen_mon_pt' AND ma = 'yoga';`
 
 ## 3. API
 
@@ -58,6 +62,11 @@ VALUES (UUID(), 'khu_vuc', 'hue', 'Huế', 'hue', 'khu_vuc/hue', 1, 1, UTC_TIMES
 | --- | --- | --- |
 | `ma_dinh_danh` | không | Một hoặc nhiều loại, cách nhau bằng dấu phẩy: `muc_tieu_tap_luyen,khu_vuc`. Bỏ trống thì trả mọi loại |
 
+| `ma_cap_tren` | không | Mã mục cha, trả mục con trực tiếp, ví dụ `ma_dinh_danh=khu_vuc&ma_cap_tren=tinh_01`. Phải kèm đúng một `ma_dinh_danh`, nếu không trả `400` |
+
+Không có `ma_cap_tren` thì **chỉ trả mục cấp 1**. Mã cha không tồn tại hoặc chưa có mục con thì trả mảng rỗng. Mỗi mục
+chỉ xét `tinh_trang` của chính nó: ẩn một tỉnh thì ẩn cả mục con của tỉnh đó.
+
 Chỉ trả mục có `tinh_trang = 1`; loại không có mục nào đang dùng thì không xuất hiện trong kết quả. Trong mỗi loại,
 mục sắp theo `ten` (bảng chưa có cột thứ tự).
 
@@ -66,8 +75,8 @@ mục sắp theo `ten` (bảng chưa có cột thứ tự).
   {
     "ma_dinh_danh": "khu_vuc",
     "items": [
-      { "ma": "can_tho", "ten": "Cần Thơ", "mo_ta": null, "cap": 1, "danh_muc_cap_tren_id": null },
-      { "ma": "da_nang", "ten": "Đà Nẵng", "mo_ta": null, "cap": 1, "danh_muc_cap_tren_id": null }
+      { "ma": "tinh_33", "ten": "Cần Thơ", "mo_ta": null, "cap": 1, "danh_muc_cap_tren_id": null },
+      { "ma": "tinh_21", "ten": "Đà Nẵng", "mo_ta": null, "cap": 1, "danh_muc_cap_tren_id": null }
     ]
   }
 ]

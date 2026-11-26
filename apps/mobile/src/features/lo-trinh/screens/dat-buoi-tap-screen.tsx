@@ -19,6 +19,7 @@ import {
   taoIdBaiTap,
   xoaBuoiTapCuaTuan,
 } from '../utils/lich-tap';
+import { laLinkHopLe } from '../utils/link-huong-dan';
 
 const THU_DAY_DU = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 const TOI_DA_CHU_SO = 3;
@@ -168,6 +169,21 @@ function DongBaiTap({
           onPress={() => onDoiCho(1)}
         />
       </View>
+      <View className="pl-8">
+        <TextField
+          hideLabel
+          label={`Link hướng dẫn bài ${stt}`}
+          placeholder="Link hướng dẫn (https://...), không bắt buộc"
+          value={bai.link ?? ''}
+          onChangeText={(link) => onSua({ link: link || undefined })}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          maxLength={500}
+          error={bai.link && !laLinkHopLe(bai.link) ? 'Link phải bắt đầu bằng https://' : undefined}
+          containerClassName="h-11 px-3"
+        />
+      </View>
     </View>
   );
 }
@@ -178,7 +194,7 @@ function DongBaiTap({
  * sửa tuần khác thì tách riêng tuần đó (N29). Sửa tới đâu ghi vào bản nháp của form tới đó nên không cần nút lưu.
  */
 // TODO(ROUTE): PT-02b chưa có bản thiết kế (luong-man-hinh.md, PT-02b); màn này tự thiết kế theo khuôn các màn check-in.
-//   Chưa gắn video hướng dẫn (N29); ảnh minh họa chưa upload (shared/file), chỉ giữ đường dẫn cục bộ.
+//   Hướng dẫn mới là link (N41), chưa tải tệp video; ảnh minh họa chưa upload (shared/file), chỉ giữ đường dẫn cục bộ.
 export function DatBuoiTapScreen({ tuan, thu }: { tuan?: string; thu?: string }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();

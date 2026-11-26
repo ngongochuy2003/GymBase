@@ -4,7 +4,7 @@ Bảng `danh_muc` là dữ liệu tham chiếu dùng chung cho dropdown của ap
 các bảng nghiệp vụ, bảng này **không có khóa ngoại tới bảng khác** (chỉ tự tham chiếu để dựng cây), nên đứng riêng
 trong sơ đồ tổng quan.
 
-Đã triển khai bằng migration `ThemBangDanhMuc` (kèm dữ liệu tham chiếu). Chi tiết API và cách sửa dữ liệu:
+Bảng tạo bằng migration `ThemBangDanhMuc`, dữ liệu tham chiếu nạp bằng migration `SeedDanhMuc`. Chi tiết API và cách sửa dữ liệu:
 [docs/api/danh-muc.md](../../docs/api/danh-muc.md).
 
 ```mermaid
@@ -45,9 +45,10 @@ erDiagram
 - `ma_dinh_danh` là namespace, không phải khóa ngoại: thêm loại mới chỉ cần thêm dòng, không sửa schema.
 - `ma` viết snake_case không dấu, không đổi sau khi đã có hồ sơ tham chiếu; đổi tên hiển thị thì sửa `ten`.
 - `tinh_trang = 0` để ẩn mục khỏi dropdown mà không phá dữ liệu cũ.
-- Đợt này danh mục **phẳng**: `cap = 1`, `danh_muc_cap_tren_id = NULL`, `muc_luc = ma`,
-  `muc_luc_ma = '<ma_dinh_danh>/<ma>'`. Cây nhiều cấp (khu vực → quận/huyện) chưa chốt định dạng đường dẫn; xem
-  `// TODO(DANH-MUC)` trong entity.
+- Trừ `khu_vuc`, danh mục **phẳng**: `cap = 1`, `danh_muc_cap_tren_id = NULL`, `muc_luc = ma`,
+  `muc_luc_ma = '<ma_dinh_danh>/<ma>'`.
+- `khu_vuc` có **hai cấp** (tỉnh/thành → phường/xã), nạp bằng migration `SeedDanhMuc`; đọc cấp 2 qua
+  `ma_cap_tren` (xem [docs/api/danh-muc.md](../../docs/api/danh-muc.md)).
 
 ## 3. Truy vấn thường dùng
 
@@ -59,7 +60,7 @@ ORDER BY ten;
 
 -- Ẩn một mục mà không xóa
 UPDATE danh_muc SET tinh_trang = 0
-WHERE ma_dinh_danh = 'khu_vuc' AND ma = 'hue';
+WHERE ma_dinh_danh = 'khu_vuc' AND ma = 'tinh_20';
 ```
 
 Thứ tự hiển thị hiện sắp theo `ten`; bảng chưa có cột thứ tự tự chọn (kéo-thả) — thêm cột khi cần.

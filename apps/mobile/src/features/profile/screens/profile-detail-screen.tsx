@@ -32,7 +32,13 @@ import { parseVaiTro } from '../types/vai-tro';
 
 const LOAD_ERROR = 'Không tải được danh sách. Vui lòng thử lại.';
 const CONNECTION_CODES = ['NETWORK', 'TIMEOUT'];
-const PERSONAL_FIELDS = ['ten_hien_thi', 'ngay_sinh', 'gioi_tinh', 'khu_vuc_hoat_dong'];
+const PERSONAL_FIELDS = [
+  'ten_hien_thi',
+  'ngay_sinh',
+  'gioi_tinh',
+  'khu_vuc_hoat_dong',
+  'anh_dai_dien_tep_tin_id',
+];
 
 type Khoi = 'hoc_vien' | 'pt';
 type Failure = { message: string; retryable: boolean; personal: boolean };
@@ -184,7 +190,8 @@ export function ProfileDetailScreen() {
       ten_hien_thi: draft.ten_hien_thi.trim(),
       ngay_sinh: draft.ngay_sinh.trim() ? toIsoNgaySinh(draft.ngay_sinh) : undefined,
       gioi_tinh: draft.gioi_tinh || undefined,
-      khu_vuc_hoat_dong: draft.khu_vuc_hoat_dong || undefined,
+      khu_vuc_hoat_dong: draft.phuong_xa || draft.khu_vuc_hoat_dong || undefined,
+      anh_dai_dien_tep_tin_id: draft.anh_dai_dien?.file_id,
       ...(hocVien && {
         muc_tieu_tap_luyen: form.muc_tieu_tap_luyen,
         trinh_do_tap: form.trinh_do_tap,

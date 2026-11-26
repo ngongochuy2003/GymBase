@@ -5,6 +5,7 @@ import { Icon } from '@/shared/icons';
 import { useTheme } from '@/shared/theme/theme';
 import type { BaiTap, KeHoachBuoiTap } from '../types';
 import type { KieuKetQua } from './ket-qua-check-in';
+import { NutHuongDan } from './nut-huong-dan';
 
 /** Nhãn và sắc thái của từng kết quả buổi tập (N3 chỉ áp cho bữa ăn; buổi tập giữ ba giá trị theo HV-06). */
 export const KET_QUA_BUOI_TAP = {
@@ -123,21 +124,26 @@ export function DanhSachBaiTap({
             <OTick daXong={xong} />
           </>
         );
-        const lop = cn('flex-row items-center gap-3 py-3', i > 0 && 'border-t border-border');
-        return onDoi ? (
-          <Pressable
-            key={bai.id}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: xong }}
-            accessibilityLabel={`${bai.ten} ${nhanBaiTap(bai)}`}
-            onPress={() => onDoi(bai.id)}
-            className={lop}
-          >
-            {noiDung}
-          </Pressable>
-        ) : (
-          <View key={bai.id} className={lop}>
-            {noiDung}
+        const lop = 'flex-row items-center gap-3 py-3';
+        // Nút hướng dẫn nằm ngoài dòng tick để bấm nó không đổi trạng thái bài.
+        return (
+          <View key={bai.id} className={cn(i > 0 && 'border-t border-border')}>
+            {onDoi ? (
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: xong }}
+                accessibilityLabel={`${bai.ten} ${nhanBaiTap(bai)}`}
+                onPress={() => onDoi(bai.id)}
+                className={lop}
+              >
+                {noiDung}
+              </Pressable>
+            ) : (
+              <View className={lop}>{noiDung}</View>
+            )}
+            <View className="pl-[60px]">
+              <NutHuongDan tenBai={bai.ten} link={bai.link} />
+            </View>
           </View>
         );
       })}

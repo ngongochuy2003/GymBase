@@ -7,7 +7,7 @@ Nguồn thiết kế: `Tài liệu dự án/GymBase_V1_Thiet_ke_Database_21_bang
 > nhưng các migration hiện có vẫn tạo `nguoi_dung`. `dang_nhap_ngoai` và 21 bảng nghiệp vụ chưa có entity hay migration.
 > Dự kiến hai migration: `InitialBase` (4 bảng nền, tạo lại cho khớp tên mới), sau đó `AddBizTables` (toàn bộ 21 bảng
 > nghiệp vụ, kèm cột `phien_dang_nhap.thiet_bi_id`). Tổng cộng 26 bảng: 25 bảng ở trên cộng bảng danh mục `danh_muc`
-> (`ThemBangDanhMuc`, xem [11-danh-muc.md](11-danh-muc.md)).
+> (`SeedDanhMuc`, xem [11-danh-muc.md](11-danh-muc.md)).
 >
 > Sơ đồ có **một số thay đổi đề xuất so với tài liệu thiết kế** (bảng bên dưới). Tài liệu docx chưa được cập nhật theo.
 
