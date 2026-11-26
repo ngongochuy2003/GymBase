@@ -52,6 +52,12 @@ public sealed class HoSoLuuDto
     /// thì hồ sơ không có chứng chỉ: chứng chỉ đang có bị gỡ. Học viên không được gửi.
     /// </summary>
     public Guid? chung_chi_tep_tin_id { get; init; }
+
+    /// <summary>
+    /// <c>file_id</c> của ảnh đại diện đã tải lên (<c>POST /files</c>, <c>purpose = avatar</c>), tùy chọn. Không gửi (null) thì giữ
+    /// ảnh đang có.
+    /// </summary>
+    public Guid? anh_dai_dien_tep_tin_id { get; init; }
 }
 
 /// <summary>Chỉ số cơ thể mới nhất.</summary>

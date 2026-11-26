@@ -717,6 +717,59 @@ public sealed class HoSoTests : IAsyncLifetime
         Assert.Empty(Storage.Deleted);
     }
 
+    // ---- Ảnh đại diện
+
+    private Guid GivenAnhDaiDienDaTaiLen(Guid chuSoHuu)
+    {
+        var id = GivenChungChiDaTaiLen(chuSoHuu, "image/jpeg", "avatar");
+        TepTinStore.Find(id)!.loai_doi_tuong = null;
+        return id;
+    }
+
+    [Fact]
+    public async Task Gui_anh_dai_dien_thi_gan_anh_moi_va_xoa_anh_cu()
+    {
+        using var client = Client(Pt);
+        var cu = GivenAnhDaiDienDaTaiLen(Pt);
+        var body = BodyPt();
+        body["anh_dai_dien_tep_tin_id"] = cu;
+        Assert.Equal(HttpStatusCode.OK, (await Luu(client, body)).StatusCode);
+        var moi = GivenAnhDaiDienDaTaiLen(Pt);
+        body["anh_dai_dien_tep_tin_id"] = moi;
+
+        var response = await Luu(client, body);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(moi)!.trang_thai);
+        Assert.Equal(TrangThaiTepTin.da_xoa, TepTinStore.Find(cu)!.trang_thai);
+    }
+
+    [Fact]
+    public async Task Khong_gui_anh_dai_dien_thi_giu_anh_dang_co()
+    {
+        using var client = Client(Pt);
+        var anh = GivenAnhDaiDienDaTaiLen(Pt);
+        var body = BodyPt();
+        body["anh_dai_dien_tep_tin_id"] = anh;
+        await Luu(client, body);
+
+        var response = await Luu(client, BodyPt());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TrangThaiTepTin.da_lien_ket, TepTinStore.Find(anh)!.trang_thai);
+        Assert.Empty(Storage.Deleted);
+    }
+
+    [Fact]
+    public async Task Anh_dai_dien_cua_nguoi_khac_tra_400()
+    {
+        using var client = Client(Pt);
+        var body = BodyPt();
+        body["anh_dai_dien_tep_tin_id"] = GivenAnhDaiDienDaTaiLen(HocVien);
+
+        await AssertLoiTruongAsync(await Luu(client, body), "anh_dai_dien_tep_tin_id");
+    }
+
     private static Dictionary<string, object?> ToDictionary(object body) =>
         System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(System.Text.Json.JsonSerializer.Serialize(body))!;
 }

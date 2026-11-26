@@ -72,6 +72,7 @@ namespace GymBase.IntegrationTests
             builder.Services.AddSingleton<FakeFileStorage>();
             builder.Services.AddSingleton<IStorageResolver>(services => new FakeStorageResolver(services.GetRequiredService<FakeFileStorage>()));
             builder.Services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
+            builder.Services.AddScoped<IAnhDaiDienLienKet, AnhDaiDienService>();
             // Upload hai bước (docs/architecture/upload-file.md) và controller file của mobile, trên kho giả.
             builder.Services.Configure<StorageOptions>(_ => { });
             builder.Services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
