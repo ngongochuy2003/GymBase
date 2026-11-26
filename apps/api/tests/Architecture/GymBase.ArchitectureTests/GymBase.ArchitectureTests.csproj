@@ -23,6 +23,9 @@
     <ProjectReference Include="..\..\..\src\File\GymBase.BLFile\GymBase.BLFile.csproj" />
     <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.Contract\GymBase.DLFile.Contract.csproj" />
     <ProjectReference Include="..\..\..\src\File\GymBase.DLFile.MySql\GymBase.DLFile.MySql.csproj" />
+    <ProjectReference Include="..\..\..\src\ThongBao\GymBase.BLThongBao\GymBase.BLThongBao.csproj" />
+    <ProjectReference Include="..\..\..\src\ThongBao\GymBase.DLThongBao.Contract\GymBase.DLThongBao.Contract.csproj" />
+    <ProjectReference Include="..\..\..\src\ThongBao\GymBase.DLThongBao.MySql\GymBase.DLThongBao.MySql.csproj" />
   </ItemGroup>
 
 </Project>

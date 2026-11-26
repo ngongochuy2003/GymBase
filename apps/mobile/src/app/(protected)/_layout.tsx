@@ -1,7 +1,9 @@
 import { Redirect, Stack } from 'expo-router';
 import { useSession } from '@/core/auth/session';
+import { NhacGioSync } from '@/features/lo-trinh';
 import { ProfileDraftProvider } from '@/features/profile';
 import { LoadingState, Screen } from '@/shared/components/ui';
+import { ThongBaoSync } from '@/shared/notifications';
 import { useTheme } from '@/shared/theme/theme';
 
 /**
@@ -26,6 +28,8 @@ export default function ProtectedLayout() {
   // Bản nháp thiết lập hồ sơ sống cùng nhóm đã đăng nhập: đăng xuất thì layout gỡ ra và bản nháp mất theo.
   return (
     <ProfileDraftProvider>
+      <ThongBaoSync />
+      <NhacGioSync />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -34,6 +38,22 @@ export default function ProtectedLayout() {
         }}
       >
         <Stack.Screen name="home" />
+        <Stack.Screen name="route" />
+        <Stack.Screen name="tao-lo-trinh" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="dat-bua-an" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="dat-buoi-tap" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-lo-trinh" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-hoc-vien" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="danh-gia-check-in" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-can-nang" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="anh-theo-moc" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="check-in-bua-an" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-check-in" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="check-in-buoi-tap" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chi-tiet-check-in-buoi-tap" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ghi-can-nang" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ghi-anh-co-the" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="thong-bao" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="profile" />
         <Stack.Screen name="compose" />
         <Stack.Screen name="post-detail" />

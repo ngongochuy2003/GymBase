@@ -9,6 +9,47 @@ public sealed class LocalFileStorage : IFileStorage
 
     public string ProviderName => "LOCAL";
 
+    public bool SupportsPresign => false;
+
+    public PresignedUpload CreatePresignedUpload(string key, string contentType, long maxBytes, TimeSpan expiry) =>
+        throw new NotSupportedException("LocalFileStorage không ký được presigned URL; chạy MinIO/S3 để upload.");
+
+    public string CreatePresignedGetUrl(string key, TimeSpan expiry) =>
+        throw new NotSupportedException("LocalFileStorage không ký được presigned URL; chạy MinIO/S3 để đọc file.");
+
+    public Task CopyAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
+    {
+        var source = ResolveAndValidatePath(sourceKey);
+        var destination = ResolveAndValidatePath(destinationKey);
+        var dir = Path.GetDirectoryName(destination);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        File.Copy(source, destination, overwrite: true);
+        return Task.CompletedTask;
+    }
+
+    public async Task<byte[]> ReadHeadAsync(string key, int count, CancellationToken ct = default)
+    {
+        await using var stream = await OpenReadAsync(key, ct);
+        var buffer = new byte[count];
+        var read = 0;
+        while (read < count)
+        {
+            var n = await stream.ReadAsync(buffer.AsMemory(read, count - read), ct);
+            if (n == 0)
+            {
+                break;
+            }
+
+            read += n;
+        }
+
+        return buffer[..read];
+    }
+
     public LocalFileStorage(IOptions<StorageOptions> options)
     {
         _options = options.Value;

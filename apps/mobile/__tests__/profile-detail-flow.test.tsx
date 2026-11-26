@@ -518,8 +518,6 @@ function uploadResult(
     content_type: 'application/pdf',
     size: 2048,
     purpose: 'chung_chi_pt',
-    provider: 'LOCAL',
-    content_url: '/api/v1/mob/files/f1/content',
     ...overrides,
   };
 }
@@ -555,6 +553,7 @@ test('picking a PDF uploads it as a private certificate and saving sends its fil
   expect(upload).toHaveBeenCalledWith(PDF.uri, 'chung_chi_pt', {
     contentType: 'application/pdf',
     fileName: 'PT_Level1_FI.pdf',
+    sizeBytes: 2048,
   });
 
   await fireEvent.press(screen.getByRole('button', SAVE));

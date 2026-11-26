@@ -11,11 +11,12 @@
       "expo-router",
       "expo-secure-store",
       "expo-dev-client",
+      "react-native-compressor",
       [
         "expo-notifications",
         {
           "color": "#FF231F7C",
-          "defaultChannel": "gymbase_urgent_messages"
+          "defaultChannel": "tin_nhan"
         }
       ],
       [
@@ -33,6 +34,7 @@
         "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
         "backgroundColor": "#F7F5F3"
       },
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",

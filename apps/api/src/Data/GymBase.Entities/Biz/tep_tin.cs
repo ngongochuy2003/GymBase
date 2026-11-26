@@ -43,4 +43,13 @@ public sealed class tep_tin : BaseEntity
 
     /// <summary>Lúc backend kiểm tra object trên S3 xong (UTC).</summary>
     public DateTime? ngay_xac_nhan { get; set; }
+
+    /// <summary>Tiến độ xử lý nền (bỏ EXIF, blurhash). Xem <see cref="TrangThaiXuLyTepTin"/>.</summary>
+    public TrangThaiXuLyTepTin trang_thai_xu_ly { get; set; } = TrangThaiXuLyTepTin.khong_can;
+
+    /// <summary>Lúc một worker nhận việc (UTC); việc `dang_xu_ly` quá lâu coi như worker đã chết và được nhận lại.</summary>
+    public DateTime? ngay_bat_dau_xu_ly { get; set; }
+
+    /// <summary>Chuỗi blurhash của ảnh, để app vẽ bản mờ trong lúc tải ảnh. Có sau khi xử lý nền xong.</summary>
+    public string? blurhash { get; set; }
 }

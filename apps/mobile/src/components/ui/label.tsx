@@ -1,0 +1,28 @@
+import { cn } from '@/lib/utils';
+import * as LabelPrimitive from '@rn-primitives/label';
+
+/** Nhãn ô nhập, cỡ chữ như `FieldLabel`. */
+function Label({
+  className,
+  onPress,
+  onLongPress,
+  onPressIn,
+  onPressOut,
+  disabled,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Text>) {
+  return (
+    <LabelPrimitive.Root
+      className={cn('flex select-none flex-row items-center gap-2', disabled && 'opacity-50')}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      disabled={disabled}
+    >
+      <LabelPrimitive.Text className={cn('text-base text-foreground', className)} {...props} />
+    </LabelPrimitive.Root>
+  );
+}
+
+export { Label };

@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/core/auth/session';
-import { resolveMediaUrl } from '@/shared/file';
-import { DEFAULT_HEADER_ACTIONS, useTabNavigation } from '@/shared/navigation';
+import { resolveMediaUrl, UploadError } from '@/shared/file';
+import { useHeaderActions, useTabNavigation } from '@/shared/navigation';
 import { ScreenRenderer, registerSection, type ScreenConfig } from '@/shared/screen-config';
 import { useToast } from '@/shared/ui-kit';
 import { ComposerCard } from '../components/composer-card';
@@ -28,11 +28,13 @@ export function ComposerScreen() {
   const { user } = useSession();
   const router = useRouter();
   const onTabPress = useTabNavigation();
+  const headerActions = useHeaderActions();
   const { toast, show } = useToast();
   const createPostMutation = useCreatePostMutation();
   const state = useComposerState({
     initialTopicIds: INITIAL_TOPICS,
     initialVisibilityId: visibilityOptions[0]?.id ?? '',
+    onMediaRejected: show,
     onPermissionDenied: (message) => {
       show(message);
       if (Platform.OS !== 'web') {
@@ -70,7 +72,7 @@ export function ComposerScreen() {
     return {
       id: 'composer',
       header: {
-        rightActions: DEFAULT_HEADER_ACTIONS,
+        ...headerActions,
         avatarUri,
         onAvatarPress: () => router.navigate('/profile'),
       },
@@ -92,8 +94,13 @@ export function ComposerScreen() {
                   if (router.canGoBack()) router.back();
                   else router.navigate('/home');
                 },
-                onError: () => {
-                  show('Đăng bài thất bại. Vui lòng thử lại.');
+                onError: (error) => {
+                  // Tệp quá lớn: câu của uploader đã nói rõ giới hạn nên hiện nguyên văn.
+                  show(
+                    error instanceof UploadError && error.code === 'FILE_TOO_LARGE'
+                      ? error.message
+                      : 'Đăng bài thất bại. Vui lòng thử lại.',
+                  );
                 },
               },
             );
@@ -143,7 +150,7 @@ export function ComposerScreen() {
       bottomTabs: composerTabs,
       activeTabId: undefined,
     };
-  }, [state, show, router, authorName, visibility, createPostMutation, avatarUri]);
+  }, [state, show, router, authorName, visibility, createPostMutation, avatarUri, headerActions]);
 
   return <ScreenRenderer config={config} onTabPress={onTabPress} overlay={toast} />;
 }

@@ -2,6 +2,8 @@ import { isAxiosError, type AxiosInstance } from 'axios';
 import { getMobClient } from '@/core/api/mobile-client';
 import { resolveMediaUrl } from '@/shared/file';
 import type { FeedPostData, ReportReasonId } from '../types';
+import { ghiNhoThongTinAnh, resolveMediaUrl } from '@/shared/file';
+import type { FeedPostData } from '../types';
 
 export { resolveMediaUrl };
 
@@ -9,6 +11,12 @@ export interface TacGiaBaiVietDto {
   id: string;
   ten_hien_thi: string;
   anh_dai_dien_url: string | null;
+}
+
+/** Thông tin đi kèm ảnh, cùng vị trí với `hinh_anh_urls`; nội dung ngoài không có cả hai. */
+export interface BaiVietAnhMetaDto {
+  file_id: string | null;
+  blurhash: string | null;
 }
 
 export interface BaiVietDto {
@@ -21,6 +29,7 @@ export interface BaiVietDto {
   trang_thai: string;
   chu_de: string | null;
   hinh_anh_urls: string[];
+  hinh_anh_meta?: BaiVietAnhMetaDto[] | null;
   so_luot_thich: number;
   so_binh_luan: number;
   da_thich: boolean;
@@ -84,9 +93,15 @@ export function formatRelativeTimeVi(isoDate: string | null | undefined, now = n
 }
 
 export function mapBaiVietDtoToFeedPost(dto: BaiVietDto, now?: Date): FeedPostData {
-  const images = (dto.hinh_anh_urls ?? [])
-    .map((url) => resolveMediaUrl(url))
-    .filter((url): url is string => Boolean(url));
+  const resolvedUrls = (dto.hinh_anh_urls ?? []).map((url) => resolveMediaUrl(url));
+  // URL ký đổi mỗi lần nên nhớ thông tin theo đúng URL vừa nhận, để RemoteImage cache theo file_id và vẽ blurhash.
+  resolvedUrls.forEach((url, index) => {
+    const meta = dto.hinh_anh_meta?.[index];
+    if (url && (meta?.file_id || meta?.blurhash)) {
+      ghiNhoThongTinAnh(url, { fileId: meta.file_id ?? undefined, blurhash: meta.blurhash ?? undefined });
+    }
+  });
+  const images = resolvedUrls.filter((url): url is string => Boolean(url));
 
   return {
     id: dto.id,

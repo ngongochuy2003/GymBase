@@ -13,6 +13,7 @@ public sealed class S3FileStorage : IFileStorage
     private readonly ILogger<S3FileStorage> _logger;
     private bool _bucketChecked;
     private readonly SemaphoreSlim _bucketLock = new(1, 1);
+    private readonly Lazy<IAmazonS3> _signer;
 
     public string ProviderName => string.Equals(_options.DefaultProvider, "MINIO", StringComparison.OrdinalIgnoreCase) ? "MINIO" : "S3";
 
@@ -21,6 +22,119 @@ public sealed class S3FileStorage : IFileStorage
         _s3Client = s3Client;
         _options = options.Value;
         _logger = logger;
+        _signer = new Lazy<IAmazonS3>(CreateSigner);
+    }
+
+    public bool SupportsPresign => true;
+
+    /// <summary>
+    /// Client dùng để ký URL. Chữ ký gắn với host, nên khi thiết bị gọi MinIO bằng địa chỉ khác (<c>PublicServiceUrl</c>) thì phải ký bằng
+    /// chính địa chỉ đó; không có thì dùng client thường.
+    /// </summary>
+    private IAmazonS3 CreateSigner()
+    {
+        if (string.IsNullOrWhiteSpace(_options.PublicServiceUrl))
+        {
+            return _s3Client;
+        }
+
+        var config = new AmazonS3Config { ServiceURL = _options.PublicServiceUrl, ForcePathStyle = _options.ForcePathStyle };
+        return new AmazonS3Client(new Amazon.Runtime.BasicAWSCredentials(_options.AccessKey, _options.SecretKey), config);
+    }
+
+    /// <summary>
+    /// <c>GetPreSignedUrlRequest</c> mặc định HTTPS dù endpoint là http (MinIO dev), nên phải đặt theo địa chỉ dùng để ký.
+    /// </summary>
+    private Protocol GiaoThuc()
+    {
+        var url = string.IsNullOrWhiteSpace(_options.PublicServiceUrl) ? _options.ServiceUrl : _options.PublicServiceUrl;
+        return url != null && url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTP : Protocol.HTTPS;
+    }
+
+    public PresignedUpload CreatePresignedUpload(string key, string contentType, long maxBytes, TimeSpan expiry)
+    {
+        var now = DateTime.UtcNow;
+        var date = now.ToString("yyyyMMdd");
+        var amzDate = now.ToString("yyyyMMdd'T'HHmmss'Z'");
+        var credential = $"{_options.AccessKey}/{date}/{_options.Region}/s3/aws4_request";
+
+        var policy = new
+        {
+            expiration = now.Add(expiry).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+            conditions = new object[]
+            {
+                new Dictionary<string, string> { ["bucket"] = _options.BucketName },
+                new Dictionary<string, string> { ["key"] = key },
+                new Dictionary<string, string> { ["Content-Type"] = contentType },
+                new Dictionary<string, string> { ["x-amz-algorithm"] = "AWS4-HMAC-SHA256" },
+                new Dictionary<string, string> { ["x-amz-credential"] = credential },
+                new Dictionary<string, string> { ["x-amz-date"] = amzDate },
+                new object[] { "content-length-range", 1, maxBytes },
+            },
+        };
+        var policyBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(policy)));
+
+        var kSigning = Hmac(Hmac(Hmac(Hmac(System.Text.Encoding.UTF8.GetBytes("AWS4" + _options.SecretKey), date), _options.Region), "s3"), "aws4_request");
+        var signature = Convert.ToHexStringLower(Hmac(kSigning, policyBase64));
+
+        var fields = new Dictionary<string, string>
+        {
+            ["key"] = key,
+            ["Content-Type"] = contentType,
+            ["x-amz-algorithm"] = "AWS4-HMAC-SHA256",
+            ["x-amz-credential"] = credential,
+            ["x-amz-date"] = amzDate,
+            ["policy"] = policyBase64,
+            ["x-amz-signature"] = signature,
+        };
+        return new PresignedUpload(UrlForm(), fields);
+    }
+
+    private static byte[] Hmac(byte[] key, string data) => System.Security.Cryptography.HMACSHA256.HashData(key, System.Text.Encoding.UTF8.GetBytes(data));
+
+    /// <summary>Địa chỉ nhận form POST: path-style <c>{endpoint}/{bucket}</c> khi có endpoint riêng (MinIO), nếu không thì host của bucket trên S3.</summary>
+    private string UrlForm()
+    {
+        var endpoint = string.IsNullOrWhiteSpace(_options.PublicServiceUrl) ? _options.ServiceUrl : _options.PublicServiceUrl;
+        return string.IsNullOrWhiteSpace(endpoint)
+            ? $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/"
+            : $"{endpoint.TrimEnd('/')}/{_options.BucketName}";
+    }
+
+    public string CreatePresignedGetUrl(string key, TimeSpan expiry) =>
+        _signer.Value.GetPreSignedURL(new GetPreSignedUrlRequest
+        {
+            BucketName = _options.BucketName,
+            Key = key,
+            Verb = HttpVerb.GET,
+            Expires = DateTime.UtcNow.Add(expiry),
+            Protocol = GiaoThuc(),
+        });
+
+    public async Task CopyAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
+    {
+        await EnsureBucketExistsAsync(ct);
+        await _s3Client.CopyObjectAsync(new CopyObjectRequest
+        {
+            SourceBucket = _options.BucketName,
+            SourceKey = sourceKey,
+            DestinationBucket = _options.BucketName,
+            DestinationKey = destinationKey,
+        }, ct);
+    }
+
+    public async Task<byte[]> ReadHeadAsync(string key, int count, CancellationToken ct = default)
+    {
+        using var response = await _s3Client.GetObjectAsync(new GetObjectRequest
+        {
+            BucketName = _options.BucketName,
+            Key = key,
+            ByteRange = new ByteRange(0, count - 1),
+        }, ct);
+        await using var stream = response.ResponseStream;
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, ct);
+        return buffer.ToArray();
     }
 
     public async Task SaveAsync(string key, Stream content, string contentType, CancellationToken ct = default)

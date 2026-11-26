@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { ApiError } from '@/core/api/api-error';
 import { useSession } from '@/core/auth/session';
-import { AppText, Button, Screen, TextField } from '@/shared/components/ui';
+import { Screen, TextField } from '@/shared/components/ui';
 import { AuthHeader } from '../components/auth-header';
 import { GoogleSignInButton } from '../components/google-sign-in-button';
 import { OrDivider } from '../components/or-divider';
@@ -64,15 +66,15 @@ export function LoginScreen() {
       <AuthHeader
         onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
       />
-      <View className="items-center gap-2 my-4">
-        <AppText title>Đăng nhập</AppText>
-        <AppText muted className="text-center">
+      <View className="my-4 items-center gap-2">
+        <Text variant="h1">Đăng nhập</Text>
+        <Text variant="muted" className="text-center">
           Chào mừng bạn quay trở lại!
-        </AppText>
+        </Text>
       </View>
       <View className="gap-4">
         {registered ? (
-          <Text accessibilityRole="alert" className="font-semibold text-primary">
+          <Text accessibilityRole="alert" className="text-sm font-semibold text-primary">
             Đăng ký thành công. Hãy đăng nhập để tiếp tục.
           </Text>
         ) : null}
@@ -120,20 +122,24 @@ export function LoginScreen() {
         />
         {failure ? (
           <View className="gap-1">
-            <Text accessibilityRole="alert" className="text-destructive">
+            <Text accessibilityRole="alert" variant="destructive" className="text-sm">
               {failure.message}
             </Text>
             {failure.hint ? (
-              <Text className="text-sm text-muted-foreground">{failure.hint}</Text>
+              <Text variant="muted" className="text-sm">
+                {failure.hint}
+              </Text>
             ) : null}
           </View>
         ) : null}
         <Button
-          pill
-          label="Đăng nhập"
+          shape="pill"
+          accessibilityLabel="Đăng nhập"
           loading={formState.isSubmitting}
           onPress={() => void submit()}
-        />
+        >
+          <Text>Đăng nhập</Text>
+        </Button>
       </View>
       <OrDivider />
       <GoogleSignInButton />

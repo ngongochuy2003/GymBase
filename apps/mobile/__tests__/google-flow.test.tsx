@@ -15,6 +15,7 @@ import { ApiError } from '@/core/api/api-error';
 import { authApi } from '@/core/api/auth-api';
 import { GoogleSignInUnavailableError, googleSignIn } from '@/core/auth/google-sign-in';
 import type { AuthResult, AuthUser } from '@/core/auth/types';
+import * as imageCache from '@/shared/file/image-cache';
 
 const user: AuthUser = {
   id: '0193f0a0-0000-7000-8000-000000000020',
@@ -210,4 +211,21 @@ test('signing out also signs out of the Google account', async () => {
 
   await waitFor(() => expect(screen).toHavePathname('/welcome'));
   expect(googleSignIn.signOut).toHaveBeenCalled();
+});
+
+test('signing out clears the image cache so private photos do not stay on a shared device', async () => {
+  jest
+    .mocked(SecureStore.getItemAsync)
+    .mockResolvedValue(
+      JSON.stringify({ accessToken: 'stored-access', refreshToken: 'stored-refresh' }),
+    );
+  jest.spyOn(authApi, 'me').mockResolvedValue(user);
+  jest.spyOn(authApi, 'logout').mockResolvedValue(undefined);
+  const clear = jest.spyOn(imageCache, 'xoaCacheAnh').mockResolvedValue(undefined);
+  await renderRouter(routes, { initialUrl: '/profile' });
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Đăng xuất' }));
+
+  await waitFor(() => expect(screen).toHavePathname('/welcome'));
+  expect(clear).toHaveBeenCalledTimes(1);
 });

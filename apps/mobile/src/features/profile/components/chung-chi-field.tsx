@@ -19,9 +19,12 @@ function uploadErrorMessage(error: unknown): string {
       : UPLOAD_ERROR;
   }
   if (error.status === 401) return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-  if (error.status === 400 || error.status === 415)
+  // Hạn mức trong ngày: câu của server đã đủ rõ nên hiện nguyên văn.
+  if (error.code === 'FILE_QUOTA_EXCEEDED') return error.message;
+  if (error.code === 'FILE_TOO_LARGE' || error.status === 413)
+    return 'Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn.';
+  if (error.status === 400 || error.status === 415 || error.code === 'STORAGE_REJECTED')
     return 'Tệp không hợp lệ. Vui lòng chọn một tệp PDF khác.';
-  if (error.status === 413) return 'Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn.';
   return `Máy chủ chưa nhận được tệp (lỗi ${error.status}). Vui lòng thử lại sau.`;
 }
 
@@ -76,6 +79,7 @@ export function ChungChiField({ value, onChange, onUploadingChange, error }: Pro
       const result = await uploadMultipartFile(picked.uri, 'chung_chi_pt', {
         contentType: 'application/pdf',
         fileName: picked.name,
+        sizeBytes: picked.size,
       });
       onChange({
         file_id: result.file_id,

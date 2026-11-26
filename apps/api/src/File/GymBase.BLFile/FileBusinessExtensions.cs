@@ -2,7 +2,6 @@ using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using GymBase.BLFile.BLFiles;
-using GymBase.BLFile.BLNotifications;
 using GymBase.BLFile.BLProcessing;
 using GymBase.BLFile.BLStorage;
 using GymBase.ModuleContracts.TepTin;
@@ -18,9 +17,8 @@ public static class FileBusinessExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // 1. Cấu hình StorageOptions & NotificationOptions
+        // 1. Cấu hình StorageOptions
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
-        services.Configure<NotificationOptions>(configuration.GetSection(NotificationOptions.SectionName));
 
         // 2. Image Processing
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
@@ -54,12 +52,14 @@ public static class FileBusinessExtensions
         services.AddSingleton<IStorageResolver, StorageResolver>();
 
         // 4. File Services
-        services.AddScoped<IFileService, FileService>();
+        services.AddScoped<ITepTinService, TepTinService>();
+        services.AddScoped<TepTinXuLyService>();
+        services.AddHostedService<TepTinXuLyWorker>();
+        services.AddScoped<TepTinDonDepService>();
+        services.AddHostedService<TepTinDonDepWorker>();
+        services.AddScoped<IFileLienKet>(sp => sp.GetRequiredService<ITepTinService>());
+        services.AddScoped<IFileUrlProvider>(sp => sp.GetRequiredService<ITepTinService>());
         services.AddScoped<IChungChiPtLienKet, ChungChiPtService>();
-        services.AddScoped<IFileMigrationService, FileMigrationService>();
-
-        // 5. Notification Services
-        services.AddSingleton<IPushNotificationService, FcmV1PushNotificationService>();
 
         return services;
     }

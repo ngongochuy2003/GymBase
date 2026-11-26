@@ -9,6 +9,9 @@ import {
 } from 'react';
 import { ApiError } from '../api/api-error';
 import { authApi, authRuntime, type RegisterInput } from '../api/auth-api';
+import { xoaCacheAnh } from '@/shared/file/image-cache';
+import { huyTatCaNhacGioAsync } from '@/shared/notifications/nhac-gio';
+import { goThietBiAsync } from '@/shared/notifications/thiet-bi';
 import { userStorage } from '../storage/user-storage';
 import { googleSignIn } from './google-sign-in';
 import type { AuthResult, AuthUser } from './types';
@@ -123,12 +126,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     try {
+      // Máy dùng chung: hủy các nhắc ăn, nhắc tập đã đặt trên máy để người kế tiếp không nhận nhắc theo lịch của người trước.
+      await huyTatCaNhacGioAsync().catch(() => undefined);
+      // Gỡ token push của máy này khi còn phiên, để người dùng kế tiếp không nhận thông báo của người trước; mất mạng thì bỏ qua.
+      await goThietBiAsync().catch(() => undefined);
       // Thu hồi phiên trên server khi còn token; mất mạng thì vẫn đăng xuất cục bộ.
       await authApi.logout().catch(() => undefined);
     } finally {
       setUser(null);
       await authRuntime.clear();
       await userStorage.clear();
+      // Máy dùng chung: không để ảnh riêng tư của người vừa đăng xuất nằm lại trong cache.
+      await xoaCacheAnh();
       await googleSignIn.signOut();
     }
   }, []);

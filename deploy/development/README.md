@@ -42,10 +42,12 @@ Thêm migration mới thì chạy lại `docker compose up --build -d`: `migrate
 
 - Giao diện web quản lý bucket: `http://localhost:9101`, đăng nhập bằng `MINIO_ROOT_USER` và `MINIO_ROOT_PASSWORD` (mặc định
   `minioadmin`/`minioadmin`). S3 API ở `http://localhost:9100`.
-- Mobile không cần thấy MinIO: API tự đọc object rồi trả qua `GET /api/v1/web/files/{id}/content`.
+- App tải thẳng lên MinIO bằng form đã ký và xem file bằng URL ký, nên **thiết bị phải với tới MinIO**: đặt `Storage__PublicServiceUrl` (biến môi trường của
+  dịch vụ API) là địa chỉ máy chạy Docker mà thiết bị gọi được, ví dụ `http://192.168.1.10:9100`; máy ảo Android dùng `http://10.0.2.2:9100`. Chi tiết ở
+  [upload-file.md](../../docs/architecture/upload-file.md), mục 9.
 - `docker compose down -v` xóa cả `minio_data` (mất file đã tải lên), nên nhớ xóa luôn dữ liệu MySQL tương ứng.
-- File tải lên **trước khi** chuyển sang MinIO (cột `tep_tin.s3_bucket` là `LOCAL`) vẫn đọc được vì volume `uploads_data` còn giữ;
-  muốn dồn sang MinIO thì gọi `POST /api/v1/web/files/migrate-to-s3`.
+- File tải lên **trước khi** chuyển sang MinIO (cột `tep_tin.s3_bucket` là `LOCAL`) không còn đường đọc: endpoint đọc cũ và `migrate-to-s3` đã bị xóa
+  ([ADR-0003](../../docs/adr/0003-upload-file-presigned-minio-s3.md)); dữ liệu cũ được xóa chứ không chuyển.
 - MinIO chạy riêng ở `infrastructure/docker/docker-compose.minio.yml` (cổng 9000, 9001) dành cho lúc chạy API bằng tay; hai
   cái không đụng nhau vì khác cổng và khác volume.
 

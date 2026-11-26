@@ -8,6 +8,13 @@ public sealed record TacGiaBaiVietDto(
     string ten_hien_thi,
     string? anh_dai_dien_url);
 
+/// <summary>
+/// Thông tin đi kèm một ảnh hoặc video của bài viết, cùng vị trí với phần tử của <c>hinh_anh_urls</c>:
+/// <c>file_id</c> để app cache theo id (URL ký đổi mỗi lần), <c>blurhash</c> để vẽ bản mờ khi ảnh đang tải.
+/// Nội dung ngoài (URL http/https của dữ liệu mẫu) không có cả hai.
+/// </summary>
+public sealed record BaiVietAnhMetaDto(Guid? file_id, string? blurhash);
+
 /// <summary>Dữ liệu bài viết trả ra API cho cả bảng tin và chi tiết bài viết.</summary>
 public sealed record BaiVietDto(
     Guid Id,
@@ -24,7 +31,8 @@ public sealed record BaiVietDto(
     bool da_thich,
     DateTime? ngay_dang,
     DateTime ngay_tao,
-    DateTime? ngay_chinh_sua) : IHasId;
+    DateTime? ngay_chinh_sua,
+    IReadOnlyList<BaiVietAnhMetaDto>? hinh_anh_meta = null) : IHasId;
 
 /// <summary>Body khi tạo bài viết mới từ web hoặc mobile.</summary>
 public sealed class BaiVietCreateDto
@@ -40,8 +48,15 @@ public sealed class BaiVietCreateDto
     /// <summary>Mã chủ đề bài viết (ví dụ: <c>workout</c>, <c>meal-prep</c>, <c>progress</c>, <c>tips</c>).</summary>
     public string? chu_de { get; init; }
 
-    /// <summary>Danh sách đường dẫn ảnh/video đính kèm (tối đa 10).</summary>
+    /// <summary>
+    /// Đường dẫn tuyệt đối (http/https) của ảnh/video bên ngoài (nội dung mẫu). Tệp người dùng tải lên đi qua <see cref="file_ids"/>.
+    /// </summary>
     public List<string>? hinh_anh_urls { get; init; }
+
+    /// <summary>
+    /// Id các tệp đã upload và xác nhận (<c>muc_dich = post</c>), theo thứ tự hiển thị. Tổng với <see cref="hinh_anh_urls"/> tối đa 10.
+    /// </summary>
+    public List<Guid>? file_ids { get; init; }
 
 }
 

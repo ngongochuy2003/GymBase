@@ -1,5 +1,6 @@
 export * from './file.types';
-export * from './variant-selector';
 export * from './file-uploader';
-export * from './optimized-image';
+export * from './image-cache';
 export * from './use-file-upload';
+export * from './video-compressor';
+export { resolveMediaUrl } from '@/core/config/api-origin';

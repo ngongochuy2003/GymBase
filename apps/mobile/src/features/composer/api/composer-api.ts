@@ -1,13 +1,16 @@
 import type { AxiosInstance } from 'axios';
 import { getMobClient } from '@/core/api/mobile-client';
-import { uploadMultipartFile, isVideoUrl } from '@/shared/file/file-uploader';
+import { deleteUploadedFile, isVideoUrl, uploadMultipartFile } from '@/shared/file/file-uploader';
 import type { ComposerPayload } from '../types';
 
 export interface BaiVietCreateRequestDto {
   noi_dung: string | null;
   che_do_hien_thi: string;
   chu_de?: string;
+  /** Chỉ URL http(s) của nội dung có sẵn; tệp tải lên đi qua `file_ids`. */
   hinh_anh_urls: string[];
+  /** Id các tệp đã upload (`muc_dich = post`), theo thứ tự hiển thị. */
+  file_ids?: string[];
 }
 
 export interface BaiVietCreatedResponseDto {
@@ -55,8 +58,7 @@ export function createComposerRepository(
     async createPost(payload: ComposerPayload): Promise<BaiVietCreatedResponseDto> {
       const body = toBaiVietCreateDto(payload);
 
-
-      // Tự động upload các ảnh từ thiết bị (blob: hoặc file://) lên backend
+      // Ảnh/video từ thiết bị (blob: hoặc file://) được upload trước, bài viết chỉ mang file_id; URL http(s) giữ nguyên.
       const itemsToUpload =
         payload.mediaItems && payload.mediaItems.length > 0
           ? payload.mediaItems
@@ -65,27 +67,37 @@ export function createComposerRepository(
               uri,
               type: undefined as 'image' | 'video' | undefined,
               mimeType: undefined,
+              sizeBytes: undefined as number | undefined,
             }));
 
-      const processedMediaUrls: string[] = [];
-      for (const item of itemsToUpload) {
-        const uri = item.uri;
-        if (uri.startsWith('http://') || uri.startsWith('https://')) {
-          processedMediaUrls.push(uri);
-        } else {
+      const externalUrls: string[] = [];
+      const fileIds: string[] = [];
+      try {
+        for (const item of itemsToUpload) {
+          const uri = item.uri;
+          if (uri.startsWith('http://') || uri.startsWith('https://')) {
+            externalUrls.push(uri);
+            continue;
+          }
           const isVideo = item.type === 'video' || isVideoUrl(uri);
-          const uploadResult = await uploadMultipartFile(uri, 'post', {
+          const uploaded = await uploadMultipartFile(uri, 'post', {
             contentType: isVideo ? (item.mimeType || 'video/mp4') : undefined,
+            // Video giữ nguyên bản gốc nên dung lượng bộ chọn báo là dung lượng gửi đi; ảnh được nén lại rồi đo lại.
+            sizeBytes: isVideo ? item.sizeBytes : undefined,
           });
-          const resultUrl = uploadResult?.content_url;
-          if (!resultUrl) throw new Error('API không trả về URL sau khi tải tệp lên.');
-          processedMediaUrls.push(resultUrl);
+          if (!uploaded?.file_id) throw new Error('API không trả về file_id sau khi tải tệp lên.');
+          fileIds.push(uploaded.file_id);
         }
-      }
-      body.hinh_anh_urls = processedMediaUrls;
+        body.hinh_anh_urls = externalUrls;
+        body.file_ids = fileIds;
 
-      const response = await client.post<BaiVietCreatedResponseDto>('/baiviet', body);
-      return response.data;
+        const response = await client.post<BaiVietCreatedResponseDto>('/baiviet', body);
+        return response.data;
+      } catch (error) {
+        // Đăng bài hỏng thì bỏ các tệp đã tải lên, khỏi để chúng nằm lại ở trạng thái chờ gắn.
+        await Promise.allSettled(fileIds.map((id) => deleteUploadedFile(id)));
+        throw error;
+      }
     },
   };
 }

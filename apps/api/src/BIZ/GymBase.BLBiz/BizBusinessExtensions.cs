@@ -3,6 +3,7 @@ using GymBase.BLBiz.BaiViet;
 using GymBase.BLBiz.BLHoSo;
 using GymBase.BLBiz.BLQuyenHan;
 using GymBase.BLBiz.BLTruyCap;
+using GymBase.ModuleContracts.TepTin;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymBase.BLBiz;
@@ -14,6 +15,7 @@ public static class BizBusinessExtensions
     public static IServiceCollection AddBizBusiness(this IServiceCollection services)
     {
         services.AddScoped<BaiVietService>();
+        services.AddScoped<IFileTruyCapPolicy, BaiVietFileTruyCapPolicy>();
         services.AddScoped<QuyenHanService>();
         services.AddScoped<IQuyenHanProvider>(provider => provider.GetRequiredService<QuyenHanService>());
         services.AddScoped<TruyCapService>();

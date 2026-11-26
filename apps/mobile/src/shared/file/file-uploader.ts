@@ -1,18 +1,58 @@
 import axios, { isAxiosError } from 'axios';
-import { Platform } from 'react-native';
-import { resolveApiOrigin } from '@/core/config/api-origin';
-import { authRuntime } from '@/core/api/auth-api';
-import { tokenStorage } from '@/core/storage/token-storage';
+import { Image, Platform } from 'react-native';
+import { toApiError } from '@/core/api/api-error';
+import { getMobClient } from '@/core/api/mobile-client';
 import { FilePurpose, FileUploadResult, UploadOptions } from './file.types';
+import {
+  compressVideoOnDevice,
+  isVideoCompressorAvailable,
+  NGUONG_NEN_VIDEO_BYTE,
+} from './video-compressor';
 
-/** Thời gian chờ tối đa cho một lần tải tệp lên (ms); tệp lớn trên mạng yếu cần lâu hơn các lệnh API thường. */
-const UPLOAD_TIMEOUT_MS = 120_000;
+/** Thời gian chờ tối đa cho một lần gửi tệp lên storage (ms); video trên mạng yếu cần lâu hơn các lệnh API thường. */
+const UPLOAD_TIMEOUT_MS = 5 * 60_000;
+const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_RETRY_DELAY_MS = 800;
 
-/** Upload thất bại do server trả mã lỗi; `status` để giao diện nói đúng nguyên nhân (401 hết phiên, 400 tệp không hợp lệ...). */
+/**
+ * Dung lượng tối đa mỗi loại tệp (byte), khớp `StorageOptions` của backend (docs/architecture/upload-file.md, mục 4).
+ * Kiểm ở app để báo ngay, khỏi tốn thời gian gửi tệp rồi mới bị storage từ chối.
+ */
+export const DUNG_LUONG_TOI_DA_BYTE = {
+  image: 10 * 1024 * 1024,
+  document: 10 * 1024 * 1024,
+  video: 100 * 1024 * 1024,
+} as const;
+
+const TEN_LOAI_TEP = { image: 'Ảnh', document: 'Tệp', video: 'Video' } as const;
+
+/** Cạnh dài tối đa của ảnh sau khi nén (px). Dùng chủ yếu trên điện thoại nên 1600 đã đủ nét; chỉ thu nhỏ, không phóng to. */
+export const CANH_DAI_ANH_TOI_DA_PX = 1600;
+
+/** Video chọn từ thư viện được lấy tối đa mức này khi máy nén được video (thư viện nén bớt xuống dưới 100MB trước khi gửi). */
+export const DUNG_LUONG_CHON_VIDEO_KHI_NEN_BYTE = 500 * 1024 * 1024;
+
+const cauQuaLon = (loai: keyof typeof TEN_LOAI_TEP, toiDa: number) =>
+  `${TEN_LOAI_TEP[loai]} quá lớn (tối đa ${Math.round(toiDa / (1024 * 1024))}MB). Vui lòng chọn tệp nhỏ hơn.`;
+
+/**
+ * Kiểm video vừa chọn từ thư viện, trả câu báo lỗi nếu quá lớn (null nếu được hoặc chưa biết dung lượng).
+ * Máy nén được video thì cho tới 500MB (sẽ nén xuống trước khi gửi), không thì áp thẳng giới hạn 100MB của storage.
+ */
+export function kiemTraVideoKhiChon(sizeBytes?: number | null): string | null {
+  if (!sizeBytes) return null;
+  const toiDa = isVideoCompressorAvailable()
+    ? DUNG_LUONG_CHON_VIDEO_KHI_NEN_BYTE
+    : DUNG_LUONG_TOI_DA_BYTE.video;
+  return sizeBytes > toiDa ? cauQuaLon('video', toiDa) : null;
+}
+
+/** Upload thất bại; `status` để giao diện nói đúng nguyên nhân (401 hết phiên, 400 tệp không hợp lệ, 413 quá lớn...). */
 export class UploadError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code?: string,
   ) {
     super(message);
     this.name = 'UploadError';
@@ -25,6 +65,8 @@ export interface ManipulatorAdapter {
     actions: { resize?: { width?: number; height?: number } }[],
     saveOptions: { compress: number; format: 'jpeg' | 'png' | 'webp' },
   ): Promise<{ uri: string; width: number; height: number; base64?: string }>;
+  /** Kích thước ảnh gốc để chọn thu nhỏ theo cạnh dài; không có thì thu nhỏ theo chiều rộng. */
+  getSize?(uri: string): Promise<{ width: number; height: number }>;
 }
 
 let defaultManipulator: ManipulatorAdapter | null = null;
@@ -34,6 +76,10 @@ try {
   defaultManipulator = {
     manipulateAsync: (uri, actions, options) =>
       ExpoManipulator.manipulateAsync(uri, actions, options),
+    getSize: (uri) =>
+      new Promise((resolve, reject) =>
+        Image.getSize(uri, (width, height) => resolve({ width, height }), reject),
+      ),
   };
 } catch {
   // Môi trường Node.js / Jest
@@ -66,9 +112,17 @@ export function isVideoUrl(urlOrPath?: string | null): boolean {
   );
 }
 
+/** Thu nhỏ theo cạnh dài, không phóng to; chưa biết kích thước thì thu theo chiều rộng. */
+function hanhDongThuNho(size?: { width: number; height: number }) {
+  const max = CANH_DAI_ANH_TOI_DA_PX;
+  if (!size) return [{ resize: { width: max } }];
+  if (Math.max(size.width, size.height) <= max) return [];
+  return size.width >= size.height ? [{ resize: { width: max } }] : [{ resize: { height: max } }];
+}
+
 /**
  * 1. Nén và chuẩn hóa ảnh phía Mobile bằng expo-image-manipulator.
- * - Cạnh dài tối đa 2048px (giữ nguyên tỷ lệ chuẩn).
+ * - Cạnh dài tối đa `CANH_DAI_ANH_TOI_DA_PX` (1600px), giữ nguyên tỷ lệ; ảnh nhỏ hơn thì không phóng to.
  * - Nén chất lượng 0.90 JPEG để đảm bảo độ nét cao không bị vỡ/bóp méo.
  * - Tự động loại bỏ metadata EXIF nhạy cảm (GPS coordinates).
  */
@@ -79,7 +133,8 @@ export async function compressImageOnDevice(
   const activeManipulator = manipulator || defaultManipulator;
 
   if (activeManipulator) {
-    const result = await activeManipulator.manipulateAsync(uri, [{ resize: { width: 2048 } }], {
+    const size = await activeManipulator.getSize?.(uri).catch(() => undefined);
+    const result = await activeManipulator.manipulateAsync(uri, hanhDongThuNho(size), {
       compress: 0.9,
       format: 'jpeg',
     });
@@ -107,57 +162,84 @@ export async function compressImageOnDevice(
   };
 }
 
-/**
- * 2. Upload file multipart/form-data trực tiếp lên Backend GymBase (/api/v1/mob/files).
- * Backend sẽ nén/xử lý WebP và lưu vào Local Storage hoặc S3 tùy cấu hình môi trường.
- */
-export async function uploadMultipartFile(
+/** Form đã ký do backend trả khi xin upload (xem docs/architecture/upload-file.md). */
+interface UploadTarget {
+  url: string;
+  method: 'POST';
+  fields: Record<string, string>;
+  file_field: string;
+  het_han: string;
+}
+
+interface XinUploadResponse {
+  file_id: string;
+  upload: UploadTarget;
+}
+
+interface XacNhanUploadResponse {
+  file_id: string;
+  loai_mime: string;
+  kich_thuoc_byte: number;
+  muc_dich: string;
+  trang_thai: string;
+}
+
+/** Tệp đã chuẩn bị để gửi: đã nén (ảnh) hoặc giữ nguyên (video, PDF). */
+interface PreparedFile {
+  uri: string;
+  type: string;
+  name: string;
+  /** Ước lượng dung lượng (byte); backend chỉ dùng để kiểm sớm, dung lượng thật lấy từ storage lúc xác nhận. */
+  sizeBytes: number;
+  /** Có khi chạy trên web (`blob:` URL): gửi thẳng Blob thay vì { uri }. */
+  blob?: Blob;
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const throwIfAborted = (signal?: AbortSignal) => {
+  if (signal?.aborted) throw new Error('Upload cancelled by user');
+};
+
+/** Đổi lỗi của API (xin upload, xác nhận) sang `UploadError`, giữ mã lỗi để giao diện rẽ nhánh. */
+function toUploadError(error: unknown): UploadError {
+  if (error instanceof UploadError) return error;
+  const api = toApiError(error);
+  return new UploadError(api.message, api.status ?? 0, api.code);
+}
+
+/** Chuẩn bị tệp: phân loại (ảnh, video, PDF), nén ảnh, đọc dung lượng. */
+async function prepareFile(
   localUri: string,
-  purpose: FilePurpose = 'avatar',
+  purpose: FilePurpose,
   options?: UploadOptions,
-): Promise<FileUploadResult> {
-  const baseUrl = resolveApiOrigin(options?.apiBaseUrl);
-  const authHeaders: Record<string, string> = {};
-
-  // Access token chỉ sống 15 phút: lấy qua phiên hiện tại để có thể làm mới khi server trả 401 (xem bên dưới).
-  let token =
-    options?.authToken ||
-    (await authRuntime.transport.getAccessToken()) ||
-    (await tokenStorage.read())?.accessToken;
-  if (!token && typeof window !== 'undefined' && window.localStorage) {
-    token = window.localStorage.getItem('access_token') || undefined;
-  }
-
-  if (token) {
-    authHeaders.Authorization = `Bearer ${token}`;
-  }
-
+): Promise<PreparedFile> {
   // Chứng chỉ PT là tài liệu PDF: gửi nguyên bản, không nén ảnh và không coi là video.
   const isDocument = purpose === 'chung_chi_pt';
   let isVideo =
     !isDocument && (isVideoUrl(localUri) || Boolean(options?.contentType?.startsWith('video/')));
-  let fileType =
+  let type =
     options?.contentType || (isDocument ? 'application/pdf' : isVideo ? 'video/mp4' : 'image/jpeg');
-  let blobData: Blob | null = null;
+  let blob: Blob | undefined;
+  let sizeBytes = options?.sizeBytes ?? 0;
 
-  // Nếu trên Web (blob: URL) hoặc có fetch, đọc MIME type trực tiếp từ Blob
+  // Web (blob: URL): đọc MIME và dung lượng trực tiếp từ Blob.
   if (typeof fetch !== 'undefined' && localUri.startsWith('blob:')) {
     try {
-      const blobRes = await fetch(localUri);
-      blobData = await blobRes.blob();
-      if (blobData.type) {
-        fileType = blobData.type;
-        if (blobData.type.startsWith('video/')) {
-          isVideo = true;
-        }
+      const response = await fetch(localUri);
+      blob = await response.blob();
+      if (blob.type) {
+        type = blob.type;
+        if (blob.type.startsWith('video/')) isVideo = true;
       }
+      sizeBytes = blob.size;
     } catch {
-      // Fallback
+      // Dùng giá trị mặc định ở trên.
     }
   }
 
-  let fileUri = localUri;
-  let fileName =
+  let uri = localUri;
+  let name =
     options?.fileName ||
     localUri.split('/').pop() ||
     (isDocument
@@ -165,121 +247,154 @@ export async function uploadMultipartFile(
       : isVideo
         ? `video_${Date.now()}.mp4`
         : `upload_${Date.now()}.jpg`);
-  if (
-    isVideo &&
-    !fileName.endsWith('.mp4') &&
-    !fileName.endsWith('.mov') &&
-    !fileName.endsWith('.webm')
-  ) {
-    fileName = `${fileName}.mp4`;
-  }
 
   if (isDocument) {
     // Giữ nguyên tệp gốc.
   } else if (!isVideo) {
     try {
-      // Bước 1: Nén ảnh giữ độ nét cao bằng expo-image-manipulator
+      // Nén ảnh giữ độ nét cao bằng expo-image-manipulator (cạnh dài 1600px, JPEG 0.9, bỏ EXIF).
       const compressed = await compressImageOnDevice(localUri);
-      fileUri = compressed.uri;
-      fileType = compressed.contentType;
-      fileName = compressed.uri.split('/').pop() || `upload_${Date.now()}.jpg`;
+      uri = compressed.uri;
+      type = compressed.contentType;
+      name = compressed.uri.split('/').pop() || `upload_${Date.now()}.jpg`;
+      sizeBytes = compressed.sizeBytes;
+      blob = undefined;
     } catch {
-      // Fallback nếu không nén được (ví dụ video bị lọt vào nhánh ảnh hoặc file đặc biệt)
-      fileUri = localUri;
+      // Không nén được (ảnh đặc biệt): gửi nguyên bản.
+      uri = localUri;
     }
   } else {
-    // Với video, giữ nguyên dữ liệu gốc và chỉ định đúng MIME type
-    const lower = fileUri.toLowerCase();
+    // Video: chỉ định đúng MIME. Trên điện thoại có thư viện nén thì nén các video lớn (hoặc chưa biết dung lượng) xuống
+    // 720p, bỏ GPS; không nén được thì giữ nguyên bản gốc.
+    const lower = uri.toLowerCase();
     if (lower.endsWith('.mov')) {
-      fileType = 'video/quicktime';
-    } else if (lower.endsWith('.webm')) {
-      fileType = 'video/webm';
-    } else if (!fileType.startsWith('video/')) {
-      fileType = 'video/mp4';
+      type = 'video/quicktime';
+    } else if (!type.startsWith('video/')) {
+      type = 'video/mp4';
     }
-  }
-
-  if (options?.signal?.aborted) {
-    throw new Error('Upload cancelled by user');
-  }
-
-  // Bước 2: Chuẩn bị FormData
-  const formData = new FormData();
-  formData.append('purpose', purpose);
-
-  if (blobData) {
-    formData.append('file', blobData, fileName);
-  } else if (
-    Platform.OS === 'web' &&
-    typeof Blob !== 'undefined' &&
-    !fileUri.startsWith('file://')
-  ) {
-    // Chỉ web đọc được tệp thành Blob để gửi. Trên điện thoại, FormData của React Native không nhận Blob (báo
-    // 'Unsupported FormDataPart implementation'): phải gửi dạng { uri, type, name } cho phần native tự đọc, kể cả uri content://.
-    try {
-      const blobRes = await fetch(fileUri);
-      const blob = await blobRes.blob();
-      formData.append('file', blob, fileName);
-    } catch {
-      // @ts-ignore
-      formData.append('file', {
-        uri: fileUri,
-        type: fileType,
-        name: fileName,
-      });
-    }
-  } else {
-    // @ts-ignore
-    formData.append('file', {
-      uri: fileUri,
-      type: fileType,
-      name: fileName,
-    });
-  }
-
-  // Bước 3: Gửi lên Backend (Kênh mobile /api/v1/mob/files)
-  const endpoint = `${baseUrl}/api/v1/mob/files`;
-  // Gửi bằng axios (XMLHttpRequest của React Native), không dùng `fetch` toàn cục: runtime Expo thay `fetch` bằng bản
-  // `expo/fetch`, bản đó không nhận phần tệp dạng { uri, type, name } ('Unsupported FormDataPart implementation'),
-  // còn XMLHttpRequest thì đọc tệp theo uri (file:// lẫn content://) ở phía native.
-  const send = async (headers: Record<string, string>) => {
-    try {
-      const response = await axios.post<FileUploadResult>(endpoint, formData, {
-        // Trên điện thoại cần khai báo multipart để phần native tự thêm boundary; web để trình duyệt tự đặt.
-        headers:
-          Platform.OS === 'web' ? headers : { ...headers, 'Content-Type': 'multipart/form-data' },
-        signal: options?.signal,
-        timeout: UPLOAD_TIMEOUT_MS,
-      });
-      return { status: response.status, data: response.data as unknown };
-    } catch (error) {
-      // Server trả mã lỗi thì giữ lại để xử lý (làm mới token khi 401); không có phản hồi (mất mạng...) thì ném tiếp.
-      if (isAxiosError(error) && error.response) {
-        return { status: error.response.status, data: error.response.data as unknown };
+    if (!blob && isVideoCompressorAvailable() && (sizeBytes === 0 || sizeBytes > NGUONG_NEN_VIDEO_BYTE)) {
+      const compressed = await compressVideoOnDevice(uri);
+      // Nén xong mà không nhỏ hơn bản gốc (đã biết dung lượng) thì giữ bản gốc.
+      if (compressed && (sizeBytes === 0 || compressed.sizeBytes < sizeBytes)) {
+        uri = compressed.uri;
+        type = 'video/mp4';
+        name = `video_${Date.now()}.mp4`;
+        sizeBytes = compressed.sizeBytes;
       }
-      throw error;
+    }
+  }
+
+  // Chỉ kiểm khi biết dung lượng; chưa biết (0) thì để storage chặn bằng policy.
+  const loai = isDocument ? 'document' : isVideo ? 'video' : 'image';
+  const toiDa = DUNG_LUONG_TOI_DA_BYTE[loai];
+  if (sizeBytes > toiDa) {
+    throw new UploadError(cauQuaLon(loai, toiDa), 413, 'FILE_TOO_LARGE');
+  }
+
+  return { uri, type, name, sizeBytes: Math.max(1, Math.round(sizeBytes)), blob };
+}
+
+/** Gửi form đã ký lên storage; trả lỗi có `status` khi storage từ chối. Không gắn Authorization: chữ ký đã nằm trong form. */
+async function postForm(target: UploadTarget, file: PreparedFile, options?: UploadOptions) {
+  const form = new FormData();
+  for (const [name, value] of Object.entries(target.fields)) form.append(name, value);
+
+  // Trường file phải đặt cuối cùng. Trên điện thoại FormData của React Native nhận { uri, type, name } để phần native tự đọc tệp.
+  if (file.blob) {
+    form.append(target.file_field, file.blob, file.name);
+  } else {
+    // @ts-expect-error React Native cho phép phần tệp dạng { uri, type, name }.
+    form.append(target.file_field, { uri: file.uri, type: file.type, name: file.name });
+  }
+
+  try {
+    await axios.post(target.url, form, {
+      headers: Platform.OS === 'web' ? undefined : { 'Content-Type': 'multipart/form-data' },
+      signal: options?.signal,
+      timeout: UPLOAD_TIMEOUT_MS,
+      onUploadProgress: (event) => {
+        if (event.total) options?.onProgress?.(Math.min(99, Math.round((event.loaded / event.total) * 100)));
+      },
+    });
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      throw new UploadError(
+        `Kho lưu trữ từ chối tệp (${error.response.status}).`,
+        error.response.status,
+        'STORAGE_REJECTED',
+      );
+    }
+    throw error;
+  }
+}
+
+/** Xóa tệp đã upload mà chưa gắn vào đâu (ví dụ đăng bài lỗi, hoặc người dùng bỏ ảnh đã chọn). Lỗi do người gọi xử lý. */
+export async function deleteUploadedFile(fileId: string): Promise<void> {
+  await getMobClient().delete(`/files/${fileId}`);
+}
+
+/**
+ * Upload hai bước lên MinIO/S3 (xem docs/architecture/upload-file.md):
+ * 1. xin form đã ký (`POST /files/upload-url`), 2. gửi tệp thẳng lên storage, 3. báo xong (`POST /files/{id}/confirm`).
+ * Lỗi mạng và 5xx của storage được thử lại có backoff; form hết hạn thì xin form mới. Trả `file_id` để gắn vào bài viết, hồ sơ...
+ */
+export async function uploadMultipartFile(
+  localUri: string,
+  purpose: FilePurpose = 'avatar',
+  options?: UploadOptions,
+): Promise<FileUploadResult> {
+  const api = getMobClient();
+  throwIfAborted(options?.signal);
+  const file = await prepareFile(localUri, purpose, options);
+  const maxRetries = options?.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const retryDelay = options?.initialRetryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
+
+  const xinUpload = async (): Promise<XinUploadResponse> => {
+    try {
+      const { data } = await api.post<XinUploadResponse>('/files/upload-url', {
+        muc_dich: purpose,
+        loai_mime: file.type,
+        kich_thuoc_byte: file.sizeBytes,
+        ten_tep: file.name,
+      });
+      return data;
+    } catch (error) {
+      throw toUploadError(error);
     }
   };
 
-  let result = await send(authHeaders);
-
-  // Access token hết hạn: làm mới một lần rồi gửi lại. Không làm khi người gọi tự truyền `authToken`.
-  if (result.status === 401 && !options?.authToken) {
-    const refreshed = await authRuntime.transport.refresh().catch(() => null);
-    if (refreshed) {
-      result = await send({ ...authHeaders, Authorization: `Bearer ${refreshed}` });
-    } else {
-      await authRuntime.transport.onUnauthorized();
+  let upload = await xinUpload();
+  for (let attempt = 0; ; attempt++) {
+    throwIfAborted(options?.signal);
+    // Form quá hạn (ví dụ app nằm nền lâu rồi mới thử lại) thì xin form mới; dòng cũ để job dọn file xử lý.
+    if (Date.parse(upload.upload.het_han) <= Date.now()) upload = await xinUpload();
+    try {
+      await postForm(upload.upload, file, options);
+      break;
+    } catch (error) {
+      if (options?.signal?.aborted) throw error;
+      const status = error instanceof UploadError ? error.status : 0;
+      const retryable = status === 0 || status >= 500;
+      if (!retryable || attempt >= maxRetries) {
+        if (error instanceof UploadError) throw error;
+        throw new UploadError('Không kết nối được tới máy chủ. Vui lòng kiểm tra mạng rồi thử lại.', 0);
+      }
+      await sleep(retryDelay * 2 ** attempt);
     }
   }
 
-  if (result.status < 200 || result.status >= 300) {
-    const errorText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
-    throw new UploadError(
-      `Upload file multipart thất bại (${result.status}): ${errorText}`,
-      result.status,
-    );
+  throwIfAborted(options?.signal);
+  try {
+    const { data } = await api.post<XacNhanUploadResponse>(`/files/${upload.file_id}/confirm`);
+    options?.onProgress?.(100);
+    return {
+      file_id: data.file_id,
+      original_name: file.name,
+      content_type: data.loai_mime,
+      size: data.kich_thuoc_byte,
+      purpose: data.muc_dich,
+    };
+  } catch (error) {
+    throw toUploadError(error);
   }
-
-  return result.data as FileUploadResult;
 }

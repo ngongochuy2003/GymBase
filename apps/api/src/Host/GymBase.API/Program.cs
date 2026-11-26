@@ -8,11 +8,13 @@ using GymBase.BLBiz.BaiViet;
 using GymBase.BLDI;
 using GymBase.BLFile;
 using GymBase.BLFile.BLFiles;
+using GymBase.BLThongBao;
 using Microsoft.AspNetCore.Authorization;
 using GymBase.DLAuth.MySql;
 using GymBase.DLBiz.MySql;
 using GymBase.DLDI.MySql;
 using GymBase.DLFile.MySql;
+using GymBase.DLThongBao.MySql;
 using GymBase.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,9 +45,13 @@ builder.Services.AddAuthData();
 builder.Services.AddBizBusiness();
 builder.Services.AddBizData();
 
-// File: lưu trữ tệp tin (Local/S3) và push notification
+// File: lưu trữ tệp tin (Local/S3)
 builder.Services.AddFileBusiness(builder.Configuration);
 builder.Services.AddFileData();
+
+// ThongBao: hộp thư thông báo, thiết bị và push token, worker đẩy push (ADR-2)
+builder.Services.AddThongBaoBusiness(builder.Configuration);
+builder.Services.AddThongBaoData();
 
 // DI (Danh mục): dữ liệu tham chiếu cho dropdown (docs/api/danh-muc.md)
 builder.Services.AddDIBusiness();
@@ -54,48 +60,6 @@ builder.Services.AddDIData();
 var app = builder.Build();
 
 app.UseAppApi();
-
-// Endpoint tải nội dung file công khai dùng chung cho mobile và web (/api/files/{id}/content)
-app.MapGet("/api/files/{id:guid}/content", async (Guid id, IFileService fileService, IWebHostEnvironment env, HttpContext ctx, CancellationToken ct) =>
-{
-    var uploadsDir = Path.Combine(env.ContentRootPath, "uploads");
-    if (Directory.Exists(uploadsDir))
-    {
-        var idPrefix = id.ToString("N");
-        var matchingFiles = Directory.GetFiles(uploadsDir, $"{idPrefix}*");
-        if (matchingFiles.Length == 0)
-        {
-            matchingFiles = Directory.GetFiles(uploadsDir, $"{id}*");
-        }
-
-        if (matchingFiles.Length > 0)
-        {
-            var filePath = matchingFiles[0];
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            var mime = ext switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".webp" => "image/webp",
-                ".gif" => "image/gif",
-                ".mp4" => "video/mp4",
-                ".mov" => "video/quicktime",
-                _ => "application/octet-stream",
-            };
-            return Results.File(filePath, mime, enableRangeProcessing: true);
-        }
-    }
-
-    try
-    {
-        var streamResult = await fileService.BLOpenAuthorizedAsync(ctx.User, id, ct);
-        return Results.File(streamResult.Stream, streamResult.ContentType, enableRangeProcessing: true);
-    }
-    catch (Exception)
-    {
-        return Results.NotFound();
-    }
-}).AllowAnonymous();
 
 app.Run();
 return 0;

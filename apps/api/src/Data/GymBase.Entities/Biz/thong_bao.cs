@@ -31,6 +31,18 @@ public sealed class thong_bao : BaseEntity
 
     public TrangThaiGui trang_thai_gui { get; set; }
 
+    /// <summary>Đường tới người dùng. Worker chỉ quét <see cref="KenhThongBao.push"/>.</summary>
+    public KenhThongBao kenh { get; set; } = KenhThongBao.push;
+
+    /// <summary>Số lần worker đã thử gửi và gặp lỗi tạm.</summary>
+    public int so_lan_thu { get; set; }
+
+    /// <summary>Không thử lại trước mốc này (UTC); null là gửi ngay được. Backoff sau lỗi tạm.</summary>
+    public DateTime? thoi_diem_thu_lai { get; set; }
+
+    /// <summary>Lúc worker giành dòng (UTC). Dòng <c>dang_gui</c> quá cũ được coi là worker đã chết và giành lại.</summary>
+    public DateTime? thoi_diem_nhan { get; set; }
+
     public DateTime? ngay_da_doc { get; set; }
 
     /// <summary>Khóa ngăn lập trùng hoặc retry trùng. Unique cùng tai_khoan_id.</summary>

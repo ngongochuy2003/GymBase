@@ -87,6 +87,8 @@ public partial class LayerReferenceTests
             {
                 // Nhóm File (media/storage) quản lý thực thể tep_tin thuộc nhóm Biz.
                 "File" => "Biz",
+                // Nhóm ThongBao quản lý thiet_bi, thong_bao, cai_dat_thong_bao, các bảng thuộc nhóm Biz.
+                "ThongBao" => "Biz",
                 var g => g,
             };
 

@@ -15,14 +15,47 @@ public sealed class TepTinRepository(AppDbContext db) : BaseRepository<tep_tin>(
 
     protected override QueryColumns<tep_tin> AllowedColumns => TepTinQueryColumns.Allowed;
 
-    public async Task<IReadOnlyList<tep_tin>> DLGetPendingMigrationAsync(string provider, int limit, CancellationToken ct = default)
-    {
-        return await Set
-            .Where(t => (t.s3_bucket == provider || t.s3_bucket == "LOCAL") && t.trang_thai == TrangThaiTepTin.da_tai_len)
+    public async Task<IReadOnlyList<tep_tin>> DLFindPendingProcessingAsync(DateTime nhanTruoc, int soLuong, CancellationToken ct = default) =>
+        await Set
+            .AsNoTracking()
+            .Where(t => t.trang_thai_xu_ly == TrangThaiXuLyTepTin.cho_xu_ly
+                        || (t.trang_thai_xu_ly == TrangThaiXuLyTepTin.dang_xu_ly && t.ngay_bat_dau_xu_ly < nhanTruoc))
             .OrderBy(t => t.ngay_tao)
-            .Take(limit)
+            .Take(soLuong)
             .ToListAsync(ct);
+
+    public async Task<bool> DLTryClaimProcessingAsync(tep_tin daThay, DateTime now, CancellationToken ct = default)
+    {
+        var id = daThay.Id;
+        var trangThai = daThay.trang_thai_xu_ly;
+        var mocNhan = daThay.ngay_bat_dau_xu_ly;
+        var capNhat = await Set
+            .Where(t => t.Id == id && t.trang_thai_xu_ly == trangThai && t.ngay_bat_dau_xu_ly == mocNhan)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(t => t.trang_thai_xu_ly, TrangThaiXuLyTepTin.dang_xu_ly).SetProperty(t => t.ngay_bat_dau_xu_ly, now),
+                ct);
+        return capNhat == 1;
     }
+
+    public async Task<IReadOnlyList<tep_tin>> DLFindStaleAsync(
+        DateTime choTaiLenTruoc, DateTime daTaiLenTruoc, int soLuong, CancellationToken ct = default) =>
+        await Set
+            .AsNoTracking()
+            .Where(t => ((t.trang_thai == TrangThaiTepTin.cho_tai_len || t.trang_thai == TrangThaiTepTin.loi) && t.ngay_tao < choTaiLenTruoc)
+                        || (t.trang_thai == TrangThaiTepTin.da_tai_len && (t.ngay_xac_nhan ?? t.ngay_tao) < daTaiLenTruoc))
+            .OrderBy(t => t.ngay_tao)
+            .Take(soLuong)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<tep_tin>> DLFindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
+        ids.Count == 0 ? [] : await Set.AsNoTracking().Where(t => ids.Contains(t.Id)).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<tep_tin>> DLFindByUploaderSinceAsync(
+        Guid nguoiTaiLenId, DateTime tuNgayUtc, CancellationToken ct = default) =>
+        await Set
+            .AsNoTracking()
+            .Where(t => t.nguoi_tai_len_id == nguoiTaiLenId && t.ngay_tao >= tuNgayUtc)
+            .ToListAsync(ct);
 
     public async Task<IReadOnlyList<tep_tin>> DLFindLinkedAsync(
         LoaiDoiTuongTepTin loaiDoiTuong, Guid doiTuongId, string mucDich, CancellationToken ct = default) =>
