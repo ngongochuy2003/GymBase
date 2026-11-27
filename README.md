@@ -104,3 +104,4 @@ Mobile sử dụng `apps/mobile/.env.example`; `.env.example` ở root dành cho
 tương lai.
 
 <!-- Ghi chú ban đầu của repository: nnHuy comment -->
+dotnet ef database update --project src\Data\GymBase.Persistence\GymBase.Persistence.csproj --startup-project src\Host\GymBase.API\GymBase.API.csproj

@@ -1,9 +1,7 @@
 import { isAxiosError, type AxiosInstance } from 'axios';
 import { getMobClient } from '@/core/api/mobile-client';
-import { resolveMediaUrl } from '@/shared/file';
 import type { FeedPostData, ReportReasonId } from '../types';
 import { ghiNhoThongTinAnh, resolveMediaUrl } from '@/shared/file';
-import type { FeedPostData } from '../types';
 
 export { resolveMediaUrl };
 
